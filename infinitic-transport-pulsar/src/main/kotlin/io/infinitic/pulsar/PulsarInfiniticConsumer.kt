@@ -29,6 +29,7 @@ import io.infinitic.common.messages.Message
 import io.infinitic.common.transport.EventListenerSubscription
 import io.infinitic.common.transport.InfiniticConsumer
 import io.infinitic.common.transport.MainSubscription
+import io.infinitic.common.transport.MessageBatchConfig
 import io.infinitic.common.transport.Subscription
 import io.infinitic.common.transport.consumers.ConsumerSharedProcessor
 import io.infinitic.common.transport.consumers.ConsumerUniqueProcessor
@@ -63,6 +64,8 @@ class PulsarInfiniticConsumer(
     handler: suspend (S, MillisInstant) -> Unit,
     beforeDlq: (suspend (S?, Exception) -> Unit)?,
     concurrency: Int,
+    getBatchConfig: (suspend (S) -> Result<MessageBatchConfig?>)?,
+    handlerBatch: (suspend (List<S>) -> Unit)?
   ): Job {
 
     // Retrieve the name of the topic and of the DLQ topic
@@ -152,6 +155,8 @@ class PulsarInfiniticConsumer(
               loggedDeserialize,
               loggedHandler,
               beforeNegativeAcknowledgement,
+              getBatchConfig,
+              handlerBatch,
           ).start(concurrency)
         }
       }

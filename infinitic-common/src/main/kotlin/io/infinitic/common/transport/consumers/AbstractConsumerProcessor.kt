@@ -78,7 +78,7 @@ abstract class AbstractConsumerProcessor<S : TransportMessage, D : Any>(
   /**
    * Processes a deserialized message.
    */
-  protected suspend fun process(message: DeserializedMessage<S, D>) {
+  protected suspend fun processSingle(message: DeserializedMessage<S, D>) {
     try {
       process(message.deserialized, message.transportMessage.publishTime)
       acknowledge(message)

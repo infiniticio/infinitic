@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Set;
 
 // 1 parameter - Batched method with Collection parameter
+@SuppressWarnings("ALL")
 class FooBatch1 {
     public String bar(int p) {
         return Integer.toString(p);

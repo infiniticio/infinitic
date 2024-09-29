@@ -20,39 +20,22 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.transport.consumers
+package io.infinitic.tests.batches
 
-import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.transport.TransportConsumer
-import io.infinitic.common.transport.TransportMessage
-import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.withContext
+import io.infinitic.annotations.Name
+import io.infinitic.workflows.Workflow
 
-class ConsumerUniqueProcessor<S : TransportMessage, D : Any>(
-  private val consumer: TransportConsumer<S>,
-  deserialize: suspend (S) -> D,
-  process: suspend (D, MillisInstant) -> Unit,
-  beforeNegativeAcknowledgement: (suspend (S, D?, Exception) -> Unit)?
-) : AbstractConsumerProcessor<S, D>(
-    consumer,
-    deserialize,
-    process,
-    beforeNegativeAcknowledgement,
-) {
-
-  suspend fun start() = consumer
-      .receiveAsFlow()
-      .collect { message ->
-        withContext(NonCancellable) {
-          tryDeserialize(message)?.let { processSingle(it) }
-        }
-      }
+@Name("batchWorkflow")
+interface BatchWorkflow {
+  fun add(value: Int): Int
+  fun add2(foo: Int, bar: Int): Int
 }
 
+@Suppress("unused")
+class BatchWorkflowImpl : Workflow(), BatchWorkflow {
 
+  private val batchService = newService(BatchService::class.java)
 
-
-
-
-
-
+  override fun add(value: Int) = batchService.add(value)
+  override fun add2(foo: Int, bar: Int) = batchService.add2(foo, bar)
+}

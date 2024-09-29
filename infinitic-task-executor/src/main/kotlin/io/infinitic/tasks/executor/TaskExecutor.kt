@@ -47,7 +47,9 @@ import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.transport.MessageBatchConfig
 import io.infinitic.common.transport.ServiceExecutorEventTopic
 import io.infinitic.common.transport.ServiceExecutorRetryTopic
+import io.infinitic.common.utils.BatchMethod
 import io.infinitic.common.utils.checkMode
+import io.infinitic.common.utils.getArgs
 import io.infinitic.common.utils.getBatchConfig
 import io.infinitic.common.utils.getBatchMethod
 import io.infinitic.common.utils.getMethodPerNameAndParameters
@@ -100,15 +102,15 @@ class TaskExecutor(
     executeTasks.process()
   }
 
-  suspend fun assessBatching(msg: ServiceExecutorMessage): Result<MessageBatchConfig?> =
+  suspend fun getBatchConfig(msg: ServiceExecutorMessage): Result<MessageBatchConfig?> =
       when (msg) {
-        is ExecuteTask -> msg.assessBatching()
+        is ExecuteTask -> msg.getBatchConfig()
       }
 
-  private suspend fun ExecuteTask.assessBatching(): Result<MessageBatchConfig?> = try {
+  private suspend fun ExecuteTask.getBatchConfig(): Result<MessageBatchConfig?> = try {
     Result.success(getMethod().getBatchConfig())
   } catch (e: Exception) {
-    sendTaskFailed(e, taskMeta) { "Error when retrieving the batching config for $this" }
+    sendTaskFailed(e, taskMeta) { "Error when retrieving the @Batch config for $this" }
     Result.failure(e)
   }
 
@@ -124,13 +126,18 @@ class TaskExecutor(
 
   private data class BatchData(
     val instance: Any,
-    val method: Method,
+    val batchMethod: BatchMethod,
     val withTimeout: WithTimeout?,
     val withRetry: WithRetry?,
     val isDelegated: Boolean,
     val argsList: List<List<*>>,
     val contextList: List<TaskContext>
-  )
+  ) {
+    fun invoke() = batchMethod.batch.invoke(
+        instance,
+        batchMethod.getArgs(argsList),
+    )
+  }
 
   private suspend fun List<ExecuteTask>.process() = coroutineScope {
     // Signal that the tasks have started
@@ -238,9 +245,8 @@ class TaskExecutor(
       withTimeout(timeout) {
         coroutineScope {
           Task.setBatchContext(batchData.contextList)
-          Result.success(
-              batchData.method.invoke(batchData.instance, batchData.argsList) as List<Any?>,
-          )
+          val output = batchData.invoke()
+          Result.success(output as List<Any?>)
         }
       }
     } catch (e: TimeoutCancellationException) {
@@ -446,7 +452,7 @@ class TaskExecutor(
         executeTask.sendTaskCompleted(
             output[i],
             batchData.isDelegated,
-            batchData.method,
+            batchData.batchMethod.single,
             batchData.contextList[i].meta,
         )
       }
@@ -527,7 +533,7 @@ class TaskExecutor(
     // Return BatchTaskData containing the task information and contexts
     return BatchData(
         instance = taskData.instance,
-        method = taskData.method,
+        batchMethod = taskData.method.getBatchMethod() ?: thisShouldNotHappen(),
         withTimeout = taskData.withTimeout,
         withRetry = taskData.withRetry,
         isDelegated = taskData.isDelegated,
@@ -547,11 +553,11 @@ class TaskExecutor(
 
     val batchMethod = serviceMethod.getBatchMethod() ?: thisShouldNotHappen()
 
-    val withTimeout = getWithTimeout(serviceName, batchMethod)
+    val withTimeout = getWithTimeout(serviceName, batchMethod.batch)
 
-    val withRetry = getWithRetry(serviceName, batchMethod)
+    val withRetry = getWithRetry(serviceName, batchMethod.batch)
 
-    val isDelegated = batchMethod.isDelegated
+    val isDelegated = batchMethod.single.isDelegated
 
     val taskContext = getContext(withRetry, withTimeout)
 

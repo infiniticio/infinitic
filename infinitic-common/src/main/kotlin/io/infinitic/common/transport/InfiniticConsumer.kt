@@ -49,7 +49,9 @@ interface InfiniticConsumer {
     entity: String,
     handler: suspend (S, MillisInstant) -> Unit,
     beforeDlq: (suspend (S?, Exception) -> Unit)?,
-    concurrency: Int
+    concurrency: Int,
+    getBatchConfig: (suspend (S) -> Result<MessageBatchConfig?>)? = null,
+    handlerBatch: (suspend (List<S>) -> Unit)? = null
   ): Job
 
   /**
@@ -70,6 +72,16 @@ interface InfiniticConsumer {
     entity: String,
     handler: suspend (S, MillisInstant) -> Unit,
     beforeDlq: (suspend (S?, Exception) -> Unit)?,
-    concurrency: Int
-  ): Unit = startAsync(subscription, entity, handler, beforeDlq, concurrency).join()
+    concurrency: Int,
+    getBatchConfig: (suspend (S) -> Result<MessageBatchConfig?>)? = null,
+    handlerBatch: (suspend (List<S>) -> Unit)? = null
+  ): Unit = startAsync(
+      subscription,
+      entity,
+      handler,
+      beforeDlq,
+      concurrency,
+      getBatchConfig,
+      handlerBatch,
+  ).join()
 }

@@ -28,6 +28,7 @@ import io.infinitic.common.messages.Message
 import io.infinitic.common.transport.EventListenerSubscription
 import io.infinitic.common.transport.InfiniticConsumer
 import io.infinitic.common.transport.MainSubscription
+import io.infinitic.common.transport.MessageBatchConfig
 import io.infinitic.common.transport.Subscription
 import io.infinitic.common.transport.TransportConsumer
 import io.infinitic.common.transport.acceptDelayed
@@ -57,6 +58,8 @@ class InMemoryInfiniticConsumer(
     handler: suspend (S, MillisInstant) -> Unit,
     beforeDlq: (suspend (S?, Exception) -> Unit)?,
     concurrency: Int,
+    getBatchConfig: (suspend (S) -> Result<MessageBatchConfig?>)?,
+    handlerBatch: (suspend (List<S>) -> Unit)?
   ): Job {
 
     val loggedDeserialize: suspend (InMemoryTransportMessage<S>) -> S = { message ->
@@ -90,8 +93,12 @@ class InMemoryInfiniticConsumer(
           coroutineScope {
             repeat(concurrency) {
               launch {
-                ConsumerUniqueProcessor(consumers[it], loggedDeserialize, loggedHandler, null)
-                    .start()
+                ConsumerUniqueProcessor(
+                    consumers[it],
+                    loggedDeserialize,
+                    loggedHandler,
+                    null,
+                ).start()
               }
             }
           }
@@ -102,8 +109,14 @@ class InMemoryInfiniticConsumer(
         // build the consumer synchronously
         val consumer = buildConsumer()
         launch {
-          ConsumerSharedProcessor(consumer, loggedDeserialize, loggedHandler, null)
-              .start(concurrency)
+          ConsumerSharedProcessor(
+              consumer,
+              loggedDeserialize,
+              loggedHandler,
+              null,
+              getBatchConfig,
+              handlerBatch,
+          ).start(concurrency)
         }
       }
     }

@@ -49,7 +49,7 @@ class ConsumerSharedProcessor<S : TransportMessage, D : Any>(
   deserialize: suspend (S) -> D,
   process: suspend (D, MillisInstant) -> Unit,
   beforeNegativeAcknowledgement: (suspend (S, D?, Exception) -> Unit)?,
-  private val assessBatching: ((D) -> Result<MessageBatchConfig?>)? = null,
+  private val getBatchConfig: (suspend (D) -> Result<MessageBatchConfig?>)? = null,
   private val processBatch: (suspend (List<D>) -> Unit)? = null
 ) : AbstractConsumerProcessor<S, D>(
     consumer,
@@ -58,8 +58,8 @@ class ConsumerSharedProcessor<S : TransportMessage, D : Any>(
     beforeNegativeAcknowledgement,
 ) {
   init {
-    require((processBatch == null) == (assessBatching == null)) {
-      "assessBatching and processBatch should be defined together or not at all"
+    require((processBatch == null) == (getBatchConfig == null)) {
+      "${::getBatchConfig.name} and processBatch should be defined together or not at all"
     }
   }
 
@@ -82,7 +82,7 @@ class ConsumerSharedProcessor<S : TransportMessage, D : Any>(
         .receiveAsFlow()
         .deserialize(concurrency)
         .collect { message ->
-          val batchConfigResult = assessBatching?.let { it(message.deserialized) }
+          val batchConfigResult = getBatchConfig?.let { it(message.deserialized) }
           batchConfigResult
               ?.onFailure {
                 // assessBatching has the responsibility to tell
@@ -122,7 +122,7 @@ class ConsumerSharedProcessor<S : TransportMessage, D : Any>(
     for (message in this) {
       withContext(NonCancellable) {
         when (message) {
-          is MessageSingle<S, D> -> process(message.deserialized)
+          is MessageSingle<S, D> -> processSingle(message.deserialized)
           is MessageBatch<S, D> -> processBatch(message.deserialized)
         }
       }

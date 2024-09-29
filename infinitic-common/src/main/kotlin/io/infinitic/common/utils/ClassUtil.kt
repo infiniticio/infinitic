@@ -189,11 +189,11 @@ val Method.annotatedName: String
 /**
  * Get the batchMethod of a method (if any)
  */
-internal val batchMethodCache = mutableMapOf<Method, Method?>()
+internal val batchMethodCache = mutableMapOf<Method, BatchMethod?>()
 
 private val batchMethodMutex = Mutex()
 
-suspend fun Method.getBatchMethod(): Method? {
+suspend fun Method.getBatchMethod(): BatchMethod? {
   if (batchMethodCache.containsKey(this)) {
     // Return immediately if the cache already contains the current method
     return batchMethodCache[this]
@@ -201,10 +201,10 @@ suspend fun Method.getBatchMethod(): Method? {
   // Lock access to the cache to avoid race conditions
   return batchMethodMutex.withLock {
     // Retrieve the map of batch methods for the declaring class
-    val batchMethodMap = declaringClass.getBatchMethods()
+    val batchMethodList = declaringClass.getBatchMethods()
     // Update the cache with all methods of the declaring class
     declaringClass.methods.forEach { method ->
-      batchMethodCache[method] = batchMethodMap[method]
+      batchMethodCache[method] = batchMethodList.firstOrNull { it.single == method }
     }
     // Return the corresponding value for the current method now in the cache
     batchMethodCache[this]
@@ -216,7 +216,7 @@ suspend fun Method.getBatchConfig(): MessageBatchConfig? {
   val batchMethod = getBatchMethod() ?: return null
 
   // Find the @Batch annotation on this method
-  val batchAnnotation = batchMethod.findAnnotation(Batch::class.java) ?: thisShouldNotHappen()
+  val batchAnnotation = batchMethod.batch.findAnnotation(Batch::class.java) ?: thisShouldNotHappen()
 
   // Create and return an instance of MessageBatchConfig from the annotation
   return MessageBatchConfig(

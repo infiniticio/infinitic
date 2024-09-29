@@ -33,66 +33,66 @@ class BatchUtilTests : StringSpec(
     {
       "Find single for batch method with 1 parameter and List" {
         val klass = FooBatch1::class.java
-        val map = shouldNotThrowAny { klass.getBatchMethods() }
-        map.size shouldBe 1
-        map.keys.first() shouldBe klass.getMethod("bar", Int::class.java)
-        map.values.first() shouldBe klass.getMethod("bar", List::class.java)
+        val list = shouldNotThrowAny { klass.getBatchMethods() }
+        list.size shouldBe 1
+        list[0].single shouldBe klass.getMethod("bar", Int::class.java)
+        list[0].batch shouldBe klass.getMethod("bar", List::class.java)
       }
 
       "Find single for batch method with 1 parameter and vararg" {
         val klass = FooBatch1bis::class.java
-        val map = shouldNotThrowAny { klass.getBatchMethods() }
-        map.size shouldBe 1
-        map.keys.first() shouldBe klass.getMethod("bar", Int::class.java)
-        map.values.first() shouldBe klass.methods[1]
+        val list = shouldNotThrowAny { klass.getBatchMethods() }
+        list.size shouldBe 1
+        list[0].single shouldBe klass.getMethod("bar", Int::class.java)
+        list[0].batch shouldBe klass.methods[1]
       }
 
       "Find single for batch method with 2 parameters and List" {
         val klass = FooBatch2::class.java
-        val map = shouldNotThrowAny { klass.getBatchMethods() }
-        map.size shouldBe 1
-        map.keys.first() shouldBe klass.getMethod("bar", Int::class.java, Int::class.java)
-        map.values.first() shouldBe klass.getMethod("bar", List::class.java)
+        val list = shouldNotThrowAny { klass.getBatchMethods() }
+        list.size shouldBe 1
+        list[0].single shouldBe klass.getMethod("bar", Int::class.java, Int::class.java)
+        list[0].batch shouldBe klass.getMethod("bar", List::class.java)
       }
 
       "Find single for batch method with 2 parameters and vararg" {
         val klass = FooBatch2bis::class.java
-        val map = shouldNotThrowAny { klass.getBatchMethods() }
-        map.size shouldBe 1
-        map.keys.first() shouldBe klass.getMethod("bar", Int::class.java, Int::class.java)
-        map.values.first() shouldBe klass.methods.first { it.name == "bar" && it.parameters.first().isVarArgs }
+        val list = shouldNotThrowAny { klass.getBatchMethods() }
+        list.size shouldBe 1
+        list[0].single shouldBe klass.getMethod("bar", Int::class.java, Int::class.java)
+        list[0].batch shouldBe klass.methods.first { it.name == "bar" && it.parameters.first().isVarArgs }
       }
 
       "Find single for batch method with 1 collection parameters" {
         val klass = FooBatch3::class.java
-        val map = shouldNotThrowAny { klass.getBatchMethods() }
-        map.size shouldBe 1
-        map.keys.first() shouldBe klass.getMethod("bar", Set::class.java)
-        map.values.first() shouldBe klass.getMethod("bar", List::class.java)
+        val list = shouldNotThrowAny { klass.getBatchMethods() }
+        list.size shouldBe 1
+        list[0].single shouldBe klass.getMethod("bar", Set::class.java)
+        list[0].batch shouldBe klass.getMethod("bar", List::class.java)
       }
 
       "Find single for batch method with no return, batch with List<unit>" {
         val klass = FooBatch4::class.java
-        val map = shouldNotThrowAny { klass.getBatchMethods() }
-        map.size shouldBe 1
-        map.keys.first() shouldBe klass.getMethod("bar", Int::class.java, Int::class.java)
-        map.values.first() shouldBe klass.getMethod("bar", List::class.java)
+        val list = shouldNotThrowAny { klass.getBatchMethods() }
+        list.size shouldBe 1
+        list[0].single shouldBe klass.getMethod("bar", Int::class.java, Int::class.java)
+        list[0].batch shouldBe klass.getMethod("bar", List::class.java)
       }
 
       "Find single for batch method with no return" {
         val klass = FooBatch5::class.java
-        val map = shouldNotThrowAny { klass.getBatchMethods() }
-        map.size shouldBe 1
-        map.keys.first() shouldBe klass.getMethod("bar", Int::class.java, Int::class.java)
-        map.values.first() shouldBe klass.getMethod("bar", List::class.java)
+        val list = shouldNotThrowAny { klass.getBatchMethods() }
+        list.size shouldBe 1
+        list[0].single shouldBe klass.getMethod("bar", Int::class.java, Int::class.java)
+        list[0].batch shouldBe klass.getMethod("bar", List::class.java)
       }
 
       "Find single for batch method with generic parameters" {
         val klass = FooBatch6::class.java
-        val map = shouldNotThrowAny { klass.getBatchMethods() }
-        map.size shouldBe 1
-        map.keys.first() shouldBe klass.getMethod("bar", MyPair::class.java)
-        map.values.first() shouldBe klass.getMethod("bar", List::class.java)
+        val list = shouldNotThrowAny { klass.getBatchMethods() }
+        list.size shouldBe 1
+        list[0].single shouldBe klass.getMethod("bar", MyPair::class.java)
+        list[0].batch shouldBe klass.getMethod("bar", List::class.java)
       }
 
       "batch method with more than 1 parameter should throw" {

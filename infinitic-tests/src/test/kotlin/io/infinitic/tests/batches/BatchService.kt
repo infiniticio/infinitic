@@ -20,39 +20,33 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.transport.consumers
+@file:Suppress("unused")
 
-import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.transport.TransportConsumer
-import io.infinitic.common.transport.TransportMessage
-import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.withContext
+package io.infinitic.tests.batches
 
-class ConsumerUniqueProcessor<S : TransportMessage, D : Any>(
-  private val consumer: TransportConsumer<S>,
-  deserialize: suspend (S) -> D,
-  process: suspend (D, MillisInstant) -> Unit,
-  beforeNegativeAcknowledgement: (suspend (S, D?, Exception) -> Unit)?
-) : AbstractConsumerProcessor<S, D>(
-    consumer,
-    deserialize,
-    process,
-    beforeNegativeAcknowledgement,
-) {
+import io.infinitic.annotations.Batch
+import io.infinitic.annotations.Name
+import io.infinitic.common.exceptions.thisShouldNotHappen
 
-  suspend fun start() = consumer
-      .receiveAsFlow()
-      .collect { message ->
-        withContext(NonCancellable) {
-          tryDeserialize(message)?.let { processSingle(it) }
-        }
-      }
+@Name("batchService")
+interface BatchService {
+  fun add(value: Int): Int
+  fun add2(foo: Int, bar: Int): Int
 }
 
+internal class BatchServiceImpl : BatchService {
 
+  override fun add(value: Int) = thisShouldNotHappen()
 
+  override fun add2(foo: Int, bar: Int) = thisShouldNotHappen()
 
+  @Batch(maxMessage = 10, maxDelaySeconds = 1.0)
+  fun add(list: List<Int>) = List(list.size) { list.sum() }
 
+  @Batch(maxMessage = 10, maxDelaySeconds = 1.0)
+  fun add2(list: List<Input>) = List(list.size) { list.sumOf { it.sum() } }
+}
 
-
-
+internal data class Input(val foo: Int, val bar: Int) {
+  fun sum() = foo + bar
+}

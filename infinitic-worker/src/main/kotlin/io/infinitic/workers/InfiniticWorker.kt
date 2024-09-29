@@ -422,6 +422,12 @@ class InfiniticWorker(
             taskExecutor.handle(message, publishedAt)
           }
 
+      val handlerBatch: suspend (List<ServiceExecutorMessage>) -> Unit =
+          { messages ->
+            //logsEventLogger.logServiceCloudEvent(message, publishedAt, cloudEventSourcePrefix)
+            taskExecutor.handleBatch(messages)
+          }
+
       val beforeDlq: suspend (ServiceExecutorMessage?, Exception) -> Unit = { message, cause ->
         when (message) {
           null -> Unit
@@ -437,6 +443,8 @@ class InfiniticWorker(
           handler = handler,
           beforeDlq = beforeDlq,
           concurrency = config.concurrency,
+          getBatchConfig = taskExecutor::getBatchConfig,
+          handlerBatch = handlerBatch,
       )
     }
 
