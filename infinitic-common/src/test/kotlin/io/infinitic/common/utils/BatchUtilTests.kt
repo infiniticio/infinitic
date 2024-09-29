@@ -131,7 +131,7 @@ class BatchUtilTests : StringSpec(
 private class FooBatch1 {
   fun bar(p: Int): String = p.toString()
 
-  @Batch
+  @Batch(maxMessage = 10, maxDelaySeconds = 1.0)
   fun bar(p: List<Int>): List<String> = p.map { it.toString() }
 }
 
@@ -139,7 +139,7 @@ private class FooBatch1 {
 private class FooBatch1bis {
   fun bar(p: Int): String = p.toString()
 
-  @Batch
+  @Batch(maxMessage = 10, maxDelaySeconds = 1.0)
   fun bar(vararg p: Int): List<String> = p.map { it.toString() }
 }
 
@@ -147,7 +147,7 @@ private class FooBatch1bis {
 private class FooBatch2 {
   fun bar(p: Int, q: Int): String = p.toString() + q.toString()
 
-  @Batch
+  @Batch(maxMessage = 10, maxDelaySeconds = 1.0)
   fun bar(l: List<PairInt>): List<String> = l.map { bar(it.p, it.q) }
 }
 
@@ -155,7 +155,7 @@ private class FooBatch2 {
 private class FooBatch2bis {
   fun bar(p: Int, q: Int): String = p.toString() + q.toString()
 
-  @Batch
+  @Batch(maxMessage = 10, maxDelaySeconds = 1.0)
   fun bar(vararg l: PairInt): List<String> = l.map { bar(it.p, it.q) }
 }
 
@@ -163,7 +163,7 @@ private class FooBatch2bis {
 private class FooBatch3 {
   fun bar(p: Set<Int>): String = p.toString()
 
-  @Batch
+  @Batch(maxMessage = 10, maxDelaySeconds = 1.0)
   fun bar(p: List<Set<Int>>): List<String> = p.map { it.toString() }
 }
 
@@ -173,7 +173,7 @@ private class FooBatch4 {
     // do nothing
   }
 
-  @Batch
+  @Batch(maxMessage = 10, maxDelaySeconds = 1.0)
   fun bar(p: List<PairInt>): List<Unit> = p.map { it.toString() }
 }
 
@@ -183,7 +183,7 @@ private class FooBatch5 {
     // do nothing
   }
 
-  @Batch
+  @Batch(maxMessage = 10, maxDelaySeconds = 1.0)
   fun bar(p: List<PairInt>) {
     // do nothing
   }
@@ -195,7 +195,7 @@ private class FooBatch6 {
     // do nothing
   }
 
-  @Batch
+  @Batch(maxMessage = 10, maxDelaySeconds = 1.0)
   fun bar(pairs: List<MyPair<Int>>) {
     // do nothing
   }
@@ -205,7 +205,7 @@ private class FooBatch6 {
 private class FooBatchError1 {
   fun bar(p: Int): String = p.toString()
 
-  @Batch
+  @Batch(maxMessage = 10, maxDelaySeconds = 1.0)
   fun bar(p: List<Int>, q: Int): List<String> = p.map { it.toString() }
 }
 
@@ -213,7 +213,7 @@ private class FooBatchError1 {
 private class FooBatchError2 {
   fun bar(p: Int, q: Int): String = p.toString() + q.toString()
 
-  @Batch
+  @Batch(maxMessage = 10, maxDelaySeconds = 1.0)
   fun bar(p: List<Int>): List<String> = p.map { it.toString() }
 }
 
@@ -221,10 +221,10 @@ private class FooBatchError2 {
 private class FooBatchError3 {
   fun bar(p: Int, q: Int): String = p.toString() + q.toString()
 
-  @Batch
+  @Batch(maxMessage = 10, maxDelaySeconds = 1.0)
   fun bar(p: List<PairInt>): List<String> = p.map { it.toString() }
 
-  @Batch
+  @Batch(maxMessage = 10, maxDelaySeconds = 1.0)
   fun bar(vararg p: PairInt): List<String> = p.map { it.toString() }
 }
 
@@ -232,7 +232,7 @@ private class FooBatchError3 {
 private class FooBatchError4 {
   fun bar(p: Int, q: Int): String = p.toString() + q.toString()
 
-  @Batch
+  @Batch(maxMessage = 10, maxDelaySeconds = 1.0)
   fun bar(p: List<PairInt>): List<Int> = p.map { it.p + it.q }
 }
 
@@ -240,7 +240,7 @@ private class FooBatchError4 {
 private class FooBatchError5 {
   fun bar(p: Int, q: Int): String = p.toString() + q.toString()
 
-  @Batch
+  @Batch(maxMessage = 10, maxDelaySeconds = 1.0)
   fun bar(p: List<PairInt>): String = "?"
 }
 
