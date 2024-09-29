@@ -136,19 +136,17 @@ sealed class ProxyHandler<T : Any>(
       }
     }
 
-    this.method = method
-    this.methodArgs = args ?: arrayOf()
+    // create a new instance of the proxyHandler and set methods and args
+    val handler = duplicate().apply {
+      this.method = method
+      this.methodArgs = args ?: arrayOf()
+    }
 
     return when (isInvocationAsync.get()) {
-      // sync => run directly from dispatcher
-      false -> dispatcherFn().dispatchAndWait(this)
+      // run directly from dispatcher
+      false -> dispatcherFn().dispatchAndWait(handler)
       // store current instance to get retrieved from ProxyHandler.async
-      true -> {
-        // set current handler
-        invocationHandler.set(this)
-        // return fake value
-        any
-      }
+      true -> any.also { invocationHandler.set(handler) }
     }
   }
 
@@ -168,4 +166,12 @@ sealed class ProxyHandler<T : Any>(
         "boolean" -> false
         else -> null
       }
+
+  private fun duplicate() = when (this) {
+    is NewWorkflowProxyHandler<*> -> copy()
+    is ChannelProxyHandler -> copy()
+    is ExistingServiceProxyHandler -> copy()
+    is ExistingWorkflowProxyHandler -> copy()
+    is NewServiceProxyHandler -> copy()
+  }
 }

@@ -31,8 +31,8 @@ import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
 
 @Suppress("UNCHECKED_CAST")
-class ChannelProxyHandler<K : SendChannel<*>>(
-  handler: ExistingWorkflowProxyHandler<*>,
+data class ChannelProxyHandler<K : SendChannel<*>>(
+  val handler: ExistingWorkflowProxyHandler<*>,
 ) : ProxyHandler<K>(handler.method.returnType as Class<out K>, handler.dispatcherFn) {
   init {
     if (handler.method.returnType != SendChannel::class.java)

@@ -26,7 +26,7 @@ import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskTag
 
-class NewServiceProxyHandler<K : Any>(
+data class NewServiceProxyHandler<K : Any>(
   override val klass: Class<K>,
   val taskTags: Set<TaskTag>,
   val taskMeta: TaskMeta,

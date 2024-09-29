@@ -91,15 +91,15 @@ interface InfiniticClientInterface : Closeable {
   fun <T : Any> getWorkflowByTag(klass: Class<out T>, tag: String): T
 
   /** Dispatch without parameter a task or workflow returning an object */
-  fun <R : Any?> dispatchAsync(method: () -> R): CompletableFuture<Deferred<R>> = startAsync {
-    method.invoke()
-  }
+  fun <R : Any?> dispatchAsync(
+    method: () -> R
+  ): CompletableFuture<Deferred<R>> = startAsync { method.invoke() }
 
   /** Dispatch with 1 parameter a task or workflow returning an object */
-  fun <P1, R : Any?> dispatchAsync(method: (p1: P1) -> R, p1: P1): CompletableFuture<Deferred<R>> =
-      startAsync {
-        method.invoke(p1)
-      }
+  fun <P1, R : Any?> dispatchAsync(
+    method: (p1: P1) -> R,
+    p1: P1
+  ): CompletableFuture<Deferred<R>> = startAsync { method.invoke(p1) }
 
   /** Dispatch with 2 parameters a task or workflow returning an object */
   fun <P1, P2, R : Any?> dispatchAsync(
