@@ -25,6 +25,7 @@ package io.infinitic.tests.batches
 import io.infinitic.Test
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
+import kotlin.time.Duration.Companion.minutes
 
 internal class BatchesWorkflowTests : StringSpec(
     {
@@ -33,7 +34,8 @@ internal class BatchesWorkflowTests : StringSpec(
 
       val batchWorkflow = client.newWorkflow(BatchWorkflow::class.java)
 
-      "Batch should work (with maxSize=10)" {
+      // the first test has a large timeout to deal with Pulsar initialization
+      "Batch should work (with maxSize=10)".config(timeout = 1.minutes) {
         for (i in 1..9) {
           client.dispatch(batchWorkflow::add, i)
         }

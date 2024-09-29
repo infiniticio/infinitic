@@ -20,6 +20,7 @@
  * <p>
  * Licensor: infinitic.io
  */
+
 package io.infinitic.common.utils.java;
 
 import io.infinitic.annotations.Batch;
