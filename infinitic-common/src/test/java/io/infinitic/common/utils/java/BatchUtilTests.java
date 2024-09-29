@@ -1,41 +1,40 @@
-/**
+/*
  * "Commons Clause" License Condition v1.0
- * <p>
+ *
  * The Software is provided to you by the Licensor under the License, as defined below, subject to
  * the following condition.
- * <p>
+ *
  * Without limiting other conditions in the License, the grant of rights under the License will not
  * include, and the License does not grant to you, the right to Sell the Software.
- * <p>
+ *
  * For purposes of the foregoing, “Sell” means practicing any or all of the rights granted to you
  * under the License to provide to third parties, for a fee or other consideration (including
  * without limitation fees for hosting or consulting/ support services related to the Software), a
  * product or service whose value derives, entirely or substantially, from the functionality of the
  * Software. Any license notice or attribution required by the License must also include this
  * Commons Clause License Condition notice.
- * <p>
+ *
  * Software: Infinitic
- * <p>
+ *
  * License: MIT License (https://opensource.org/licenses/MIT)
- * <p>
+ *
  * Licensor: infinitic.io
  */
-
 package io.infinitic.common.utils.java;
 
 import io.infinitic.annotations.Batch;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
 // 1 parameter - Batched method with Collection parameter
-@SuppressWarnings("ALL")
 class FooBatch1 {
     public String bar(int p) {
         return Integer.toString(p);
     }
 
-    @Batch
+    @Batch(maxMessage = 10, maxDelaySeconds = 1.0)
     public List<String> bar(List<Integer> p) {
         return p.stream().map(Object::toString).toList();
     }
@@ -47,9 +46,9 @@ class FooBatch1bis {
         return Integer.toString(p);
     }
 
-    @Batch
+    @Batch(maxMessage = 10, maxDelaySeconds = 1.0)
     public List<String> bar(int... p) {
-        return java.util.Arrays.stream(p).mapToObj(Integer::toString).toList();
+        return Arrays.stream(p).mapToObj(Integer::toString).toList();
     }
 }
 
@@ -59,7 +58,7 @@ class FooBatch2 {
         return Integer.toString(p) + q;
     }
 
-    @Batch
+    @Batch(maxMessage = 10, maxDelaySeconds = 1.0)
     public List<String> bar(List<PairInt> l) {
         return l.stream().map(pair -> bar(pair.p(), pair.q())).toList();
     }
@@ -71,9 +70,9 @@ class FooBatch2bis {
         return Integer.toString(p) + q;
     }
 
-    @Batch
+    @Batch(maxMessage = 10, maxDelaySeconds = 1.0)
     public List<String> bar(PairInt... l) {
-        return java.util.Arrays.stream(l).map(pair -> bar(pair.p(), pair.q())).toList();
+        return Arrays.stream(l).map(pair -> bar(pair.p(), pair.q())).toList();
     }
 }
 
@@ -83,7 +82,7 @@ class FooBatch3 {
         return p.toString();
     }
 
-    @Batch
+    @Batch(maxMessage = 10, maxDelaySeconds = 1.0)
     public List<String> bar(List<Set<Integer>> p) {
         return p.stream().map(Set::toString).toList();
     }
@@ -95,7 +94,7 @@ class FooBatch5 {
         // do nothing
     }
 
-    @Batch
+    @Batch(maxMessage = 10, maxDelaySeconds = 1.0)
     public void bar(List<PairInt> p) {
         // do nothing
     }
@@ -107,7 +106,7 @@ class FooBatch6 {
         // do nothing
     }
 
-    @Batch
+    @Batch(maxMessage = 10, maxDelaySeconds = 1.0)
     public void bar(List<MyPair<Integer>> pairs) {
         // do nothing
     }
@@ -119,7 +118,7 @@ class FooBatchError1 {
         return Integer.toString(p);
     }
 
-    @Batch
+    @Batch(maxMessage = 10, maxDelaySeconds = 1.0)
     public List<String> bar(List<Integer> p, int q) {
         return p.stream().map(Object::toString).toList();
     }
@@ -131,7 +130,7 @@ class FooBatchError2 {
         return Integer.toString(p) + q;
     }
 
-    @Batch
+    @Batch(maxMessage = 10, maxDelaySeconds = 1.0)
     public List<String> bar(List<Integer> p) {
         return p.stream().map(Object::toString).toList();
     }
@@ -143,14 +142,14 @@ class FooBatchError3 {
         return Integer.toString(p) + q;
     }
 
-    @Batch
+    @Batch(maxMessage = 10, maxDelaySeconds = 1.0)
     public List<String> bar(List<PairInt> p) {
         return p.stream().map(Object::toString).toList();
     }
 
-    @Batch
+    @Batch(maxMessage = 10, maxDelaySeconds = 1.0)
     public List<String> bar(PairInt... p) {
-        return java.util.Arrays.stream(p).map(Object::toString).toList();
+        return Arrays.stream(p).map(Object::toString).toList();
     }
 }
 
@@ -160,7 +159,7 @@ class FooBatchError4 {
         return "?";
     }
 
-    @Batch
+    @Batch(maxMessage = 10, maxDelaySeconds = 1.0)
     public List<Integer> bar(List<PairInt> p) {
         return p.stream().map(pair -> pair.p() + pair.q()).toList();
     }
@@ -172,7 +171,7 @@ class FooBatchError5 {
         return "?";
     }
 
-    @Batch
+    @Batch(maxMessage = 10, maxDelaySeconds = 1.0)
     public String bar(List<PairInt> p) {
         return "?";
     }
