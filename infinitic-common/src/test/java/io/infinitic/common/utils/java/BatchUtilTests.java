@@ -25,7 +25,7 @@ package io.infinitic.common.utils.java;
 import io.infinitic.annotations.Batch;
 
 import java.util.Arrays;
-import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -37,8 +37,9 @@ class FooBatch1 {
     }
 
     @Batch(maxMessages = 10, maxSeconds = 1.0)
-    public List<String> bar(List<Integer> p) {
-        return p.stream().map(Object::toString).toList();
+    public Map<String, String> bar(Map<String, Integer> p) {
+        return p.entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, entry -> bar(entry.getValue())));
     }
 }
 
@@ -50,8 +51,9 @@ class FooBatch2 {
     }
 
     @Batch(maxMessages = 10, maxSeconds = 1.0)
-    public List<String> bar(List<PairInt> l) {
-        return l.stream().map(pair -> bar(pair.p(), pair.q())).toList();
+    public Map<String, String> bar(Map<String, PairInt> l) {
+        return l.entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, entry -> bar(entry.getValue().p(), entry.getValue().q())));
     }
 }
 
@@ -63,8 +65,9 @@ class FooBatch3 {
     }
 
     @Batch(maxMessages = 10, maxSeconds = 1.0)
-    public List<String> bar(List<Set<Integer>> p) {
-        return p.stream().map(Set::toString).toList();
+    public Map<String, String> bar(Map<String, Set<Integer>> p) {
+        return p.entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, entry -> bar(entry.getValue())));
     }
 }
 
@@ -76,7 +79,7 @@ class FooBatch5 {
     }
 
     @Batch(maxMessages = 10, maxSeconds = 1.0)
-    public void bar(List<PairInt> p) {
+    public void bar(Map<String, PairInt> p) {
         // do nothing
     }
 }
@@ -89,7 +92,7 @@ class FooBatch6 {
     }
 
     @Batch(maxMessages = 10, maxSeconds = 1.0)
-    public void bar(List<MyPair<Integer>> pairs) {
+    public void bar(Map<String, MyPair<Integer>> pairs) {
         // do nothing
     }
 }
@@ -104,10 +107,9 @@ class FooBatch7 implements FooBatch {
     }
 
     @Batch(maxMessages = 10, maxSeconds = 1.0)
-    public List<PairInt> bar(List<Integer> list) {
-        return list.stream()
-                .map(i -> new PairInt(i, i))
-                .collect(Collectors.toList());
+    public Map<String, PairInt> bar(Map<String, Integer> list) {
+        return list.entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, entry -> bar(entry.getValue())));
     }
 }
 
@@ -124,10 +126,10 @@ class FooBatchError0 {
     }
 
     @Batch(maxMessages = 10, maxSeconds = 1.0)
-    List<String> bar(int... p) {
-        return Arrays.stream(p)
-                .mapToObj(Integer::toString)
-                .collect(Collectors.toList());
+    Map<String, String> bar(int... p) {
+        return Arrays.stream(p).boxed().collect(Collectors.toMap(
+                Object::toString,
+                Object::toString));
     }
 }
 
@@ -139,8 +141,9 @@ class FooBatchError1 {
     }
 
     @Batch(maxMessages = 10, maxSeconds = 1.0)
-    public List<String> bar(List<Integer> p, int q) {
-        return p.stream().map(Object::toString).toList();
+    public Map<String, String> bar(Map<String, Integer> p, int q) {
+        return p.entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, entry -> bar(entry.getValue())));
     }
 }
 
@@ -152,8 +155,9 @@ class FooBatchError2 {
     }
 
     @Batch(maxMessages = 10, maxSeconds = 1.0)
-    public List<String> bar(List<Integer> p) {
-        return p.stream().map(Object::toString).toList();
+    public Map<String, String> bar(Map<String, Integer> p) {
+        return p.entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, entry -> bar(entry.getValue(), entry.getValue())));
     }
 }
 
@@ -165,12 +169,13 @@ class FooBatchError4 {
     }
 
     @Batch(maxMessages = 10, maxSeconds = 1.0)
-    public List<Integer> bar(List<PairInt> p) {
-        return p.stream().map(pair -> pair.p() + pair.q()).toList();
+    public Map<String, Integer> bar(Map<String, PairInt> p) {
+        return p.entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, entry -> Integer.parseInt(bar(entry.getValue().p(), entry.getValue().q()))));
     }
 }
 
-// Not a List in return type
+// Not a Map in return type
 @SuppressWarnings("unused")
 class FooBatchError5 {
     public String bar(int p, int q) {
@@ -178,7 +183,7 @@ class FooBatchError5 {
     }
 
     @Batch(maxMessages = 10, maxSeconds = 1.0)
-    public String bar(List<PairInt> p) {
+    public String bar(Map<String, PairInt> p) {
         return "?";
     }
 }

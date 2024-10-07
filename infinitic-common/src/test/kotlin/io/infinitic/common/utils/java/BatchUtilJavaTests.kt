@@ -36,7 +36,7 @@ class BatchUtilJavaTests : StringSpec(
         val klass = FooBatch1::class.java
         val list = shouldNotThrowAny { klass.getBatchMethods() }
         val single = klass.getMethod("bar", Int::class.java)
-        val batch = klass.getMethod("bar", List::class.java)
+        val batch = klass.getMethod("bar", Map::class.java)
         list.find { it.single == single }?.batch shouldBe batch
       }
 
@@ -44,7 +44,7 @@ class BatchUtilJavaTests : StringSpec(
         val klass = FooBatch2::class.java
         val list = shouldNotThrowAny { klass.getBatchMethods() }
         val single = klass.getMethod("bar", Int::class.java, Int::class.java)
-        val batch = klass.getMethod("bar", List::class.java)
+        val batch = klass.getMethod("bar", Map::class.java)
         list.find { it.single == single }?.batch shouldBe batch
       }
 
@@ -52,7 +52,7 @@ class BatchUtilJavaTests : StringSpec(
         val klass = FooBatch3::class.java
         val list = shouldNotThrowAny { klass.getBatchMethods() }
         val single = klass.getMethod("bar", Set::class.java)
-        val batch = klass.getMethod("bar", List::class.java)
+        val batch = klass.getMethod("bar", Map::class.java)
         list.find { it.single == single }?.batch shouldBe batch
       }
 
@@ -60,7 +60,7 @@ class BatchUtilJavaTests : StringSpec(
         val klass = FooBatch5::class.java
         val list = shouldNotThrowAny { klass.getBatchMethods() }
         val single = klass.getMethod("bar", Int::class.java, Int::class.java)
-        val batch = klass.getMethod("bar", List::class.java)
+        val batch = klass.getMethod("bar", Map::class.java)
         list.find { it.single == single }?.batch shouldBe batch
       }
 
@@ -68,7 +68,7 @@ class BatchUtilJavaTests : StringSpec(
         val klass = FooBatch6::class.java
         val list = shouldNotThrowAny { klass.getBatchMethods() }
         val single = klass.getMethod("bar", MyPair::class.java)
-        val batch = klass.getMethod("bar", List::class.java)
+        val batch = klass.getMethod("bar", Map::class.java)
         list.find { it.single == single }?.batch shouldBe batch
       }
 
@@ -76,7 +76,7 @@ class BatchUtilJavaTests : StringSpec(
         val klass = FooBatch7::class.java
         val list = shouldNotThrowAny { klass.getBatchMethods() }
         val single = klass.getMethod("bar", Int::class.java)
-        val batch = klass.getMethod("bar", List::class.java)
+        val batch = klass.getMethod("bar", Map::class.java)
         list.find { it.single == single }?.batch shouldBe batch
       }
 
