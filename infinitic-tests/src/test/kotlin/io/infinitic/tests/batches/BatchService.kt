@@ -60,24 +60,24 @@ internal class BatchServiceImpl : BatchService {
   override fun foo5(input: Input) = thisShouldNotHappen()
 
   @Batch(maxMessages = 10, maxSeconds = 1.0)
-  fun foo(list: List<Int>): List<Int> =
-      List(list.size) { list.sum() }
+  fun foo(list: Map<String, Int>): Map<String, Int> =
+      list.mapValues { list.values.sum() }
 
   @Batch(maxMessages = 10, maxSeconds = 1.0)
-  fun foo2(list: List<Input>): List<Int> =
-      List(list.size) { list.sumOf { it.sum() } }
+  fun foo2(list: Map<String, Input>): Map<String, Int> =
+      list.mapValues { list.values.sumOf { it.sum() } }
 
   @Batch(maxMessages = 10, maxSeconds = 1.0)
-  fun foo3(list: List<Input>): List<Int> =
-      List(list.size) { list.sumOf { it.sum() } }
+  fun foo3(list: Map<String, Input>): Map<String, Int> =
+      list.mapValues { list.values.sumOf { it.sum() } }
 
   @Batch(maxMessages = 10, maxSeconds = 1.0)
-  fun foo4(list: List<Int>): List<Input> =
-      list.map { Input(list.sumOf { it }, it) }
+  fun foo4(list: Map<String, Int>): Map<String, Input> =
+      list.mapValues { Input(list.values.sumOf { it }, it.value) }
 
   @Batch(maxMessages = 10, maxSeconds = 1.0)
-  fun foo5(list: List<Input>): List<Input> =
-      list.map { Input(list.sumOf { it.sum() }, it.bar) }
+  fun foo5(list: Map<String, Input>): Map<String, Input> =
+      list.mapValues { Input(list.values.sumOf { it.sum() }, it.value.bar) }
 }
 
 internal data class Input(val foo: Int, val bar: Int) {

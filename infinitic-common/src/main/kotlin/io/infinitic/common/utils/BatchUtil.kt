@@ -23,6 +23,7 @@
 package io.infinitic.common.utils
 
 import io.infinitic.annotations.Batch
+import io.infinitic.common.tasks.data.TaskId
 import java.lang.reflect.Constructor
 import java.lang.reflect.GenericArrayType
 import java.lang.reflect.Method
@@ -46,10 +47,10 @@ data class BatchMethod(
   val constructor: Constructor<*>?,
   val componentReturnType: Type?,
 ) {
-  fun getArgs(args: List<List<Any?>>): List<Any?> = when (constructor) {
-    null -> args.map { it.first() }
-    else -> args.map { constructor.newInstance(*it.toTypedArray()) }
-  }
+  fun getArgs(args: Map<TaskId, List<*>>): Map<String, Any?> = when (constructor) {
+    null -> args.map { (k, v) -> k.toString() to v.first() }
+    else -> args.map { (k, v) -> k.toString() to constructor.newInstance(*v.toTypedArray()) }
+  }.toMap()
 }
 
 /**
@@ -103,13 +104,13 @@ fun Class<*>.getBatchMethods(): List<BatchMethod> =
             single,
             batch,
             getBatchConstructor(single, batch),
-            batch.genericReturnType.getListType(),
+            batch.genericReturnType.getMapType(),
         )
       }
     }.flatten()
 
 private fun getBatchConstructor(single: Method, batch: Method): Constructor<*>? =
-    batch.parameters[0].parameterizedType.getListType()!!
+    batch.parameters[0].parameterizedType.getMapType()!!
         .getConstructor(single.parameters.map { it.parameterizedType })
 
 /**
@@ -135,13 +136,13 @@ private fun Method.isBatchedOf(method: Method): Boolean =
 // Comparing the parameters
 private fun Method.hasBatchParameterTypesOf(method: Method): Boolean {
   if (parameters.size != 1) throw Exception(
-      "A @Batch method must have exactly one parameter that is a collection or an array. " +
+      "A @Batch method must have exactly one parameter that is a Map<String, T>. " +
           "The @Batch method ${declaringClass.name}::$name has ${parameters.size} parameters",
   )
   val type: Type = parameters[0].parameterizedType
-  val elementType = type.getListType()
+  val elementType = type.getMapType()
     ?: throw Exception(
-        "A @Batch method must have exactly one parameter that is a List. " +
+        "A @Batch method must have exactly one parameter that is a Map<String, T>. " +
             "But for the @Batch method ${declaringClass.name}::$name this type is $type",
     )
   val singleTypes = method.parameters.map { it.parameterizedType }
@@ -152,7 +153,7 @@ private fun Method.hasBatchParameterTypesOf(method: Method): Boolean {
 private fun Method.hasBatchReturnTypeOf(method: Method): Boolean {
   if (genericReturnType.isVoid()) return method.genericReturnType.isVoid()
 
-  val returnElementType = genericReturnType.getListType()
+  val returnElementType = genericReturnType.getMapType()
     ?: throw Exception(
         "A @Batch method must have a return type that is a collection or an array. " +
             "But for the @Batch method ${declaringClass.name}::$name this type is $genericReturnType",
@@ -168,15 +169,18 @@ private fun Type.isObject(): Boolean = if (this is Class<*>) when {
 }
 else false
 
-private fun Type.getListType(): Type? {
+private fun Type.getMapType(): Type? {
   return when {
-    isList() -> extractBoundType((this as ParameterizedType).actualTypeArguments.first())
+    isStringMap() -> extractBoundType((this as ParameterizedType).actualTypeArguments[1])
     else -> null
   }
 }
 
 // Is type a List?
-private fun Type.isList() = (this is ParameterizedType) && (rawType == List::class.java)
+private fun Type.isStringMap() =
+    (this is ParameterizedType) &&
+        (rawType == Map::class.java) &&
+        actualTypeArguments[0] == String::class.java
 
 // Extracts the bound type for a given type. If the type is a `WildcardType` with upper bounds,
 // it returns the first upper bound; otherwise, it returns the type itself.

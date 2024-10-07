@@ -30,7 +30,6 @@ import kotlin.time.Duration.Companion.minutes
 internal class BatchesWorkflowTests : StringSpec(
     {
       val client = Test.client
-      val worker = Test.worker
 
       val batchWorkflow = client.newWorkflow(BatchWorkflow::class.java)
 

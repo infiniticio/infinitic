@@ -31,8 +31,6 @@ import io.kotest.assertions.throwables.shouldThrowAny
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
-import kotlin.reflect.jvm.kotlinFunction
-
 
 class BatchUtilTests : StringSpec(
     {
@@ -40,7 +38,7 @@ class BatchUtilTests : StringSpec(
         val klass = FooBatch1::class.java
         val list = shouldNotThrowAny { klass.getBatchMethods() }
         val single = klass.getMethod("bar", Int::class.java)
-        val batch = klass.getMethod("bar", List::class.java)
+        val batch = klass.getMethod("bar", Map::class.java)
         list.find { it.single == single }?.batch shouldBe batch
       }
 
@@ -48,7 +46,7 @@ class BatchUtilTests : StringSpec(
         val klass = FooBatch2::class.java
         val list = shouldNotThrowAny { klass.getBatchMethods() }
         val single = klass.getMethod("bar", Int::class.java, Int::class.java)
-        val batch = klass.getMethod("bar", List::class.java)
+        val batch = klass.getMethod("bar", Map::class.java)
         list.find { it.single == single }?.batch shouldBe batch
       }
 
@@ -56,7 +54,7 @@ class BatchUtilTests : StringSpec(
         val klass = FooBatch3::class.java
         val list = shouldNotThrowAny { klass.getBatchMethods() }
         val single = klass.getMethod("bar", Set::class.java)
-        val batch = klass.getMethod("bar", List::class.java)
+        val batch = klass.getMethod("bar", Map::class.java)
         list.find { it.single == single }?.batch shouldBe batch
       }
 
@@ -64,7 +62,7 @@ class BatchUtilTests : StringSpec(
         val klass = FooBatch4::class.java
         val list = shouldNotThrowAny { klass.getBatchMethods() }
         val single = klass.getMethod("bar", Int::class.java, Int::class.java)
-        val batch = klass.getMethod("bar", List::class.java)
+        val batch = klass.getMethod("bar", Map::class.java)
         list.find { it.single == single }?.batch shouldBe batch
       }
 
@@ -72,7 +70,7 @@ class BatchUtilTests : StringSpec(
         val klass = FooBatch5::class.java
         val list = shouldNotThrowAny { klass.getBatchMethods() }
         val single = klass.getMethod("bar", Int::class.java, Int::class.java)
-        val batch = klass.getMethod("bar", List::class.java)
+        val batch = klass.getMethod("bar", Map::class.java)
         list.find { it.single == single }?.batch shouldBe batch
       }
 
@@ -80,7 +78,7 @@ class BatchUtilTests : StringSpec(
         val klass = FooBatch6::class.java
         val list = shouldNotThrowAny { klass.getBatchMethods() }
         val single = klass.getMethod("bar", MyPair::class.java)
-        val batch = klass.getMethod("bar", List::class.java)
+        val batch = klass.getMethod("bar", Map::class.java)
         list.find { it.single == single }?.batch shouldBe batch
       }
 
@@ -88,7 +86,7 @@ class BatchUtilTests : StringSpec(
         val klass = FooBatch7::class.java
         val list = shouldNotThrowAny { klass.getBatchMethods() }
         val single = klass.getMethod("bar", Int::class.java)
-        val batch = klass.getMethod("bar", List::class.java)
+        val batch = klass.getMethod("bar", Map::class.java)
         list.find { it.single == single }?.batch shouldBe batch
       }
 
@@ -96,7 +94,7 @@ class BatchUtilTests : StringSpec(
         val klass = FooBatch8::class.java
         val list = shouldNotThrowAny { klass.getBatchMethods() }
         val single = klass.getMethod("bar", Int::class.java)
-        val batch = klass.getMethod("bar", List::class.java)
+        val batch = klass.getMethod("bar", Map::class.java)
         list.find { it.single == single }?.batch shouldBe batch
       }
 
@@ -129,15 +127,20 @@ class BatchUtilTests : StringSpec(
         val e = shouldThrowAny { klass.getBatchMethods() }
         e.message.shouldContain("return type")
       }
+
+      "batch method with a map not based on string should throw" {
+        val klass = FooBatchError6::class.java
+        val e = shouldThrowAny { klass.getBatchMethods() }
+        e.message.shouldContain("Map<String, T>")
+      }
     },
 )
 
 fun main() {
-  val klass = FooBatch8::class.java
+  val klass = FooBatch1::class.java
   klass.getBatchMethods().forEach { println(it) }
   klass.methods.filter { it.name == "bar" }[0].let {
     println(it)
-    println(it.kotlinFunction)
   }
 }
 
@@ -146,7 +149,8 @@ private class FooBatch1 {
   fun bar(p: Int): String = p.toString()
 
   @Batch(maxMessages = 10, maxSeconds = 1.0)
-  fun bar(p: List<Int>): List<String> = p.map { it.toString() }
+  fun bar(p: Map<String, Int>): Map<String, String> =
+      p.mapValues { it.value.toString() }
 }
 
 // 2 parameters - Batched method with Collection parameter
@@ -154,7 +158,8 @@ private class FooBatch2 {
   fun bar(p: Int, q: Int): String = p.toString() + q.toString()
 
   @Batch(maxMessages = 10, maxSeconds = 1.0)
-  fun bar(l: List<PairInt>): List<String> = l.map { bar(it.p, it.q) }
+  fun bar(l: Map<String, PairInt>): Map<String, String> =
+      l.mapValues { bar(it.value.p, it.value.q) }
 }
 
 // 1 parameter - Batched method with Collection parameter
@@ -162,7 +167,8 @@ private class FooBatch3 {
   fun bar(p: Set<Int>): String = p.toString()
 
   @Batch(maxMessages = 10, maxSeconds = 1.0)
-  fun bar(p: List<Set<Int>>): List<String> = p.map { it.toString() }
+  fun bar(p: Map<String, Set<Int>>): Map<String, String> =
+      p.mapValues { it.value.toString() }
 }
 
 // 1 parameter - No return - return List<Unit>
@@ -172,7 +178,8 @@ private class FooBatch4 {
   }
 
   @Batch(maxMessages = 10, maxSeconds = 1.0)
-  fun bar(p: List<PairInt>): List<Unit> = p.map { it.toString() }
+  fun bar(p: Map<String, PairInt>): Map<String, Unit> =
+      p.mapValues { it.value.toString() }
 }
 
 // 1 parameter - No return
@@ -182,7 +189,7 @@ private class FooBatch5 {
   }
 
   @Batch(maxMessages = 10, maxSeconds = 1.0)
-  fun bar(p: List<PairInt>) {
+  fun bar(p: Map<String, PairInt>) {
     // do nothing
   }
 }
@@ -194,7 +201,7 @@ private class FooBatch6 {
   }
 
   @Batch(maxMessages = 10, maxSeconds = 1.0)
-  fun bar(pairs: List<MyPair<Int>>) {
+  fun bar(pairs: Map<String, MyPair<Int>>) {
     // do nothing
   }
 }
@@ -204,7 +211,8 @@ private class FooBatch7 : FooBatch {
   override fun bar(p: Int) = PPairInt(p, p)
 
   @Batch(maxMessages = 10, maxSeconds = 1.0)
-  fun bar(list: List<Int>): List<PairInt> = list.map { PairInt(it, it) }
+  fun bar(list: Map<String, Int>): Map<String, PairInt> =
+      list.mapValues { PairInt(it.value, it.value) }
 }
 
 internal interface FooBatch {
@@ -216,7 +224,8 @@ private class FooBatch8 : FooBatch {
   override fun bar(p: Int): Nothing = thisShouldNotHappen()
 
   @Batch(maxMessages = 10, maxSeconds = 1.0)
-  fun bar(list: List<Int>): List<PairInt> = list.map { PairInt(it, it) }
+  fun bar(list: Map<String, Int>): Map<String, PairInt> =
+      list.mapValues { PairInt(it.value, it.value) }
 }
 
 internal class PPairInt(override val p: Int, override val q: Int) : PairInt(p, q)
@@ -234,7 +243,7 @@ private class FooBatchError1 {
   fun bar(p: Int): String = p.toString()
 
   @Batch(maxMessages = 10, maxSeconds = 1.0)
-  fun bar(p: List<Int>, q: Int): List<String> = p.map { it.toString() }
+  fun bar(p: Map<String, Int>, q: Int): Map<String, String> = p.mapValues { it.toString() }
 }
 
 // annotation @Batch without corresponding single method with the right parameters
@@ -242,7 +251,7 @@ private class FooBatchError2 {
   fun bar(p: Int, q: Int): String = p.toString() + q.toString()
 
   @Batch(maxMessages = 10, maxSeconds = 1.0)
-  fun bar(p: List<Int>): List<String> = p.map { it.toString() }
+  fun bar(p: Map<String, Int>): Map<String, String> = p.mapValues { it.toString() }
 }
 
 // Not the right return type
@@ -250,15 +259,22 @@ private class FooBatchError4 {
   fun bar(p: Int, q: Int): String = p.toString() + q.toString()
 
   @Batch(maxMessages = 10, maxSeconds = 1.0)
-  fun bar(p: List<PairInt>): List<Int> = p.map { it.p + it.q }
+  fun bar(p: Map<String, PairInt>): Map<String, Int> = p.mapValues { it.value.p + it.value.q }
 }
 
-// Not a List in return type
+// Not a Map in return type
 private class FooBatchError5 {
   fun bar(p: Int, q: Int): String = p.toString() + q.toString()
 
   @Batch(maxMessages = 10, maxSeconds = 1.0)
-  fun bar(p: List<PairInt>): String = "?"
+  fun bar(p: Map<String, PairInt>): List<String> = listOf("?")
+}
+
+private class FooBatchError6 {
+  fun bar(p: Int, q: Int): String = p.toString() + q.toString()
+
+  @Batch(maxMessages = 10, maxSeconds = 1.0)
+  fun bar(p: Map<Int, PairInt>): Map<String, String> = mapOf("?" to "?")
 }
 
 internal open class PairInt(open val p: Int, open val q: Int)
