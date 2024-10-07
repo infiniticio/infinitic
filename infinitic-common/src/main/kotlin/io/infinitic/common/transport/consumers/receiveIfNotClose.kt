@@ -20,19 +20,14 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.transport.consumer
+package io.infinitic.common.transport.consumers
 
-/**
- * Represents a structure that can hold either a single item or a collection of items.
- *
- * @param D The type of item(s) contained within this structure.
- */
-sealed interface OneOrMany<D>
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.ClosedReceiveChannelException
 
-class One<D>(val datum: D) : OneOrMany<D> {
-  override fun toString() = "One(${datum.toString()})"
-}
-
-class Many<D>(val data: List<D>) : OneOrMany<D> {
-  override fun toString() = "Many($data})"
-}
+internal suspend fun <M> Channel<M>.receiveIfNotClose(): M? =
+    try {
+      receive()
+    } catch (e: ClosedReceiveChannelException) {
+      null
+    }

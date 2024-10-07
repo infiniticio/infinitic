@@ -793,9 +793,9 @@ internal class ClientDispatcher(
         consumer.startAsync(
             subscription = MainSubscription(ClientTopic),
             entity = emitterName.toString(),
-            handler = { message, _ -> responseFlow.emit(message) },
-            beforeDlq = null,
             concurrency = 1,
+            process = { message, _ -> responseFlow.emit(message) },
+            beforeDlq = null,
         )
       }
       // asynchronously listen

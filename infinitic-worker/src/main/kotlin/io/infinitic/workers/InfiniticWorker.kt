@@ -395,9 +395,9 @@ class InfiniticWorker(
       loggedConsumer.startAsync(
           subscription = MainSubscription(ServiceTagEngineTopic),
           entity = config.serviceName,
-          handler = handler,
-          beforeDlq = null,
           concurrency = config.concurrency,
+          process = handler,
+          beforeDlq = null,
       )
     }
   }
@@ -446,11 +446,11 @@ class InfiniticWorker(
       loggedConsumer.startAsync(
           subscription = MainSubscription(ServiceExecutorTopic),
           entity = config.serviceName,
-          handler = handler,
-          beforeDlq = beforeDlq,
           concurrency = config.concurrency,
-          getBatchConfig = taskExecutor::getBatchConfig,
-          handlerBatch = handlerBatch,
+          process = handler,
+          beforeDlq = beforeDlq,
+          batchConfig = taskExecutor::getBatchConfig,
+          batchProcess = handlerBatch,
       )
     }
 
@@ -465,9 +465,9 @@ class InfiniticWorker(
       loggedConsumer.startAsync(
           subscription = MainSubscription(ServiceExecutorRetryTopic),
           entity = config.serviceName,
-          handler = taskRetryHandler::handle,
-          beforeDlq = null,
           concurrency = config.concurrency,
+          process = taskRetryHandler::handle,
+          beforeDlq = null,
       )
     }
 
@@ -487,9 +487,9 @@ class InfiniticWorker(
       loggedConsumer.startAsync(
           subscription = MainSubscription(ServiceExecutorEventTopic),
           entity = config.serviceName,
-          handler = handler,
-          beforeDlq = null,
           concurrency = config.concurrency,
+          process = handler,
+          beforeDlq = null,
       )
     }
 
@@ -522,9 +522,9 @@ class InfiniticWorker(
       loggedConsumer.startAsync(
           subscription = MainSubscription(WorkflowTagEngineTopic),
           entity = config.workflowName,
-          handler = handler,
-          beforeDlq = null,
           concurrency = config.concurrency,
+          process = handler,
+          beforeDlq = null,
       )
     }
   }
@@ -554,9 +554,9 @@ class InfiniticWorker(
       loggedConsumer.startAsync(
           subscription = MainSubscription(WorkflowStateCmdTopic),
           entity = config.workflowName,
-          handler = handler,
-          beforeDlq = null,
           concurrency = config.concurrency,
+          process = handler,
+          beforeDlq = null,
       )
     }
 
@@ -580,9 +580,9 @@ class InfiniticWorker(
       loggedConsumer.startAsync(
           subscription = MainSubscription(WorkflowStateEngineTopic),
           entity = config.workflowName,
-          handler = handler,
-          beforeDlq = null,
           concurrency = config.concurrency,
+          process = handler,
+          beforeDlq = null,
       )
     }
 
@@ -598,9 +598,9 @@ class InfiniticWorker(
       loggedConsumer.startAsync(
           subscription = MainSubscription(WorkflowStateTimerTopic),
           entity = config.workflowName,
-          handler = workflowStateTimerHandler::handle,
-          beforeDlq = null,
           concurrency = config.concurrency,
+          process = workflowStateTimerHandler::handle,
+          beforeDlq = null,
       )
     }
 
@@ -621,9 +621,9 @@ class InfiniticWorker(
       loggedConsumer.startAsync(
           subscription = MainSubscription(WorkflowStateEventTopic),
           entity = config.workflowName,
-          handler = handler,
-          beforeDlq = null,
           concurrency = config.concurrency,
+          process = handler,
+          beforeDlq = null,
       )
     }
 
@@ -663,9 +663,9 @@ class InfiniticWorker(
       loggedConsumer.startAsync(
           subscription = MainSubscription(WorkflowExecutorTopic),
           entity = config.workflowName,
-          handler = handler,
-          beforeDlq = beforeDlq,
           concurrency = config.concurrency,
+          process = handler,
+          beforeDlq = beforeDlq,
       )
     }
 
@@ -680,9 +680,9 @@ class InfiniticWorker(
       loggedConsumer.startAsync(
           subscription = MainSubscription(WorkflowExecutorRetryTopic),
           entity = config.workflowName,
-          handler = taskRetryHandler::handle,
-          beforeDlq = null,
           concurrency = config.concurrency,
+          process = taskRetryHandler::handle,
+          beforeDlq = null,
       )
     }
 
@@ -703,9 +703,9 @@ class InfiniticWorker(
       loggedConsumer.startAsync(
           subscription = MainSubscription(WorkflowExecutorEventTopic),
           entity = config.workflowName,
-          handler = handler,
-          beforeDlq = null,
           concurrency = config.concurrency,
+          process = handler,
+          beforeDlq = null,
       )
     }
 
@@ -835,9 +835,9 @@ class InfiniticWorker(
       loggedConsumer.startAsync(
           subscription = subscriptionType.create(ServiceExecutorTopic, subscriptionName),
           entity = serviceName.toString(),
-          handler = handler,
-          beforeDlq = logMessageSentToDLQ,
           concurrency = concurrency,
+          process = handler,
+          beforeDlq = logMessageSentToDLQ,
       )
     }
     // TASK-RETRY topic
@@ -845,9 +845,9 @@ class InfiniticWorker(
       loggedConsumer.startAsync(
           subscription = subscriptionType.create(ServiceExecutorRetryTopic, subscriptionName),
           entity = serviceName.toString(),
-          handler = handler,
-          beforeDlq = logMessageSentToDLQ,
           concurrency = concurrency,
+          process = handler,
+          beforeDlq = logMessageSentToDLQ,
       )
     }
     // TASK-EVENTS topic
@@ -855,9 +855,9 @@ class InfiniticWorker(
       loggedConsumer.startAsync(
           subscription = subscriptionType.create(ServiceExecutorEventTopic, subscriptionName),
           entity = serviceName.toString(),
-          handler = handler,
-          beforeDlq = logMessageSentToDLQ,
           concurrency = concurrency,
+          process = handler,
+          beforeDlq = logMessageSentToDLQ,
       )
     }
 
@@ -878,9 +878,9 @@ class InfiniticWorker(
       loggedConsumer.startAsync(
           subscription = subscriptionType.create(WorkflowExecutorTopic, subscriptionName),
           entity = workflowName.toString(),
-          handler = handler,
-          beforeDlq = logMessageSentToDLQ,
           concurrency = concurrency,
+          process = handler,
+          beforeDlq = logMessageSentToDLQ,
       )
     }
     // WORKFLOW-TASK-RETRY topic
@@ -888,9 +888,9 @@ class InfiniticWorker(
       loggedConsumer.startAsync(
           subscription = subscriptionType.create(WorkflowExecutorRetryTopic, subscriptionName),
           entity = workflowName.toString(),
-          handler = handler,
-          beforeDlq = logMessageSentToDLQ,
           concurrency = concurrency,
+          process = handler,
+          beforeDlq = logMessageSentToDLQ,
       )
     }
     // WORKFLOW-TASK-EVENTS topic
@@ -898,9 +898,9 @@ class InfiniticWorker(
       loggedConsumer.startAsync(
           subscription = subscriptionType.create(WorkflowExecutorEventTopic, subscriptionName),
           entity = workflowName.toString(),
-          handler = handler,
-          beforeDlq = logMessageSentToDLQ,
           concurrency = concurrency,
+          process = handler,
+          beforeDlq = logMessageSentToDLQ,
       )
     }
     return listOf(jobExecutor, jobRetry, jobEvents)
@@ -918,9 +918,9 @@ class InfiniticWorker(
       consumer.startAsync(
           subscription = subscriptionType.create(WorkflowStateCmdTopic, subscriptionName),
           entity = workflowName.toString(),
-          handler = handler,
-          beforeDlq = logMessageSentToDLQ,
           concurrency = concurrency,
+          process = handler,
+          beforeDlq = logMessageSentToDLQ,
       )
     }
 
@@ -929,13 +929,13 @@ class InfiniticWorker(
       consumer.startAsync(
           subscription = subscriptionType.create(WorkflowStateEngineTopic, subscriptionName),
           entity = workflowName.toString(),
-          handler = { message: Message, publishedAt: MillisInstant ->
+          concurrency = concurrency,
+          process = { message: Message, publishedAt: MillisInstant ->
             // the event handler is not applied for WorkflowCmdMessage from clients
             // as the event has already been handled in the workflow-cmd topic
             if (message !is WorkflowStateEngineCmdMessage) handler(message, publishedAt)
           },
           beforeDlq = logMessageSentToDLQ,
-          concurrency = concurrency,
       )
     }
 
@@ -944,9 +944,9 @@ class InfiniticWorker(
       consumer.startAsync(
           subscription = subscriptionType.create(WorkflowStateEventTopic, subscriptionName),
           entity = workflowName.toString(),
-          handler = handler,
-          beforeDlq = logMessageSentToDLQ,
           concurrency = concurrency,
+          process = handler,
+          beforeDlq = logMessageSentToDLQ,
       )
     }
 

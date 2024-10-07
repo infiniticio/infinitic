@@ -39,7 +39,7 @@ interface InfiniticConsumer {
    * @param S The type of the messages to be consumed.
    * @param subscription The subscription from which to consume messages.
    * @param entity The entity associated with this consumer. (typically a service name or workflow name)
-   * @param handler The function to handle each consumed message and its publishing time.
+   * @param process The function to handle each consumed message and its publishing time.
    * @param beforeDlq An optional function to be executed before sending the message to the dead-letter queue (DLQ).
    * @param concurrency The number of concurrent message handlers to be used.
    */
@@ -47,11 +47,11 @@ interface InfiniticConsumer {
   suspend fun <S : Message> startAsync(
     subscription: Subscription<S>,
     entity: String,
-    handler: suspend (S, MillisInstant) -> Unit,
-    beforeDlq: (suspend (S?, Exception) -> Unit)?,
     concurrency: Int,
-    getBatchConfig: (suspend (S) -> Result<BatchConfig?>)? = null,
-    handlerBatch: (suspend (List<S>, List<MillisInstant>) -> Unit)? = null
+    process: suspend (S, MillisInstant) -> Unit,
+    beforeDlq: (suspend (S?, Exception) -> Unit)?,
+    batchConfig: (suspend (S) -> BatchConfig?)? = null,
+    batchProcess: (suspend (List<S>, List<MillisInstant>) -> Unit)? = null
   ): Job
 
   /**
@@ -62,7 +62,7 @@ interface InfiniticConsumer {
    * @param S The type of the messages to be consumed.
    * @param subscription The subscription from which to consume messages.
    * @param entity The entity associated with this consumer. (typically a service name or workflow name)
-   * @param handler The function to handle each consumed message and its publishing time.
+   * @param process The function to handle each consumed message and its publishing time.
    * @param beforeDlq An optional function to be executed before sending the message to the dead-letter queue (DLQ).
    * @param concurrency The number of concurrent message handlers to be used.
    */
@@ -70,18 +70,18 @@ interface InfiniticConsumer {
   suspend fun <S : Message> start(
     subscription: Subscription<S>,
     entity: String,
-    handler: suspend (S, MillisInstant) -> Unit,
-    beforeDlq: (suspend (S?, Exception) -> Unit)?,
     concurrency: Int,
-    getBatchConfig: (suspend (S) -> Result<BatchConfig?>)? = null,
-    handlerBatch: (suspend (List<S>, List<MillisInstant>) -> Unit)? = null
+    process: suspend (S, MillisInstant) -> Unit,
+    beforeDlq: (suspend (S?, Exception) -> Unit)?,
+    batchConfig: (suspend (S) -> BatchConfig?)? = null,
+    batchProcess: (suspend (List<S>, List<MillisInstant>) -> Unit)? = null
   ): Unit = startAsync(
       subscription,
       entity,
-      handler,
-      beforeDlq,
       concurrency,
-      getBatchConfig,
-      handlerBatch,
+      process,
+      beforeDlq,
+      batchConfig,
+      batchProcess,
   ).join()
 }

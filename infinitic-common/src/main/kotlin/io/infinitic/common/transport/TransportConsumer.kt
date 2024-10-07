@@ -31,13 +31,6 @@ interface TransportConsumer<T : TransportMessage> {
   fun acknowledgeAsync(message: T): CompletableFuture<Unit>
   fun negativeAcknowledgeAsync(message: T): CompletableFuture<Unit>
 
-  fun acknowledgeAsync(messages: List<T>): CompletableFuture<Unit>
-  fun negativeAcknowledgeAsync(messages: List<T>): CompletableFuture<Unit>
-
   suspend fun acknowledge(message: T): Unit = acknowledgeAsync(message).await()
   suspend fun negativeAcknowledge(message: T): Unit = negativeAcknowledgeAsync(message).await()
-
-  suspend fun acknowledge(messages: List<T>): Unit = acknowledgeAsync(messages).await()
-  suspend fun negativeAcknowledge(messages: List<T>): Unit =
-      negativeAcknowledgeAsync(messages).await()
 }

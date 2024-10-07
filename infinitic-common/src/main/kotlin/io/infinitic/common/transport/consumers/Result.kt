@@ -20,9 +20,9 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.transport.consumer
+package io.infinitic.common.transport.consumers
 
-class Result<M : Any, out T> internal constructor(
+internal class Result<M : Any, out T> internal constructor(
   private val message: M,
   private val value: Any?
 ) {

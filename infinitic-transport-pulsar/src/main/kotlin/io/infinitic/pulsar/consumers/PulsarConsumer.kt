@@ -31,18 +31,10 @@ class PulsarConsumer<E>(
   override fun receiveAsync(): CompletableFuture<PulsarTransportMessage<E>> =
       pulsarConsumer.receiveAsync().thenApply { PulsarTransportMessage(it) }
 
-  override fun negativeAcknowledgeAsync(messages: List<PulsarTransportMessage<E>>): CompletableFuture<Unit> {
-    pulsarConsumer.negativeAcknowledge(messages.toPulsarMessages())
-    return CompletableFuture.completedFuture(Unit)
-  }
-
   override fun negativeAcknowledgeAsync(message: PulsarTransportMessage<E>): CompletableFuture<Unit> {
     pulsarConsumer.negativeAcknowledge(message.toPulsarMessage())
     return CompletableFuture.completedFuture(Unit)
   }
-
-  override fun acknowledgeAsync(messages: List<PulsarTransportMessage<E>>): CompletableFuture<Unit> =
-      pulsarConsumer.acknowledgeAsync(messages.toPulsarMessages()).thenApply { }
 
   override fun acknowledgeAsync(message: PulsarTransportMessage<E>): CompletableFuture<Unit> =
       pulsarConsumer.acknowledgeAsync(message.toPulsarMessage()).thenApply { }

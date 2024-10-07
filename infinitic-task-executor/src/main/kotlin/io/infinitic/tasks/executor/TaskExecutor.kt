@@ -102,17 +102,13 @@ class TaskExecutor(
     executeTasks.process()
   }
 
-  suspend fun getBatchConfig(msg: ServiceExecutorMessage): Result<BatchConfig?> =
+  fun getBatchConfig(msg: ServiceExecutorMessage): BatchConfig? =
       when (msg) {
         is ExecuteTask -> msg.getBatchConfig()
       }
 
-  private suspend fun ExecuteTask.getBatchConfig(): Result<BatchConfig?> = try {
-    Result.success(getInstanceAndMethod().second.getBatchConfig())
-  } catch (e: Exception) {
-    sendTaskFailed(e, taskMeta) { "Error when retrieving the @Batch config for $this" }
-    Result.failure(e)
-  }
+  private fun ExecuteTask.getBatchConfig(): BatchConfig? =
+      getInstanceAndMethod().second.getBatchConfig()
 
   private data class TaskData(
     val instance: Any,

@@ -20,7 +20,7 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.transport.consumer
+package io.infinitic.common.transport.consumers
 
 import io.github.oshai.kotlinlogging.KLogger
 import kotlinx.coroutines.CoroutineScope
@@ -44,7 +44,7 @@ import kotlinx.coroutines.withContext
  * @return A new channel that contains the processed results.
  */
 context(CoroutineScope, KLogger)
-fun <M : Any, I, O> Channel<Result<M, I>>.process(
+internal fun <M : Any, I, O> Channel<Result<M, I>>.process(
   concurrency: Int = 1,
   process: suspend (M, I) -> O,
 ): Channel<Result<M, O>> {
@@ -73,6 +73,9 @@ fun <M : Any, I, O> Channel<Result<M, I>>.process(
               result.onFailure {
                 outputChannel.send(result.failure(it))
               }
+            } catch (e: Exception) {
+              warn(e) { "Exception while processing" }
+              throw e
             } catch (e: Error) {
               warn(e) { "Error while processing, cancelling calling scope" }
               callingScope.cancel()

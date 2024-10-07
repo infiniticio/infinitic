@@ -20,7 +20,7 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.transport.consumer
+package io.infinitic.common.transport.consumers
 
 import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.common.transport.TransportConsumer
@@ -41,7 +41,7 @@ import kotlin.coroutines.cancellation.CancellationException
  * @return A channel that emits Result objects containing the original and resulting messages.
  */
 context(CoroutineScope, KLogger)
-fun <S : TransportMessage> TransportConsumer<S>.startConsuming(): Channel<Result<S, S>> {
+internal fun <S : TransportMessage> TransportConsumer<S>.startConsuming(): Channel<Result<S, S>> {
   val channel = Channel<Result<S, S>>()
   val scope = this@CoroutineScope
 

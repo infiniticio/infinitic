@@ -41,13 +41,7 @@ class InMemoryConsumer<S : Message>(
     InMemoryTransportMessage(channel.receive())
   }
 
-  override fun negativeAcknowledgeAsync(messages: List<InMemoryTransportMessage<S>>): CompletableFuture<Unit> =
-      scope.future {}
-
   override fun negativeAcknowledgeAsync(message: InMemoryTransportMessage<S>): CompletableFuture<Unit> =
-      scope.future {}
-
-  override fun acknowledgeAsync(messages: List<InMemoryTransportMessage<S>>): CompletableFuture<Unit> =
       scope.future {}
 
   override fun acknowledgeAsync(message: InMemoryTransportMessage<S>): CompletableFuture<Unit> =
@@ -66,13 +60,7 @@ class InMemoryDelayedConsumer<S : Message>(
     }
   }
 
-  override fun negativeAcknowledgeAsync(messages: List<InMemoryTransportMessage<S>>): CompletableFuture<Unit> =
-      scope.future {}
-
   override fun negativeAcknowledgeAsync(message: InMemoryTransportMessage<S>): CompletableFuture<Unit> =
-      scope.future {}
-
-  override fun acknowledgeAsync(messages: List<InMemoryTransportMessage<S>>): CompletableFuture<Unit> =
       scope.future {}
 
   override fun acknowledgeAsync(message: InMemoryTransportMessage<S>): CompletableFuture<Unit> =

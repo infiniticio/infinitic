@@ -20,7 +20,6 @@
  *
  * Licensor: infinitic.io
  */
-
 package io.infinitic.common.utils.java;
 
 import io.infinitic.annotations.Batch;
@@ -44,6 +43,7 @@ class FooBatch1 {
 }
 
 // 2 parameters - Batched method with Collection parameter
+@SuppressWarnings("unused")
 class FooBatch2 {
     public String bar(int p, int q) {
         return Integer.toString(p) + q;
@@ -56,6 +56,7 @@ class FooBatch2 {
 }
 
 // 1 parameter - Batched method with Collection parameter
+@SuppressWarnings("unused")
 class FooBatch3 {
     public String bar(Set<Integer> p) {
         return p.toString();
@@ -68,6 +69,7 @@ class FooBatch3 {
 }
 
 // 1 parameter - No return
+@SuppressWarnings("unused")
 class FooBatch5 {
     public void bar(int p, int q) {
         // do nothing
@@ -80,6 +82,7 @@ class FooBatch5 {
 }
 
 // 1 parameter - Parameter with Generic
+@SuppressWarnings("unused")
 class FooBatch6 {
     public void bar(MyPair<Integer> pair) {
         // do nothing
@@ -92,6 +95,7 @@ class FooBatch6 {
 }
 
 // Single method with parent return value
+@SuppressWarnings("unused")
 class FooBatch7 implements FooBatch {
 
     @Override
@@ -107,11 +111,13 @@ class FooBatch7 implements FooBatch {
     }
 }
 
+@SuppressWarnings("unused")
 interface FooBatch {
     PairInt bar(int p);
 }
 
 // vararg not accepted
+@SuppressWarnings("unused")
 class FooBatchError0 {
     String bar(int p) {
         return Integer.toString(p);
@@ -126,6 +132,7 @@ class FooBatchError0 {
 }
 
 // annotation @Batch without corresponding single method with the right parameters
+@SuppressWarnings("unused")
 class FooBatchError1 {
     public String bar(int p) {
         return Integer.toString(p);
@@ -138,6 +145,7 @@ class FooBatchError1 {
 }
 
 // annotation @Batch without corresponding single method with the right parameters
+@SuppressWarnings("unused")
 class FooBatchError2 {
     public String bar(int p, int q) {
         return Integer.toString(p) + q;
@@ -150,6 +158,7 @@ class FooBatchError2 {
 }
 
 // Not the right return type
+@SuppressWarnings("unused")
 class FooBatchError4 {
     public String bar(int p, int q) {
         return "?";
@@ -162,6 +171,7 @@ class FooBatchError4 {
 }
 
 // Not a List in return type
+@SuppressWarnings("unused")
 class FooBatchError5 {
     public String bar(int p, int q) {
         return "?";

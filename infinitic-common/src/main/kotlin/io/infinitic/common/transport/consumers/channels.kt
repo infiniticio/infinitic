@@ -20,14 +20,35 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.transport.consumer
+package io.infinitic.common.transport.consumers
 
+import io.github.oshai.kotlinlogging.KLogger
+import io.infinitic.common.exceptions.thisShouldNotHappen
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.ClosedReceiveChannelException
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
-suspend fun <M> Channel<M>.receiveIfNotClose(): M? =
-    try {
-      receive()
-    } catch (e: ClosedReceiveChannelException) {
-      null
+
+private val producersMutex = Mutex()
+private val producerCounters = mutableMapOf<Channel<*>, Int>()
+
+context(KLogger)
+internal suspend fun Channel<*>.addProducer() = producersMutex.withLock {
+  debug { "Adding one producer from ${producerCounters[this]} to channel ${this.hashCode()}" }
+  producerCounters[this] = (producerCounters[this] ?: 0) + 1
+}
+
+context(KLogger)
+internal suspend fun Channel<*>.removeProducer() = producersMutex.withLock {
+  debug { "Removing one producer from ${producerCounters[this]} from channel ${this.hashCode()}" }
+  when (val count = producerCounters[this]) {
+    null -> thisShouldNotHappen()
+    1 -> {
+      producerCounters.remove(this)
+      debug { "closing channel ${this.hashCode()}" }
+      this.close()
     }
+
+    else -> producerCounters[this] = (count - 1)
+  }
+}

@@ -20,7 +20,7 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.transport.consumer
+package io.infinitic.common.transport.consumers
 
 import io.github.oshai.kotlinlogging.KLogger
 import kotlinx.coroutines.CoroutineScope
@@ -38,7 +38,7 @@ import kotlinx.coroutines.withContext
  *                If null, no processing is applied.
  */
 context(CoroutineScope, KLogger)
-fun <S> Channel<S>.collect(
+internal fun <S> Channel<S>.collect(
   process: (suspend (S) -> Unit)? = null
 ) {
   val callingScope: CoroutineScope = this@CoroutineScope

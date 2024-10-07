@@ -32,8 +32,7 @@ import io.infinitic.common.transport.MainSubscription
 import io.infinitic.common.transport.Subscription
 import io.infinitic.common.transport.TransportConsumer
 import io.infinitic.common.transport.acceptDelayed
-import io.infinitic.common.transport.consumers.ConsumerSharedProcessor
-import io.infinitic.common.transport.consumers.ConsumerUniqueProcessor
+import io.infinitic.common.transport.consumers.ProcessorConsumer
 import io.infinitic.inMemory.channels.DelayedMessage
 import io.infinitic.inMemory.channels.InMemoryChannels
 import io.infinitic.inMemory.consumers.InMemoryConsumer
@@ -55,11 +54,11 @@ class InMemoryInfiniticConsumer(
   override suspend fun <S : Message> startAsync(
     subscription: Subscription<S>,
     entity: String,
-    handler: suspend (S, MillisInstant) -> Unit,
-    beforeDlq: (suspend (S?, Exception) -> Unit)?,
     concurrency: Int,
-    getBatchConfig: (suspend (S) -> Result<BatchConfig?>)?,
-    handlerBatch: (suspend (List<S>, List<MillisInstant>) -> Unit)?
+    process: suspend (S, MillisInstant) -> Unit,
+    beforeDlq: (suspend (S?, Exception) -> Unit)?,
+    batchConfig: (suspend (S) -> BatchConfig?)?,
+    batchProcess: (suspend (List<S>, List<MillisInstant>) -> Unit)?
   ): Job {
 
     val loggedDeserialize: suspend (InMemoryTransportMessage<S>) -> S = { message ->
@@ -71,7 +70,7 @@ class InMemoryInfiniticConsumer(
 
     val loggedHandler: suspend (S, MillisInstant) -> Unit = { message, publishTime ->
       logger.debug { "Processing $message" }
-      handler(message, publishTime)
+      process(message, publishTime)
       logger.trace { "Processed $message" }
     }
 
@@ -86,21 +85,13 @@ class InMemoryInfiniticConsumer(
     return when (subscription.withKey) {
       true -> {
         // build the consumers synchronously (but in parallel)
-        val consumers = coroutineScope {
+        val consumers: List<TransportConsumer<InMemoryTransportMessage<S>>> = coroutineScope {
           List(concurrency) { async { buildConsumer(it) } }.map { it.await() }
         }
         launch {
-          coroutineScope {
-            repeat(concurrency) {
-              launch {
-                ConsumerUniqueProcessor(
-                    consumers[it],
-                    loggedDeserialize,
-                    loggedHandler,
-                    null,
-                ).start()
-              }
-            }
+          repeat(concurrency) {
+            val processor = ProcessorConsumer<InMemoryTransportMessage<S>, S>(consumers[it], null)
+            with(processor) { startAsync(1, loggedDeserialize, loggedHandler) }
           }
         }
       }
@@ -108,15 +99,15 @@ class InMemoryInfiniticConsumer(
       false -> {
         // build the consumer synchronously
         val consumer = buildConsumer()
-        launch {
-          ConsumerSharedProcessor(
-              consumer,
+        val processor = ProcessorConsumer<InMemoryTransportMessage<S>, S>(consumer, null)
+        with(processor) {
+          startAsync(
+              1,
               loggedDeserialize,
               loggedHandler,
-              null,
-              getBatchConfig,
-              handlerBatch,
-          ).start(concurrency)
+              batchConfig,
+              batchProcess,
+          )
         }
       }
     }

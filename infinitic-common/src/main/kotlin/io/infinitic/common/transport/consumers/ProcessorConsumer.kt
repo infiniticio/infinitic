@@ -20,8 +20,9 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.transport.consumer
+package io.infinitic.common.transport.consumers
 
+import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.transport.BatchConfig
@@ -29,13 +30,12 @@ import io.infinitic.common.transport.TransportConsumer
 import io.infinitic.common.transport.TransportMessage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 
 /**
  * A generic consumer for messages that handles
  * - deserialization,
- * - processing,
+ * - single and batch processing,
  * - acknowledgement and negative acknowledgement.
  *
  * @param S The type of the message implementing the interface [TransportMessage].
@@ -45,8 +45,8 @@ import kotlinx.coroutines.launch
  * @param beforeNegativeAcknowledgement A suspend function called before negatively acknowledging a message.
  */
 class ProcessorConsumer<S : TransportMessage, D : Any>(
-  val consumer: TransportConsumer<S>,
-  val beforeNegativeAcknowledgement: (suspend (Exception, S, D?) -> Unit)?,
+  private val consumer: TransportConsumer<S>,
+  private val beforeNegativeAcknowledgement: (suspend (S, D?, Exception) -> Unit)?,
 ) {
 
   /**
@@ -71,7 +71,6 @@ class ProcessorConsumer<S : TransportMessage, D : Any>(
     batchConfig: (suspend (D) -> BatchConfig?)? = null,
     batchProcess: (suspend (List<D>, List<MillisInstant>) -> Unit)? = null,
   ): Job = launch {
-
     with(logger) {
       consumer
           .startConsuming()
@@ -96,21 +95,23 @@ class ProcessorConsumer<S : TransportMessage, D : Any>(
               } catch (e: Exception) {
                 null
               }
-              negativeAcknowledge(it, message, d)
+              negativeAcknowledge(message, d, it)
             }
           }
     }
   }
 
+  context(KLogger)
   private suspend fun acknowledge(message: S, deserialize: D) = try {
-    consumer.acknowledgeAsync(message).await()
+    consumer.acknowledge(message)
   } catch (e: Exception) {
     logWarn(e) { "Error when acknowledging ${deserialize.string}" }
   }
 
-  private suspend fun negativeAcknowledge(e: Exception, message: S, deserialized: D?) {
+  context(KLogger)
+  private suspend fun negativeAcknowledge(message: S, deserialized: D?, e: Exception) {
     try {
-      beforeNegativeAcknowledgement?.let { it(e, message, deserialized) }
+      beforeNegativeAcknowledgement?.let { it(message, deserialized, e) }
     } catch (e: Exception) {
       logWarn(e) {
         "Error when calling negative acknowledgement hook for message " +
@@ -118,7 +119,7 @@ class ProcessorConsumer<S : TransportMessage, D : Any>(
       }
     }
     try {
-      consumer.negativeAcknowledgeAsync(message).await()
+      consumer.negativeAcknowledge(message)
     } catch (e: Exception) {
       logWarn(e) {
         "Error when negatively acknowledging message " +
@@ -126,14 +127,6 @@ class ProcessorConsumer<S : TransportMessage, D : Any>(
       }
     }
   }
-
-  // No Error should come from logging errors
-  private val D.string: String
-    get() = try {
-      toString()
-    } catch (e: Exception) {
-      "${this::class.java.name}: Error during toString() - (${e::class.java.name}(${e.message}))"
-    }
 
   private fun logWarn(e: Exception, message: () -> String) = try {
     logger.warn(e, message)

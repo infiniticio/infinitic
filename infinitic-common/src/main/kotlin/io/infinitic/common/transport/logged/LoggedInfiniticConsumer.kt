@@ -40,15 +40,15 @@ class LoggedInfiniticConsumer(
   override suspend fun <S : Message> startAsync(
     subscription: Subscription<S>,
     entity: String,
-    handler: suspend (S, MillisInstant) -> Unit,
-    beforeDlq: (suspend (S?, Exception) -> Unit)?,
     concurrency: Int,
-    getBatchConfig: (suspend (S) -> Result<BatchConfig?>)?,
-    handlerBatch: (suspend (List<S>, List<MillisInstant>) -> Unit)?
+    process: suspend (S, MillisInstant) -> Unit,
+    beforeDlq: (suspend (S?, Exception) -> Unit)?,
+    batchConfig: (suspend (S) -> BatchConfig?)?,
+    batchProcess: (suspend (List<S>, List<MillisInstant>) -> Unit)?
   ): Job {
     val loggedHandler: suspend (S, MillisInstant) -> Unit = { message, instant ->
       logger.debug { formatLog(message.id(), "Processing:", message) }
-      handler(message, instant)
+      process(message, instant)
       logger.trace { formatLog(message.id(), "Processed:", message) }
     }
 
@@ -64,11 +64,11 @@ class LoggedInfiniticConsumer(
     return consumer.startAsync(
         subscription,
         entity,
+        concurrency,
         loggedHandler,
         loggedBeforeDlq,
-        concurrency,
-        getBatchConfig,
-        handlerBatch,
+        batchConfig,
+        batchProcess,
     )
   }
 }

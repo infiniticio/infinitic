@@ -21,7 +21,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.common.transport.consumer
+package io.infinitic.common.transport.consumers
 
 import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.common.transport.BatchConfig
@@ -46,7 +46,7 @@ import kotlinx.coroutines.withContext
  *         either a [SingleMessage] or a [MultipleMessages] instance.
  */
 context(CoroutineScope, KLogger)
-fun <M : Any, I> Channel<Result<M, I>>.batchBy(
+internal fun <M : Any, I> Channel<Result<M, I>>.batchBy(
   getBatchConfig: suspend (I) -> BatchConfig?,
 ): Channel<OneOrMany<Result<M, I>>> {
   val callingScope: CoroutineScope = this@CoroutineScope

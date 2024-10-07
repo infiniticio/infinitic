@@ -160,7 +160,7 @@ internal val mockedProducer = mockk<InMemoryInfiniticProducer> {
 internal val mockedConsumer = mockk<InMemoryInfiniticConsumer> {
   coEvery {
     with(capture(scopeSlot)) {
-      startAsync(any<Subscription<*>>(), "$clientNameTest", any(), any(), 1)
+      startAsync(any<Subscription<*>>(), "$clientNameTest", 1, any(), any())
     }
   } answers {
     scopeSlot.captured.launch { delay(Long.MAX_VALUE) }
@@ -230,9 +230,9 @@ internal class InfiniticClientTests : StringSpec(
             mockedConsumer.start(
                 MainSubscription(ClientTopic),
                 "$clientNameTest",
-                any(),
-                any(),
                 1,
+                any(),
+                any(),
             )
           }
         }
@@ -514,9 +514,9 @@ internal class InfiniticClientTests : StringSpec(
             mockedConsumer.startAsync(
                 MainSubscription(ClientTopic),
                 "$clientNameTest",
-                any(),
-                any(),
                 1,
+                any(),
+                any(),
             )
           }
         }
@@ -530,9 +530,9 @@ internal class InfiniticClientTests : StringSpec(
             mockedConsumer.startAsync(
                 MainSubscription(ClientTopic),
                 "$clientNameTest",
-                any(),
-                any(),
                 1,
+                any(),
+                any(),
             )
           }
         }

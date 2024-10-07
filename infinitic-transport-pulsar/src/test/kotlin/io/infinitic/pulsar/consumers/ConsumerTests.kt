@@ -94,7 +94,7 @@ class ConsumerTests : StringSpec(
         coroutineScope {
           repeat(total) {
             launch {
-              val m = when (message) {
+              @Suppress("UNCHECKED_CAST") val m = when (message) {
                 is DispatchWorkflow -> message.copy(workflowId = WorkflowId())
                 is ExecuteTask -> message.copy(taskId = TaskId())
                 else -> message
@@ -147,7 +147,7 @@ class ConsumerTests : StringSpec(
               }
             }
 
-            consumer.start(subscription, entity, handler, null, 1)
+            consumer.start(subscription, entity, 1, handler, null)
           }
         } catch (e: CancellationException) {
           // do nothing
@@ -191,7 +191,7 @@ class ConsumerTests : StringSpec(
               }
             }
 
-            consumer.start(subscription, entity, handler, null, 100)
+            consumer.start(subscription, entity, 100, handler, null)
           }
         } catch (e: CancellationException) {
           // do nothing
@@ -235,7 +235,7 @@ class ConsumerTests : StringSpec(
               }
             }
 
-            consumer.start(subscription, entity, handler, null, 1)
+            consumer.start(subscription, entity, 1, handler, null)
           }
         } catch (e: CancellationException) {
           // do nothing
@@ -280,7 +280,7 @@ class ConsumerTests : StringSpec(
               }
             }
 
-            consumer.start(subscription, entity, handler, null, 100)
+            consumer.start(subscription, entity, 100, handler, null)
           }
         } catch (e: CancellationException) {
           // do nothing

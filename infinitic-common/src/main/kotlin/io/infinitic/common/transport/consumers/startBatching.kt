@@ -20,7 +20,7 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.transport.consumer
+package io.infinitic.common.transport.consumers
 
 import io.github.oshai.kotlinlogging.KLogger
 import kotlinx.coroutines.CoroutineScope
@@ -40,7 +40,7 @@ import kotlinx.coroutines.withTimeoutOrNull
  * @param outputChannel The channel to send the batched messages to. Defaults to a new channel.
  */
 context(CoroutineScope, KLogger)
-fun <M : Any, I> Channel<Result<M, I>>.startBatching(
+internal fun <M : Any, I> Channel<Result<M, I>>.startBatching(
   maxMessages: Int,
   maxDuration: Long,
   outputChannel: Channel<OneOrMany<Result<M, I>>>,

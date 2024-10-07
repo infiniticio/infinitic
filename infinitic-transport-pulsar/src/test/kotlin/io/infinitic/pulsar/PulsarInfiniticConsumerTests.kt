@@ -99,9 +99,9 @@ class PulsarInfiniticConsumerTests : StringSpec(
           infiniticConsumer.start(
               subscription = MainSubscription(ClientTopic),
               entity = name,
-              handler = { _, _ -> },
-              beforeDlq = { _, _ -> },
               concurrency = 1,
+              process = { _, _ -> },
+              beforeDlq = { _, _ -> },
           )
         }
 
@@ -122,9 +122,9 @@ class PulsarInfiniticConsumerTests : StringSpec(
           infiniticConsumer.start(
               subscription = MainSubscription(WorkflowTagEngineTopic),
               entity = name,
-              handler = { _, _ -> },
-              beforeDlq = { _, _ -> },
               concurrency = 10,
+              process = { _, _ -> },
+              beforeDlq = { _, _ -> },
           )
         }
 
@@ -144,9 +144,9 @@ class PulsarInfiniticConsumerTests : StringSpec(
           infiniticConsumer.start(
               subscription = MainSubscription(WorkflowStateCmdTopic),
               entity = name,
-              handler = { _, _ -> },
-              beforeDlq = { _, _ -> },
               concurrency = 10,
+              process = { _, _ -> },
+              beforeDlq = { _, _ -> },
           )
         }
 
@@ -166,9 +166,9 @@ class PulsarInfiniticConsumerTests : StringSpec(
           infiniticConsumer.start(
               subscription = MainSubscription(WorkflowStateEngineTopic),
               entity = name,
-              handler = { _, _ -> },
-              beforeDlq = { _, _ -> },
               concurrency = 10,
+              process = { _, _ -> },
+              beforeDlq = { _, _ -> },
           )
         }
 
@@ -188,9 +188,9 @@ class PulsarInfiniticConsumerTests : StringSpec(
           infiniticConsumer.start(
               subscription = MainSubscription(WorkflowStateTimerTopic),
               entity = name,
-              handler = { _, _ -> },
-              beforeDlq = { _, _ -> },
               concurrency = 10,
+              process = { _, _ -> },
+              beforeDlq = { _, _ -> },
           )
         }
 
@@ -210,9 +210,9 @@ class PulsarInfiniticConsumerTests : StringSpec(
           infiniticConsumer.start(
               subscription = MainSubscription(WorkflowStateEventTopic),
               entity = name,
-              handler = { _, _ -> },
-              beforeDlq = { _, _ -> },
               concurrency = 10,
+              process = { _, _ -> },
+              beforeDlq = { _, _ -> },
           )
         }
 
@@ -232,9 +232,9 @@ class PulsarInfiniticConsumerTests : StringSpec(
           infiniticConsumer.start(
               subscription = MainSubscription(WorkflowExecutorTopic),
               entity = name,
-              handler = { _, _ -> },
-              beforeDlq = { _, _ -> },
               concurrency = 10,
+              process = { _, _ -> },
+              beforeDlq = { _, _ -> },
           )
         }
 
@@ -254,9 +254,9 @@ class PulsarInfiniticConsumerTests : StringSpec(
           infiniticConsumer.start(
               subscription = MainSubscription(WorkflowExecutorEventTopic),
               entity = name,
-              handler = { _, _ -> },
-              beforeDlq = { _, _ -> },
               concurrency = 10,
+              process = { _, _ -> },
+              beforeDlq = { _, _ -> },
           )
         }
 
@@ -276,9 +276,9 @@ class PulsarInfiniticConsumerTests : StringSpec(
           infiniticConsumer.start(
               subscription = MainSubscription(ServiceTagEngineTopic),
               entity = name,
-              handler = { _, _ -> },
-              beforeDlq = { _, _ -> },
               concurrency = 10,
+              process = { _, _ -> },
+              beforeDlq = { _, _ -> },
           )
         }
 
@@ -298,9 +298,9 @@ class PulsarInfiniticConsumerTests : StringSpec(
           infiniticConsumer.start(
               subscription = MainSubscription(ServiceExecutorTopic),
               entity = name,
-              handler = { _, _ -> },
-              beforeDlq = { _, _ -> },
               concurrency = 10,
+              process = { _, _ -> },
+              beforeDlq = { _, _ -> },
           )
         }
 
@@ -320,9 +320,9 @@ class PulsarInfiniticConsumerTests : StringSpec(
           infiniticConsumer.start(
               subscription = MainSubscription(ServiceExecutorEventTopic),
               entity = name,
-              handler = { _, _ -> },
-              beforeDlq = { _, _ -> },
               concurrency = 10,
+              process = { _, _ -> },
+              beforeDlq = { _, _ -> },
           )
         }
 

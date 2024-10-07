@@ -31,8 +31,7 @@ import io.infinitic.common.transport.EventListenerSubscription
 import io.infinitic.common.transport.InfiniticConsumer
 import io.infinitic.common.transport.MainSubscription
 import io.infinitic.common.transport.Subscription
-import io.infinitic.common.transport.consumers.ConsumerSharedProcessor
-import io.infinitic.common.transport.consumers.ConsumerUniqueProcessor
+import io.infinitic.common.transport.consumers.ProcessorConsumer
 import io.infinitic.pulsar.client.InfiniticPulsarClient
 import io.infinitic.pulsar.config.PulsarConsumerConfig
 import io.infinitic.pulsar.consumers.PulsarConsumer
@@ -61,11 +60,11 @@ class PulsarInfiniticConsumer(
   override suspend fun <S : Message> startAsync(
     subscription: Subscription<S>,
     entity: String,
-    handler: suspend (S, MillisInstant) -> Unit,
-    beforeDlq: (suspend (S?, Exception) -> Unit)?,
     concurrency: Int,
-    getBatchConfig: (suspend (S) -> Result<BatchConfig?>)?,
-    handlerBatch: (suspend (List<S>, List<MillisInstant>) -> Unit)?
+    process: suspend (S, MillisInstant) -> Unit,
+    beforeDlq: (suspend (S?, Exception) -> Unit)?,
+    batchConfig: (suspend (S) -> BatchConfig?)?,
+    batchProcess: (suspend (List<S>, List<MillisInstant>) -> Unit)?
   ): Job {
 
     // Retrieve the name of the topic and of the DLQ topic
@@ -93,7 +92,7 @@ class PulsarInfiniticConsumer(
 
     val loggedHandler: suspend (S, MillisInstant) -> Unit = { message, publishTime ->
       logger.debug { "Processing $message" }
-      handler(message, publishTime)
+      process(message, publishTime)
       logger.trace { "Processed $message" }
     }
 
@@ -130,34 +129,25 @@ class PulsarInfiniticConsumer(
           List(concurrency) { async { buildConsumer(it) } }.map { it.await() }
         }
         launch {
-          coroutineScope {
-            List(concurrency) { index ->
-              launch {
-                ConsumerUniqueProcessor(
-                    consumers[index],
-                    loggedDeserialize,
-                    loggedHandler,
-                    beforeNegativeAcknowledgement,
-                ).start()
-              }
-            }
+          List(concurrency) { index ->
+            val processor = ProcessorConsumer(consumers[index], beforeNegativeAcknowledgement)
+            with(processor) { startAsync(1, loggedDeserialize, loggedHandler) }
           }
         }
       }
 
-
       false -> {
-        // build the consumer synchronously
+        // build the unique consumer synchronously
         val consumer = buildConsumer()
-        launch {
-          ConsumerSharedProcessor(
-              consumer,
+        val processor = ProcessorConsumer(consumer, beforeNegativeAcknowledgement)
+        with(processor) {
+          startAsync(
+              concurrency,
               loggedDeserialize,
               loggedHandler,
-              beforeNegativeAcknowledgement,
-              getBatchConfig,
-              handlerBatch,
-          ).start(concurrency)
+              batchConfig,
+              batchProcess,
+          )
         }
       }
     }

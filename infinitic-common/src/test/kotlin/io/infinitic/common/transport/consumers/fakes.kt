@@ -27,9 +27,9 @@ import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.transport.BatchConfig
 import io.infinitic.common.transport.TransportConsumer
 import io.infinitic.common.transport.TransportMessage
-import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.future.future
 import java.util.*
@@ -55,52 +55,45 @@ internal val acknowledgedList = Collections.synchronizedList(mutableListOf<Int>(
 internal val negativeAcknowledgedList = Collections.synchronizedList(mutableListOf<Int>())
 internal val beforeNegativeAcknowledgedList = Collections.synchronizedList(mutableListOf<Int>())
 
-fun checkAllProcessedAreAcknowledged() {
-  // no double in processed
-  processedList.toSet().size shouldBe processedList.size
-  // all processed are acknowledged
-  processedList.sorted() shouldBe acknowledgedList.sorted()
-}
+internal open class IntConsumer : TransportConsumer<IntMessage> {
+  private val counter = AtomicInteger(0)
 
-fun checkBeforeNegativeAcknowledged() {
-  // no double negative acknowledging
-  negativeAcknowledgedList.toSet().size shouldBe negativeAcknowledgedList.size
-  // all negatively acknowledged have processed beforeNegativeAcknowledge
-  negativeAcknowledgedList.sorted() shouldBe beforeNegativeAcknowledgedList.sorted()
-}
+  private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
-internal class Consumer : TransportConsumer<IntMessage> {
-  val counter = AtomicInteger(0)
-
-  private val scope = CoroutineScope(Dispatchers.IO)
+  fun reset() {
+    counter.set(0)
+  }
 
   override fun receiveAsync() = scope.future {
     IntMessage(counter.incrementAndGet())
-  }.thenApply { it.also { receivedList.add(it.value) } }
-
-  override fun negativeAcknowledgeAsync(messages: List<IntMessage>): CompletableFuture<Unit> =
-      scope.future { delay(Random.nextLong(5)) }
-          .thenApply { negativeAcknowledgedList.addAll(messages.map { it.value }) }
-
-  override fun acknowledgeAsync(messages: List<IntMessage>): CompletableFuture<Unit> =
-      scope.future { delay(Random.nextLong(5)) }
-          .thenApply { acknowledgedList.addAll(messages.map { it.value }) }
+        .also { receivedList.add(it.value) }
+  }
 
   override fun negativeAcknowledgeAsync(message: IntMessage): CompletableFuture<Unit> =
-      scope.future { delay(Random.nextLong(5)) }
-          .thenApply { negativeAcknowledgedList.add(message.value) }
+      scope.future {
+        delay(Random.nextLong(5))
+            .also { negativeAcknowledgedList.add(message.value) }
+      }
 
   override fun acknowledgeAsync(message: IntMessage): CompletableFuture<Unit> =
-      scope.future { delay(Random.nextLong(5)) }
-          .thenApply { acknowledgedList.add(message.value) }
+      scope.future {
+        delay(Random.nextLong(5))
+            .also { acknowledgedList.add(message.value) }
+      }
 }
 
-internal fun deserialize(value: IntMessage) = DeserializedIntMessage(value).also {
+internal suspend fun deserialize(value: IntMessage) = DeserializedIntMessage(value).also {
+  println("start deserializing...$value")
+  delay(Random.nextLong(5))
   deserializedList.add(it.value.value)
+  println("end   deserializing...$value")
 }
 
 
-internal fun process(message: DeserializedIntMessage, publishTime: MillisInstant) {
+internal suspend fun process(message: DeserializedIntMessage, publishTime: MillisInstant) {
+  println("start processing......${message.value.value}")
+  delay(Random.nextLong(100))
+  println("end   processing......${message.value.value}")
   processedList.add(message.value.value)
 }
 
@@ -108,19 +101,19 @@ internal fun processBatch(batch: List<DeserializedIntMessage>, publishTimes: Lis
   processedList.addAll(batch.map { it.value.value })
 }
 
-internal fun assessBatching(value: DeserializedIntMessage): Result<BatchConfig?> {
+internal fun getBatchingConfig(value: DeserializedIntMessage): BatchConfig? {
   val i = value.value.value
   return when {
-    i == 0 -> null
-    (i % 2) == 0 -> BatchConfig("even", 20, MillisDuration(1000 * 3600 * 50))
-    (i % 2) == 1 -> BatchConfig("odd", 20, MillisDuration(1000 * 3600 * 50))
+    (i % 3) == 0 -> null
+    (i % 3) == 1 -> BatchConfig("1", 20, MillisDuration(1000 * 3600 * 50))
+    (i % 3) == 2 -> BatchConfig("2", 20, MillisDuration(1000 * 3600 * 50))
     else -> throw IllegalStateException()
-  }.let { Result.success(it) }
+  }
 }
 
 internal fun beforeNegativeAcknowledgement(
   message: IntMessage,
-  value: DeserializedIntMessage?,
+  deserialized: DeserializedIntMessage?,
   e: Exception
 ) {
   beforeNegativeAcknowledgedList.add(message.value)

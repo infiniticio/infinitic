@@ -22,37 +22,17 @@
  */
 package io.infinitic.common.transport.consumers
 
-import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.transport.TransportConsumer
-import io.infinitic.common.transport.TransportMessage
-import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.withContext
+/**
+ * Represents a structure that can hold either a single item or a collection of items.
+ *
+ * @param D The type of item(s) contained within this structure.
+ */
+sealed interface OneOrMany<D>
 
-class ConsumerUniqueProcessor<S : TransportMessage, D : Any>(
-  private val consumer: TransportConsumer<S>,
-  deserialize: suspend (S) -> D,
-  process: suspend (D, MillisInstant) -> Unit,
-  beforeNegativeAcknowledgement: (suspend (S, D?, Exception) -> Unit)?
-) : AbstractConsumerProcessor<S, D>(
-    consumer,
-    deserialize,
-    process,
-    beforeNegativeAcknowledgement,
-) {
-
-  suspend fun start() = consumer
-      .receiveAsFlow()
-      .collect { message ->
-        withContext(NonCancellable) {
-          tryDeserialize(message)?.let { processSingle(it) }
-        }
-      }
+internal class One<D>(val datum: D) : OneOrMany<D> {
+  override fun toString() = "One(${datum.toString()})"
 }
 
-
-
-
-
-
-
-
+internal class Many<D>(val data: List<D>) : OneOrMany<D> {
+  override fun toString() = "Many($data})"
+}

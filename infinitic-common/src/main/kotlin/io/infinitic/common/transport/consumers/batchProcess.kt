@@ -20,10 +20,9 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.transport.consumer
+package io.infinitic.common.transport.consumers
 
 import io.github.oshai.kotlinlogging.KLogger
-import io.infinitic.common.transport.consumers.string
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.cancel
@@ -42,7 +41,7 @@ import kotlinx.coroutines.withContext
  * @return A channel where the results of the processed elements will be sent.
  */
 context(CoroutineScope, KLogger)
-fun <M : Any, I, O> Channel<OneOrMany<Result<M, I>>>.batchProcess(
+internal fun <M : Any, I, O> Channel<OneOrMany<Result<M, I>>>.batchProcess(
   concurrency: Int = 1,
   singleProcess: suspend (M, I) -> O,
   batchProcess: suspend (List<M>, List<I>) -> List<O>,
@@ -100,6 +99,9 @@ fun <M : Any, I, O> Channel<OneOrMany<Result<M, I>>>.batchProcess(
                 is One -> process(oneOrMany)
                 is Many -> process(oneOrMany)
               }
+            } catch (e: Exception) {
+              warn(e) { "Exception while batch processing messages" }
+              throw e
             } catch (e: Error) {
               warn(e) { "Error when batch processing messages, cancelling calling scope" }
               callingScope.cancel()
