@@ -43,13 +43,12 @@ import io.infinitic.common.tasks.events.messages.TaskRetriedEvent
 import io.infinitic.common.tasks.events.messages.TaskStartedEvent
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
+import io.infinitic.common.transport.BatchConfig
 import io.infinitic.common.transport.InfiniticProducer
-import io.infinitic.common.transport.MessageBatchConfig
 import io.infinitic.common.transport.ServiceExecutorEventTopic
 import io.infinitic.common.transport.ServiceExecutorRetryTopic
 import io.infinitic.common.utils.BatchMethod
 import io.infinitic.common.utils.checkMode
-import io.infinitic.common.utils.getArgs
 import io.infinitic.common.utils.getBatchConfig
 import io.infinitic.common.utils.getBatchMethod
 import io.infinitic.common.utils.getMethodPerNameAndParameters
@@ -76,6 +75,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
+import java.lang.reflect.Type
 import java.util.concurrent.TimeoutException
 import kotlin.reflect.jvm.javaMethod
 
@@ -102,13 +102,13 @@ class TaskExecutor(
     executeTasks.process()
   }
 
-  suspend fun getBatchConfig(msg: ServiceExecutorMessage): Result<MessageBatchConfig?> =
+  suspend fun getBatchConfig(msg: ServiceExecutorMessage): Result<BatchConfig?> =
       when (msg) {
         is ExecuteTask -> msg.getBatchConfig()
       }
 
-  private suspend fun ExecuteTask.getBatchConfig(): Result<MessageBatchConfig?> = try {
-    Result.success(getMethod().getBatchConfig())
+  private suspend fun ExecuteTask.getBatchConfig(): Result<BatchConfig?> = try {
+    Result.success(getInstanceAndMethod().second.getBatchConfig())
   } catch (e: Exception) {
     sendTaskFailed(e, taskMeta) { "Error when retrieving the @Batch config for $this" }
     Result.failure(e)
@@ -133,10 +133,7 @@ class TaskExecutor(
     val argsList: List<List<*>>,
     val contextList: List<TaskContext>
   ) {
-    fun invoke() = batchMethod.batch.invoke(
-        instance,
-        batchMethod.getArgs(argsList),
-    )
+    fun invoke() = batchMethod.batch.invoke(instance, batchMethod.getArgs(argsList)) as List<Any?>
   }
 
   private suspend fun List<ExecuteTask>.process() = coroutineScope {
@@ -245,8 +242,7 @@ class TaskExecutor(
       withTimeout(timeout) {
         coroutineScope {
           Task.setBatchContext(batchData.contextList)
-          val output = batchData.invoke()
-          Result.success(output as List<Any?>)
+          Result.success(batchData.invoke())
         }
       }
     } catch (e: TimeoutCancellationException) {
@@ -454,6 +450,7 @@ class TaskExecutor(
             batchData.isDelegated,
             batchData.batchMethod.single,
             batchData.contextList[i].meta,
+            batchData.batchMethod.componentReturnType,
         )
       }
     }
@@ -463,12 +460,13 @@ class TaskExecutor(
     output: Any?,
     isDelegated: Boolean,
     method: Method,
-    meta: Map<String, ByteArray>
+    meta: Map<String, ByteArray>,
+    returnType: Type? = null
   ) {
     if (isDelegated && output != null) logDebug {
       "Method '${method}' has an '${Delegated::class.java.name}' annotation, so its result is ignored"
     }
-    val returnValue = method.encodeReturnValue(output)
+    val returnValue = method.encodeReturnValue(output, returnType)
     val taskCompletedEvent = TaskCompletedEvent.from(
         this,
         getEmitterName(),
@@ -482,12 +480,12 @@ class TaskExecutor(
   private suspend fun ExecuteTask.sendTaskCompleted(output: Any?, taskData: TaskData) =
       sendTaskCompleted(output, taskData.isDelegated, taskData.method, taskData.context.meta)
 
-  private fun ExecuteTask.getMethod(): Method {
-    // Obtain the service class instance from the registry
-    val klass = registry.getServiceExecutorInstance(serviceName)::class.java
+  private fun ExecuteTask.getInstanceAndMethod(): Pair<Any, Method> {
+    // Obtain the service instance from the registry
+    val instance = registry.getServiceExecutorInstance(serviceName)
 
-    // Return the method corresponding to the specified name and parameter types
-    return klass.getMethodPerNameAndParameters(
+    // Return the class and method corresponding to the specified name and parameter types
+    return instance to instance::class.java.getMethodPerNameAndParameters(
         "$methodName",
         methodParameterTypes?.types,
         methodArgs.size,
@@ -543,13 +541,7 @@ class TaskExecutor(
   }
 
   private suspend fun ExecuteTask.parseBatch(): TaskData {
-    val serviceInstance = registry.getServiceExecutorInstance(serviceName)
-
-    val serviceMethod = serviceInstance::class.java.getMethodPerNameAndParameters(
-        "$methodName",
-        methodParameterTypes?.types,
-        methodArgs.size,
-    )
+    val (serviceInstance, serviceMethod) = getInstanceAndMethod()
 
     val batchMethod = serviceMethod.getBatchMethod() ?: thisShouldNotHappen()
 
@@ -557,7 +549,7 @@ class TaskExecutor(
 
     val withRetry = getWithRetry(serviceName, batchMethod.batch)
 
-    val isDelegated = batchMethod.single.isDelegated
+    val isDelegated = batchMethod.single.isDelegated || batchMethod.batch.isDelegated
 
     val taskContext = getContext(withRetry, withTimeout)
 

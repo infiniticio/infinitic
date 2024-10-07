@@ -25,12 +25,13 @@ package io.infinitic.common.transport.consumers
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.fixtures.runAndCancel
-import io.infinitic.common.transport.MessageBatchConfig
+import io.infinitic.common.transport.BatchConfig
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import kotlin.random.Random
 
+@Suppress("UNUSED_PARAMETER")
 internal class ConsumerBatchedProcessorTests : StringSpec(
     {
       val concurrency = Random.nextInt(2, 100)
@@ -97,7 +98,10 @@ internal class ConsumerBatchedProcessorTests : StringSpec(
       }
 
       "An Error during batch processing throws" {
-        fun processBatchWithError(batch: List<DeserializedIntMessage>) {
+        fun processBatchWithError(
+          batch: List<DeserializedIntMessage>,
+          publishTimes: List<MillisInstant>
+        ) {
           if (batch.map { it.value.value }.contains(200)) throw Error("Expected Error")
           println("processBatch: $batch")
           processedList.addAll(batch.map { it.value.value })
@@ -143,7 +147,10 @@ internal class ConsumerBatchedProcessorTests : StringSpec(
 
       "An exception during batch processing triggers negative acknowledgment" {
 
-        fun processBatchWithError(batch: List<DeserializedIntMessage>) {
+        fun processBatchWithError(
+          batch: List<DeserializedIntMessage>,
+          publishTimes: List<MillisInstant>
+        ) {
           if (batch.map { it.value.value }.contains(100)) throw Exception("Expected Exception")
           if (batch.map { it.value.value }.contains(200)) throw Error("Expected Error")
           println("processBatch: $batch")
@@ -168,7 +175,10 @@ internal class ConsumerBatchedProcessorTests : StringSpec(
 
       "Checking batching process by size" {
 
-        fun processBatchWithChecks(batch: List<DeserializedIntMessage>) {
+        fun processBatchWithChecks(
+          batch: List<DeserializedIntMessage>,
+          publishTimes: List<MillisInstant>
+        ) {
           // checking that batches are correct
           batch.map { it.value.value % 2 }.toSet().size shouldBe 1
           batch.size shouldBe 20
@@ -196,17 +206,20 @@ internal class ConsumerBatchedProcessorTests : StringSpec(
 
       "Checking batching by time" {
 
-        fun assessTimeBatching(value: DeserializedIntMessage): Result<MessageBatchConfig?> {
+        fun assessTimeBatching(value: DeserializedIntMessage): Result<BatchConfig?> {
           val i = value.value.value
           return when {
             i == 0 -> null
-            (i % 2) == 0 -> MessageBatchConfig("even", MillisDuration(10), Int.MAX_VALUE)
-            (i % 2) == 1 -> MessageBatchConfig("odd", MillisDuration(10), Int.MAX_VALUE)
+            (i % 2) == 0 -> BatchConfig("even", Int.MAX_VALUE, MillisDuration(10))
+            (i % 2) == 1 -> BatchConfig("odd", Int.MAX_VALUE, MillisDuration(10))
             else -> throw IllegalStateException()
           }.let { Result.success(it) }
         }
 
-        fun processBatchWithChecks(batch: List<DeserializedIntMessage>) {
+        fun processBatchWithChecks(
+          batch: List<DeserializedIntMessage>,
+          publishTimes: List<MillisInstant>
+        ) {
           // checking that batches are correct
           batch.map { it.value.value % 2 }.toSet().size shouldBe 1
           println("batch = $batch")

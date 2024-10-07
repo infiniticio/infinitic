@@ -26,16 +26,22 @@ import io.infinitic.annotations.Name
 import io.infinitic.workflows.Workflow
 
 @Name("batchWorkflow")
-interface BatchWorkflow {
+internal interface BatchWorkflow {
   fun add(value: Int): Int
-  fun add2(foo: Int, bar: Int): Int
+  fun foo2(foo: Int, bar: Int): Int
+  fun foo3(foo: Int, bar: Int): Int
+  fun foo4(foo: Int, bar: Int): Input
+  fun foo5(foo: Int, bar: Int): Input
 }
 
 @Suppress("unused")
-class BatchWorkflowImpl : Workflow(), BatchWorkflow {
+internal class BatchWorkflowImpl : Workflow(), BatchWorkflow {
 
   private val batchService = newService(BatchService::class.java)
 
-  override fun add(value: Int) = batchService.add(value)
-  override fun add2(foo: Int, bar: Int) = batchService.add2(foo, bar)
+  override fun add(value: Int) = batchService.foo(value)
+  override fun foo2(foo: Int, bar: Int) = batchService.foo2(foo, bar)
+  override fun foo3(foo: Int, bar: Int) = batchService.foo3(Input(foo, bar))
+  override fun foo4(foo: Int, bar: Int) = batchService.foo4(foo)
+  override fun foo5(foo: Int, bar: Int) = batchService.foo5(Input(foo, bar))
 }

@@ -25,8 +25,8 @@ package io.infinitic.common.transport.logged
 import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.messages.Message
+import io.infinitic.common.transport.BatchConfig
 import io.infinitic.common.transport.InfiniticConsumer
-import io.infinitic.common.transport.MessageBatchConfig
 import io.infinitic.common.transport.Subscription
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -43,8 +43,8 @@ class LoggedInfiniticConsumer(
     handler: suspend (S, MillisInstant) -> Unit,
     beforeDlq: (suspend (S?, Exception) -> Unit)?,
     concurrency: Int,
-    getBatchConfig: (suspend (S) -> Result<MessageBatchConfig?>)?,
-    handlerBatch: (suspend (List<S>) -> Unit)?
+    getBatchConfig: (suspend (S) -> Result<BatchConfig?>)?,
+    handlerBatch: (suspend (List<S>, List<MillisInstant>) -> Unit)?
   ): Job {
     val loggedHandler: suspend (S, MillisInstant) -> Unit = { message, instant ->
       logger.debug { formatLog(message.id(), "Processing:", message) }

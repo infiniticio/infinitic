@@ -23,7 +23,7 @@
 package io.infinitic.common.transport.consumers
 
 import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.transport.MessageBatchConfig
+import io.infinitic.common.transport.BatchConfig
 import io.infinitic.common.transport.TransportConsumer
 import io.infinitic.common.transport.TransportMessage
 import kotlinx.coroutines.CancellationException
@@ -49,8 +49,8 @@ class ConsumerSharedProcessor<S : TransportMessage, D : Any>(
   deserialize: suspend (S) -> D,
   process: suspend (D, MillisInstant) -> Unit,
   beforeNegativeAcknowledgement: (suspend (S, D?, Exception) -> Unit)?,
-  private val getBatchConfig: (suspend (D) -> Result<MessageBatchConfig?>)? = null,
-  private val processBatch: (suspend (List<D>) -> Unit)? = null
+  private val getBatchConfig: (suspend (D) -> Result<BatchConfig?>)? = null,
+  private val processBatch: (suspend (List<D>, List<MillisInstant>) -> Unit)? = null
 ) : AbstractConsumerProcessor<S, D>(
     consumer,
     deserialize,
@@ -135,7 +135,10 @@ class ConsumerSharedProcessor<S : TransportMessage, D : Any>(
    */
   private suspend fun processBatch(messages: List<DeserializedMessage<S, D>>) {
     try {
-      processBatch!!(messages.map { it.deserialized })
+      processBatch!!(
+          messages.map { it.deserialized },
+          messages.map { it.transportMessage.publishTime },
+      )
       acknowledge(messages)
     } catch (e: Exception) {
       logger.error(e) { "error when processing batch ${messages.map { it.transportMessage.messageId }}" }
@@ -183,7 +186,7 @@ class ConsumerSharedProcessor<S : TransportMessage, D : Any>(
    */
   context(CoroutineScope)
   private suspend fun MutableMap<String, Channel<DeserializedMessage<S, D>>>.send(
-    config: MessageBatchConfig,
+    config: BatchConfig,
     message: DeserializedMessage<S, D>
   ) {
     getOrPut(config.batchKey) {
@@ -196,7 +199,7 @@ class ConsumerSharedProcessor<S : TransportMessage, D : Any>(
    * Starts batching and processing  the elements received in the channel
    * using the provided batch configuration.
    */
-  private suspend fun Channel<DeserializedMessage<S, D>>.startBatchingAndProcessing(config: MessageBatchConfig) {
+  private suspend fun Channel<DeserializedMessage<S, D>>.startBatchingAndProcessing(config: BatchConfig) {
     receiveAsFlow()
         .collectBatch(config) { batch ->
           // once a batch completed, send to processChannel as a MessageBatch
@@ -212,14 +215,14 @@ class ConsumerSharedProcessor<S : TransportMessage, D : Any>(
    * @param action The action to be performed on each batch of elements.
    */
   internal suspend fun <M> Flow<M>.collectBatch(
-    config: MessageBatchConfig,
+    config: BatchConfig,
     action: suspend (List<M>) -> Unit
   ) = coroutineScope {
-    require(config.batchSize > 1) { "batch size must be > 1" }
+    require(config.maxMessages > 1) { "batch size must be > 1" }
 
     var nowMillis: Long = 0
     val buffer = mutableListOf<M>()
-    val timeoutMillis = config.batchTime
+    val timeoutMillis = config.maxDuration
     val bufferMutex = Mutex()
     lateinit var timeoutJob: Job
 
@@ -257,7 +260,7 @@ class ConsumerSharedProcessor<S : TransportMessage, D : Any>(
               timeoutJob = startTimeoutJob()
             }
 
-            config.batchSize -> {
+            config.maxMessages -> {
               // we reach the batch size, before the timeout
               timeoutJob.cancel()
               batch = ArrayList(buffer)

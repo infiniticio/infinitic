@@ -31,7 +31,7 @@ import io.infinitic.annotations.Retry
 import io.infinitic.annotations.Timeout
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.common.transport.MessageBatchConfig
+import io.infinitic.common.transport.BatchConfig
 import io.infinitic.exceptions.tasks.NoMethodFoundWithParameterCountException
 import io.infinitic.exceptions.tasks.NoMethodFoundWithParameterTypesException
 import io.infinitic.exceptions.tasks.TooManyMethodsFoundWithParameterCountException
@@ -56,6 +56,7 @@ import kotlin.reflect.jvm.javaMethod
 
 private val cachesList
   get() = listOf(
+      batchMethodCache,
       methodsCache,
       methodNameCache,
       classSimpleNameCache,
@@ -81,7 +82,7 @@ fun Class<*>.getMethodPerNameAndParameters(
   parametersCount: Int
 ): Method = methodsCache.getOrPut(getCacheKey(this, methodName, parameterTypes, parametersCount)) {
   when (parameterTypes) {
-    null -> getMethodPerAnnotationAndParametersCount(methodName, parametersCount)
+    null -> getMethodPerAnnotationAndParameterCount(methodName, parametersCount)
       ?: getMethodPerNameAndParameterCount(methodName, parametersCount)
       ?: throw NoMethodFoundWithParameterCountException(name, methodName, parametersCount)
 
@@ -193,25 +194,20 @@ internal val batchMethodCache = mutableMapOf<Method, BatchMethod?>()
 
 private val batchMethodMutex = Mutex()
 
-suspend fun Method.getBatchMethod(): BatchMethod? {
-  if (batchMethodCache.containsKey(this)) {
-    // Return immediately if the cache already contains the current method
-    return batchMethodCache[this]
-  }
-  // Lock access to the cache to avoid race conditions
-  return batchMethodMutex.withLock {
-    // Retrieve the map of batch methods for the declaring class
-    val batchMethodList = declaringClass.getBatchMethods()
-    // Update the cache with all methods of the declaring class
-    declaringClass.methods.forEach { method ->
+fun Method.getBatchMethod(): BatchMethod? = batchMethodCache[this]
+
+suspend fun Class<*>.initBatchMethods() {
+  // Retrieve the list of BatchMethod for the class
+  val batchMethodList = getBatchMethods()
+  // Update the cache with all methods of the class
+  batchMethodMutex.withLock {
+    getAllMethods().forEach { method ->
       batchMethodCache[method] = batchMethodList.firstOrNull { it.single == method }
     }
-    // Return the corresponding value for the current method now in the cache
-    batchMethodCache[this]
   }
 }
 
-suspend fun Method.getBatchConfig(): MessageBatchConfig? {
+fun Method.getBatchConfig(): BatchConfig? {
   // Retrieve the method annotated as batch, if it exists
   val batchMethod = getBatchMethod() ?: return null
 
@@ -219,10 +215,10 @@ suspend fun Method.getBatchConfig(): MessageBatchConfig? {
   val batchAnnotation = batchMethod.batch.findAnnotation(Batch::class.java) ?: thisShouldNotHappen()
 
   // Create and return an instance of MessageBatchConfig from the annotation
-  return MessageBatchConfig(
-      batchTime = MillisDuration((batchAnnotation.maxDelaySeconds * 1000).toLong()),
-      batchSize = batchAnnotation.maxMessage,
+  return BatchConfig(
       batchKey = toUniqueString(),
+      maxMessages = batchAnnotation.maxMessages,
+      maxDuration = MillisDuration((batchAnnotation.maxSeconds * 1000).toLong()),
   )
 }
 
@@ -281,6 +277,33 @@ fun <T : Any> Method.getMillisDuration(klass: Class<T>): Result<MillisDuration?>
   return Result.success(millis?.let { MillisDuration(it) })
 }
 
+/**
+ * Retrieves all methods declared in the current class and its superclasses.
+ * This includes private methods from the current class and public or protected methods from its superclasses.
+ */
+fun Class<*>.getAllMethods(): List<Method> {
+  val methods = mutableSetOf<Method>()
+
+  // Add all declared methods (including private) of the current class
+  methods.addAll(this.declaredMethods)
+
+  // Traverse superclass hierarchy to add public and protected methods
+  var current: Class<*>? = this.superclass
+  while (current != null && current != Any::class.java) {
+    current.declaredMethods
+        .filter { method ->
+          java.lang.reflect.Modifier.isPublic(method.modifiers) ||
+              java.lang.reflect.Modifier.isProtected(method.modifiers)
+        }
+        .forEach { method ->
+          methods.add(method)
+        }
+    current = current.superclass
+  }
+
+  return methods.toList()
+}
+
 private fun getCacheKey(
   klass: Class<*>,
   methodName: String,
@@ -331,7 +354,7 @@ private fun Class<*>.getMethodPerNameAndParameterTypes(
   null
 }
 
-private fun Class<*>.getMethodPerAnnotationAndParametersCount(
+private fun Class<*>.getMethodPerAnnotationAndParameterCount(
   methodName: String,
   parameterCount: Int
 ): Method? {
@@ -358,7 +381,7 @@ private fun Class<*>.getMethodPerAnnotationAndParametersCount(
 
     // has any of the interfaces a method with @Name annotation and right count of parameters?
     klass.interfaces.forEach { `interface` ->
-      `interface`.getMethodPerAnnotationAndParametersCount(methodName, parameterCount)?.also {
+      `interface`.getMethodPerAnnotationAndParameterCount(methodName, parameterCount)?.also {
         return it
       }
     }

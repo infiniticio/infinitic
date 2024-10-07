@@ -20,21 +20,19 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.transport
-
-import io.infinitic.common.data.MillisDuration
+package io.infinitic.common.transport.consumer
 
 /**
- * Data class representing how a specific message should be batched
- * Messages with the same [batchKey] will be batched together, it typically represents a task type.
- * [batchTime] and [batchSize] are expected to be always the same for a given [batchKey]
+ * Represents a structure that can hold either a single item or a collection of items.
+ *
+ * @param D The type of item(s) contained within this structure.
  */
-data class MessageBatchConfig(
-  val batchKey: String,
-  val batchTime: MillisDuration,
-  val batchSize: Int,
-) {
-  companion object {
-    val NONE = MessageBatchConfig("", MillisDuration(0), 1)
-  }
+sealed interface OneOrMany<D>
+
+class One<D>(val datum: D) : OneOrMany<D> {
+  override fun toString() = "One(${datum.toString()})"
+}
+
+class Many<D>(val data: List<D>) : OneOrMany<D> {
+  override fun toString() = "Many($data})"
 }

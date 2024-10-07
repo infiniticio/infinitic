@@ -20,8 +20,14 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.annotations
+package io.infinitic.common.transport.consumer
 
-/** Use this annotation to define a timeout duration for tasks */
-@Target(AnnotationTarget.FUNCTION)
-annotation class Batch(val maxMessages: Int, val maxSeconds: Double)
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.ClosedReceiveChannelException
+
+suspend fun <M> Channel<M>.receiveIfNotClose(): M? =
+    try {
+      receive()
+    } catch (e: ClosedReceiveChannelException) {
+      null
+    }

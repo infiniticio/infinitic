@@ -28,28 +28,18 @@ import io.infinitic.annotations.Batch;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 // 1 parameter - Batched method with Collection parameter
+@SuppressWarnings("unused")
 class FooBatch1 {
     public String bar(int p) {
         return Integer.toString(p);
     }
 
-    @Batch(maxMessage = 10, maxDelaySeconds = 1.0)
+    @Batch(maxMessages = 10, maxSeconds = 1.0)
     public List<String> bar(List<Integer> p) {
         return p.stream().map(Object::toString).toList();
-    }
-}
-
-// 1 parameter - Batched method with vararg parameters
-class FooBatch1bis {
-    public String bar(int p) {
-        return Integer.toString(p);
-    }
-
-    @Batch(maxMessage = 10, maxDelaySeconds = 1.0)
-    public List<String> bar(int... p) {
-        return Arrays.stream(p).mapToObj(Integer::toString).toList();
     }
 }
 
@@ -59,21 +49,9 @@ class FooBatch2 {
         return Integer.toString(p) + q;
     }
 
-    @Batch(maxMessage = 10, maxDelaySeconds = 1.0)
+    @Batch(maxMessages = 10, maxSeconds = 1.0)
     public List<String> bar(List<PairInt> l) {
         return l.stream().map(pair -> bar(pair.p(), pair.q())).toList();
-    }
-}
-
-// 2 parameters - Batched method with vararg parameter
-class FooBatch2bis {
-    public String bar(int p, int q) {
-        return Integer.toString(p) + q;
-    }
-
-    @Batch(maxMessage = 10, maxDelaySeconds = 1.0)
-    public List<String> bar(PairInt... l) {
-        return Arrays.stream(l).map(pair -> bar(pair.p(), pair.q())).toList();
     }
 }
 
@@ -83,7 +61,7 @@ class FooBatch3 {
         return p.toString();
     }
 
-    @Batch(maxMessage = 10, maxDelaySeconds = 1.0)
+    @Batch(maxMessages = 10, maxSeconds = 1.0)
     public List<String> bar(List<Set<Integer>> p) {
         return p.stream().map(Set::toString).toList();
     }
@@ -95,21 +73,55 @@ class FooBatch5 {
         // do nothing
     }
 
-    @Batch(maxMessage = 10, maxDelaySeconds = 1.0)
+    @Batch(maxMessages = 10, maxSeconds = 1.0)
     public void bar(List<PairInt> p) {
         // do nothing
     }
 }
 
-// Converted code
+// 1 parameter - Parameter with Generic
 class FooBatch6 {
     public void bar(MyPair<Integer> pair) {
         // do nothing
     }
 
-    @Batch(maxMessage = 10, maxDelaySeconds = 1.0)
+    @Batch(maxMessages = 10, maxSeconds = 1.0)
     public void bar(List<MyPair<Integer>> pairs) {
         // do nothing
+    }
+}
+
+// Single method with parent return value
+class FooBatch7 implements FooBatch {
+
+    @Override
+    public PairInt bar(int p) {
+        return new PairInt(p, p);
+    }
+
+    @Batch(maxMessages = 10, maxSeconds = 1.0)
+    public List<PairInt> bar(List<Integer> list) {
+        return list.stream()
+                .map(i -> new PairInt(i, i))
+                .collect(Collectors.toList());
+    }
+}
+
+interface FooBatch {
+    PairInt bar(int p);
+}
+
+// vararg not accepted
+class FooBatchError0 {
+    String bar(int p) {
+        return Integer.toString(p);
+    }
+
+    @Batch(maxMessages = 10, maxSeconds = 1.0)
+    List<String> bar(int... p) {
+        return Arrays.stream(p)
+                .mapToObj(Integer::toString)
+                .collect(Collectors.toList());
     }
 }
 
@@ -119,7 +131,7 @@ class FooBatchError1 {
         return Integer.toString(p);
     }
 
-    @Batch(maxMessage = 10, maxDelaySeconds = 1.0)
+    @Batch(maxMessages = 10, maxSeconds = 1.0)
     public List<String> bar(List<Integer> p, int q) {
         return p.stream().map(Object::toString).toList();
     }
@@ -131,26 +143,9 @@ class FooBatchError2 {
         return Integer.toString(p) + q;
     }
 
-    @Batch(maxMessage = 10, maxDelaySeconds = 1.0)
+    @Batch(maxMessages = 10, maxSeconds = 1.0)
     public List<String> bar(List<Integer> p) {
         return p.stream().map(Object::toString).toList();
-    }
-}
-
-// double annotation @Batch for the same single method
-class FooBatchError3 {
-    public String bar(int p, int q) {
-        return Integer.toString(p) + q;
-    }
-
-    @Batch(maxMessage = 10, maxDelaySeconds = 1.0)
-    public List<String> bar(List<PairInt> p) {
-        return p.stream().map(Object::toString).toList();
-    }
-
-    @Batch(maxMessage = 10, maxDelaySeconds = 1.0)
-    public List<String> bar(PairInt... p) {
-        return Arrays.stream(p).map(Object::toString).toList();
     }
 }
 
@@ -160,7 +155,7 @@ class FooBatchError4 {
         return "?";
     }
 
-    @Batch(maxMessage = 10, maxDelaySeconds = 1.0)
+    @Batch(maxMessages = 10, maxSeconds = 1.0)
     public List<Integer> bar(List<PairInt> p) {
         return p.stream().map(pair -> pair.p() + pair.q()).toList();
     }
@@ -172,7 +167,7 @@ class FooBatchError5 {
         return "?";
     }
 
-    @Batch(maxMessage = 10, maxDelaySeconds = 1.0)
+    @Batch(maxMessages = 10, maxSeconds = 1.0)
     public String bar(List<PairInt> p) {
         return "?";
     }

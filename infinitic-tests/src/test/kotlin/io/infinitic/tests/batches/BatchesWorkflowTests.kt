@@ -35,7 +35,7 @@ internal class BatchesWorkflowTests : StringSpec(
       val batchWorkflow = client.newWorkflow(BatchWorkflow::class.java)
 
       // the first test has a large timeout to deal with Pulsar initialization
-      "Batch should work (with maxSize=10)".config(timeout = 1.minutes) {
+      "One primitive parameter (with maxSize=10)".config(timeout = 1.minutes) {
         for (i in 1..9) {
           client.dispatch(batchWorkflow::add, i)
         }
@@ -43,7 +43,7 @@ internal class BatchesWorkflowTests : StringSpec(
         batchWorkflow.add(10) shouldBe 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10
       }
 
-      "Batch should work (with maxDelaySeconds=1)" {
+      "One primitive parameter (with maxDelaySeconds=1)" {
         for (i in 1..8) {
           client.dispatch(batchWorkflow::add, i)
         }
@@ -51,20 +51,68 @@ internal class BatchesWorkflowTests : StringSpec(
         batchWorkflow.add(9) shouldBe 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9
       }
 
-      "Batch with Object parameter should work (with maxSize=10)" {
+      "Two primitive parameters (with maxSize=10)" {
         for (i in 1..9) {
-          client.dispatch(batchWorkflow::add2, i, i)
+          client.dispatch(batchWorkflow::foo2, i, i)
         }
 
-        batchWorkflow.add2(10, 10) shouldBe (1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10) * 2
+        batchWorkflow.foo2(10, 10) shouldBe (1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10) * 2
       }
 
-      "Batch with Object parameter  should work (with maxDelaySeconds=1)" {
+      "Two primitive parameters (with maxDelaySeconds=1)" {
         for (i in 1..8) {
-          client.dispatch(batchWorkflow::add2, i, i)
+          client.dispatch(batchWorkflow::foo2, i, i)
         }
 
-        batchWorkflow.add2(9, 9) shouldBe (1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9) * 2
+        batchWorkflow.foo2(9, 9) shouldBe (1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9) * 2
+      }
+
+      "One Object parameter (with maxSize=10)" {
+        for (i in 1..9) {
+          client.dispatch(batchWorkflow::foo3, i, i)
+        }
+
+        batchWorkflow.foo3(10, 10) shouldBe (1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10) * 2
+      }
+
+      "One Object parameter (with maxDelaySeconds=1)" {
+        for (i in 1..8) {
+          client.dispatch(batchWorkflow::foo3, i, i)
+        }
+
+        batchWorkflow.foo3(9, 9) shouldBe (1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9) * 2
+      }
+
+      "Returns Object (with maxSize=10)" {
+        for (i in 1..9) {
+          client.dispatch(batchWorkflow::foo4, i, i)
+        }
+
+        batchWorkflow.foo4(10, 10) shouldBe Input(foo = 55, bar = 10)
+      }
+
+      "Returns Object (with maxDelaySeconds=1)" {
+        for (i in 1..8) {
+          client.dispatch(batchWorkflow::foo4, i, i)
+        }
+
+        batchWorkflow.foo4(9, 9) shouldBe Input(foo = 45, bar = 9)
+      }
+
+      "One Object parameter and returns Object(with maxSize=10)" {
+        for (i in 1..9) {
+          client.dispatch(batchWorkflow::foo5, i, i)
+        }
+
+        batchWorkflow.foo5(10, 10) shouldBe Input(foo = 55 * 2, bar = 10)
+      }
+
+      "One Object parameter and returns Object (with maxDelaySeconds=1)" {
+        for (i in 1..8) {
+          client.dispatch(batchWorkflow::foo5, i, i)
+        }
+
+        batchWorkflow.foo5(9, 9) shouldBe Input(foo = 45 * 2, bar = 9)
       }
     },
 )

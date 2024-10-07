@@ -23,12 +23,12 @@
 package io.infinitic.common.utils
 
 import io.infinitic.annotations.Batch
-import io.infinitic.common.exceptions.thisShouldNotHappen
 import java.lang.reflect.Constructor
 import java.lang.reflect.GenericArrayType
 import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
+import java.lang.reflect.TypeVariable
 import java.lang.reflect.WildcardType
 import kotlin.reflect.javaType
 import kotlin.reflect.typeOf
@@ -40,11 +40,17 @@ import kotlin.reflect.typeOf
  * @property batch The batch method that processes multiple items.
  * @property constructor The constructor used to create instances for the batch method's parameter, if applicable.
  */
-class BatchMethod(
+data class BatchMethod(
   val single: Method,
   val batch: Method,
   val constructor: Constructor<*>?,
-)
+  val componentReturnType: Type?,
+) {
+  fun getArgs(args: List<List<Any?>>): List<Any?> = when (constructor) {
+    null -> args.map { it.first() }
+    else -> args.map { constructor.newInstance(*it.toTypedArray()) }
+  }
+}
 
 /**
  * Retrieves a map associating single method with their batch methods for the class.
@@ -57,64 +63,74 @@ class BatchMethod(
  * @throws Exception if a corresponding single method is not found or multiple corresponding single methods are found.
  */
 fun Class<*>.getBatchMethods(): List<BatchMethod> =
-    methods.filter {
+    getAllMethods().filter {
       // get all batched methods
       it.findAnnotation(Batch::class.java) != null
-    }.associateByOrThrow { batchMethod ->
+    }.associateWith { batchMethod ->
       // for this batch method, find all single method with the same annotated name
       methods.filter { singleMethod ->
         batchMethod.isBatchedOf(singleMethod)
-      }.also { candidates ->
-        // we should not have a batch method without an associated single method
-        if (candidates.isEmpty()) throw Exception(
-            "No single method found corresponding to the @Batch method $name:${batchMethod.name}",
-        )
-        // we should not have a batch method with more than one associated single method
-        if (candidates.size > 1) throw Exception(
-            "Multiple single methods (${candidates.joinToString { it.name }}) " +
-                "found Corresponding to @Batch method $name:${batchMethod.name}",
-        )
-      }.first()
-    }.map { methods ->
-      val singleMethod = methods.key
-      val batchMethod = methods.value
-      BatchMethod(
-          singleMethod, batchMethod,
-          batchMethod.parameters[0].parameterizedType.getComponentType()!!
-              .getConstructor(singleMethod.parameters.map { it.parameterizedType }),
-      )
-    }
+      }
+    }.also {
+      it.validateSingleMethodsAssociation()
+      it.forEach { (batch, singles) ->
+        when (singles.size) {
+          0 -> throw Exception(
+              "No single method found corresponding to the @Batch method $name:${batch.name}",
+          )
 
-fun BatchMethod.getArgs(args: List<List<Any?>>): List<Any?> = when (constructor) {
-  null -> args.map { it.first() }
-  else -> args.map { constructor.newInstance(*it.toTypedArray()) }
-}
+          1 -> if (!batch.hasBatchReturnTypeOf(singles[0])) throw Exception(
+              "The return type of the @Batch method $name:${batch.name} should be " +
+                  "List<${singles[0].genericReturnType}>, but is ${batch.genericReturnType}",
+          )
+
+          else -> {
+            // This is to cover a special case in Kotlin where the single method returns
+            // Nothing ( fun myMethod() = thiswhouldNnothappen())
+            singles.forEach { single ->
+              if ((single.returnType != Void::class.java) && !batch.hasBatchReturnTypeOf(single))
+                throw Exception(
+                    "The return type of the @Batch method $name:${batch.name} should be " +
+                        "List<${single.genericReturnType}>, but is ${batch.genericReturnType}",
+                )
+            }
+          }
+        }
+      }
+    }.map { (batch, singles) ->
+      singles.map { single ->
+        BatchMethod(
+            single,
+            batch,
+            getBatchConstructor(single, batch),
+            batch.genericReturnType.getListType(),
+        )
+      }
+    }.flatten()
+
+private fun getBatchConstructor(single: Method, batch: Method): Constructor<*>? =
+    batch.parameters[0].parameterizedType.getListType()!!
+        .getConstructor(single.parameters.map { it.parameterizedType })
 
 /**
- * Associates the elements of the given [Iterable] by a key selected from each element or throws an
- * [Exception] if any two elements would have the same key.
+ * This ensures that the single methods have a unique and clear association with their corresponding batch method.
  */
-private fun Iterable<Method>.associateByOrThrow(keySelector: (Method) -> Method): Map<Method, Method> {
-  val map = mutableMapOf<Method, Method>()
-  for (element in this) {
-    val key = keySelector(element)
-    if (map.containsKey(key)) {
-      val batches = listOf(map[key]!!, element)
-      throw Exception(
-          "Multiple @Batch methods (${batches.joinToString { it.name }}) found " +
-              "for the single method ${key.declaringClass}::${key.name}",
-      )
-    }
-    map[key] = element
-  }
-  return map
+private fun Map<Method, List<Method>>.validateSingleMethodsAssociation() {
+  flatMap { (batch, singles) -> singles.map { single -> single to batch } }
+      .groupBy({ it.first }, { it.second })
+      .filter { it.value.size > 1 }
+      .forEach { (single, batches) ->
+        throw Exception(
+            "Multiple @Batch methods (${batches.joinToString { it.name }}) found " +
+                "for the single method ${single.declaringClass}::${single.name}",
+        )
+      }
 }
 
 private fun Method.isBatchedOf(method: Method): Boolean =
     (annotatedName == method.annotatedName) &&
         (method.findAnnotation(Batch::class.java) == null) &&
-        hasBatchParameterTypesOf(method) &&
-        hasBatchReturnTypeOf(method)
+        hasBatchParameterTypesOf(method)
 
 // Comparing the parameters
 private fun Method.hasBatchParameterTypesOf(method: Method): Boolean {
@@ -123,33 +139,25 @@ private fun Method.hasBatchParameterTypesOf(method: Method): Boolean {
           "The @Batch method ${declaringClass.name}::$name has ${parameters.size} parameters",
   )
   val type: Type = parameters[0].parameterizedType
-  val elementType = type.getComponentType()
+  val elementType = type.getListType()
     ?: throw Exception(
         "A @Batch method must have exactly one parameter that is a List. " +
             "But for the @Batch method ${declaringClass.name}::$name this type is $type",
     )
   val singleTypes = method.parameters.map { it.parameterizedType }
-  return elementType.isSameThan(singleTypes)
+  return elementType.isAssignableFrom(singleTypes)
 }
 
 // Comparing the return value
 private fun Method.hasBatchReturnTypeOf(method: Method): Boolean {
   if (genericReturnType.isVoid()) return method.genericReturnType.isVoid()
 
-  val returnElementType = genericReturnType.getComponentType()
+  val returnElementType = genericReturnType.getListType()
     ?: throw Exception(
         "A @Batch method must have a return type that is a collection or an array. " +
             "But for the @Batch method ${declaringClass.name}::$name this type is $genericReturnType",
     )
-  return returnElementType.isSameThan(method.genericReturnType)
-}
-
-private fun Type.isArray() = (this is Class<*> && isArray) || (this is GenericArrayType)
-
-// Is type a Collection? We exclude Set that does not preserve the elements
-private fun Type.isList(): Boolean {
-  if (this !is ParameterizedType) return false
-  return rawType == List::class.java
+  return returnElementType.isAssignableFrom(method.genericReturnType)
 }
 
 private fun Type.isObject(): Boolean = if (this is Class<*>) when {
@@ -160,21 +168,15 @@ private fun Type.isObject(): Boolean = if (this is Class<*>) when {
 }
 else false
 
-private fun Type.getComponentType(): Type? {
+private fun Type.getListType(): Type? {
   return when {
-    isArray() -> {
-      when (this) {
-        is Class<*> -> this.componentType
-        is GenericArrayType -> this.genericComponentType
-        else -> thisShouldNotHappen()
-      }
-    }
-
     isList() -> extractBoundType((this as ParameterizedType).actualTypeArguments.first())
-
     else -> null
   }
 }
+
+// Is type a List?
+private fun Type.isList() = (this is ParameterizedType) && (rawType == List::class.java)
 
 // Extracts the bound type for a given type. If the type is a `WildcardType` with upper bounds,
 // it returns the first upper bound; otherwise, it returns the type itself.
@@ -186,6 +188,8 @@ private fun extractBoundType(type: Type) = when (type) {
 
   else -> type
 }
+
+private fun Type.isVoid() = (primitiveToWrapperMap[this] ?: this) == java.lang.Void::class.java
 
 // Map of primitive types and their wrapper
 private val primitiveToWrapperMap = mapOf<Type, Class<*>>(
@@ -201,18 +205,60 @@ private val primitiveToWrapperMap = mapOf<Type, Class<*>>(
     typeOf<Unit>().javaType to java.lang.Void::class.java,
 )
 
-private fun Type.isVoid() = (primitiveToWrapperMap[this] ?: this) == java.lang.Void::class.java
-
-private fun Type.isSameThan(type: Type) =
-    ((primitiveToWrapperMap[this] ?: this) == (primitiveToWrapperMap[type] ?: type))
-
-private fun Type.isSameThan(types: List<Type>): Boolean {
+private fun Type.isAssignableFrom(subType: Type): Boolean {
   return when {
-    isObject() -> (this as Class<*>).getConstructorWith(types) != null
-    else -> when (types.size) {
-      1 -> (this.isSameThan(types.first()))
-      else -> false
+    // Les deux types sont identiques
+    ((primitiveToWrapperMap[this] ?: this) == (primitiveToWrapperMap[subType] ?: subType)) -> true
+
+    // Les deux sont des Class
+    this is Class<*> && subType is Class<*> -> this.isAssignableFrom(subType)
+
+    // Les deux sont des ParameterizedType
+    this is ParameterizedType && subType is ParameterizedType ->
+      this.rawType.isAssignableFrom(subType.rawType)
+
+    // Le this est ParameterizedType et le subType est Class
+    this is ParameterizedType && subType is Class<*> ->
+      this.rawType.isAssignableFrom(subType)
+
+    // Le this est Class et le subType est ParameterizedType
+    this is Class<*> && subType is ParameterizedType ->
+      this.isAssignableFrom(subType.rawType)
+
+    // Les deux sont des TypeVariable
+    this is TypeVariable<*> && subType is TypeVariable<*> ->
+      this.genericDeclaration == subType.genericDeclaration && this.name == subType.name
+
+    // Les deux sont des GenericArrayType
+    this is GenericArrayType && subType is GenericArrayType ->
+      this.genericComponentType.isAssignableFrom(subType.genericComponentType)
+
+    // Le this est GenericArrayType et le subType est un array Class
+    this is GenericArrayType && subType is Class<*> && subType.isArray ->
+      this.genericComponentType.isAssignableFrom(subType.componentType)
+
+    // Le this est Class et représente un array, et le subType est GenericArrayType
+    this is Class<*> && this.isArray && subType is GenericArrayType ->
+      this.componentType.isAssignableFrom(subType.genericComponentType)
+
+    // Le this est WildcardType (le joker)
+    this is WildcardType -> {
+      val upperBounds = this.upperBounds
+      val lowerBounds = this.lowerBounds
+
+      if (upperBounds.isNotEmpty() && upperBounds[0].isAssignableFrom(subType)) true
+      else lowerBounds.isNotEmpty() && lowerBounds[0] == subType
     }
+
+    else -> false
+  }
+}
+
+private fun Type.isAssignableFrom(types: List<Type>): Boolean {
+  if (isObject() && ((this as Class<*>).getConstructorWith(types) != null)) return true
+  return when (types.size) {
+    1 -> (this.isAssignableFrom(types.first()))
+    else -> false
   }
 }
 
@@ -225,10 +271,11 @@ private fun <S> Class<S>.getConstructorWith(types: List<Type>): Constructor<S>? 
   val constructors = declaredConstructors.filter { constructor ->
     (constructor.parameterTypes.size == types.size) &&
         constructor.parameters.map { it.parameterizedType }.zip(types).all { (type, otherType) ->
-          type.isSameThan(otherType)
+          type.isAssignableFrom(otherType)
         }
   }
   val size = constructors.size
+  @Suppress("UNCHECKED_CAST")
   return when {
     size > 1 -> throw Exception("Class $name has $size constructors with the same types ${types.joinToString()}. This is unexpected.")
     size == 1 -> constructors.first() as Constructor<S>

@@ -52,11 +52,11 @@ data class MethodReturnValue(internal val serializedData: SerializedData) {
 /**
  * Serializes the given [MethodReturnValue]
  */
-fun Method.encodeReturnValue(value: Any?) = MethodReturnValue(
+fun Method.encodeReturnValue(value: Any?, type: Type? = null) = MethodReturnValue(
     try {
       SerializedData.encode(
           value,
-          type = genericReturnType,
+          type = type ?: genericReturnType,
           jsonViewClass = jsonViewClass,
       )
     } catch (e: Exception) {

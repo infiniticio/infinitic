@@ -32,7 +32,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.future.future
 import java.util.concurrent.CompletableFuture
 
-class InMemoryTransportConsumer<S : Message>(
+class InMemoryConsumer<S : Message>(
   private val channel: Channel<S>
 ) : TransportConsumer<InMemoryTransportMessage<S>> {
   val scope = CoroutineScope(Dispatchers.IO)
@@ -54,7 +54,7 @@ class InMemoryTransportConsumer<S : Message>(
       scope.future {}
 }
 
-class InMemoryTransportDelayedConsumer<S : Message>(
+class InMemoryDelayedConsumer<S : Message>(
   private val channel: Channel<DelayedMessage<S>>
 ) : TransportConsumer<InMemoryTransportMessage<S>> {
   val scope = CoroutineScope(Dispatchers.IO)

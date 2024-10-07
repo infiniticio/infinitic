@@ -22,13 +22,12 @@
  */
 package io.infinitic.pulsar.consumers
 
-import io.infinitic.common.transport.TransportConsumer
 import org.apache.pulsar.client.api.Consumer
 import java.util.concurrent.CompletableFuture
 
-class PulsarTransportConsumer<E>(
+class PulsarConsumer<E>(
   private val pulsarConsumer: Consumer<E>
-) : TransportConsumer<PulsarTransportMessage<E>> {
+) : io.infinitic.common.transport.TransportConsumer<PulsarTransportMessage<E>> {
   override fun receiveAsync(): CompletableFuture<PulsarTransportMessage<E>> =
       pulsarConsumer.receiveAsync().thenApply { PulsarTransportMessage(it) }
 

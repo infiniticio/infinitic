@@ -26,16 +26,16 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.messages.Message
+import io.infinitic.common.transport.BatchConfig
 import io.infinitic.common.transport.EventListenerSubscription
 import io.infinitic.common.transport.InfiniticConsumer
 import io.infinitic.common.transport.MainSubscription
-import io.infinitic.common.transport.MessageBatchConfig
 import io.infinitic.common.transport.Subscription
 import io.infinitic.common.transport.consumers.ConsumerSharedProcessor
 import io.infinitic.common.transport.consumers.ConsumerUniqueProcessor
 import io.infinitic.pulsar.client.InfiniticPulsarClient
 import io.infinitic.pulsar.config.PulsarConsumerConfig
-import io.infinitic.pulsar.consumers.PulsarTransportConsumer
+import io.infinitic.pulsar.consumers.PulsarConsumer
 import io.infinitic.pulsar.consumers.PulsarTransportMessage
 import io.infinitic.pulsar.resources.PulsarResources
 import io.infinitic.pulsar.resources.defaultName
@@ -64,8 +64,8 @@ class PulsarInfiniticConsumer(
     handler: suspend (S, MillisInstant) -> Unit,
     beforeDlq: (suspend (S?, Exception) -> Unit)?,
     concurrency: Int,
-    getBatchConfig: (suspend (S) -> Result<MessageBatchConfig?>)?,
-    handlerBatch: (suspend (List<S>) -> Unit)?
+    getBatchConfig: (suspend (S) -> Result<BatchConfig?>)?,
+    handlerBatch: (suspend (List<S>, List<MillisInstant>) -> Unit)?
   ): Job {
 
     // Retrieve the name of the topic and of the DLQ topic
@@ -108,7 +108,7 @@ class PulsarInfiniticConsumer(
           }
         }
 
-    fun buildConsumer(index: Int? = null): PulsarTransportConsumer<Envelope<out S>> {
+    fun buildConsumer(index: Int? = null): PulsarConsumer<Envelope<out S>> {
       logger.debug { "Creating consumer ${index?.let { "${it + 1} " } ?: ""}for $topicName" }
       return getConsumer(
           schema = subscription.topic.schema,
@@ -118,7 +118,7 @@ class PulsarInfiniticConsumer(
           subscriptionNameDlq = subscription.nameDLQ,
           subscriptionType = subscription.type,
           consumerName = entity + (index?.let { "-$it" } ?: ""),
-      ).getOrThrow().let { PulsarTransportConsumer(it) }.also {
+      ).getOrThrow().let { PulsarConsumer(it) }.also {
         logger.trace { "Consumer created ${index?.let { "${it + 1} " } ?: ""}for $topicName" }
       }
     }

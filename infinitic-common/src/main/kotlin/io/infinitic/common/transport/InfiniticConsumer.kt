@@ -50,8 +50,8 @@ interface InfiniticConsumer {
     handler: suspend (S, MillisInstant) -> Unit,
     beforeDlq: (suspend (S?, Exception) -> Unit)?,
     concurrency: Int,
-    getBatchConfig: (suspend (S) -> Result<MessageBatchConfig?>)? = null,
-    handlerBatch: (suspend (List<S>) -> Unit)? = null
+    getBatchConfig: (suspend (S) -> Result<BatchConfig?>)? = null,
+    handlerBatch: (suspend (List<S>, List<MillisInstant>) -> Unit)? = null
   ): Job
 
   /**
@@ -73,8 +73,8 @@ interface InfiniticConsumer {
     handler: suspend (S, MillisInstant) -> Unit,
     beforeDlq: (suspend (S?, Exception) -> Unit)?,
     concurrency: Int,
-    getBatchConfig: (suspend (S) -> Result<MessageBatchConfig?>)? = null,
-    handlerBatch: (suspend (List<S>) -> Unit)? = null
+    getBatchConfig: (suspend (S) -> Result<BatchConfig?>)? = null,
+    handlerBatch: (suspend (List<S>, List<MillisInstant>) -> Unit)? = null
   ): Unit = startAsync(
       subscription,
       entity,

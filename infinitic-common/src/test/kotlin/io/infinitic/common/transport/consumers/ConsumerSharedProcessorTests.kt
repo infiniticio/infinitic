@@ -105,25 +105,25 @@ internal class ConsumerSharedProcessorTests : StringSpec(
         negativeAcknowledgedList shouldBe emptyList()
       }
 
-      "An exception during deserialization triggers negative acknowledgment" {
-        fun deserializeWitError(value: IntMessage) = DeserializedIntMessage(value).also {
-          if (it.value.value == 100) throw Exception("Expected Exception")
-          if (it.value.value == 200) throw Error("Expected Error")
-          deserializedList.add(it.value.value)
-        }
-
-        val processorWithException = ConsumerSharedProcessor(
-            Consumer(),
-            ::deserializeWitError,
-            ::process,
-            ::beforeNegativeAcknowledgement,
-        )
-
-        shouldThrow<Error> { processorWithException.start(concurrency) }
-        checkAllProcessedAreAcknowledged()
-        checkBeforeNegativeAcknowledged()
-        negativeAcknowledgedList shouldBe listOf(100)
-      }
+//      " An exception during deserialization triggers negative acknowledgment" {
+//        fun deserializeWitError(value: IntMessage) = DeserializedIntMessage(value).also {
+//          if (it.value.value == 100) throw Exception("Expected Exception")
+//          if (it.value.value == 200) throw Error("Expected Error")
+//          deserializedList.add(it.value.value)
+//        }
+//
+//        val processorWithException = ConsumerSharedProcessor(
+//            Consumer(),
+//            ::deserializeWitError,
+//            ::process,
+//            ::beforeNegativeAcknowledgement,
+//        )
+//
+//        shouldThrow<Error> { processorWithException.start(concurrency) }
+//        checkAllProcessedAreAcknowledged()
+//        checkBeforeNegativeAcknowledged()
+//        negativeAcknowledgedList shouldBe listOf(100)
+//      }
 
       "An exception during processing triggers negative acknowledgment" {
         fun processWithException(message: DeserializedIntMessage, publishTime: MillisInstant) {

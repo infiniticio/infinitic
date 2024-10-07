@@ -26,7 +26,6 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.transport.TransportConsumer
 import io.infinitic.common.transport.TransportMessage
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -52,8 +51,6 @@ abstract class AbstractConsumerProcessor<S : TransportMessage, D : Any>(
     while (currentCoroutineContext().isActive) {
       try {
         emit(receiveAsync().await())
-      } catch (e: CancellationException) {
-        break
       } catch (e: Exception) {
         logger.error(e) { "Error when receiving message from consumer" }
       }
@@ -64,7 +61,9 @@ abstract class AbstractConsumerProcessor<S : TransportMessage, D : Any>(
    * Attempts to deserialize a given transport message.
    * In case of an error, it logs the error, sends a negative acknowledgment, and returns null.
    */
-  protected suspend fun tryDeserialize(message: S): DeserializedMessage<S, D>? = try {
+  protected suspend fun tryDeserialize(
+    message: S
+  ): DeserializedMessage<S, D>? = try {
     DeserializedMessage(
         transportMessage = message,
         deserialized = deserialize(message),
@@ -148,7 +147,7 @@ abstract class AbstractConsumerProcessor<S : TransportMessage, D : Any>(
   /**
    * A data class that holds the original transport message alongside its deserialized content.
    */
-  protected data class DeserializedMessage<S : TransportMessage, D : Any>(
+  data class DeserializedMessage<S : TransportMessage, D : Any>(
     val transportMessage: S,
     val deserialized: D,
   ) {

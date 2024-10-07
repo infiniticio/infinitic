@@ -20,8 +20,21 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.annotations
+package io.infinitic.common.transport
 
-/** Use this annotation to define a timeout duration for tasks */
-@Target(AnnotationTarget.FUNCTION)
-annotation class Batch(val maxMessages: Int, val maxSeconds: Double)
+import io.infinitic.common.data.MillisDuration
+
+/**
+ * Data class representing how a specific message should be batched
+ * Messages with the same [batchKey] will be batched together, it typically represents a task type.
+ * [maxMessages] and [maxDuration] are expected to be always the same for a given [batchKey]
+ */
+data class BatchConfig(
+  val batchKey: String,
+  val maxMessages: Int,
+  val maxDuration: MillisDuration,
+) {
+  companion object {
+    val NONE = BatchConfig("", 1, MillisDuration(0))
+  }
+}

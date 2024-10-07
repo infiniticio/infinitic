@@ -24,9 +24,9 @@ package io.infinitic.inMemory.consumers
 
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.messages.Message
-import io.infinitic.common.transport.TransportMessage
 
-class InMemoryTransportMessage<S : Message>(private val message: S) : TransportMessage {
+class InMemoryTransportMessage<S : Message>(private val message: S) :
+  io.infinitic.common.transport.TransportMessage {
   override val messageId: String = message.messageId.toString()
   override val redeliveryCount: Int = 0
   override val publishTime: MillisInstant = MillisInstant.now()

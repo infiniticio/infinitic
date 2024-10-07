@@ -27,24 +27,57 @@ package io.infinitic.tests.batches
 import io.infinitic.annotations.Batch
 import io.infinitic.annotations.Name
 import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.mockk.InternalPlatformDsl.toArray
+
+fun main() {
+  // BatchServiceImpl::class.java.getBatchMethods().forEach { println(it) }
+  val l: List<Any> = listOf(Input(1, 2), Input(3, 4))
+
+  val m1 = BatchServiceImpl::class.java.methods.filter { it.name == "foo2" }[2]
+  println(m1)
+  println(m1.invoke(BatchServiceImpl(), l))
+
+  val m2 = BatchServiceImpl::class.java.methods.filter { it.name == "bar2" }[0]
+  println(m2)
+  m2.invoke(BatchServiceImpl(), l.toArray())
+}
 
 @Name("batchService")
-interface BatchService {
-  fun add(value: Int): Int
-  fun add2(foo: Int, bar: Int): Int
+internal interface BatchService {
+  fun foo(foo: Int): Int
+  fun foo2(foo: Int, bar: Int): Int
+  fun foo3(input: Input): Int
+  fun foo4(foo: Int): Input
+  fun foo5(input: Input): Input
 }
 
 internal class BatchServiceImpl : BatchService {
 
-  override fun add(value: Int) = thisShouldNotHappen()
+  override fun foo(foo: Int) = thisShouldNotHappen()
+  override fun foo2(foo: Int, bar: Int) = thisShouldNotHappen()
+  override fun foo3(input: Input) = thisShouldNotHappen()
+  override fun foo4(foo: Int) = thisShouldNotHappen()
+  override fun foo5(input: Input) = thisShouldNotHappen()
 
-  override fun add2(foo: Int, bar: Int) = thisShouldNotHappen()
+  @Batch(maxMessages = 10, maxSeconds = 1.0)
+  fun foo(list: List<Int>): List<Int> =
+      List(list.size) { list.sum() }
 
-  @Batch(maxMessage = 10, maxDelaySeconds = 1.0)
-  fun add(list: List<Int>) = List(list.size) { list.sum() }
+  @Batch(maxMessages = 10, maxSeconds = 1.0)
+  fun foo2(list: List<Input>): List<Int> =
+      List(list.size) { list.sumOf { it.sum() } }
 
-  @Batch(maxMessage = 10, maxDelaySeconds = 1.0)
-  fun add2(list: List<Input>) = List(list.size) { list.sumOf { it.sum() } }
+  @Batch(maxMessages = 10, maxSeconds = 1.0)
+  fun foo3(list: List<Input>): List<Int> =
+      List(list.size) { list.sumOf { it.sum() } }
+
+  @Batch(maxMessages = 10, maxSeconds = 1.0)
+  fun foo4(list: List<Int>): List<Input> =
+      list.map { Input(list.sumOf { it }, it) }
+
+  @Batch(maxMessages = 10, maxSeconds = 1.0)
+  fun foo5(list: List<Input>): List<Input> =
+      list.map { Input(list.sumOf { it.sum() }, it.bar) }
 }
 
 internal data class Input(val foo: Int, val bar: Int) {

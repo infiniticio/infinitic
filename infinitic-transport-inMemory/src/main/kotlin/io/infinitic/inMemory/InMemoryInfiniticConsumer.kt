@@ -25,10 +25,10 @@ package io.infinitic.inMemory
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.messages.Message
+import io.infinitic.common.transport.BatchConfig
 import io.infinitic.common.transport.EventListenerSubscription
 import io.infinitic.common.transport.InfiniticConsumer
 import io.infinitic.common.transport.MainSubscription
-import io.infinitic.common.transport.MessageBatchConfig
 import io.infinitic.common.transport.Subscription
 import io.infinitic.common.transport.TransportConsumer
 import io.infinitic.common.transport.acceptDelayed
@@ -36,8 +36,8 @@ import io.infinitic.common.transport.consumers.ConsumerSharedProcessor
 import io.infinitic.common.transport.consumers.ConsumerUniqueProcessor
 import io.infinitic.inMemory.channels.DelayedMessage
 import io.infinitic.inMemory.channels.InMemoryChannels
-import io.infinitic.inMemory.consumers.InMemoryTransportConsumer
-import io.infinitic.inMemory.consumers.InMemoryTransportDelayedConsumer
+import io.infinitic.inMemory.consumers.InMemoryConsumer
+import io.infinitic.inMemory.consumers.InMemoryDelayedConsumer
 import io.infinitic.inMemory.consumers.InMemoryTransportMessage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -58,8 +58,8 @@ class InMemoryInfiniticConsumer(
     handler: suspend (S, MillisInstant) -> Unit,
     beforeDlq: (suspend (S?, Exception) -> Unit)?,
     concurrency: Int,
-    getBatchConfig: (suspend (S) -> Result<MessageBatchConfig?>)?,
-    handlerBatch: (suspend (List<S>) -> Unit)?
+    getBatchConfig: (suspend (S) -> Result<BatchConfig?>)?,
+    handlerBatch: (suspend (List<S>, List<MillisInstant>) -> Unit)?
   ): Job {
 
     val loggedDeserialize: suspend (InMemoryTransportMessage<S>) -> S = { message ->
@@ -78,8 +78,8 @@ class InMemoryInfiniticConsumer(
     fun buildConsumer(index: Int? = null): TransportConsumer<InMemoryTransportMessage<S>> {
       logger.debug { "Creating consumer ${index?.let { "${it + 1} " } ?: ""}on ${subscription.topic} for $entity " }
       return when (subscription.topic.acceptDelayed) {
-        true -> InMemoryTransportDelayedConsumer(subscription.getChannelForDelayed(entity))
-        false -> InMemoryTransportConsumer(subscription.getChannel(entity))
+        true -> InMemoryDelayedConsumer(subscription.getChannelForDelayed(entity))
+        false -> InMemoryConsumer(subscription.getChannel(entity))
       }
     }
 

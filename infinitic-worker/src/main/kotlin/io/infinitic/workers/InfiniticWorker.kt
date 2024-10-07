@@ -85,6 +85,7 @@ import io.infinitic.workers.config.WorkflowConfig
 import io.infinitic.workers.config.WorkflowExecutorConfig
 import io.infinitic.workers.config.WorkflowStateEngineConfig
 import io.infinitic.workers.config.WorkflowTagEngineConfig
+import io.infinitic.workers.config.initBatchMethods
 import io.infinitic.workers.registry.ExecutorRegistry
 import io.infinitic.workflows.Workflow
 import io.infinitic.workflows.engine.WorkflowStateCmdHandler
@@ -409,6 +410,9 @@ class InfiniticWorker(
         "$LOGS_SERVICE_EXECUTOR.${config.serviceName}",
     ).ignoreNull()
 
+    // init batch methods for current factory
+    config.initBatchMethods()
+
     // TASK-EXECUTOR
     val jobExecutor = with(scope) {
       val logger = TaskExecutor.logger
@@ -422,9 +426,11 @@ class InfiniticWorker(
             taskExecutor.handle(message, publishedAt)
           }
 
-      val handlerBatch: suspend (List<ServiceExecutorMessage>) -> Unit =
-          { messages ->
-            //logsEventLogger.logServiceCloudEvent(message, publishedAt, cloudEventSourcePrefix)
+      val handlerBatch: suspend (List<ServiceExecutorMessage>, List<MillisInstant>) -> Unit =
+          { messages, publishedAtList ->
+            messages.zip(publishedAtList).forEach { (message, publishedAt) ->
+              logsEventLogger.logServiceCloudEvent(message, publishedAt, cloudEventSourcePrefix)
+            }
             taskExecutor.handleBatch(messages)
           }
 
