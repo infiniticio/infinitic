@@ -22,7 +22,7 @@
  */
 package io.infinitic.workers;
 
-import io.infinitic.common.workers.config.ExponentialBackoffRetryPolicy;
+import io.infinitic.common.workers.config.WithExponentialBackoffRetry;
 import io.infinitic.storage.config.PostgresStorageConfig;
 import io.infinitic.storage.config.StorageConfig;
 import io.infinitic.transport.config.PulsarTransportConfig;
@@ -49,7 +49,7 @@ class JavaInfiniticWorkerTests {
             StorageConfig storage = PostgresStorageConfig.builder()
                     .setHost("localhost")
                     .setPort(5432)
-                    .setUserName("postgres")
+                    .setUsername("postgres")
                     .setPassword("password")
                     .build();
 
@@ -71,7 +71,7 @@ class JavaInfiniticWorkerTests {
                     .setServiceName("service1")
                     .setConcurrency(3)
                     .setFactory(ServiceA::new)
-                    .withRetry(new ExponentialBackoffRetryPolicy())
+                    .withRetry(new WithExponentialBackoffRetry())
                     .setTimeoutSeconds(4.0)
                     .build();
 

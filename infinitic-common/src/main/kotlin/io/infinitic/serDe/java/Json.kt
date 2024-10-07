@@ -36,8 +36,6 @@ import com.fasterxml.jackson.module.kotlin.KotlinFeature
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.jsonMapper
 import com.sksamuel.hoplite.Secret
-import io.infinitic.workflows.Deferred
-import io.infinitic.workflows.DeferredJacksonSerializer
 import org.apache.avro.specific.SpecificRecordBase
 import java.io.IOException
 import java.util.*
@@ -51,7 +49,6 @@ object Json {
     addModule(KotlinModule.Builder().configure(KotlinFeature.NullIsSameAsDefault, true).build())
     addModule(
         SimpleModule()
-            .addSerializer(Deferred::class.java, DeferredJacksonSerializer())
             .addSerializer(Secret::class.java, SecretSerializer()),
     )
     configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)

@@ -23,6 +23,7 @@
 package io.infinitic.workers.config
 
 import io.infinitic.common.utils.getInstance
+import io.infinitic.common.utils.initBatchMethods
 import io.infinitic.common.workers.config.RetryPolicy
 import io.infinitic.common.workers.config.UNSET_RETRY_POLICY
 import io.infinitic.config.loadFromYamlFile
@@ -34,6 +35,10 @@ import io.infinitic.tasks.WithTimeout
 private typealias ServiceFactory = () -> Any
 
 internal const val UNSET_TIMEOUT = Double.MAX_VALUE
+
+suspend fun ServiceExecutorConfig.initBatchMethods() {
+  factory()::class.java.initBatchMethods()
+}
 
 @Suppress("unused")
 sealed class ServiceExecutorConfig {

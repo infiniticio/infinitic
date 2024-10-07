@@ -55,9 +55,9 @@ import io.infinitic.common.workflows.engine.messages.TaskDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.TimerDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.WaitWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowCanceledEvent
-import io.infinitic.common.workflows.engine.messages.WorkflowCmdMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowCompletedEvent
-import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineCmdMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineEventMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
 import io.infinitic.events.types.CANCEL
 import io.infinitic.events.types.CANCELED
@@ -92,7 +92,7 @@ import io.infinitic.events.types.TIMER_COMPLETED
 import io.infinitic.events.types.TIMER_DISPATCHED
 import io.infinitic.events.types.TYPE_WORKFLOW
 
-internal fun WorkflowCmdMessage.workflowSimpleType(): String? = when (this) {
+internal fun WorkflowStateEngineCmdMessage.workflowSimpleType(): String? = when (this) {
   is DispatchWorkflow -> START
   is DispatchMethod -> START_METHOD
   is CancelWorkflow -> when (workflowMethodId) {
@@ -109,7 +109,7 @@ internal fun WorkflowCmdMessage.workflowSimpleType(): String? = when (this) {
 }
 
 internal fun WorkflowStateEngineMessage.workflowSimpleType(): String? = when (this) {
-  is WorkflowCmdMessage -> null
+  is WorkflowStateEngineCmdMessage -> null
   is RemoteTimerCompleted -> TIMER_COMPLETED
   is RemoteMethodCompleted -> REMOTE_METHOD_COMPLETED
   is RemoteMethodCanceled -> REMOTE_METHOD_CANCELED
@@ -133,7 +133,7 @@ internal fun WorkflowStateEngineMessage.workflowSimpleType(): String? = when (th
   }
 }
 
-internal fun WorkflowEventMessage.workflowSimpleType(): String = when (this) {
+internal fun WorkflowStateEngineEventMessage.workflowSimpleType(): String = when (this) {
   is WorkflowCompletedEvent -> ENDED
   is WorkflowCanceledEvent -> CANCELED
   is MethodCommandedEvent -> START_METHOD
@@ -154,10 +154,11 @@ internal fun WorkflowEventMessage.workflowSimpleType(): String = when (this) {
 }
 
 
-fun WorkflowCmdMessage.workflowType(): String? =
+fun WorkflowStateEngineCmdMessage.workflowType(): String? =
     this.workflowSimpleType()?.let { "$TYPE_WORKFLOW.$it" }
 
 fun WorkflowStateEngineMessage.workflowType(): String? =
     this.workflowSimpleType()?.let { "$TYPE_WORKFLOW.$it" }
 
-fun WorkflowEventMessage.workflowType(): String = "$TYPE_WORKFLOW." + workflowSimpleType()
+fun WorkflowStateEngineEventMessage.workflowType(): String =
+    "$TYPE_WORKFLOW." + workflowSimpleType()

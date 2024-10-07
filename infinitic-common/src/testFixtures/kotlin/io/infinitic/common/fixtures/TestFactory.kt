@@ -22,6 +22,7 @@
  */
 package io.infinitic.common.fixtures
 
+import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.Version
 import io.infinitic.common.data.methods.MethodArgs
 import io.infinitic.common.serDe.SerializedData
@@ -35,7 +36,7 @@ import io.infinitic.common.workflows.data.steps.Step
 import io.infinitic.common.workflows.data.steps.StepStatus
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEventEnvelope
-import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineEventMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
 import org.jeasy.random.EasyRandom
 import org.jeasy.random.EasyRandomParameters
@@ -85,7 +86,7 @@ object TestFactory {
           WorkflowEngineEnvelope.from(random(sub))
         }
         .randomize(WorkflowEventEnvelope::class.java) {
-          val sub = WorkflowEventMessage::class.sealedSubclasses.shuffled().first()
+          val sub = WorkflowStateEngineEventMessage::class.sealedSubclasses.shuffled().first()
           WorkflowEventEnvelope.from(random(sub))
         }
         .randomize(ServiceEventEnvelope::class.java) {
@@ -96,6 +97,7 @@ object TestFactory {
           val sub = DeferredError::class.sealedSubclasses.shuffled().first()
           random(sub)
         }
+        .randomize(MessageId::class.java) { MessageId() }
 
     values?.forEach { parameters.randomize(FieldPredicates.named(it.key), Randomizer { it.value }) }
 

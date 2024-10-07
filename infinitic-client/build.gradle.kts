@@ -21,13 +21,14 @@
  * Licensor: infinitic.io
  */
 dependencies {
-  implementation(project(":infinitic-utils"))
   api(project(":infinitic-common"))
   api(project(":infinitic-transport"))
+  implementation(project(":infinitic-utils"))
 
   implementation(Libs.Coroutines.core)
   implementation(Libs.Coroutines.jdk8)
 
+  testImplementation(project(":infinitic-transport-inMemory"))
   testImplementation(Libs.Serialization.json)
 }
 

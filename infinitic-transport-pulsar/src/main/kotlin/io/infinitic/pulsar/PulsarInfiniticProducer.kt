@@ -22,46 +22,44 @@
  */
 package io.infinitic.pulsar
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.MillisDuration
+import io.infinitic.common.messages.Envelope
 import io.infinitic.common.messages.Message
 import io.infinitic.common.transport.ClientTopic
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.transport.NamingTopic
 import io.infinitic.common.transport.Topic
-import io.infinitic.pulsar.producers.Producer
+import io.infinitic.pulsar.client.InfiniticPulsarClient
+import io.infinitic.pulsar.config.PulsarProducerConfig
 import io.infinitic.pulsar.resources.PulsarResources
 import io.infinitic.pulsar.resources.envelope
 import io.infinitic.pulsar.resources.initWhenProducing
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.future.await
 import org.apache.pulsar.client.api.PulsarClientException.AlreadyClosedException
 import org.apache.pulsar.client.api.PulsarClientException.TopicDoesNotExistException
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit
 
 class PulsarInfiniticProducer(
-  private val producer: Producer,
+  private val client: InfiniticPulsarClient,
+  private val pulsarProducerConfig: PulsarProducerConfig,
   private val pulsarResources: PulsarResources
 ) : InfiniticProducer {
 
   private var suggestedName: String? = null
 
-  // If [suggestedName] is provided, we check that no other is connected with it
-  // If [suggestedName] is not provided, Pulsar will provide a unique name
-  private val uniqueName: String by lazy {
-    runBlocking(Dispatchers.IO) {
-      val namingTopic = with(pulsarResources) {
-        NamingTopic.forEntity(null, init = true, checkConsumer = false)
-      }
-      // Get unique name
-      producer.getUniqueName(namingTopic, suggestedName).getOrThrow()
-    }
+  override fun setSuggestedName(name: String) {
+    suggestedName = name
   }
 
-  // (if set, must be done before sending the first message)
-  override var name: String
-    get() = uniqueName
-    set(value) {
-      suggestedName = value
+  override suspend fun getName(): String {
+    val namingTopic = with(pulsarResources) {
+      NamingTopic.forEntity(null, init = true, checkConsumer = false)
     }
+    // Get unique name
+    return client.getUniqueName(namingTopic, suggestedName).getOrThrow()
+  }
 
   override suspend fun <T : Message> internalSendTo(
     message: T,
@@ -70,18 +68,18 @@ class PulsarInfiniticProducer(
   ) {
     val topicFullName = with(pulsarResources) {
       topic.forEntity(
-          message.entity(),
+          entity = message.entity(),
           init = topic.initWhenProducing,
           checkConsumer = true,
       )
     }
 
     return try {
-      producer.send(
+      sendEnvelope(
           topic.envelope(message),
           after,
           topicFullName,
-          name,
+          getName(),
           key = message.key(),
       )
     } catch (e: Exception) {
@@ -90,11 +88,53 @@ class PulsarInfiniticProducer(
     }
   }
 
+  internal suspend fun sendEnvelope(
+    envelope: Envelope<out Message>,
+    after: MillisDuration,
+    topic: String,
+    producerName: String,
+    key: String? = null
+  ): Unit = sendEnvelopeAsync(envelope, after, topic, producerName, key).await()
+
+  internal fun sendEnvelopeAsync(
+    envelope: Envelope<out Message>,
+    after: MillisDuration,
+    topic: String,
+    producerName: String,
+    key: String? = null
+  ): CompletableFuture<Unit> {
+
+    val producer = client
+        .getProducer(topic, envelope::class, producerName, pulsarProducerConfig, key)
+        .getOrElse { return CompletableFuture.failedFuture(it) }
+
+    logger.trace { "Sending${if (after > 0) " after $after ms" else ""} to topic '$topic' with key '$key': '$envelope'" }
+
+    return producer
+        .newMessage()
+        .value(envelope)
+        .also {
+          if (key != null) {
+            it.key(key)
+          }
+          if (after > 0) {
+            it.deliverAfter(after.millis, TimeUnit.MILLISECONDS)
+          }
+        }
+        .sendAsync()
+        // remove MessageId from the completed CompletableFuture
+        .thenApply { }
+  }
+
   private fun Topic<*>.canIgnore(e: Exception): Boolean = when (this) {
-    // If response topic does not exist, it means the client closed
+    // If response topic does not exist, it means the client has closed
     // If producer is already closed, it means that the topics existed, was used, but does not exist anymore
     // in those cases, we are ok not to send this message
     is ClientTopic -> (e is TopicDoesNotExistException || e is AlreadyClosedException)
     else -> false
+  }
+
+  companion object {
+    val logger = KotlinLogging.logger {}
   }
 }

@@ -37,6 +37,7 @@ import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.transport.logged.LoggedInfiniticConsumer
 import io.infinitic.common.transport.logged.LoggedInfiniticProducer
+import io.infinitic.common.transport.logged.LoggedInfiniticResources
 import io.infinitic.common.utils.annotatedName
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
@@ -63,14 +64,14 @@ class InfiniticClient(
 ) : InfiniticClientInterface {
 
   private val resources by lazy {
-    config.transport.resources
+    LoggedInfiniticResources(logger, config.transport.resources)
   }
   private val consumer by lazy {
     LoggedInfiniticConsumer(logger, config.transport.consumer)
   }
   private val producer by lazy {
     LoggedInfiniticProducer(logger, config.transport.producer).apply {
-      config.name?.let { name = it }
+      config.name?.let { setSuggestedName(it) }
     }
   }
 
@@ -79,11 +80,11 @@ class InfiniticClient(
   private var isClosed: AtomicBoolean = AtomicBoolean(false)
 
   // Scope used to asynchronously send message, and also to consumes messages
-  private val clientScope = CoroutineScope(Dispatchers.IO)
+  internal val clientScope = CoroutineScope(Dispatchers.IO)
 
-  private val dispatcher by lazy { ClientDispatcher(clientScope, consumer, producer) }
+  private val dispatcher by lazy { ClientDispatcher(clientScope, consumer, producer, logger) }
 
-  override val name by lazy { producer.name }
+  override suspend fun getName() = producer.getName()
 
   /** Get last Deferred created by the call of a stub */
   override val lastDeferred get() = dispatcher.getLastDeferred()
@@ -103,7 +104,7 @@ class InfiniticClient(
                 "Some ongoing messages may not have been sent properly."
           }
         } finally {
-          deleteClientTopics()
+          deleteClientTopic()
           config.transport.close()
         }
       }
@@ -112,11 +113,12 @@ class InfiniticClient(
   }
 
   /**
-   * Deletes the topics associated with the client
+   * Deletes the topic associated with the client
    * (Do NOT delete the client DLQ topic to allow manual inspection of failed messages)
    */
-  private suspend fun deleteClientTopics() {
+  private suspend fun deleteClientTopic() {
     if (::consumer.isLazyInitialized) {
+      val name = getName()
       resources.deleteTopicForClient(name).getOrElse {
         logger.warn(it) { "Unable to delete topic for client $name, please delete it manually." }
       }?.let {

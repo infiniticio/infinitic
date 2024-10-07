@@ -23,6 +23,7 @@
 package io.infinitic.common.utils
 
 import com.fasterxml.jackson.annotation.JsonView
+import io.infinitic.annotations.Batch
 import io.infinitic.annotations.CheckMode
 import io.infinitic.annotations.Delegated
 import io.infinitic.annotations.Name
@@ -30,6 +31,7 @@ import io.infinitic.annotations.Retry
 import io.infinitic.annotations.Timeout
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.common.transport.BatchConfig
 import io.infinitic.exceptions.tasks.NoMethodFoundWithParameterCountException
 import io.infinitic.exceptions.tasks.NoMethodFoundWithParameterTypesException
 import io.infinitic.exceptions.tasks.TooManyMethodsFoundWithParameterCountException
@@ -40,6 +42,8 @@ import io.infinitic.tasks.millis
 import io.infinitic.workflows.WorkflowCheckMode
 import io.mockk.every
 import io.mockk.mockkClass
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.jetbrains.annotations.TestOnly
 import java.lang.reflect.Constructor
 import java.lang.reflect.Method
@@ -52,6 +56,7 @@ import kotlin.reflect.jvm.javaMethod
 
 private val cachesList
   get() = listOf(
+      batchMethodCache,
       methodsCache,
       methodNameCache,
       classSimpleNameCache,
@@ -77,16 +82,226 @@ fun Class<*>.getMethodPerNameAndParameters(
   parametersCount: Int
 ): Method = methodsCache.getOrPut(getCacheKey(this, methodName, parameterTypes, parametersCount)) {
   when (parameterTypes) {
-    null ->
-      getMethodPerAnnotationAndParametersCount(methodName, parametersCount)
-        ?: getMethodPerNameAndParameterCount(methodName, parametersCount)
-        ?: throw NoMethodFoundWithParameterCountException(name, methodName, parametersCount)
+    null -> getMethodPerAnnotationAndParameterCount(methodName, parametersCount)
+      ?: getMethodPerNameAndParameterCount(methodName, parametersCount)
+      ?: throw NoMethodFoundWithParameterCountException(name, methodName, parametersCount)
 
-    else ->
-      getMethodPerAnnotationAndParameterTypes(methodName, parameterTypes)
-        ?: getMethodPerNameAndParameterTypes(methodName, parameterTypes)
-        ?: throw NoMethodFoundWithParameterTypesException(name, methodName, parameterTypes)
+    else -> getMethodPerAnnotationAndParameterTypes(methodName, parameterTypes)
+      ?: getMethodPerNameAndParameterTypes(methodName, parameterTypes)
+      ?: throw NoMethodFoundWithParameterTypesException(name, methodName, parameterTypes)
   }
+}
+
+/**
+ * Get an instance of a class by name
+ */
+fun String.getInstance(
+  classNotFound: String = this.classNotFound,
+  errorClass: String = this.errorClass,
+  noEmptyConstructor: String = this.noEmptyConstructor,
+  constructorError: String = this.constructorError,
+  instanceError: String = this.instanceError
+): Result<Any> = getClass(classNotFound, errorClass)
+    .getOrElse { return Result.failure(it) }
+    .getInstance(noEmptyConstructor, constructorError, instanceError)
+    .getOrElse { return Result.failure(it) }
+    .let { Result.success(it) }
+
+/**
+ * Get a class by name
+ */
+fun String.getClass(
+  classNotFound: String = this.classNotFound,
+  errorClass: String = this.errorClass,
+): Result<Class<*>> = try {
+  Result.success(Class.forName(this))
+} catch (e: ClassNotFoundException) {
+  Result.failure(IllegalArgumentException(classNotFound))
+} catch (e: Exception) {
+  Result.failure(IllegalArgumentException(errorClass, e))
+}
+
+/**
+ * Check if a class can be an implementation of a service or workflow by name
+ * This is used as a health check when registering a service or workflow in workers
+ */
+fun Class<*>.isImplementationOf(name: String): Boolean {
+  var klass = this
+
+  do {
+    klass.interfaces.forEach {
+      if (name == it.annotatedName) return true
+    }
+    // Look for the name on the superclass
+    klass = klass.superclass ?: break
+
+  } while (true)
+
+  return false
+}
+
+/**
+ * Return the name of a class, or its @Name annotation if any
+ */
+internal val classNameCache = ConcurrentHashMap<Class<*>, String>()
+
+val Class<*>.annotatedName: String
+  get() = classNameCache.getOrPut(this) {
+    // Use @Name annotation if any
+    findAnnotation(Name::class.java)?.name
+    // else use class name
+      ?: name
+  }
+
+/**
+ * Get the CheckMode of a method (if any)
+ */
+
+internal val workflowCheckModeCache = ConcurrentHashMap<Method, Optional<WorkflowCheckMode>>()
+
+val Method.checkMode: WorkflowCheckMode?
+  get() = workflowCheckModeCache.getOrPut(this) {
+    when (val mode = findCheckMode()) {
+      null -> Optional.empty()
+      else -> Optional.of(mode)
+    }
+  }.getOrNull()
+
+/**
+ * Return the "fullMethodName" used in workflow task to detect workflow changes
+ * This must NOT change as it could trigger false positive in change detection
+ */
+fun Class<*>.getFullMethodName(method: Method) =
+    "${findAnnotatedSimpleName()}::${method.annotatedName}"
+
+/**
+ * Return the name of a method, or its @Name annotation if any
+ */
+internal val methodNameCache = ConcurrentHashMap<Method, String>()
+
+val Method.annotatedName: String
+  get() = methodNameCache.getOrPut(this) {
+    // Use @Name annotation if any
+    findAnnotation(Name::class.java)?.name
+    // else use method name
+      ?: name
+  }
+
+/**
+ * Get the batchMethod of a method (if any)
+ */
+internal val batchMethodCache = mutableMapOf<Method, BatchMethod?>()
+
+private val batchMethodMutex = Mutex()
+
+fun Method.getBatchMethod(): BatchMethod? = batchMethodCache[this]
+
+suspend fun Class<*>.initBatchMethods() {
+  // Retrieve the list of BatchMethod for the class
+  val batchMethodList = getBatchMethods()
+  // Update the cache with all methods of the class
+  batchMethodMutex.withLock {
+    getAllMethods().forEach { method ->
+      batchMethodCache[method] = batchMethodList.firstOrNull { it.single == method }
+    }
+  }
+}
+
+fun Method.getBatchConfig(): BatchConfig? {
+  // Retrieve the method annotated as batch, if it exists
+  val batchMethod = getBatchMethod() ?: return null
+
+  // Find the @Batch annotation on this method
+  val batchAnnotation = batchMethod.batch.findAnnotation(Batch::class.java) ?: thisShouldNotHappen()
+
+  // Create and return an instance of MessageBatchConfig from the annotation
+  return BatchConfig(
+      batchKey = toUniqueString(),
+      maxMessages = batchAnnotation.maxMessages,
+      maxDuration = MillisDuration((batchAnnotation.maxSeconds * 1000).toLong()),
+  )
+}
+
+private fun Method.toUniqueString(): String {
+  val className = declaringClass.name
+  val methodName = name
+  val parameterTypes = parameters.joinToString(separator = ",") { it.type.name }
+  return "$className.$methodName($parameterTypes)"
+}
+
+/**
+ * Get the WithRetry instance of a method (if any)
+ */
+internal val methodWithRetryCache = ConcurrentHashMap<Method, Result<WithRetry?>>()
+
+val Method.withRetry: Result<WithRetry?>
+  get() = methodWithRetryCache.getOrPut(this) {
+    findWithRetryClass()?.getInstance()?.getOrElse { return Result.failure(it) }
+        ?.let { Result.success(it) }
+      ?: Result.success(null)
+  }
+
+/**
+ * Get the WithTimeout instance of a method (if any)
+ * This method MUST be call with a klass that is not an interface
+ */
+internal val methodWithTimeoutCache = ConcurrentHashMap<Method, Result<WithTimeout?>>()
+
+@Suppress("UNCHECKED_CAST")
+val Method.withTimeout: Result<WithTimeout?>
+  get() = methodWithTimeoutCache.getOrPut(this) {
+    (findWithTimeoutClassByAnnotation()
+      ?: when (WithTimeout::class.java.isAssignableFrom(declaringClass)) {
+        true -> declaringClass as Class<out WithTimeout>
+        false -> null
+      })?.getInstance() ?: Result.success(null)
+  }
+
+/**
+ * Returns true if this method has the [Delegated] annotation
+ */
+internal val methodIsDelegatedCache = ConcurrentHashMap<Method, Boolean>()
+
+val Method.isDelegated: Boolean
+  get() = methodIsDelegatedCache.getOrPut(this) {
+    findAnnotation(Delegated::class.java) != null
+  }
+
+/**
+ * Get the WithTimeout instance of a method (if any)
+ */
+fun <T : Any> Method.getMillisDuration(klass: Class<T>): Result<MillisDuration?> {
+  val millis: Long? = (timeoutInMillis ?: klass.timeoutInMillis)
+      ?.getOrElse { return Result.failure(it) }
+
+  return Result.success(millis?.let { MillisDuration(it) })
+}
+
+/**
+ * Retrieves all methods declared in the current class and its superclasses.
+ * This includes private methods from the current class and public or protected methods from its superclasses.
+ */
+fun Class<*>.getAllMethods(): List<Method> {
+  val methods = mutableSetOf<Method>()
+
+  // Add all declared methods (including private) of the current class
+  methods.addAll(this.declaredMethods)
+
+  // Traverse superclass hierarchy to add public and protected methods
+  var current: Class<*>? = this.superclass
+  while (current != null && current != Any::class.java) {
+    current.declaredMethods
+        .filter { method ->
+          java.lang.reflect.Modifier.isPublic(method.modifiers) ||
+              java.lang.reflect.Modifier.isProtected(method.modifiers)
+        }
+        .forEach { method ->
+          methods.add(method)
+        }
+    current = current.superclass
+  }
+
+  return methods.toList()
 }
 
 private fun getCacheKey(
@@ -139,7 +354,7 @@ private fun Class<*>.getMethodPerNameAndParameterTypes(
   null
 }
 
-private fun Class<*>.getMethodPerAnnotationAndParametersCount(
+private fun Class<*>.getMethodPerAnnotationAndParameterCount(
   methodName: String,
   parameterCount: Int
 ): Method? {
@@ -166,7 +381,7 @@ private fun Class<*>.getMethodPerAnnotationAndParametersCount(
 
     // has any of the interfaces a method with @Name annotation and right count of parameters?
     klass.interfaces.forEach { `interface` ->
-      `interface`.getMethodPerAnnotationAndParametersCount(methodName, parameterCount)?.also {
+      `interface`.getMethodPerAnnotationAndParameterCount(methodName, parameterCount)?.also {
         return it
       }
     }
@@ -207,75 +422,6 @@ private fun classForName(name: String): Class<out Any> =
       else -> Class.forName(name)
     }
 
-
-/**
- * Get an instance of a class by name
- */
-fun String.getInstance(
-  classNotFound: String = this.classNotFound,
-  errorClass: String = this.errorClass,
-  noEmptyConstructor: String = this.noEmptyConstructor,
-  constructorError: String = this.constructorError,
-  instanceError: String = this.instanceError
-): Result<Any> = getClass(classNotFound, errorClass)
-    .getOrElse { return Result.failure(it) }
-    .getInstance(noEmptyConstructor, constructorError, instanceError)
-    .getOrElse { return Result.failure(it) }
-    .let { Result.success(it) }
-
-/**
- * Get a class by name
- */
-fun String.getClass(
-  classNotFound: String = this.classNotFound,
-  errorClass: String = this.errorClass,
-): Result<Class<*>> = try {
-  Result.success(Class.forName(this))
-} catch (e: ClassNotFoundException) {
-  Result.failure(IllegalArgumentException(classNotFound))
-} catch (e: Exception) {
-  Result.failure(IllegalArgumentException(errorClass, e))
-}
-
-/**
- * Check if a class can be an implementation of a service or workflow by name
- * This is used as a health check when registering a service or workflow in workers
- */
-fun Class<*>.isImplementationOf(name: String): Boolean {
-  var klass = this
-
-  do {
-    klass.interfaces.forEach {
-      if (name == it.annotatedName) return true
-    }
-    // Look for the name on the superclass
-    klass = klass.superclass ?: break
-
-  } while (true)
-
-  return false
-}
-
-/**
- * Return the "fullMethodName" used in workflow task to detect workflow changes
- * This must NOT change as it could trigger false positive in change detection
- */
-fun Class<*>.getFullMethodName(method: Method) =
-    "${findAnnotatedSimpleName()}::${method.annotatedName}"
-
-/**
- * Return the name of a method, or its @Name annotation if any
- */
-internal val methodNameCache = ConcurrentHashMap<Method, String>()
-
-val Method.annotatedName: String
-  get() = methodNameCache.getOrPut(this) {
-    // Use @Name annotation if any
-    findAnnotation(Name::class.java)?.name
-    // else use method name
-      ?: name
-  }
-
 /**
  * Return the simple name of a class, or its @Name annotation if any
  */
@@ -288,32 +434,6 @@ private fun Class<*>.findAnnotatedSimpleName(): String = classSimpleNameCache.ge
     ?: simpleName
 }
 
-/**
- * Return the name of a class, or its @Name annotation if any
- */
-internal val classNameCache = ConcurrentHashMap<Class<*>, String>()
-
-val Class<*>.annotatedName: String
-  get() = classNameCache.getOrPut(this) {
-    // Use @Name annotation if any
-    findAnnotation(Name::class.java)?.name
-    // else use class name
-      ?: name
-  }
-
-/**
- * Get the CheckMode of a method (if any)
- */
-
-internal val workflowCheckModeCache = ConcurrentHashMap<Method, Optional<WorkflowCheckMode>>()
-
-val Method.checkMode: WorkflowCheckMode?
-  get() = workflowCheckModeCache.getOrPut(this) {
-    when (val mode = findCheckMode()) {
-      null -> Optional.empty()
-      else -> Optional.of(mode)
-    }
-  }.getOrNull()
 
 private fun Method.findCheckMode(): WorkflowCheckMode? =
     // look for @CheckMode annotation on this method
@@ -321,53 +441,6 @@ private fun Method.findCheckMode(): WorkflowCheckMode? =
     // else look for @CheckMode annotation on the class
       ?: declaringClass::class.java.getAnnotation(CheckMode::class.java)?.mode
 
-/**
- * Get the WithRetry instance of a method (if any)
- */
-internal val methodWithRetryCache = ConcurrentHashMap<Method, Result<WithRetry?>>()
-
-val Method.withRetry: Result<WithRetry?>
-  get() = methodWithRetryCache.getOrPut(this) {
-    findWithRetryClass()?.getInstance()?.getOrElse { return Result.failure(it) }
-        ?.let { Result.success(it) }
-      ?: Result.success(null)
-  }
-
-/**
- * Get the WithTimeout instance of a method (if any)
- * This method MUST be call with a klass that is not an interface
- */
-internal val methodWithTimeoutCache = ConcurrentHashMap<Method, Result<WithTimeout?>>()
-
-@Suppress("UNCHECKED_CAST")
-val Method.withTimeout: Result<WithTimeout?>
-  get() = methodWithTimeoutCache.getOrPut(this) {
-    (findWithTimeoutClassByAnnotation()
-      ?: when (WithTimeout::class.java.isAssignableFrom(declaringClass)) {
-        true -> declaringClass as Class<out WithTimeout>
-        false -> null
-      })?.getInstance() ?: Result.success(null)
-  }
-
-/**
- * Returns true if this method has the [Delegated] annotation
- */
-internal val methodIsDelegatedCache = ConcurrentHashMap<Method, Boolean>()
-
-val Method.isDelegated: Boolean
-  get() = methodIsDelegatedCache.getOrPut(this) {
-    findAnnotation(Delegated::class.java) != null
-  }
-
-/**
- * Get the WithTimeout instance of a method (if any)
- */
-fun <T : Any> Method.getMillisDuration(klass: Class<T>): Result<MillisDuration?> {
-  val millis: Long? = (timeoutInMillis ?: klass.timeoutInMillis)
-      ?.getOrElse { return Result.failure(it) }
-
-  return Result.success(millis?.let { MillisDuration(it) })
-}
 
 /**
  * Returns the timeout of a method as defined by its @Timeout annotation

@@ -49,7 +49,7 @@ import kotlinx.serialization.json.JsonObject
 fun ServiceExecutorMessage.toJson() = when (this) {
   is ExecuteTask -> JsonObject(
       mapOf(
-          TASK_ARGS to methodParameters.toJson(),
+          TASK_ARGS to methodArgs.toJson(),
           TASK_RETRY_SEQUENCE to taskRetrySequence.toJson(),
           TASK_RETRY_INDEX to taskRetryIndex.toJson(),
           SERVICE_NAME to serviceName.toJson(),

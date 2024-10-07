@@ -25,10 +25,12 @@ package io.infinitic.pulsar.client
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.messages.Message
-import io.infinitic.pulsar.consumers.ConsumerConfig
-import io.infinitic.pulsar.producers.ProducerConfig
+import io.infinitic.pulsar.config.PulsarConsumerConfig
+import io.infinitic.pulsar.config.PulsarProducerConfig
 import io.infinitic.pulsar.schemas.schemaDefinition
 import kotlinx.coroutines.future.await
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.apache.pulsar.client.api.BatcherBuilder
 import org.apache.pulsar.client.api.Consumer
 import org.apache.pulsar.client.api.DeadLetterPolicy
@@ -43,11 +45,13 @@ import java.util.concurrent.TimeUnit
 import kotlin.reflect.KClass
 
 
-class PulsarInfiniticClient(private val pulsarClient: PulsarClient) {
+class InfiniticPulsarClient(private val pulsarClient: PulsarClient) {
 
   private val logger = KotlinLogging.logger {}
 
   private lateinit var name: String
+
+  private val nameMutex = Mutex()
 
   /**
    * Useful to check the uniqueness of a connected producer's name or to provide a unique name
@@ -55,40 +59,29 @@ class PulsarInfiniticClient(private val pulsarClient: PulsarClient) {
   suspend fun getUniqueName(namerTopic: String, proposedName: String?): Result<String> {
     if (::name.isInitialized) return Result.success(name)
 
-    // this consumer must stay active until client is closed
-    // to prevent other clients to use the same name
-    name = try {
-      pulsarClient
-          .newProducer()
-          .topic(namerTopic)
-          .also {
-            proposedName?.let { name -> it.producerName(name) }
-          }
-          .createAsync()
-          .await()
-          .producerName
-    } catch (e: PulsarClientException) {
-      // if the producer name is already taken
-      // the exception will be PulsarClientException.ProducerBusyException
-      return Result.failure(e)
+    return nameMutex.withLock {
+      if (::name.isInitialized) return Result.success(name)
+
+      // this consumer must stay active until client is closed
+      // to prevent other clients to use the same name
+      name = try {
+        pulsarClient
+            .newProducer()
+            .topic(namerTopic)
+            .also {
+              proposedName?.let { name -> it.producerName(name) }
+            }
+            .createAsync()
+            .await()
+            .producerName
+      } catch (e: PulsarClientException) {
+        // if the producer name is already taken
+        // the exception will be PulsarClientException.ProducerBusyException
+        return Result.failure(e)
+      }
+
+      Result.success(name)
     }
-
-    return Result.success(name)
-  }
-
-  /**
-   * Closes a consumer and removes it from the list of consumers.
-   *
-   * @param consumer The consumer to close.
-   * @return Result of the close operation.
-   *         - Result.success(Unit) if the consumer was closed successfully.
-   *         - Result.failure(e) if an error occurred during the close operation.
-   */
-  fun closeConsumer(consumer: Consumer<*>): Result<Unit> = try {
-    consumer.close()
-    Result.success(Unit)
-  } catch (e: PulsarClientException) {
-    Result.failure(e)
   }
 
   /**
@@ -102,14 +95,14 @@ class PulsarInfiniticClient(private val pulsarClient: PulsarClient) {
     topic: String,
     schemaClass: KClass<out Envelope<out Message>>,
     producerName: String,
-    producerConfig: ProducerConfig,
+    pulsarProducerConfig: PulsarProducerConfig,
     key: String? = null,
   ): Result<Producer<Envelope<out Message>>> {
     // get producer if it already exists
     return try {
       Result.success(
           producers.computeIfAbsent(topic) {
-            createProducer(topic, schemaClass, producerName, producerConfig, key)
+            createProducer(topic, schemaClass, producerName, pulsarProducerConfig, key)
           },
       )
     } catch (e: PulsarClientException) {
@@ -122,7 +115,7 @@ class PulsarInfiniticClient(private val pulsarClient: PulsarClient) {
     topic: String,
     schemaClass: KClass<out Envelope<out Message>>,
     producerName: String,
-    producerConfig: ProducerConfig,
+    pulsarProducerConfig: PulsarProducerConfig,
     key: String? = null,
   ): Producer<Envelope<out Message>> {
     // otherwise create it
@@ -138,80 +131,80 @@ class PulsarInfiniticClient(private val pulsarClient: PulsarClient) {
     with(builder) {
       key?.also { batcherBuilder(BatcherBuilder.KEY_BASED) }
 
-      producerConfig.autoUpdatePartitions?.also {
+      pulsarProducerConfig.autoUpdatePartitions?.also {
         logger.info { "Producer $producerName: autoUpdatePartitions=$it" }
         autoUpdatePartitions(it)
       }
-      producerConfig.autoUpdatePartitionsIntervalSeconds?.also {
+      pulsarProducerConfig.autoUpdatePartitionsIntervalSeconds?.also {
         logger.info { "Producer $producerName: autoUpdatePartitionsInterval=$it" }
         autoUpdatePartitionsInterval((it * 1000).toInt(), TimeUnit.MILLISECONDS)
       }
-      producerConfig.batchingMaxBytes?.also {
+      pulsarProducerConfig.batchingMaxBytes?.also {
         logger.info { "Producer $producerName: batchingMaxBytes=$it" }
         batchingMaxBytes(it)
       }
-      producerConfig.batchingMaxMessages?.also {
+      pulsarProducerConfig.batchingMaxMessages?.also {
         logger.info { "Producer $producerName: batchingMaxMessages=$it" }
         batchingMaxMessages(it)
       }
-      producerConfig.batchingMaxPublishDelaySeconds?.also {
+      pulsarProducerConfig.batchingMaxPublishDelaySeconds?.also {
         logger.info { "Producer $producerName: batchingMaxPublishDelay=$it" }
         batchingMaxPublishDelay((it * 1000).toLong(), TimeUnit.MILLISECONDS)
       }
-      producerConfig.compressionType?.also {
+      pulsarProducerConfig.compressionType?.also {
         logger.info { "Producer $producerName: compressionType=$it" }
         compressionType(it)
       }
-      producerConfig.cryptoFailureAction?.also {
+      pulsarProducerConfig.cryptoFailureAction?.also {
         logger.info { "Producer $producerName: cryptoFailureAction=$it" }
         cryptoFailureAction(it)
       }
-      producerConfig.defaultCryptoKeyReader?.also {
+      pulsarProducerConfig.defaultCryptoKeyReader?.also {
         logger.info { "Producer $producerName: defaultCryptoKeyReader=$it" }
         defaultCryptoKeyReader(it)
       }
-      producerConfig.encryptionKey?.also {
+      pulsarProducerConfig.encryptionKey?.also {
         logger.info { "Producer $producerName: addEncryptionKey=$it" }
         addEncryptionKey(it)
       }
-      producerConfig.enableBatching?.also {
+      pulsarProducerConfig.enableBatching?.also {
         logger.info { "Producer $producerName: enableBatching=$it" }
         enableBatching(it)
       }
-      producerConfig.enableChunking?.also {
+      pulsarProducerConfig.enableChunking?.also {
         logger.info { "Producer $producerName: enableChunking=$it" }
         enableChunking(it)
       }
-      producerConfig.enableLazyStartPartitionedProducers?.also {
+      pulsarProducerConfig.enableLazyStartPartitionedProducers?.also {
         logger.info { "Producer $producerName: enableLazyStartPartitionedProducers=$it" }
         enableLazyStartPartitionedProducers(it)
       }
-      producerConfig.enableMultiSchema?.also {
+      pulsarProducerConfig.enableMultiSchema?.also {
         logger.info { "Producer $producerName: enableMultiSchema=$it" }
         enableMultiSchema(it)
       }
-      producerConfig.hashingScheme?.also {
+      pulsarProducerConfig.hashingScheme?.also {
         logger.info { "Producer $producerName: hashingScheme=$it" }
         hashingScheme(it)
       }
-      producerConfig.messageRoutingMode?.also {
+      pulsarProducerConfig.messageRoutingMode?.also {
         logger.info { "Producer $producerName: messageRoutingMode=$it" }
         messageRoutingMode(it)
       }
-      producerConfig.properties?.also {
+      pulsarProducerConfig.properties?.also {
         logger.info { "Producer $producerName: properties=$it" }
         properties(it)
       }
-      producerConfig.roundRobinRouterBatchingPartitionSwitchFrequency?.also {
+      pulsarProducerConfig.roundRobinRouterBatchingPartitionSwitchFrequency?.also {
         logger.info { "Producer $producerName: roundRobinRouterBatchingPartitionSwitchFrequency=$it" }
         roundRobinRouterBatchingPartitionSwitchFrequency(it)
       }
-      producerConfig.sendTimeoutSeconds?.also {
+      pulsarProducerConfig.sendTimeoutSeconds?.also {
         logger.info { "Producer $producerName: sendTimeout=$it" }
         sendTimeout((it * 1000).toInt(), TimeUnit.MILLISECONDS)
       }
-      blockIfQueueFull(producerConfig.blockIfQueueFull).also {
-        logger.info { "Producer $producerName: blockIfQueueFull=${producerConfig.blockIfQueueFull}" }
+      blockIfQueueFull(pulsarProducerConfig.blockIfQueueFull).also {
+        logger.info { "Producer $producerName: blockIfQueueFull=${pulsarProducerConfig.blockIfQueueFull}" }
       }
     }
 
@@ -234,7 +227,6 @@ class PulsarInfiniticClient(private val pulsarClient: PulsarClient) {
     val (topic,
         subscriptionName,
         subscriptionType,
-        subscriptionInitialPosition,
         consumerName,
         consumerConfig
     ) = consumerDef
@@ -245,7 +237,7 @@ class PulsarInfiniticClient(private val pulsarClient: PulsarClient) {
         .subscriptionType(subscriptionType)
         .subscriptionName(subscriptionName)
         .consumerName(consumerName)
-        .subscriptionInitialPosition(subscriptionInitialPosition)
+        .subscriptionInitialPosition(SubscriptionInitialPosition.Earliest)
 
     // Dead Letter Queue
     consumerDefDlq?.let {
@@ -262,11 +254,10 @@ class PulsarInfiniticClient(private val pulsarClient: PulsarClient) {
           .ackTimeout(0, TimeUnit.MILLISECONDS)
 
       // to avoid immediate deletion of messages in DLQ, we immediately create a subscription
-      val consumerDlq =
-          newConsumer(schema, it).getOrElse { throwable ->
-            logger.error { "Unable to create consumer on DLQ topic ${it.topic}" }
-            return Result.failure(throwable)
-          }
+      val consumerDlq = newConsumer(schema, it).getOrElse { throwable ->
+        logger.error { "Unable to create consumer on DLQ topic ${it.topic}" }
+        return Result.failure(throwable)
+      }
       try {
         // we close the consumer immediately as we do not need it
         consumerDlq.close()
@@ -390,13 +381,17 @@ class PulsarInfiniticClient(private val pulsarClient: PulsarClient) {
     val topic: String,
     val subscriptionName: String,
     val subscriptionType: SubscriptionType,
-    val subscriptionInitialPosition: SubscriptionInitialPosition,
     val consumerName: String,
-    val consumerConfig: ConsumerConfig,
+    val pulsarConsumerConfig: PulsarConsumerConfig,
   )
 
   companion object {
     // producer per topic
     val producers = ConcurrentHashMap<String, Producer<Envelope<out Message>>>()
+
+    @JvmStatic
+    fun clearCaches() {
+      producers.clear()
+    }
   }
 }

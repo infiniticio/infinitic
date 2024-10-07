@@ -38,17 +38,17 @@ data class InfiniticClientConfig(
   companion object {
     /** Create ClientConfig from file in file system */
     @JvmStatic
-    fun fromYamlFile(vararg files: String): InfiniticClientConfig =
+    fun fromYamlFile(vararg files: String) =
         loadConfigFromFile<InfiniticClientConfig>(*files)
 
     /** Create ClientConfig from file in resources directory */
     @JvmStatic
-    fun fromYamlResource(vararg resources: String): InfiniticClientConfig =
+    fun fromYamlResource(vararg resources: String) =
         loadConfigFromResource<InfiniticClientConfig>(*resources)
 
     /** Create ClientConfig from yaml strings */
     @JvmStatic
-    fun fromYamlString(vararg yamls: String): InfiniticClientConfig =
+    fun fromYamlString(vararg yamls: String) =
         loadConfigFromYaml<InfiniticClientConfig>(*yamls)
   }
 }

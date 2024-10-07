@@ -33,11 +33,11 @@ class LoggedInfiniticProducer(
   private val producer: InfiniticProducer,
 ) : InfiniticProducer {
 
-  override var name: String
-    get() = producer.name
-    set(value) {
-      producer.name = value
-    }
+  override suspend fun getName() = producer.getName()
+
+  override fun setSuggestedName(name: String) {
+    producer.setSuggestedName(name)
+  }
 
   override suspend fun <T : Message> internalSendTo(
     message: T,

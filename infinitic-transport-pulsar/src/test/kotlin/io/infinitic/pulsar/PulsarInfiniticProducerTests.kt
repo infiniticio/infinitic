@@ -33,11 +33,11 @@ import io.infinitic.common.tasks.events.messages.TaskStartedEvent
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.transport.ClientTopic
-import io.infinitic.common.transport.RetryServiceExecutorTopic
-import io.infinitic.common.transport.RetryWorkflowExecutorTopic
 import io.infinitic.common.transport.ServiceExecutorEventTopic
+import io.infinitic.common.transport.ServiceExecutorRetryTopic
 import io.infinitic.common.transport.ServiceExecutorTopic
 import io.infinitic.common.transport.WorkflowExecutorEventTopic
+import io.infinitic.common.transport.WorkflowExecutorRetryTopic
 import io.infinitic.common.transport.WorkflowExecutorTopic
 import io.infinitic.common.transport.WorkflowStateCmdTopic
 import io.infinitic.common.transport.WorkflowStateEngineTopic
@@ -45,51 +45,45 @@ import io.infinitic.common.transport.WorkflowStateEventTopic
 import io.infinitic.common.transport.WorkflowStateTimerTopic
 import io.infinitic.common.transport.WorkflowTagEngineTopic
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
-import io.infinitic.common.workflows.engine.messages.WorkflowCmdMessage
-import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineCmdMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineEventMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
-import io.infinitic.pulsar.admin.PulsarInfiniticAdmin
-import io.infinitic.pulsar.client.PulsarInfiniticClient
+import io.infinitic.pulsar.admin.InfiniticPulsarAdmin
+import io.infinitic.pulsar.client.InfiniticPulsarClient
 import io.infinitic.pulsar.config.policies.PoliciesConfig
-import io.infinitic.pulsar.producers.Producer
-import io.infinitic.pulsar.producers.ProducerConfig
-import io.infinitic.pulsar.resources.PulsarResources
+import io.infinitic.pulsar.config.pulsarConfigTest
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.annotation.EnabledIf
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
-import net.bytebuddy.utility.RandomString
-import org.apache.pulsar.client.admin.PulsarAdmin
-import org.apache.pulsar.client.api.PulsarClient
 
 @EnabledIf(DockerOnly::class)
 class PulsarInfiniticProducerTests : StringSpec(
     {
-      val pulsarServer = DockerOnly().pulsarServer!!
+      val pulsarConfig = pulsarConfigTest!!
+      val admin = pulsarConfig.infiniticPulsarAdmin
+      val tenant = pulsarConfig.tenant
+      val namespace = pulsarConfig.namespace
+      val pulsarResources = pulsarConfig.pulsarResources
 
-      val client = PulsarInfiniticClient(
-          PulsarClient.builder().serviceUrl(pulsarServer.pulsarBrokerUrl).build(),
+      val pulsarProducer = PulsarInfiniticProducer(
+          pulsarConfig.infiniticPulsarClient,
+          pulsarConfig.producer,
+          pulsarResources,
       )
 
-      val admin = PulsarInfiniticAdmin(
-          PulsarAdmin.builder().serviceHttpUrl(pulsarServer.httpServiceUrl).build(),
-      )
+      beforeEach {
+        InfiniticPulsarClient.clearCaches()
+        InfiniticPulsarAdmin.clearCaches()
+      }
 
-      val tenant = RandomString(10).nextString()
-      val namespace = RandomString(10).nextString()
-
-      val pulsarResources = PulsarResources(
-          admin,
-          tenant,
-          null,
-          namespace,
-          null,
-          PoliciesConfig(),
-      )
-      val pulsarProducer =
-          PulsarInfiniticProducer(Producer(client, ProducerConfig()), pulsarResources)
+      afterSpec {
+        pulsarConfig.pulsarClient.close()
+        pulsarConfig.pulsarAdmin.close()
+        DockerOnly().pulsarServer?.stop()
+      }
 
       "publishing to an absent ClientTopic should not throw, should NOT create the topic" {
         val message = TestFactory.random<ClientMessage>()
@@ -139,7 +133,7 @@ class PulsarInfiniticProducerTests : StringSpec(
       }
 
       "publishing to an absent WorkflowCmdTopic should not throw, should create the topic" {
-        val message = TestFactory.random<WorkflowCmdMessage>()
+        val message = TestFactory.random<WorkflowStateEngineCmdMessage>()
 
         // publishing to an absent WorkflowCmdTopic should not throw
         shouldNotThrowAny {
@@ -179,7 +173,7 @@ class PulsarInfiniticProducerTests : StringSpec(
       }
 
       "publishing to an absent WorkflowEventTopic should not throw, should create the topic" {
-        val message = TestFactory.random<WorkflowEventMessage>()
+        val message = TestFactory.random<WorkflowStateEngineEventMessage>()
 
 
         // publishing to an absent WorkflowEventsTopic should not throw
@@ -216,12 +210,12 @@ class PulsarInfiniticProducerTests : StringSpec(
 
         // publishing to an absent DelayedWorkflowTaskExecutorTopic should not throw
         shouldNotThrowAny {
-          pulsarProducer.internalSendTo(message, RetryWorkflowExecutorTopic, MillisDuration(1))
+          pulsarProducer.internalSendTo(message, WorkflowExecutorRetryTopic, MillisDuration(1))
         }
 
         // publishing to an absent DelayedWorkflowTaskExecutorTopic should create it
         val topic =
-            with(pulsarResources) { RetryWorkflowExecutorTopic.fullName(message.entity()) }
+            with(pulsarResources) { WorkflowExecutorRetryTopic.fullName(message.entity()) }
         admin.getTopicInfo(topic).getOrThrow() shouldNotBe null
       }
 
@@ -261,13 +255,13 @@ class PulsarInfiniticProducerTests : StringSpec(
         shouldNotThrowAny {
           pulsarProducer.internalSendTo(
               message,
-              RetryServiceExecutorTopic,
+              ServiceExecutorRetryTopic,
               MillisDuration(1),
           )
         }
 
         // publishing to an absent DelayedServiceExecutorTopic should create it
-        val topic = with(pulsarResources) { RetryServiceExecutorTopic.fullName(message.entity()) }
+        val topic = with(pulsarResources) { ServiceExecutorRetryTopic.fullName(message.entity()) }
         admin.getTopicInfo(topic).getOrThrow() shouldNotBe null
       }
 

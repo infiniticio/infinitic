@@ -70,7 +70,7 @@ fun Method.serializeArgs(vararg args: Any?) = MethodArgs(
 /**
  * Deserializes the serialized method parameters.
  */
-fun Method.deserializeArgs(methodParameters: MethodArgs): Array<*> =
+fun Method.deserializeArgs(methodParameters: MethodArgs): List<*> =
     methodParameters.serializedParameters.mapIndexed { index, serializedData ->
       try {
         serializedData.decode(
@@ -86,7 +86,7 @@ fun Method.deserializeArgs(methodParameters: MethodArgs): Array<*> =
             e,
         )
       }
-    }.toTypedArray()
+    }
 
 /**
  * Serializer for [MethodArgs] class.

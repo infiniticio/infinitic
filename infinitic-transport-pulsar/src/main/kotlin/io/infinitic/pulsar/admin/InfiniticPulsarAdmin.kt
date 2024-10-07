@@ -36,13 +36,12 @@ import org.apache.pulsar.common.policies.data.RetentionPolicies
 import org.apache.pulsar.common.policies.data.TenantInfo
 import org.apache.pulsar.common.policies.data.impl.AutoTopicCreationOverrideImpl
 import org.apache.pulsar.common.policies.data.impl.DelayedDeliveryPoliciesImpl
-import java.util.concurrent.ConcurrentHashMap
 import kotlin.random.Random
 import org.apache.pulsar.common.policies.data.Policies as PulsarPolicies
 import org.apache.pulsar.common.policies.data.TopicType as PulsarTopicType
 
 @Suppress("MemberVisibilityCanBePrivate")
-class PulsarInfiniticAdmin(
+class InfiniticPulsarAdmin(
   pulsarAdmin: PulsarAdmin
 ) {
   private val logger = KotlinLogging.logger {}
@@ -52,10 +51,6 @@ class PulsarInfiniticAdmin(
   private val topicPolicies = pulsarAdmin.topicPolicies()
   private val tenants = pulsarAdmin.tenants()
   private val namespaces = pulsarAdmin.namespaces()
-
-  private val topicsMutex = Mutex()
-  private val namespacesMutex = Mutex()
-  private val tenantsMutex = Mutex()
 
   /**
    * Get set of clusters' name
@@ -108,8 +103,21 @@ class PulsarInfiniticAdmin(
     topic: String,
     isPartitioned: Boolean,
     subscriptionName: String
-  ): Result<Boolean> = subscriptionCheckedForConsumers.getOrPut(Pair(topic, subscriptionName)) {
-    checkSubscriptionHasConsumer(topic, isPartitioned, subscriptionName)
+  ): Result<Boolean> {
+    val key = Pair(topic, subscriptionName)
+    // First check if the subscription is already initialized, to avoid locking unnecessarily
+    subscriptionCheckedForConsumers[key]?.let { return it }
+
+    // Locking the section where we might do an expensive initialization
+    return subscriptionMutex.withLock {
+      // Double-checked locking to ensure the subscription hasn't been initialized by another coroutine
+      subscriptionCheckedForConsumers[key]?.let { return it }
+
+      // Do the check
+      checkSubscriptionHasConsumer(topic, isPartitioned, subscriptionName).also {
+        subscriptionCheckedForConsumers[key] = it
+      }
+    }
   }
 
   /**
@@ -561,7 +569,7 @@ class PulsarInfiniticAdmin(
         AutoTopicCreationOverrideImpl(
             allowAutoTopicCreation,
             PulsarTopicType.PARTITIONED.toString(),
-            3,
+            DEFAULT_NUM_PARTITIONS,
         )
     it.schema_validation_enforced = schemaValidationEnforced
     it.is_allow_auto_update_schema = isAllowAutoUpdateSchema
@@ -596,6 +604,14 @@ class PulsarInfiniticAdmin(
   companion object {
     private const val DEFAULT_NUM_PARTITIONS = 3
 
+    @JvmStatic
+    fun clearCaches() {
+      initializedTenants.clear()
+      initializedNamespaces.clear()
+      initializedTopics.clear()
+      subscriptionCheckedForConsumers.clear()
+    }
+
     // set of initialized tenants
     private val initializedTenants = mutableMapOf<String, Result<TenantInfo>>()
 
@@ -605,8 +621,20 @@ class PulsarInfiniticAdmin(
     // set of initialized topics (topic name includes tenant and namespace)
     private val initializedTopics = mutableMapOf<String, Result<TopicInfo>>()
 
-    // thread-safe set of (topic, subscription name) that have already been checked for consumers
+    // set of (topic, subscription name) that have already been checked for consumers
     private val subscriptionCheckedForConsumers =
-        ConcurrentHashMap<Pair<String, String>, Result<Boolean>>()
+        mutableMapOf<Pair<String, String>, Result<Boolean>>()
+
+    // Mutex for topic initialization
+    private val topicsMutex = Mutex()
+
+    // Mutex for namespace initialization
+    private val namespacesMutex = Mutex()
+
+    // Mutex for tenant initialization
+    private val tenantsMutex = Mutex()
+
+    // Mutex for subscription checks
+    private val subscriptionMutex = Mutex()
   }
 }

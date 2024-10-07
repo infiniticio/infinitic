@@ -22,67 +22,135 @@
  */
 package io.infinitic.pulsar
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.MillisInstant
+import io.infinitic.common.messages.Envelope
 import io.infinitic.common.messages.Message
+import io.infinitic.common.transport.BatchConfig
 import io.infinitic.common.transport.EventListenerSubscription
 import io.infinitic.common.transport.InfiniticConsumer
 import io.infinitic.common.transport.MainSubscription
-import io.infinitic.common.transport.RetryServiceExecutorTopic
-import io.infinitic.common.transport.RetryWorkflowExecutorTopic
 import io.infinitic.common.transport.Subscription
-import io.infinitic.pulsar.consumers.Consumer
+import io.infinitic.common.transport.consumers.ProcessorConsumer
+import io.infinitic.pulsar.client.InfiniticPulsarClient
+import io.infinitic.pulsar.config.PulsarConsumerConfig
+import io.infinitic.pulsar.consumers.PulsarConsumer
+import io.infinitic.pulsar.consumers.PulsarTransportMessage
 import io.infinitic.pulsar.resources.PulsarResources
-import io.infinitic.pulsar.resources.defaultInitialPosition
 import io.infinitic.pulsar.resources.defaultName
 import io.infinitic.pulsar.resources.defaultNameDLQ
 import io.infinitic.pulsar.resources.schema
 import io.infinitic.pulsar.resources.type
-import org.apache.pulsar.client.api.SubscriptionInitialPosition
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+import org.apache.pulsar.client.api.Consumer
+import org.apache.pulsar.client.api.Schema
+import org.apache.pulsar.client.api.SubscriptionType
 
 class PulsarInfiniticConsumer(
-  private val consumer: Consumer,
+  private val client: InfiniticPulsarClient,
+  private val pulsarConsumerConfig: PulsarConsumerConfig,
   private val pulsarResources: PulsarResources,
-  val shutdownGracePeriodSeconds: Double
 ) : InfiniticConsumer {
 
-  override suspend fun <S : Message> start(
+  context(CoroutineScope)
+  override suspend fun <S : Message> startAsync(
     subscription: Subscription<S>,
     entity: String,
-    handler: suspend (S, MillisInstant) -> Unit,
-    beforeDlq: (suspend (S?, Exception) -> Unit)?,
     concurrency: Int,
-  ) {
-    when (subscription.topic) {
-      // we do nothing here, as WorkflowTaskExecutorTopic and ServiceExecutorTopic
-      // do not need a distinct topic to handle delayed messages in Pulsar
-      RetryWorkflowExecutorTopic, RetryServiceExecutorTopic -> return
+    process: suspend (S, MillisInstant) -> Unit,
+    beforeDlq: (suspend (S?, Exception) -> Unit)?,
+    batchConfig: (suspend (S) -> BatchConfig?)?,
+    batchProcess: (suspend (List<S>, List<MillisInstant>) -> Unit)?
+  ): Job {
 
-      else -> Unit
+    // Retrieve the name of the topic and of the DLQ topic
+    // Create them if they do not exist.
+    val (topicName, topicDLQName) = coroutineScope {
+      val deferredTopic = async {
+        with(pulsarResources) {
+          subscription.topic.forEntity(entity, true, checkConsumer = false)
+        }
+      }
+      val deferredTopicDLQ = async {
+        with(pulsarResources) {
+          subscription.topic.forEntityDLQ(entity, true)
+        }
+      }
+      Pair(deferredTopic.await(), deferredTopicDLQ.await())
     }
 
-    // Retrieves the name the topic, If the topic doesn't exist yet, create it.
-    val topicName = with(pulsarResources) {
-      subscription.topic.forEntity(entity, true, checkConsumer = false)
+    val loggedDeserialize: suspend (PulsarTransportMessage<Envelope<out S>>) -> S = { message ->
+      logger.debug { "Deserializing message: ${message.messageId}" }
+      message.toPulsarMessage().value.message().also {
+        logger.trace { "Deserialized message: ${message.messageId}" }
+      }
     }
 
-    // Retrieves the name the DLQ topic, If the topic doesn't exist yet, create it.
-    val topicDLQName = with(pulsarResources) {
-      subscription.topic.forEntityDLQ(entity, true)
+    val loggedHandler: suspend (S, MillisInstant) -> Unit = { message, publishTime ->
+      logger.debug { "Processing $message" }
+      process(message, publishTime)
+      logger.trace { "Processed $message" }
     }
 
-    consumer.startListening(
-        handler = handler,
-        beforeDlq = beforeDlq,
-        schema = subscription.topic.schema,
-        topic = topicName,
-        topicDlq = topicDLQName,
-        subscriptionName = subscription.name,
-        subscriptionNameDlq = subscription.nameDLQ,
-        subscriptionType = subscription.type,
-        subscriptionInitialPosition = subscription.initialPosition,
-        consumerName = entity,
-        concurrency = concurrency,
-    )
+    val beforeNegativeAcknowledgement: suspend (PulsarTransportMessage<Envelope<out S>>, S?, Exception) -> Unit =
+        { message, deserialized, cause ->
+          if (message.redeliveryCount == pulsarConsumerConfig.maxRedeliverCount) {
+            beforeDlq?.let {
+              logger.debug { "Processing beforeNegativeAcknowledgement for ${deserialized ?: message.messageId}" }
+              it(deserialized, cause)
+              logger.trace { "Processed beforeNegativeAcknowledgement for ${deserialized ?: message.messageId}" }
+            }
+          }
+        }
+
+    fun buildConsumer(index: Int? = null): PulsarConsumer<Envelope<out S>> {
+      logger.debug { "Creating consumer ${index?.let { "${it + 1} " } ?: ""}for $topicName" }
+      return getConsumer(
+          schema = subscription.topic.schema,
+          topic = topicName,
+          topicDlq = topicDLQName,
+          subscriptionName = subscription.name,
+          subscriptionNameDlq = subscription.nameDLQ,
+          subscriptionType = subscription.type,
+          consumerName = entity + (index?.let { "-$it" } ?: ""),
+      ).getOrThrow().let { PulsarConsumer(it) }.also {
+        logger.trace { "Consumer created ${index?.let { "${it + 1} " } ?: ""}for $topicName" }
+      }
+    }
+
+    return when (subscription.withKey) {
+      true -> {
+        // build the consumers synchronously (but in parallel)
+        val consumers = coroutineScope {
+          List(concurrency) { async { buildConsumer(it) } }.map { it.await() }
+        }
+        launch {
+          List(concurrency) { index ->
+            val processor = ProcessorConsumer(consumers[index], beforeNegativeAcknowledgement)
+            with(processor) { startAsync(1, loggedDeserialize, loggedHandler) }
+          }
+        }
+      }
+
+      false -> {
+        // build the unique consumer synchronously
+        val consumer = buildConsumer()
+        val processor = ProcessorConsumer(consumer, beforeNegativeAcknowledgement)
+        with(processor) {
+          startAsync(
+              concurrency,
+              loggedDeserialize,
+              loggedHandler,
+              batchConfig,
+              batchProcess,
+          )
+        }
+      }
+    }
   }
 
   private val Subscription<*>.name
@@ -97,11 +165,37 @@ class PulsarInfiniticConsumer(
       is EventListenerSubscription -> name?.let { "$it-dlq" } ?: defaultNameDLQ
     }
 
-  private val Subscription<*>.initialPosition
-    get() = when (this) {
-      is MainSubscription -> defaultInitialPosition
-      is EventListenerSubscription -> name?.let { SubscriptionInitialPosition.Earliest }
-        ?: defaultInitialPosition
+  private fun <S : Envelope<out Message>> getConsumer(
+    schema: Schema<S>,
+    topic: String,
+    topicDlq: String?,
+    subscriptionName: String,
+    subscriptionNameDlq: String,
+    subscriptionType: SubscriptionType,
+    consumerName: String,
+  ): Result<Consumer<S>> {
+    val consumerDef = InfiniticPulsarClient.ConsumerDef(
+        topic = topic,
+        subscriptionName = subscriptionName, //  MUST be the same for all instances!
+        subscriptionType = subscriptionType,
+        consumerName = consumerName,
+        pulsarConsumerConfig = pulsarConsumerConfig,
+    )
+    val consumerDefDlq = topicDlq?.let {
+      InfiniticPulsarClient.ConsumerDef(
+          topic = it,
+          subscriptionName = subscriptionNameDlq, //  MUST be the same for all instances!
+          subscriptionType = SubscriptionType.Shared,
+          consumerName = "$consumerName-dlq",
+          pulsarConsumerConfig = pulsarConsumerConfig,
+      )
     }
+
+    return client.newConsumer(schema, consumerDef, consumerDefDlq)
+  }
+
+  companion object {
+    val logger = KotlinLogging.logger {}
+  }
 }
 

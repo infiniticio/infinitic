@@ -28,25 +28,28 @@ import io.infinitic.common.transport.ClientTopic
 import io.infinitic.common.transport.MainSubscription
 import io.infinitic.common.transport.Topic
 import io.infinitic.common.transport.isTimer
-import io.infinitic.pulsar.admin.PulsarInfiniticAdmin
+import io.infinitic.pulsar.admin.InfiniticPulsarAdmin
 import io.infinitic.pulsar.config.PulsarConfig
-import io.infinitic.pulsar.config.policies.PoliciesConfig
 
 @Suppress("MemberVisibilityCanBePrivate")
 class PulsarResources(
-  val admin: PulsarInfiniticAdmin,
+  pulsarConfig: PulsarConfig
+) {
+
+  val admin by lazy { InfiniticPulsarAdmin(pulsarConfig.pulsarAdmin) }
+
   /**
    * tenant configuration
    */
-  val tenant: String,
-  val allowedClusters: Set<String>?,
+  val tenant = pulsarConfig.tenant
+  val allowedClusters = pulsarConfig.allowedClusters
+
   /**
    * namespace configuration
    */
-  val namespace: String,
-  val adminRoles: Set<String>?,
-  val policies: PoliciesConfig
-) {
+  val namespace = pulsarConfig.namespace
+  val adminRoles = pulsarConfig.adminRoles
+  val policies = pulsarConfig.policies
 
   /**
    * Full name of the current Pulsar namespace
@@ -59,17 +62,21 @@ class PulsarResources(
   fun topicFullName(topic: String) = "persistent://$namespaceFullName/$topic"
 
   /** Set of topics for current tenant and namespace */
-  suspend fun getTopicsFullName(): Set<String> = admin.getTopicsSet(namespaceFullName).getOrThrow()
+  suspend fun getTopicsFullName(): Result<Set<String>> = admin.getTopicsSet(namespaceFullName)
 
   /** Set of service's names for current tenant and namespace */
-  suspend fun getServiceNames(): Set<String> = getTopicsFullName().mapNotNull {
-    getServiceNameFromTopicName(it.removePrefix(topicFullName("")))
-  }.toSet()
+  suspend fun getServiceNames(): Result<Set<String>> = getTopicsFullName().map { topicsSet ->
+    topicsSet.mapNotNull {
+      getServiceNameFromTopicName(it.removePrefix(topicFullName("")))
+    }.toSet()
+  }
 
   /** Set of workflow's names for current tenant and namespace */
-  suspend fun getWorkflowNames(): Set<String> = getTopicsFullName().mapNotNull {
-    getWorkflowNameFromTopicName(it.removePrefix(topicFullName("")))
-  }.toSet()
+  suspend fun getWorkflowNames(): Result<Set<String>> = getTopicsFullName().map { topicsSet ->
+    topicsSet.mapNotNull {
+      getWorkflowNameFromTopicName(it.removePrefix(topicFullName("")))
+    }.toSet()
+  }
 
   /**
    * @param entity The optional entity name (service name or workflow name).
@@ -96,7 +103,7 @@ class PulsarResources(
     if (init) initTopicOnce(
         topic = it,
         isPartitioned = isPartitioned,
-        isTimed = isTimer,
+        isTimer = isTimer,
     )
 
     if (checkConsumer) admin.checkSubscriptionHasConsumerOnce(
@@ -116,7 +123,7 @@ class PulsarResources(
         if (init) initTopicOnce(
             topic = it,
             isPartitioned = isPartitioned,
-            isTimed = isTimer,
+            isTimer = isTimer,
         )
       }
 
@@ -132,14 +139,14 @@ class PulsarResources(
   suspend fun initTopicOnce(
     topic: String,
     isPartitioned: Boolean,
-    isTimed: Boolean,
+    isTimer: Boolean,
   ): Result<Unit> {
     // initialize tenant once (do nothing on error)
     admin.syncInitTenantOnce(tenant, allowedClusters, adminRoles)
     // initialize namespace once (do nothing on error)
     admin.syncInitNamespaceOnce(namespaceFullName, policies)
     // initialize topic once  (do nothing on error)
-    val ttl = when (isTimed) {
+    val ttl = when (isTimer) {
       true -> policies.timerTTLSeconds
       false -> policies.messageTTLSeconds
     }
@@ -154,8 +161,8 @@ class PulsarResources(
   suspend fun initDlqTopicOnce(
     topic: String?,
     isPartitioned: Boolean,
-    isDelayed: Boolean,
-  ): Result<Unit?> = topic?.let { initTopicOnce(it, isPartitioned, isDelayed) }
+    isTimer: Boolean,
+  ): Result<Unit?> = topic?.let { initTopicOnce(it, isPartitioned, isTimer) }
     ?: Result.success(null)
 
   /**
@@ -168,17 +175,5 @@ class PulsarResources(
   suspend fun deleteTopicForClient(clientName: String): Result<String?> {
     val topicName = ClientTopic.fullName(clientName)
     return deleteTopic(topicName).map { it?.let { topicName } }
-  }
-
-  companion object {
-    /** Create TopicManager from a Pulsar configuration instance */
-    fun from(pulsarConfig: PulsarConfig) = PulsarResources(
-        PulsarInfiniticAdmin(pulsarConfig.admin),
-        pulsarConfig.tenant,
-        pulsarConfig.allowedClusters,
-        pulsarConfig.namespace,
-        pulsarConfig.adminRoles,
-        pulsarConfig.policies,
-    )
   }
 }

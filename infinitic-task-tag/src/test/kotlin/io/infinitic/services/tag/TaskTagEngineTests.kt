@@ -62,7 +62,6 @@ import io.mockk.Runs
 import io.mockk.clearAllMocks
 import io.mockk.coEvery
 import io.mockk.coVerifySequence
-import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.slot
@@ -81,7 +80,7 @@ private var delegatedTaskData = slot<DelegatedTaskData>()
 private lateinit var tagStateStorage: TaskTagStorage
 
 private val producerMock = mockk<InfiniticProducer> {
-  every { name } returns "$workerName"
+  coEvery { getName() } returns "$workerName"
   coEvery { capture(clientMessage).sendTo(ClientTopic) } returns Unit
   coEvery { capture(workflowStateEngineMessage).sendTo(WorkflowStateEngineTopic) } returns Unit
 }
@@ -169,7 +168,7 @@ internal class TaskTagEngineTests :
           // then
           coVerifySequence {
             tagStateStorage.getTaskIdsForTag(msgIn.taskTag, msgIn.serviceName)
-            producerMock.name
+            producerMock.getName()
             with(producerMock) { capture(clientMessage).sendTo(ClientTopic) }
           }
           captured(taskTag) shouldBe msgIn.taskTag
@@ -224,7 +223,7 @@ internal class TaskTagEngineTests :
           delegatedTaskData.captured shouldBe msgIn.delegatedTaskData
         }
 
-        "CompleteAsyncTask should send RemoteTaskCompleted to parent workflow" {
+        "CompleteDelegatedTask should send RemoteTaskCompleted to parent workflow" {
           // given
           val requester = random<WorkflowRequester>()
           val msgIn = random<CompleteDelegatedTask>()
@@ -235,8 +234,8 @@ internal class TaskTagEngineTests :
           getTaskEngine(delegatedTaskData).handle(msgIn, emittedAt)
           // then
           coVerifySequence {
+            producerMock.getName()
             tagStateStorage.getDelegatedTaskData(msgIn.taskId)
-            producerMock.name
             with(producerMock) {
               capture(workflowStateEngineMessage).sendTo(
                   WorkflowStateEngineTopic,
@@ -275,8 +274,8 @@ internal class TaskTagEngineTests :
           getTaskEngine(delegatedTaskData).handle(msgIn, emittedAt)
           // then
           coVerifySequence {
+            producerMock.getName()
             tagStateStorage.getDelegatedTaskData(msgIn.taskId)
-            producerMock.name
             with(producerMock) { capture(clientMessage).sendTo(ClientTopic) }
             tagStateStorage.delDelegatedTaskData(msgIn.taskId)
           }

@@ -25,6 +25,8 @@ package io.infinitic
 import io.infinitic.common.fixtures.DockerOnly
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.engine.state.WorkflowState
+import io.infinitic.pulsar.admin.InfiniticPulsarAdmin
+import io.infinitic.pulsar.client.InfiniticPulsarClient
 import io.infinitic.transport.config.InMemoryTransportConfig
 import io.infinitic.transport.config.PulsarTransportConfig
 import io.infinitic.utils.Listener
@@ -43,11 +45,6 @@ import kotlin.time.Duration.Companion.milliseconds
  * If Docker is available, the tests are done on Pulsar, if not they are done in memory
  * Docker is available on GitHub.
  */
-
-fun main() {
-  Test.start()
-}
-
 internal object Test {
 
   private val pulsarServer = DockerOnly().pulsarServer
@@ -76,6 +73,8 @@ internal object Test {
   val client by lazy { worker.client }
 
   fun start() {
+    InfiniticPulsarClient.clearCaches()
+    InfiniticPulsarAdmin.clearCaches()
     pulsarServer?.start()
     worker.startAsync()
   }
@@ -85,7 +84,6 @@ internal object Test {
     pulsarServer?.stop()
   }
 }
-
 
 /**
  * This listener is used to close resources after all tests

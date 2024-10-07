@@ -28,10 +28,10 @@ import io.infinitic.pulsar.resources.PulsarResources
 class PulsarInfiniticResources(
   private val pulsarResources: PulsarResources
 ) : InfiniticResources {
-  override suspend fun getServices(): Set<String> =
+  override suspend fun getServices() =
       pulsarResources.getServiceNames()
 
-  override suspend fun getWorkflows(): Set<String> =
+  override suspend fun getWorkflows() =
       pulsarResources.getWorkflowNames()
 
   override suspend fun deleteTopicForClient(clientName: String) =

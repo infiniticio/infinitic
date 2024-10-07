@@ -82,7 +82,7 @@ class RedisConfigTest {
     @Test
     void testOptionalParameters() {
         RedisStorageConfig config = builder
-                .setUserName("user")
+                .setUsername("user")
                 .setPassword("password")
                 .setDatabase(1)
                 .setTimeout(42)

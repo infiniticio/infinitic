@@ -25,134 +25,105 @@ package io.infinitic.inMemory
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.messages.Message
+import io.infinitic.common.transport.BatchConfig
 import io.infinitic.common.transport.EventListenerSubscription
 import io.infinitic.common.transport.InfiniticConsumer
 import io.infinitic.common.transport.MainSubscription
 import io.infinitic.common.transport.Subscription
+import io.infinitic.common.transport.TransportConsumer
 import io.infinitic.common.transport.acceptDelayed
-import kotlinx.coroutines.CancellationException
+import io.infinitic.common.transport.consumers.ProcessorConsumer
+import io.infinitic.inMemory.channels.DelayedMessage
+import io.infinitic.inMemory.channels.InMemoryChannels
+import io.infinitic.inMemory.consumers.InMemoryConsumer
+import io.infinitic.inMemory.consumers.InMemoryDelayedConsumer
+import io.infinitic.inMemory.consumers.InMemoryTransportMessage
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class InMemoryInfiniticConsumer(
   private val mainChannels: InMemoryChannels,
   private val eventListenerChannels: InMemoryChannels,
 ) : InfiniticConsumer {
-  
-  override suspend fun <S : Message> start(
+
+  context(CoroutineScope)
+  override suspend fun <S : Message> startAsync(
     subscription: Subscription<S>,
     entity: String,
-    handler: suspend (S, MillisInstant) -> Unit,
+    concurrency: Int,
+    process: suspend (S, MillisInstant) -> Unit,
     beforeDlq: (suspend (S?, Exception) -> Unit)?,
-    concurrency: Int
-  ) {
-    val c = when (subscription.withKey) {
-      true -> 1
-      false -> concurrency
+    batchConfig: (suspend (S) -> BatchConfig?)?,
+    batchProcess: (suspend (List<S>, List<MillisInstant>) -> Unit)?
+  ): Job {
+
+    val loggedDeserialize: suspend (InMemoryTransportMessage<S>) -> S = { message ->
+      logger.debug { "Deserializing message: ${message.messageId}" }
+      message.toMessage().also {
+        logger.trace { "Deserialized message: ${message.messageId}" }
+      }
     }
-    when (subscription.topic.acceptDelayed) {
+
+    val loggedHandler: suspend (S, MillisInstant) -> Unit = { message, publishTime ->
+      logger.debug { "Processing $message" }
+      process(message, publishTime)
+      logger.trace { "Processed $message" }
+    }
+
+    fun buildConsumer(index: Int? = null): TransportConsumer<InMemoryTransportMessage<S>> {
+      logger.debug { "Creating consumer ${index?.let { "${it + 1} " } ?: ""}on ${subscription.topic} for $entity " }
+      return when (subscription.topic.acceptDelayed) {
+        true -> InMemoryDelayedConsumer(subscription.getChannelForDelayed(entity))
+        false -> InMemoryConsumer(subscription.getChannel(entity))
+      }
+    }
+
+    return when (subscription.withKey) {
       true -> {
-        val channel = subscription.getDelayedChannel(entity)
-        logger.info { "$subscription (${channel.id}) Starting consumer for $entity with concurrency = $c" }
-        startLoopForDelayed(subscription, handler, beforeDlq, channel, c)
+        // build the consumers synchronously (but in parallel)
+        val consumers: List<TransportConsumer<InMemoryTransportMessage<S>>> = coroutineScope {
+          List(concurrency) { async { buildConsumer(it) } }.map { it.await() }
+        }
+        launch {
+          repeat(concurrency) {
+            val processor = ProcessorConsumer<InMemoryTransportMessage<S>, S>(consumers[it], null)
+            with(processor) { startAsync(1, loggedDeserialize, loggedHandler) }
+          }
+        }
       }
 
       false -> {
-        val channel = subscription.getChannel(entity)
-        logger.info { "$subscription (${channel.id}) Starting consumer for $entity with concurrency = $c" }
-        startLoop(subscription, handler, beforeDlq, channel, c)
-      }
-    }
-  }
-
-  // start an executor on a channel containing messages
-  private suspend fun <S : Message> startLoop(
-    subscription: Subscription<S>,
-    handler: suspend (S, MillisInstant) -> Unit,
-    beforeDlq: (suspend (S?, Exception) -> Unit)?,
-    channel: Channel<S>,
-    concurrency: Int
-  ) = coroutineScope {
-    repeat(concurrency) {
-      launch {
-        try {
-          for (message in channel) {
-            try {
-              logger.trace { "$subscription (${channel.id})}: Handling $message" }
-              handler(message, MillisInstant.now())
-              logger.debug { "$subscription (${channel.id}): Handled $message" }
-            } catch (e: Exception) {
-              logger.warn(e) { "$subscription (${channel.id}): Error while processing message $message" }
-              sendToDlq(beforeDlq, channel, message, e)
-            }
-          }
-        } catch (e: CancellationException) {
-          logger.info { "$subscription (${channel.id})} Canceled" }
+        // build the consumer synchronously
+        val consumer = buildConsumer()
+        val processor = ProcessorConsumer<InMemoryTransportMessage<S>, S>(consumer, null)
+        with(processor) {
+          startAsync(
+              1,
+              loggedDeserialize,
+              loggedHandler,
+              batchConfig,
+              batchProcess,
+          )
         }
       }
     }
   }
 
-  // start an executor on a channel containing delayed messages
-  private suspend fun <S : Message> startLoopForDelayed(
-    subscription: Subscription<S>,
-    handler: suspend (S, MillisInstant) -> Unit,
-    beforeDlq: (suspend (S?, Exception) -> Unit)?,
-    channel: Channel<DelayedMessage<S>>,
-    concurrency: Int
-  ) = coroutineScope {
-    repeat(concurrency) {
-      launch {
-        try {
-          for (delayedMessage in channel) {
-            try {
-              val ts = MillisInstant.now()
-              delay(delayedMessage.after.millis)
-              logger.trace { "$subscription (${channel.id}): Handling ${delayedMessage.message}" }
-              handler(delayedMessage.message, ts)
-              logger.debug { "$subscription (${channel.id}): Handled ${delayedMessage.message}" }
-            } catch (e: Exception) {
-              logger.warn(e) { "$subscription (${channel.id}): Error while processing delayed message ${delayedMessage.message}" }
-              sendToDlq(beforeDlq, channel, delayedMessage.message, e)
-            }
-          }
-        } catch (e: CancellationException) {
-          logger.info { "$subscription (${channel.id})} Canceled" }
-        }
+  private fun <S : Message> Subscription<S>.getChannelForDelayed(entity: String): Channel<DelayedMessage<S>> =
+      when (this) {
+        is MainSubscription -> with(mainChannels) { topic.channelForDelayed(entity) }
+        is EventListenerSubscription -> with(eventListenerChannels) { topic.channelForDelayed(entity) }
       }
-    }
-  }
 
-  private fun <S : Message> Subscription<S>.getDelayedChannel(entity: String) = when (this) {
-    is MainSubscription -> with(mainChannels) { topic.channelForDelayed(entity) }
-    is EventListenerSubscription -> with(eventListenerChannels) { topic.channelForDelayed(entity) }
-  }
-
-  private fun <S : Message> Subscription<S>.getChannel(entity: String) = when (this) {
-    is MainSubscription -> with(mainChannels) { topic.channel(entity) }
-    is EventListenerSubscription -> with(eventListenerChannels) { topic.channel(entity) }
-  }
-
-  // emulate sending to DLQ
-  private suspend fun <T : Message> sendToDlq(
-    beforeDlq: (suspend (T?, Exception) -> Unit)?,
-    channel: Channel<*>,
-    message: T,
-    e: Exception
-  ) {
-    try {
-      logger.error { "Channel ${channel.id}: Sending message to DLQ $message" }
-      beforeDlq?.let {
-        logger.debug { "BeforeDlq processing..." }
-        it(message, e)
-        logger.trace { "BeforeDlq processed." }
+  private fun <S : Message> Subscription<S>.getChannel(entity: String): Channel<S> =
+      when (this) {
+        is MainSubscription -> with(mainChannels) { topic.channel(entity) }
+        is EventListenerSubscription -> with(eventListenerChannels) { topic.channel(entity) }
       }
-    } catch (e: Exception) {
-      logger.error(e) { "Channel ${channel.id}: Unable to process BeforeDlq" }
-    }
-  }
 
   companion object {
     private val logger = KotlinLogging.logger {}

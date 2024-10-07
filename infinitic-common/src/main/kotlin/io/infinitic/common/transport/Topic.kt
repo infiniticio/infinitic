@@ -27,8 +27,8 @@ import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.events.messages.ServiceExecutorEventMessage
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.tasks.tags.messages.ServiceTagMessage
-import io.infinitic.common.workflows.engine.messages.WorkflowCmdMessage
-import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineCmdMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineEventMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
 
@@ -74,8 +74,8 @@ data object ServiceExecutorTopic : ServiceTopic<ServiceExecutorMessage>() {
   override val prefix = "task-executor"
 }
 
-data object RetryServiceExecutorTopic : ServiceTopic<ServiceExecutorMessage>() {
-  override val prefix = "task-executor"
+data object ServiceExecutorRetryTopic : ServiceTopic<ServiceExecutorMessage>() {
+  override val prefix = "task-retry"
 }
 
 
@@ -102,7 +102,7 @@ data object WorkflowTagEngineTopic : WorkflowTopic<WorkflowTagEngineMessage>() {
   override val prefix = "workflow-tag"
 }
 
-data object WorkflowStateCmdTopic : WorkflowTopic<WorkflowCmdMessage>() {
+data object WorkflowStateCmdTopic : WorkflowTopic<WorkflowStateEngineCmdMessage>() {
   override val prefix = "workflow-cmd"
 }
 
@@ -114,7 +114,7 @@ data object WorkflowStateTimerTopic : WorkflowTopic<WorkflowStateEngineMessage>(
   override val prefix = "workflow-delay"
 }
 
-data object WorkflowStateEventTopic : WorkflowTopic<WorkflowEventMessage>() {
+data object WorkflowStateEventTopic : WorkflowTopic<WorkflowStateEngineEventMessage>() {
   override val prefix = "workflow-events"
 }
 
@@ -122,8 +122,8 @@ data object WorkflowExecutorTopic : WorkflowTopic<ServiceExecutorMessage>() {
   override val prefix = "workflow-task-executor"
 }
 
-data object RetryWorkflowExecutorTopic : WorkflowTopic<ServiceExecutorMessage>() {
-  override val prefix = "workflow-task-executor"
+data object WorkflowExecutorRetryTopic : WorkflowTopic<ServiceExecutorMessage>() {
+  override val prefix = "workflow-task-retry"
 }
 
 data object WorkflowExecutorEventTopic : WorkflowTopic<ServiceExecutorEventMessage>() {
@@ -147,8 +147,8 @@ val Topic<*>.isTimer
 val Topic<*>.acceptDelayed
   get() = when (this) {
     WorkflowStateTimerTopic -> true
-    RetryWorkflowExecutorTopic -> true
-    RetryServiceExecutorTopic -> true
+    WorkflowExecutorRetryTopic -> true
+    ServiceExecutorRetryTopic -> true
 
     else -> false
   }
@@ -162,8 +162,8 @@ val Topic<*>.acceptDelayed
 val <S : Message> Topic<S>.withoutDelay
   get() = when (this) {
     WorkflowStateTimerTopic -> WorkflowStateEngineTopic
-    RetryWorkflowExecutorTopic -> WorkflowExecutorTopic
-    RetryServiceExecutorTopic -> ServiceExecutorTopic
+    WorkflowExecutorRetryTopic -> WorkflowExecutorTopic
+    ServiceExecutorRetryTopic -> ServiceExecutorTopic
     else -> this
   } as Topic<S>
 
@@ -174,7 +174,7 @@ val <S : Message> Topic<S>.withoutDelay
 val <S : Message> Topic<S>.forWorkflow
   get() = when (this) {
     ServiceExecutorTopic -> WorkflowExecutorTopic
-    RetryServiceExecutorTopic -> RetryWorkflowExecutorTopic
+    ServiceExecutorRetryTopic -> WorkflowExecutorRetryTopic
     ServiceExecutorEventTopic -> WorkflowExecutorEventTopic
     else -> this
   } as Topic<S>

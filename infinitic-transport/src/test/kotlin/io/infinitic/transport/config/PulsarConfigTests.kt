@@ -23,15 +23,12 @@
 
 package io.infinitic.transport.config
 
-import io.infinitic.common.fixtures.DockerOnly
 import io.infinitic.pulsar.config.PulsarConfig
 import io.kotest.assertions.throwables.shouldThrow
-import io.kotest.core.annotation.EnabledIf
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 
-@EnabledIf(DockerOnly::class)
 class PulsarConfigTests : StringSpec(
     {
       val brokerServiceUrl = "pulsar://localhost:6650/"

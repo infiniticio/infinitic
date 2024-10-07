@@ -48,7 +48,7 @@ class TaskTagEngine(
   private val storage: TaskTagStorage,
   private val producer: InfiniticProducer
 ) {
-  private val emitterName by lazy { EmitterName(producer.name) }
+  private suspend fun getEmitterName() = EmitterName(producer.getName())
 
   suspend fun handle(message: ServiceTagMessage, publishTime: MillisInstant) = coroutineScope {
     when (message) {
@@ -57,7 +57,7 @@ class TaskTagEngine(
       is CancelTaskByTag -> TODO()
       is RetryTaskByTag -> thisShouldNotHappen()
       is SetDelegatedTaskData -> setDelegatedTaskData(message)
-      is CompleteDelegatedTask -> completeAsyncTask(message, publishTime)
+      is CompleteDelegatedTask -> completeDelegateTask(message, publishTime)
       is GetTaskIdsByTag -> getTaskIds(message)
       else -> thisShouldNotHappen()
     }
@@ -75,10 +75,12 @@ class TaskTagEngine(
     storage.setDelegatedTaskData(message.taskId, message.delegatedTaskData)
   }
 
-  private suspend fun completeAsyncTask(
+  private suspend fun completeDelegateTask(
     message: CompleteDelegatedTask,
     publishTime: MillisInstant
   ) {
+    val emitterName = getEmitterName()
+
     storage.getDelegatedTaskData(message.taskId)?.let {
       // send to waiting client
       TaskCompleted.from(it, message.returnValue, emitterName)?.let {
@@ -102,7 +104,7 @@ class TaskTagEngine(
         serviceName = message.serviceName,
         taskTag = message.taskTag,
         taskIds = taskIds,
-        emitterName = emitterName,
+        emitterName = getEmitterName(),
     )
 
     with(producer) { taskIdsByTag.sendTo(ClientTopic) }

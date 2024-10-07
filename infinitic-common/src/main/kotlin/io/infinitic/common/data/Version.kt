@@ -71,4 +71,3 @@ object VersionSerializer : KSerializer<Version> {
 
   override fun deserialize(decoder: Decoder) = Version(decoder.decodeString())
 }
-

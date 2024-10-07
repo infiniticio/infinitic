@@ -55,10 +55,12 @@ dependencies {
 
 tasks.withType<KotlinCompile> {
   doFirst {
-    // File containing the list of all released versions
-    val file = File(project.projectDir.absolutePath, "/src/main/resources/versions")
+    val mainSourceSet = project.sourceSets.getByName("main")
+    val resourcePath = mainSourceSet.resources.srcDirs.first().absolutePath
 
     if (Ci.isRelease) {
+      // File containing the list of all released versions
+      val file = File("$resourcePath/versions")
       // append current release version if not yet present
       if (!file.useLines { lines -> lines.any { it == Ci.version } }) {
         file.appendText(Ci.version + "\n")
@@ -66,12 +68,20 @@ tasks.withType<KotlinCompile> {
     }
 
     // current version (snapshot or release)
-    File(project.projectDir.absolutePath, "/src/main/resources/currentVersion")
-        .writeText(Ci.version)
+    File("$resourcePath/currentVersion").writeText(Ci.version)
 
     // Pulsar version
-    File(project.projectDir.absolutePath, "/src/testFixtures/resources/pulsar")
-        .writeText(Libs.Pulsar.version)
+    val testFixturesResourcePath =
+        project.sourceSets.getByName("testFixtures").resources.srcDirs.first().absolutePath
+    File(testFixturesResourcePath, "/pulsar").writeText(Libs.Pulsar.version)
+  }
+}
+
+tasks.withType<Test> {
+  doFirst {
+    val mainSourceSet = project.sourceSets.getByName("main")
+    val resourcePath = mainSourceSet.resources.srcDirs.first().absolutePath
+    systemProperty("resourcePath", resourcePath)
   }
 }
 

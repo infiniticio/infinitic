@@ -41,7 +41,7 @@ import kotlinx.coroutines.launch
 
 class WorkflowStateCmdHandler(val producer: InfiniticProducer) {
 
-  val emitterName by lazy { EmitterName(producer.name) }
+  private suspend fun getEmitterName() = EmitterName(producer.getName())
 
   suspend fun handle(msg: WorkflowStateEngineMessage, publishTime: MillisInstant) {
     // define emittedAt from the publishing instant if not yet defined
@@ -91,7 +91,7 @@ class WorkflowStateCmdHandler(val producer: InfiniticProducer) {
           }
 
           val taskDispatchedEvent =
-              workflowTaskParameters.workflowTaskDispatchedEvent(emitterName)
+              workflowTaskParameters.workflowTaskDispatchedEvent(getEmitterName())
 
           with(producer) {
             // dispatch workflow task
@@ -103,7 +103,8 @@ class WorkflowStateCmdHandler(val producer: InfiniticProducer) {
 
           with(producer) {
             // event: starting new method
-            dispatchNewWorkflow.methodCommandedEvent(emitterName).sendTo(WorkflowStateEventTopic)
+            dispatchNewWorkflow.methodCommandedEvent(getEmitterName())
+                .sendTo(WorkflowStateEventTopic)
           }
         }
       }

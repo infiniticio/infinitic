@@ -52,10 +52,10 @@ import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.tasks.tags.messages.RemoveTaskIdFromTag
 import io.infinitic.common.transport.InfiniticProducer
-import io.infinitic.common.transport.RetryServiceExecutorTopic
 import io.infinitic.common.transport.ServiceExecutorEventTopic
+import io.infinitic.common.transport.ServiceExecutorRetryTopic
 import io.infinitic.common.transport.ServiceExecutorTopic
-import io.infinitic.common.workers.config.ExponentialBackoffRetryPolicy
+import io.infinitic.common.workers.config.WithExponentialBackoffRetry
 import io.infinitic.common.workers.data.WorkerName
 import io.infinitic.exceptions.tasks.ClassNotFoundException
 import io.infinitic.exceptions.tasks.NoMethodFoundWithParameterCountException
@@ -101,12 +101,12 @@ class TaskExecutorTests :
         val registry = mockk<ExecutorRegistryInterface>()
         val client = mockk<InfiniticClientInterface>()
         val producer = mockk<InfiniticProducer> {
-          every { name } returns "$testWorkerName"
+          coEvery { getName() } returns "$testWorkerName"
           coEvery {
             capture(taskExecutorSlot).sendTo(ServiceExecutorTopic)
           } returns Unit
           coEvery {
-            capture(taskExecutorSlot).sendTo(RetryServiceExecutorTopic, capture(afterSlot))
+            capture(taskExecutorSlot).sendTo(ServiceExecutorRetryTopic, capture(afterSlot))
           } returns Unit
           coEvery {
             capture(taskEventSlot).sendTo(ServiceExecutorEventTopic)
@@ -424,7 +424,7 @@ class TaskExecutorTests :
           every { registry.getServiceExecutorInstance(testServiceName) } returns ServiceWithRegisteredTimeout()
           every { registry.getServiceExecutorWithTimeout(testServiceName) } returns { 0.1 }
           every { registry.getServiceExecutorWithRetry(testServiceName) } returns
-              ExponentialBackoffRetryPolicy(maximumRetries = 0)
+              WithExponentialBackoffRetry(maximumRetries = 0)
           val types = listOf(Int::class.java.name, String::class.java.name)
           // with
           val msg = getExecuteTask("handle", arrayOf(2, "3"), types)
@@ -446,7 +446,7 @@ class TaskExecutorTests :
           every { registry.getServiceExecutorInstance(testServiceName) } returns ServiceWithTimeoutOnMethod()
           every { registry.getServiceExecutorWithTimeout(testServiceName) } returns WithTimeout.UNSET
           every { registry.getServiceExecutorWithRetry(testServiceName) } returns
-              ExponentialBackoffRetryPolicy(maximumRetries = 0)
+              WithExponentialBackoffRetry(maximumRetries = 0)
           val input = arrayOf(2, "3")
           val types = listOf(Int::class.java.name, String::class.java.name)
           // with
@@ -468,8 +468,9 @@ class TaskExecutorTests :
         "Should throw TimeoutException with timeout from class Annotation" {
           every { registry.getServiceExecutorInstance(testServiceName) } returns ServiceWithTimeoutOnClass()
           every { registry.getServiceExecutorWithTimeout(testServiceName) } returns WithTimeout.UNSET
-          every { registry.getServiceExecutorWithRetry(testServiceName) } returns
-              ExponentialBackoffRetryPolicy(maximumRetries = 0)
+          every { registry.getServiceExecutorWithRetry(testServiceName) } returns WithExponentialBackoffRetry(
+              maximumRetries = 0,
+          )
           val input = arrayOf(2, "3")
           val types = listOf(Int::class.java.name, String::class.java.name)
           // with
@@ -560,7 +561,7 @@ internal fun getExecuteTask(method: String, input: Array<out Any?>, types: List<
         clientWaiting = false,
         methodName = MethodName(method),
         methodParameterTypes = types?.let { MethodParameterTypes(it) },
-        methodParameters = methodParametersFrom(*input),
+        methodArgs = methodParametersFrom(*input),
         lastError = null,
     )
 

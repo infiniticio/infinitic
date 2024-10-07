@@ -24,6 +24,11 @@
 # Comment the line below to perform tests on a local Pulsar cluster
 
 services:
+  - name: batchService
+    tagEngine:
+    executor:
+      class: io.infinitic.tests.batches.BatchServiceImpl
+      concurrency: 5
   - name: annotatedService
     tagEngine:
     executor:
@@ -50,6 +55,12 @@ services:
       concurrency: 5
 
 workflows:
+  - name: batchWorkflow
+    tagEngine:
+    stateEngine:
+    executor:
+      class: io.infinitic.tests.batches.BatchWorkflowImpl
+      concurrency: 2
   - name: annotatedWorkflow
     tagEngine:
     stateEngine:

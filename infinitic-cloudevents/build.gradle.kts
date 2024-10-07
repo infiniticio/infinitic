@@ -23,6 +23,7 @@
 
 dependencies {
   implementation(project(":infinitic-common"))
+  implementation(project(":infinitic-transport-inMemory"))
 
   implementation(Libs.Serialization.json)
   implementation(Libs.CloudEvents.json)

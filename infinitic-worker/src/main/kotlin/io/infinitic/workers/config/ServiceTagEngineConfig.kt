@@ -89,6 +89,9 @@ data class ServiceTagEngineConfig(
     fun setStorage(storage: StorageConfig) =
         apply { this.storage = storage }
 
+    fun setStorage(storage: StorageConfig.StorageConfigBuilder) =
+        apply { this.storage = storage.build() }
+
     fun build(): ServiceTagEngineConfig {
       serviceName.checkServiceName()
 

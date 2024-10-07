@@ -53,7 +53,6 @@ import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerifySequence
 import io.mockk.confirmVerified
-import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.slot
@@ -83,7 +82,7 @@ private class WorkflowTagEngineTests :
           // then
           coVerifySequence {
             workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
-            producer.name
+            producer.getName()
             with(producer) { ofType<CancelWorkflow>().sendTo(WorkflowStateEngineTopic) }
             with(producer) { ofType<CancelWorkflow>().sendTo(WorkflowStateEngineTopic) }
           }
@@ -106,7 +105,7 @@ private class WorkflowTagEngineTests :
           // then
           coVerifySequence {
             workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
-            producer.name
+            producer.getName()
             with(producer) {
               ofType<RetryWorkflowTask>().sendTo(WorkflowStateEngineTopic)
             }
@@ -136,7 +135,7 @@ private class WorkflowTagEngineTests :
           // then
           coVerifySequence {
             workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
-            producer.name
+            producer.getName()
             with(producer) { ofType<RetryTasks>().sendTo(WorkflowStateEngineTopic) }
             with(producer) { ofType<RetryTasks>().sendTo(WorkflowStateEngineTopic) }
           }
@@ -163,7 +162,7 @@ private class WorkflowTagEngineTests :
           // then
           coVerifySequence {
             workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
-            producer.name
+            producer.getName()
             with(producer) { ofType<CompleteTimers>().sendTo(WorkflowStateEngineTopic) }
             with(producer) { ofType<CompleteTimers>().sendTo(WorkflowStateEngineTopic) }
           }
@@ -188,7 +187,7 @@ private class WorkflowTagEngineTests :
           // then
           coVerifySequence {
             workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
-            producer.name
+            producer.getName()
             with(producer) { ofType<SendSignal>().sendTo(WorkflowStateEngineTopic) }
             with(producer) { ofType<SendSignal>().sendTo(WorkflowStateEngineTopic) }
           }
@@ -222,7 +221,7 @@ private class WorkflowTagEngineTests :
           // then
           coVerifySequence {
             workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)
-            producer.name
+            producer.getName()
             with(producer) { ofType<WorkflowIdsByTag>().sendTo(ClientTopic) }
           }
           confirmVerified()
@@ -265,7 +264,7 @@ private fun getEngine(
   workflowTagStorage = mockWorkflowTagStorage(workflowTag, workflowName, workflowIds)
 
   val producer = mockk<InfiniticProducer> {
-    every { name } returns "clientWorkflowTagEngineName"
+    coEvery { getName() } returns "clientWorkflowTagEngineName"
     coEvery { capture(clientSlot).sendTo(ClientTopic) } returns Unit
     coEvery { capture(workflowEngineSlot).sendTo(WorkflowStateEngineTopic) } returns Unit
   }

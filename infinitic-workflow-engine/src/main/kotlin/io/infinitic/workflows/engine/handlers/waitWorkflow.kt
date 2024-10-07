@@ -37,7 +37,6 @@ internal fun CoroutineScope.waitWorkflow(
   state: WorkflowState,
   message: WaitWorkflow
 ) {
-  val emitterName = EmitterName(producer.name)
   val clientName = ClientName.from(message.emitterName)
 
   when (val methodRun = state.getWorkflowMethod(message.workflowMethodId)) {
@@ -47,7 +46,7 @@ internal fun CoroutineScope.waitWorkflow(
             recipientName = clientName,
             workflowId = message.workflowId,
             workflowMethodId = message.workflowMethodId,
-            emitterName = emitterName,
+            emitterName = EmitterName(producer.getName()),
         )
         with(producer) { methodRunUnknown.sendTo(ClientTopic) }
       }

@@ -32,12 +32,14 @@ interface InfiniticProducer {
   /**
    * Name of the sender
    */
-  var name: String
+  suspend fun getName(): String
+
+  fun setSuggestedName(name: String)
 
   suspend fun <T : Message> internalSendTo(
     message: T,
     topic: Topic<T>,
-    after: MillisDuration = MillisDuration(0)
+    after: MillisDuration = MillisDuration(0),
   )
 
   /**

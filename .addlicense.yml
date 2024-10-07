@@ -4,6 +4,7 @@ ignorePaths:
   - "**/*.md"
   - "**/*.avsc"
   - "**/compiled.css"
+  - ".idea/**"
 
 hasLicensePatterns:
   - '"commons clause" license condition v1.0'

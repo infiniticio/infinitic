@@ -57,7 +57,7 @@ data class MySQLStorageConfig(
   /**
    * MySQLStorageConfig builder
    */
-  class MySQLStorageConfigBuilder: StorageConfigBuilder {
+  class MySQLStorageConfigBuilder : StorageConfigBuilder {
     private var compression: CompressionConfig? = null
     private var cache: CacheConfig? = null
     private var host: String? = null
@@ -75,9 +75,10 @@ data class MySQLStorageConfig(
 
     fun setCompression(compression: CompressionConfig) = apply { this.compression = compression }
     fun setCache(cache: CacheConfig) = apply { this.cache = cache }
+    fun setCache(cache: CacheConfig.CacheConfigBuilder) = apply { this.cache = cache.build() }
     fun setHost(host: String) = apply { this.host = host }
     fun setPort(port: Int) = apply { this.port = port }
-    fun setUserName(user: String) = apply { this.username = user }
+    fun setUsername(user: String) = apply { this.username = user }
     fun setPassword(password: String) = apply { this.password = password }
     fun setDatabase(database: String) = apply { this.database = database }
     fun setKeySetTable(keySetTable: String) = apply { this.keySetTable = keySetTable }

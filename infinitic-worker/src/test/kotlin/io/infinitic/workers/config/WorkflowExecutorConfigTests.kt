@@ -23,7 +23,7 @@
 package io.infinitic.workers.config
 
 import com.sksamuel.hoplite.ConfigException
-import io.infinitic.common.workers.config.ExponentialBackoffRetryPolicy
+import io.infinitic.common.workers.config.WithExponentialBackoffRetry
 import io.infinitic.common.workflows.emptyWorkflowContext
 import io.infinitic.tasks.WithRetry
 import io.infinitic.tasks.WithTimeout
@@ -63,7 +63,7 @@ internal class WorkflowExecutorConfigTests : StringSpec(
       }
 
       "Can create WorkflowExecutorConfig through builder with all parameters" {
-        val withRetry = ExponentialBackoffRetryPolicy()
+        val withRetry = WithExponentialBackoffRetry()
         val config = shouldNotThrowAny {
           WorkflowExecutorConfig.builder()
               .setWorkflowName(workflowName)
@@ -130,7 +130,7 @@ class: ${WorkflowAImpl::class.java.name}
       }
 
       "Can create WorkflowExecutorConfig through YAML with all parameters" {
-        val withRetry = ExponentialBackoffRetryPolicy(minimumSeconds = 4.0)
+        val withRetry = WithExponentialBackoffRetry(minimumSeconds = 4.0)
         val config = shouldNotThrowAny {
           WorkflowExecutorConfig.fromYamlString(
               """

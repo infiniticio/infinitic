@@ -35,7 +35,7 @@ import io.kotest.matchers.shouldBe
 class WorkflowCmdEnvelopeTests :
   StringSpec(
       {
-        WorkflowCmdMessage::class.sealedSubclasses.map {
+        WorkflowStateEngineCmdMessage::class.sealedSubclasses.map {
           val msg = TestFactory.random(it)
 
           "WorkflowCmdEnvelope: ${msg::class.simpleName} should be have its workflowId as key" {
@@ -43,7 +43,7 @@ class WorkflowCmdEnvelopeTests :
           }
         }
 
-        WorkflowCmdMessage::class.sealedSubclasses.map {
+        WorkflowStateEngineCmdMessage::class.sealedSubclasses.map {
           val msg = TestFactory.random(it)
 
           "WorkflowCmdEnvelope: ${msg::class.simpleName} should be avro-convertible" {

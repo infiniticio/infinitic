@@ -35,10 +35,12 @@ class TopicTests : StringSpec(
           WorkflowStateEngineTopic -> "workflow-engine"
           WorkflowStateTimerTopic -> "workflow-delay"
           WorkflowStateEventTopic -> "workflow-events"
-          WorkflowExecutorTopic, RetryWorkflowExecutorTopic -> "workflow-task-executor"
+          WorkflowExecutorTopic -> "workflow-task-executor"
+          WorkflowExecutorRetryTopic -> "workflow-task-retry"
           WorkflowExecutorEventTopic -> "workflow-task-events"
           ServiceTagEngineTopic -> "task-tag"
-          ServiceExecutorTopic, RetryServiceExecutorTopic -> "task-executor"
+          ServiceExecutorTopic -> "task-executor"
+          ServiceExecutorRetryTopic -> "task-retry"
           ServiceExecutorEventTopic -> "task-events"
           ClientTopic -> "response"
           NamingTopic -> "namer"
@@ -50,11 +52,11 @@ class TopicTests : StringSpec(
         with(WorkflowStateTimerTopic) { prefix shouldBe prefix() }
         with(WorkflowStateEventTopic) { prefix shouldBe prefix() }
         with(WorkflowExecutorTopic) { prefix shouldBe prefix() }
-        with(RetryWorkflowExecutorTopic) { prefix shouldBe prefix() }
+        with(WorkflowExecutorRetryTopic) { prefix shouldBe prefix() }
         with(WorkflowExecutorEventTopic) { prefix shouldBe prefix() }
         with(ServiceTagEngineTopic) { prefix shouldBe prefix() }
         with(ServiceExecutorTopic) { prefix shouldBe prefix() }
-        with(RetryServiceExecutorTopic) { prefix shouldBe prefix() }
+        with(ServiceExecutorRetryTopic) { prefix shouldBe prefix() }
         with(ServiceExecutorEventTopic) { prefix shouldBe prefix() }
         with(ClientTopic) { prefix shouldBe prefix() }
         with(NamingTopic) { prefix shouldBe prefix() }

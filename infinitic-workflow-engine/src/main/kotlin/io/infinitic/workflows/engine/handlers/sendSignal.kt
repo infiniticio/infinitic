@@ -46,7 +46,6 @@ internal fun CoroutineScope.sendSignal(
   state: WorkflowState,
   message: SendSignal
 ) {
-  val emitterName = EmitterName(producer.name)
 
   state.receivingChannels
       .firstOrNull {
@@ -83,7 +82,7 @@ internal fun CoroutineScope.sendSignal(
               workflowName = message.workflowName,
               workflowId = message.workflowId,
               workflowVersion = state.workflowVersion,
-              emitterName = emitterName,
+              emitterName = EmitterName(producer.getName()),
           )
           with(producer) { signalReceivedEvent.sendTo(WorkflowStateEventTopic) }
         }
@@ -97,7 +96,7 @@ internal fun CoroutineScope.sendSignal(
         workflowName = message.workflowName,
         workflowId = message.workflowId,
         workflowVersion = state.workflowVersion,
-        emitterName = emitterName,
+        emitterName = EmitterName(producer.getName()),
     )
 
     with(producer) { signalDiscardedEvent.sendTo(WorkflowStateEventTopic) }

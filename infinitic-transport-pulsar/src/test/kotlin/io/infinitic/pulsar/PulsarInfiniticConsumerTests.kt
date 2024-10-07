@@ -24,7 +24,8 @@
 package io.infinitic.pulsar
 
 import io.infinitic.common.clients.data.ClientName
-import io.infinitic.common.data.MillisInstant
+import io.infinitic.common.fixtures.runWithContextAndCancel
+import io.infinitic.common.messages.Envelope
 import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.transport.ClientTopic
@@ -40,19 +41,20 @@ import io.infinitic.common.transport.WorkflowStateEventTopic
 import io.infinitic.common.transport.WorkflowStateTimerTopic
 import io.infinitic.common.transport.WorkflowTagEngineTopic
 import io.infinitic.common.workflows.data.workflows.WorkflowName
-import io.infinitic.pulsar.admin.PulsarInfiniticAdmin
+import io.infinitic.pulsar.client.InfiniticPulsarClient
+import io.infinitic.pulsar.config.PulsarConfig
 import io.infinitic.pulsar.config.policies.PoliciesConfig
-import io.infinitic.pulsar.consumers.Consumer
 import io.infinitic.pulsar.resources.PulsarResources
 import io.kotest.core.spec.style.StringSpec
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
-import io.mockk.slot
 import io.mockk.spyk
 import net.bytebuddy.utility.RandomString
-import org.apache.pulsar.client.api.SubscriptionInitialPosition
-import org.apache.pulsar.client.api.SubscriptionType
+import org.apache.pulsar.client.api.Consumer
+import org.apache.pulsar.client.api.Schema
+import java.util.concurrent.CompletableFuture
 
 class PulsarInfiniticConsumerTests : StringSpec(
     {
@@ -60,74 +62,55 @@ class PulsarInfiniticConsumerTests : StringSpec(
       val workflowName = WorkflowName("workflowTest")
       val serviceName = ServiceName("serviceTest")
 
-      val handler = slot<suspend (Message, MillisInstant) -> Unit>()
-      val handlerDlq = slot<suspend (Message?, Exception) -> Unit>()
-      val topic = slot<String>()
-
-      val dlqTopic = slot<String?>()
-
-      val subscriptionName = slot<String>()
-      val subscriptionNameDlq = slot<String>()
-      val subscriptionType = slot<SubscriptionType>()
-      val subscriptionInitialPosition = slot<SubscriptionInitialPosition>()
-      val consumerName = slot<String>()
-      val concurrency = slot<Int>()
-
       val tenant = RandomString().nextString()
       val namespace = RandomString().nextString()
 
-      val original = PulsarResources(
-          mockk<PulsarInfiniticAdmin>(),
-          tenant,
-          setOf(),
-          namespace,
-          setOf(),
-          PoliciesConfig(),
+      val pulsarConfig = PulsarConfig(
+          brokerServiceUrl = "pulsar://localhost:6650",
+          webServiceUrl = "http://localhost:8080",
+          tenant = tenant,
+          namespace = namespace,
+          allowedClusters = setOf(),
+          adminRoles = setOf(),
+          policies = PoliciesConfig(),
       )
 
-      val pulsarResources = spyk(original) {
+      val pulsarResources = spyk(PulsarResources(pulsarConfig)) {
         coEvery { initTopicOnce(any(), any(), any()) } returns Result.success(Unit)
-
         coEvery { initDlqTopicOnce(any(), any(), any()) } returns Result.success(Unit)
       }
 
-      val consumer = mockk<Consumer> {
-        coEvery {
-          startListening(
-              capture(handler),
-              capture(handlerDlq),
-              any(),
-              capture(topic),
-              captureNullable(dlqTopic),
-              capture(subscriptionName),
-              capture(subscriptionNameDlq),
-              capture(subscriptionType),
-              capture(subscriptionInitialPosition),
-              capture(consumerName),
-              capture(concurrency),
-          )
-        } returns Unit
+      val pulsarConsumer = mockk<Consumer<Envelope<out Message>>> {
+        every { receiveAsync() } returns CompletableFuture<org.apache.pulsar.client.api.Message<Envelope<out Message>>>()
       }
 
-      val infiniticConsumerAsync = PulsarInfiniticConsumer(consumer, pulsarResources, 20.0)
+      val client = mockk<InfiniticPulsarClient> {
+        every { newConsumer(any<Schema<Envelope<out Message>>>(), any(), any()) } returns
+            Result.success(pulsarConsumer)
+      }
+
+      val infiniticConsumer =
+          PulsarInfiniticConsumer(client, pulsarConfig.consumer, pulsarResources)
 
       "should init client-response topic before consuming it" {
         val name = "$clientName"
 
-        infiniticConsumerAsync.start(
-            subscription = MainSubscription(ClientTopic),
-            entity = name,
-            handler = { _, _ -> },
-            beforeDlq = { _, _ -> },
-            concurrency = 1,
-        )
+        runWithContextAndCancel {
+          infiniticConsumer.start(
+              subscription = MainSubscription(ClientTopic),
+              entity = name,
+              concurrency = 1,
+              process = { _, _ -> },
+              beforeDlq = { _, _ -> },
+          )
+        }
 
 
         coVerify {
           pulsarResources.initTopicOnce(
               "persistent://$tenant/$namespace/response:$name",
-              false,
-              false,
+              isPartitioned = false,
+              isTimer = false,
           )
         }
       }
@@ -135,19 +118,21 @@ class PulsarInfiniticConsumerTests : StringSpec(
       "should init workflow-tag topic before consuming it" {
         val name = "$workflowName"
 
-        infiniticConsumerAsync.start(
-            subscription = MainSubscription(WorkflowTagEngineTopic),
-            entity = name,
-            handler = { _, _ -> },
-            beforeDlq = { _, _ -> },
-            concurrency = 10,
-        )
+        runWithContextAndCancel {
+          infiniticConsumer.start(
+              subscription = MainSubscription(WorkflowTagEngineTopic),
+              entity = name,
+              concurrency = 10,
+              process = { _, _ -> },
+              beforeDlq = { _, _ -> },
+          )
+        }
 
         coVerify {
           pulsarResources.initTopicOnce(
               "persistent://$tenant/$namespace/workflow-tag:$name",
-              true,
-              false,
+              isPartitioned = true,
+              isTimer = false,
           )
         }
       }
@@ -155,19 +140,21 @@ class PulsarInfiniticConsumerTests : StringSpec(
       "should init workflow-cmd topic before consuming it" {
         val name = "$workflowName"
 
-        infiniticConsumerAsync.start(
-            subscription = MainSubscription(WorkflowStateCmdTopic),
-            entity = name,
-            handler = { _, _ -> },
-            beforeDlq = { _, _ -> },
-            concurrency = 10,
-        )
+        runWithContextAndCancel {
+          infiniticConsumer.start(
+              subscription = MainSubscription(WorkflowStateCmdTopic),
+              entity = name,
+              concurrency = 10,
+              process = { _, _ -> },
+              beforeDlq = { _, _ -> },
+          )
+        }
 
         coVerify {
           pulsarResources.initTopicOnce(
               "persistent://$tenant/$namespace/workflow-cmd:$name",
-              true,
-              false,
+              isPartitioned = true,
+              isTimer = false,
           )
         }
       }
@@ -175,19 +162,21 @@ class PulsarInfiniticConsumerTests : StringSpec(
       "should init workflow-engine topic before consuming it" {
         val name = "$workflowName"
 
-        infiniticConsumerAsync.start(
-            subscription = MainSubscription(WorkflowStateEngineTopic),
-            entity = name,
-            handler = { _, _ -> },
-            beforeDlq = { _, _ -> },
-            concurrency = 10,
-        )
+        runWithContextAndCancel {
+          infiniticConsumer.start(
+              subscription = MainSubscription(WorkflowStateEngineTopic),
+              entity = name,
+              concurrency = 10,
+              process = { _, _ -> },
+              beforeDlq = { _, _ -> },
+          )
+        }
 
         coVerify {
           pulsarResources.initTopicOnce(
               "persistent://$tenant/$namespace/workflow-engine:$name",
-              true,
-              false,
+              isPartitioned = true,
+              isTimer = false,
           )
         }
       }
@@ -195,19 +184,21 @@ class PulsarInfiniticConsumerTests : StringSpec(
       "should init workflow-delay topic before consuming it" {
         val name = "$workflowName"
 
-        infiniticConsumerAsync.start(
-            subscription = MainSubscription(WorkflowStateTimerTopic),
-            entity = name,
-            handler = { _, _ -> },
-            beforeDlq = { _, _ -> },
-            concurrency = 10,
-        )
+        runWithContextAndCancel {
+          infiniticConsumer.start(
+              subscription = MainSubscription(WorkflowStateTimerTopic),
+              entity = name,
+              concurrency = 10,
+              process = { _, _ -> },
+              beforeDlq = { _, _ -> },
+          )
+        }
 
         coVerify {
           pulsarResources.initTopicOnce(
               "persistent://$tenant/$namespace/workflow-delay:$name",
-              true,
-              true,
+              isPartitioned = true,
+              isTimer = true,
           )
         }
       }
@@ -215,19 +206,21 @@ class PulsarInfiniticConsumerTests : StringSpec(
       "should init workflow-events topic before consuming it" {
         val name = "$workflowName"
 
-        infiniticConsumerAsync.start(
-            subscription = MainSubscription(WorkflowStateEventTopic),
-            entity = name,
-            handler = { _, _ -> },
-            beforeDlq = { _, _ -> },
-            concurrency = 10,
-        )
+        runWithContextAndCancel {
+          infiniticConsumer.start(
+              subscription = MainSubscription(WorkflowStateEventTopic),
+              entity = name,
+              concurrency = 10,
+              process = { _, _ -> },
+              beforeDlq = { _, _ -> },
+          )
+        }
 
         coVerify {
           pulsarResources.initTopicOnce(
               "persistent://$tenant/$namespace/workflow-events:$name",
-              true,
-              false,
+              isPartitioned = true,
+              isTimer = false,
           )
         }
       }
@@ -235,19 +228,21 @@ class PulsarInfiniticConsumerTests : StringSpec(
       "should init workflow-task-executor topic before consuming it" {
         val name = "$workflowName"
 
-        infiniticConsumerAsync.start(
-            subscription = MainSubscription(WorkflowExecutorTopic),
-            entity = name,
-            handler = { _, _ -> },
-            beforeDlq = { _, _ -> },
-            concurrency = 10,
-        )
+        runWithContextAndCancel {
+          infiniticConsumer.start(
+              subscription = MainSubscription(WorkflowExecutorTopic),
+              entity = name,
+              concurrency = 10,
+              process = { _, _ -> },
+              beforeDlq = { _, _ -> },
+          )
+        }
 
         coVerify {
           pulsarResources.initTopicOnce(
               "persistent://$tenant/$namespace/workflow-task-executor:$name",
-              true,
-              false,
+              isPartitioned = true,
+              isTimer = false,
           )
         }
       }
@@ -255,19 +250,21 @@ class PulsarInfiniticConsumerTests : StringSpec(
       "should init workflow-task-events topic before consuming it" {
         val name = "$workflowName"
 
-        infiniticConsumerAsync.start(
-            subscription = MainSubscription(WorkflowExecutorEventTopic),
-            entity = name,
-            handler = { _, _ -> },
-            beforeDlq = { _, _ -> },
-            concurrency = 10,
-        )
+        runWithContextAndCancel {
+          infiniticConsumer.start(
+              subscription = MainSubscription(WorkflowExecutorEventTopic),
+              entity = name,
+              concurrency = 10,
+              process = { _, _ -> },
+              beforeDlq = { _, _ -> },
+          )
+        }
 
         coVerify {
           pulsarResources.initTopicOnce(
               "persistent://$tenant/$namespace/workflow-task-events:$name",
-              true,
-              false,
+              isPartitioned = true,
+              isTimer = false,
           )
         }
       }
@@ -275,19 +272,21 @@ class PulsarInfiniticConsumerTests : StringSpec(
       "should init task-tag topic before consuming it" {
         val name = "$serviceName"
 
-        infiniticConsumerAsync.start(
-            subscription = MainSubscription(ServiceTagEngineTopic),
-            entity = name,
-            handler = { _, _ -> },
-            beforeDlq = { _, _ -> },
-            concurrency = 10,
-        )
+        runWithContextAndCancel {
+          infiniticConsumer.start(
+              subscription = MainSubscription(ServiceTagEngineTopic),
+              entity = name,
+              concurrency = 10,
+              process = { _, _ -> },
+              beforeDlq = { _, _ -> },
+          )
+        }
 
         coVerify {
           pulsarResources.initTopicOnce(
               "persistent://$tenant/$namespace/task-tag:$name",
-              true,
-              false,
+              isPartitioned = true,
+              isTimer = false,
           )
         }
       }
@@ -295,19 +294,21 @@ class PulsarInfiniticConsumerTests : StringSpec(
       "should init task-executor topic before consuming it" {
         val name = "$serviceName"
 
-        infiniticConsumerAsync.start(
-            subscription = MainSubscription(ServiceExecutorTopic),
-            entity = name,
-            handler = { _, _ -> },
-            beforeDlq = { _, _ -> },
-            concurrency = 10,
-        )
+        runWithContextAndCancel {
+          infiniticConsumer.start(
+              subscription = MainSubscription(ServiceExecutorTopic),
+              entity = name,
+              concurrency = 10,
+              process = { _, _ -> },
+              beforeDlq = { _, _ -> },
+          )
+        }
 
         coVerify {
           pulsarResources.initTopicOnce(
               "persistent://$tenant/$namespace/task-executor:$name",
-              true,
-              false,
+              isPartitioned = true,
+              isTimer = false,
           )
         }
       }
@@ -315,19 +316,21 @@ class PulsarInfiniticConsumerTests : StringSpec(
       "should init task-events topic before consuming it" {
         val name = "$serviceName"
 
-        infiniticConsumerAsync.start(
-            subscription = MainSubscription(ServiceExecutorEventTopic),
-            entity = name,
-            handler = { _, _ -> },
-            beforeDlq = { _, _ -> },
-            concurrency = 10,
-        )
+        runWithContextAndCancel {
+          infiniticConsumer.start(
+              subscription = MainSubscription(ServiceExecutorEventTopic),
+              entity = name,
+              concurrency = 10,
+              process = { _, _ -> },
+              beforeDlq = { _, _ -> },
+          )
+        }
 
         coVerify {
           pulsarResources.initTopicOnce(
               "persistent://$tenant/$namespace/task-events:$name",
-              true,
-              false,
+              isPartitioned = true,
+              isTimer = false,
           )
         }
       }

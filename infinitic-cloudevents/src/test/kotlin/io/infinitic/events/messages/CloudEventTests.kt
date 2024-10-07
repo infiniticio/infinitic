@@ -81,9 +81,9 @@ import io.infinitic.common.workflows.engine.messages.TaskDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.TimerDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.WaitWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowCanceledEvent
-import io.infinitic.common.workflows.engine.messages.WorkflowCmdMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowCompletedEvent
-import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineCmdMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineEventMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
 import io.infinitic.storage.config.InMemoryStorageConfig
 import io.infinitic.transport.config.InMemoryTransportConfig
@@ -108,11 +108,11 @@ private val eventListener = mockk<CloudEventListener> {
   every { onEvent(capture(events)) } just Runs
 }
 
-val transport = InMemoryTransportConfig()
+private val transport = InMemoryTransportConfig()
 
 private val worker = InfiniticWorker.builder()
     .setTransport(transport)
-    .setStorage(InMemoryStorageConfig.builder().build())
+    .setStorage(InMemoryStorageConfig.builder())
     .setEventListener(
         EventListenerConfig.builder()
             .setListener(eventListener)
@@ -154,7 +154,7 @@ suspend fun main() {
     }
   }
 
-  WorkflowCmdMessage::class.sealedSubclasses.forEach {
+  WorkflowStateEngineCmdMessage::class.sealedSubclasses.forEach {
     events.clear()
     val message = TestFactory.random(it, mapOf("workflowName" to WorkflowName("WorkflowA")))
     message.sendToTopic(WorkflowStateCmdTopic)
@@ -166,7 +166,7 @@ suspend fun main() {
   }
 
   WorkflowStateEngineMessage::class.sealedSubclasses.forEach {
-    if (!it.isSubclassOf(WorkflowCmdMessage::class)) {
+    if (!it.isSubclassOf(WorkflowStateEngineCmdMessage::class)) {
       events.clear()
       val message = TestFactory.random(it, mapOf("workflowName" to WorkflowName("WorkflowA")))
       message.sendToTopic(WorkflowStateEngineTopic)
@@ -178,7 +178,7 @@ suspend fun main() {
     }
   }
 
-  WorkflowEventMessage::class.sealedSubclasses.forEach {
+  WorkflowStateEngineEventMessage::class.sealedSubclasses.forEach {
     events.clear()
     val message = TestFactory.random(it, mapOf("workflowName" to WorkflowName("WorkflowA")))
     message.sendToTopic(WorkflowStateEventTopic)
@@ -192,133 +192,199 @@ suspend fun main() {
   worker.close()
 }
 
-internal class CloudEventTests :
-  StringSpec(
-      {
-        beforeSpec {
-          worker.startAsync()
-        }
+internal class CloudEventTests : StringSpec(
+    {
+      beforeSpec {
+        worker.startAsync()
+      }
 
-        afterSpec {
-          worker.close()
-        }
+      afterSpec {
+        worker.close()
+      }
 
-        beforeEach {
-          events.clear()
-        }
+      beforeEach {
+        events.clear()
+      }
 
-        ServiceExecutorMessage::class.sealedSubclasses.forEach {
-          "Check ${it.simpleName} event envelope from Service Executor topic" {
-            val message = TestFactory.random(it, mapOf("serviceName" to ServiceName("ServiceA")))
-            message.sendToTopic(ServiceExecutorTopic)
+      ServiceExecutorMessage::class.sealedSubclasses.forEach {
+        "Check ${it.simpleName} event envelope from Service Executor topic" {
+          val message = TestFactory.random(it, mapOf("serviceName" to ServiceName("ServiceA")))
+          message.sendToTopic(ServiceExecutorTopic)
 
-            events.size shouldBe 1
-            val event = events.first()
-            event.id shouldBe message.messageId.toString()
-            event.source shouldBe URI("inMemory/services/ServiceA")
-            event.dataContentType shouldBe "application/json"
-            event.subject shouldBe message.taskId.toString()
-            event.type shouldBe when (it) {
-              ExecuteTask::class -> "infinitic.task.start"
-              else -> thisShouldNotHappen()
-            }
+          // first test is slow down in GitHub
+          delay(2000)
+
+          events.size shouldBe 1
+          val event = events.first()
+          event.id shouldBe message.messageId.toString()
+          event.source shouldBe URI("inMemory/services/executor/ServiceA")
+          event.dataContentType shouldBe "application/json"
+          event.subject shouldBe message.taskId.toString()
+          event.type shouldBe when (it) {
+            ExecuteTask::class -> "infinitic.task.start"
+            else -> thisShouldNotHappen()
           }
         }
+      }
 
-        ServiceExecutorEventMessage::class.sealedSubclasses.forEach {
-          "Check ${it.simpleName} event envelope from Service Events topic" {
-            val message = TestFactory.random(it, mapOf("serviceName" to ServiceName("ServiceA")))
-            message.sendToTopic(ServiceExecutorEventTopic)
+      ServiceExecutorEventMessage::class.sealedSubclasses.forEach {
+        "Check ${it.simpleName} event envelope from Service Events topic" {
+          val message = TestFactory.random(it, mapOf("serviceName" to ServiceName("ServiceA")))
+          message.sendToTopic(ServiceExecutorEventTopic)
 
-            events.size shouldBe 1
-            val event = events.first()
-            event.id shouldBe message.messageId.toString()
-            event.source shouldBe URI("inMemory/services/ServiceA")
-            event.dataContentType shouldBe "application/json"
-            event.subject shouldBe message.taskId.toString()
-            event.type shouldBe when (it) {
-              TaskStartedEvent::class -> "infinitic.task.started"
-              TaskCompletedEvent::class -> when ((message as TaskCompletedEvent).isDelegated) {
-                true -> "infinitic.task.delegationCompleted"
-                false -> "infinitic.task.completed"
-              }
-
-              TaskFailedEvent::class -> "infinitic.task.failed"
-              TaskRetriedEvent::class -> "infinitic.task.retryScheduled"
-              else -> thisShouldNotHappen()
+          events.size shouldBe 1
+          val event = events.first()
+          event.id shouldBe message.messageId.toString()
+          event.source shouldBe URI("inMemory/services/executor/ServiceA")
+          event.dataContentType shouldBe "application/json"
+          event.subject shouldBe message.taskId.toString()
+          event.type shouldBe when (it) {
+            TaskStartedEvent::class -> "infinitic.task.started"
+            TaskCompletedEvent::class -> when ((message as TaskCompletedEvent).isDelegated) {
+              true -> "infinitic.task.delegationCompleted"
+              false -> "infinitic.task.completed"
             }
+
+            TaskFailedEvent::class -> "infinitic.task.failed"
+            TaskRetriedEvent::class -> "infinitic.task.retryScheduled"
+            else -> thisShouldNotHappen()
           }
         }
+      }
 
-        ServiceExecutorMessage::class.sealedSubclasses.forEach {
-          "Check ${it.simpleName} source for WorkflowTask" {
+      ServiceExecutorMessage::class.sealedSubclasses.forEach {
+        "Check ${it.simpleName} source for WorkflowTask" {
+          val message = TestFactory.random(
+              it,
+              mapOf(
+                  "serviceName" to WorkflowTask.WORKFLOW_SERVICE_NAME,
+                  "workflowName" to WorkflowName("WorkflowA"),
+              ),
+          )
+          message.sendToTopic(WorkflowExecutorTopic)
+
+          events.size shouldBe 1
+          val event = events.first()
+          event.source shouldBe URI("inMemory/workflows/executor/WorkflowA")
+          event.subject shouldBe message.taskId.toString()
+          event.type shouldBe when (it) {
+            ExecuteTask::class -> "infinitic.task.start"
+            else -> thisShouldNotHappen()
+          }
+        }
+      }
+
+      ServiceExecutorEventMessage::class.sealedSubclasses.forEach {
+        "Check ${it.simpleName} source for WorkflowTask" {
+          var message = TestFactory.random(
+              it,
+              mapOf(
+                  "serviceName" to WorkflowTask.WORKFLOW_SERVICE_NAME,
+                  "workflowName" to WorkflowName("WorkflowA"),
+              ),
+          )
+          if (message is TaskCompletedEvent) {
+            message = (message as TaskCompletedEvent).copy(isDelegated = false)
+          }
+          message.sendToTopic(WorkflowExecutorEventTopic)
+
+          events.size shouldBe 1
+          val event = events.first()
+          event.source shouldBe URI("inMemory/workflows/executor/WorkflowA")
+          event.subject shouldBe message.taskId.toString()
+          event.type shouldBe when (it) {
+            TaskStartedEvent::class -> "infinitic.task.started"
+            TaskCompletedEvent::class -> "infinitic.task.completed"
+            TaskFailedEvent::class -> "infinitic.task.failed"
+            TaskRetriedEvent::class -> "infinitic.task.retryScheduled"
+            else -> thisShouldNotHappen()
+          }
+        }
+      }
+
+      WorkflowStateEngineCmdMessage::class.sealedSubclasses.forEach {
+        "Check ${it.simpleName} event envelope from cmd topic" {
+          val message = TestFactory.random(it, mapOf("workflowName" to WorkflowName("WorkflowA")))
+          message.sendToTopic(WorkflowStateCmdTopic)
+
+          val type = when (it) {
+            CancelWorkflow::class -> when ((message as CancelWorkflow).workflowMethodId) {
+              null -> "infinitic.workflow.cancel"
+              else -> "infinitic.workflow.cancelMethod"
+            }
+
+            CompleteTimers::class -> null
+            CompleteWorkflow::class -> null
+            DispatchMethod::class -> "infinitic.workflow.startMethod"
+            DispatchWorkflow::class -> "infinitic.workflow.start"
+            RetryTasks::class -> "infinitic.workflow.retryTask"
+            RetryWorkflowTask::class -> "infinitic.workflow.retryExecutor"
+            SendSignal::class -> "infinitic.workflow.signal"
+            WaitWorkflow::class -> null
+            else -> thisShouldNotHappen()
+          }
+
+          events.size shouldBe if (type == null) 0 else 1
+          if (events.size == 1) {
+            val event = events.first()
+            event.id shouldBe message.messageId.toString()
+            event.source shouldBe URI("inMemory/workflows/stateEngine/WorkflowA")
+            event.dataContentType shouldBe "application/json"
+            event.subject shouldBe message.workflowId.toString()
+            event.type shouldBe type
+          }
+        }
+      }
+
+      // TODO complete this test and add similar tests for all other events
+      "Check infinitic.task.dispatched data" {
+        val message = TestFactory.random<ExecuteTask>(
+            mapOf("serviceName" to ServiceName("ServiceA")),
+        )
+        message.sendToTopic(ServiceExecutorTopic)
+
+        events.size shouldBe 1
+        val event = events.first()
+        val json = Json.parseToJsonElement(String(event.data!!.toBytes())).jsonObject
+        json["taskName"]!!.jsonPrimitive.content shouldBe message.methodName.toString()
+      }
+
+      WorkflowStateEngineCmdMessage::class.sealedSubclasses.forEach {
+        "No ${it.simpleName} event should come from engine topic" {
+          val message = TestFactory.random(
+              it,
+              mapOf(
+                  "workflowName" to WorkflowName("WorkflowA"),
+                  "requester" to ClientRequester(clientName = ClientName(RandomString().nextString())),
+              ),
+          )
+          message.sendToTopic(WorkflowStateEngineTopic)
+          events.size shouldBe 0
+        }
+      }
+
+      WorkflowStateEngineMessage::class.sealedSubclasses.forEach {
+        if (!it.isSubclassOf(WorkflowStateEngineCmdMessage::class)) {
+          "Check ${it.simpleName} event envelope from engine topic" {
             val message = TestFactory.random(
                 it,
                 mapOf(
-                    "serviceName" to WorkflowTask.WORKFLOW_SERVICE_NAME,
                     "workflowName" to WorkflowName("WorkflowA"),
                 ),
             )
-            message.sendToTopic(WorkflowExecutorTopic)
-
-            events.size shouldBe 1
-            val event = events.first()
-            event.source shouldBe URI("inMemory/services/executor/WorkflowA")
-            event.subject shouldBe message.taskId.toString()
-            event.type shouldBe when (it) {
-              ExecuteTask::class -> "infinitic.task.start"
-              else -> thisShouldNotHappen()
-            }
-          }
-        }
-
-        ServiceExecutorEventMessage::class.sealedSubclasses.forEach {
-          "Check ${it.simpleName} source for WorkflowTask" {
-            var message = TestFactory.random(
-                it,
-                mapOf(
-                    "serviceName" to WorkflowTask.WORKFLOW_SERVICE_NAME,
-                    "workflowName" to WorkflowName("WorkflowA"),
-                ),
-            )
-            if (message is TaskCompletedEvent) {
-              message = (message as TaskCompletedEvent).copy(isDelegated = false)
-            }
-            message.sendToTopic(WorkflowExecutorEventTopic)
-
-            events.size shouldBe 1
-            val event = events.first()
-            event.source shouldBe URI("inMemory/services/executor/WorkflowA")
-            event.subject shouldBe message.taskId.toString()
-            event.type shouldBe when (it) {
-              TaskStartedEvent::class -> "infinitic.task.started"
-              TaskCompletedEvent::class -> "infinitic.task.completed"
-              TaskFailedEvent::class -> "infinitic.task.failed"
-              TaskRetriedEvent::class -> "infinitic.task.retryScheduled"
-              else -> thisShouldNotHappen()
-            }
-          }
-        }
-
-        WorkflowCmdMessage::class.sealedSubclasses.forEach {
-          "Check ${it.simpleName} event envelope from cmd topic" {
-            val message = TestFactory.random(it, mapOf("workflowName" to WorkflowName("WorkflowA")))
-            message.sendToTopic(WorkflowStateCmdTopic)
+            message.sendToTopic(WorkflowStateEngineTopic)
 
             val type = when (it) {
-              CancelWorkflow::class -> when ((message as CancelWorkflow).workflowMethodId) {
-                null -> "infinitic.workflow.cancel"
-                else -> "infinitic.workflow.cancelMethod"
-              }
-
-              CompleteTimers::class -> null
-              CompleteWorkflow::class -> null
-              DispatchMethod::class -> "infinitic.workflow.startMethod"
-              DispatchWorkflow::class -> "infinitic.workflow.start"
-              RetryTasks::class -> "infinitic.workflow.retryTask"
-              RetryWorkflowTask::class -> "infinitic.workflow.retryExecutor"
-              SendSignal::class -> "infinitic.workflow.signal"
-              WaitWorkflow::class -> null
+              RemoteMethodCanceled::class -> "infinitic.workflow.remoteMethodCanceled"
+              RemoteMethodCompleted::class -> "infinitic.workflow.remoteMethodCompleted"
+              RemoteMethodFailed::class -> "infinitic.workflow.remoteMethodFailed"
+              RemoteMethodTimedOut::class -> "infinitic.workflow.remoteMethodTimedOut"
+              RemoteMethodUnknown::class -> "infinitic.workflow.remoteMethodUnknown"
+              RemoteTaskCanceled::class -> null
+              RemoteTaskCompleted::class -> "infinitic.workflow.taskCompleted"
+              RemoteTaskFailed::class -> "infinitic.workflow.taskFailed"
+              RemoteTaskTimedOut::class -> "infinitic.workflow.taskTimedOut"
+              RemoteTimerCompleted::class -> "infinitic.workflow.timerCompleted"
               else -> thisShouldNotHappen()
             }
 
@@ -326,116 +392,52 @@ internal class CloudEventTests :
             if (events.size == 1) {
               val event = events.first()
               event.id shouldBe message.messageId.toString()
-              event.source shouldBe URI("inMemory/workflows/WorkflowA")
+              event.source shouldBe URI("inMemory/workflows/stateEngine/WorkflowA")
               event.dataContentType shouldBe "application/json"
               event.subject shouldBe message.workflowId.toString()
               event.type shouldBe type
             }
           }
         }
+      }
 
-        // TODO complete this test and add similar tests for all other events
-        "Check infinitic.task.dispatched data" {
-          val message = TestFactory.random<ExecuteTask>(
-              mapOf("serviceName" to ServiceName("ServiceA")),
+      WorkflowStateEngineEventMessage::class.sealedSubclasses.forEach {
+        "Check ${it.simpleName} event envelope from events topic" {
+          val message = TestFactory.random(
+              it,
+              mapOf("workflowName" to WorkflowName("WorkflowA")),
           )
-          message.sendToTopic(ServiceExecutorTopic)
+          message.sendToTopic(WorkflowStateEventTopic)
+
+          val type = when (it) {
+            WorkflowCompletedEvent::class -> "infinitic.workflow.ended"
+            WorkflowCanceledEvent::class -> "infinitic.workflow.canceled"
+            MethodCommandedEvent::class -> "infinitic.workflow.startMethod"
+            MethodCompletedEvent::class -> "infinitic.workflow.methodCompleted"
+            MethodFailedEvent::class -> "infinitic.workflow.methodFailed"
+            MethodCanceledEvent::class -> "infinitic.workflow.methodCanceled"
+            MethodTimedOutEvent::class -> "infinitic.workflow.methodTimedOut"
+            TaskDispatchedEvent::class -> "infinitic.workflow.taskDispatched"
+            RemoteMethodDispatchedEvent::class -> "infinitic.workflow.remoteMethodDispatched"
+            TimerDispatchedEvent::class -> "infinitic.workflow.timerDispatched"
+            SignalDispatchedEvent::class -> "infinitic.workflow.signalDispatched"
+            SignalReceivedEvent::class -> "infinitic.workflow.signalReceived"
+            SignalDiscardedEvent::class -> "infinitic.workflow.signalDiscarded"
+            else -> thisShouldNotHappen()
+          }
 
           events.size shouldBe 1
-          val event = events.first()
-          val json = Json.parseToJsonElement(String(event.data!!.toBytes())).jsonObject
-          json["taskName"]!!.jsonPrimitive.content shouldBe message.methodName.toString()
-        }
-
-        WorkflowCmdMessage::class.sealedSubclasses.forEach {
-          "No ${it.simpleName} event should come from engine topic" {
-            val message = TestFactory.random(
-                it,
-                mapOf(
-                    "workflowName" to WorkflowName("WorkflowA"),
-                    "requester" to ClientRequester(clientName = ClientName(RandomString().nextString())),
-                ),
-            )
-            message.sendToTopic(WorkflowStateEngineTopic)
-            events.size shouldBe 0
+          if (events.size == 1) {
+            val event = events.first()
+            event.id shouldBe message.messageId.toString()
+            event.source shouldBe URI("inMemory/workflows/stateEngine/WorkflowA")
+            event.dataContentType shouldBe "application/json"
+            event.subject shouldBe message.workflowId.toString()
+            event.type shouldBe type
           }
         }
-
-        WorkflowStateEngineMessage::class.sealedSubclasses.forEach {
-          if (!it.isSubclassOf(WorkflowCmdMessage::class)) {
-            "Check ${it.simpleName} event envelope from engine topic" {
-              val message = TestFactory.random(
-                  it,
-                  mapOf(
-                      "workflowName" to WorkflowName("WorkflowA"),
-                  ),
-              )
-              message.sendToTopic(WorkflowStateEngineTopic)
-
-              val type = when (it) {
-                RemoteMethodCanceled::class -> "infinitic.workflow.remoteMethodCanceled"
-                RemoteMethodCompleted::class -> "infinitic.workflow.remoteMethodCompleted"
-                RemoteMethodFailed::class -> "infinitic.workflow.remoteMethodFailed"
-                RemoteMethodTimedOut::class -> "infinitic.workflow.remoteMethodTimedOut"
-                RemoteMethodUnknown::class -> "infinitic.workflow.remoteMethodUnknown"
-                RemoteTaskCanceled::class -> null
-                RemoteTaskCompleted::class -> "infinitic.workflow.taskCompleted"
-                RemoteTaskFailed::class -> "infinitic.workflow.taskFailed"
-                RemoteTaskTimedOut::class -> "infinitic.workflow.taskTimedOut"
-                RemoteTimerCompleted::class -> "infinitic.workflow.timerCompleted"
-                else -> thisShouldNotHappen()
-              }
-
-              events.size shouldBe if (type == null) 0 else 1
-              if (events.size == 1) {
-                val event = events.first()
-                event.id shouldBe message.messageId.toString()
-                event.source shouldBe URI("inMemory/workflows/WorkflowA")
-                event.dataContentType shouldBe "application/json"
-                event.subject shouldBe message.workflowId.toString()
-                event.type shouldBe type
-              }
-            }
-          }
-        }
-
-        WorkflowEventMessage::class.sealedSubclasses.forEach {
-          "Check ${it.simpleName} event envelope from events topic" {
-            val message = TestFactory.random(
-                it,
-                mapOf("workflowName" to WorkflowName("WorkflowA")),
-            )
-            message.sendToTopic(WorkflowStateEventTopic)
-
-            val type = when (it) {
-              WorkflowCompletedEvent::class -> "infinitic.workflow.ended"
-              WorkflowCanceledEvent::class -> "infinitic.workflow.canceled"
-              MethodCommandedEvent::class -> "infinitic.workflow.startMethod"
-              MethodCompletedEvent::class -> "infinitic.workflow.methodCompleted"
-              MethodFailedEvent::class -> "infinitic.workflow.methodFailed"
-              MethodCanceledEvent::class -> "infinitic.workflow.methodCanceled"
-              MethodTimedOutEvent::class -> "infinitic.workflow.methodTimedOut"
-              TaskDispatchedEvent::class -> "infinitic.workflow.taskDispatched"
-              RemoteMethodDispatchedEvent::class -> "infinitic.workflow.remoteMethodDispatched"
-              TimerDispatchedEvent::class -> "infinitic.workflow.timerDispatched"
-              SignalDispatchedEvent::class -> "infinitic.workflow.signalDispatched"
-              SignalReceivedEvent::class -> "infinitic.workflow.signalReceived"
-              SignalDiscardedEvent::class -> "infinitic.workflow.signalDiscarded"
-              else -> thisShouldNotHappen()
-            }
-
-            events.size shouldBe 1
-            if (events.size == 1) {
-              val event = events.first()
-              event.id shouldBe message.messageId.toString()
-              event.source shouldBe URI("inMemory/workflows/WorkflowA")
-              event.dataContentType shouldBe "application/json"
-              event.subject shouldBe message.workflowId.toString()
-              event.type shouldBe type
-            }
-          }
-        }
-      },
-  ) {
+      }
+    },
+) {
 
 }

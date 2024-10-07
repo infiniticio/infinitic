@@ -22,11 +22,13 @@
  */
 
 dependencies {
-  api(project(":infinitic-transport-pulsar"))
-  api(project(":infinitic-transport-inMemory"))
-
   implementation(project(":infinitic-common"))
   implementation(project(":infinitic-utils"))
+  implementation(project(":infinitic-transport-pulsar"))
+  implementation(project(":infinitic-transport-inMemory"))
+
+  implementation(Libs.Coroutines.core)
+  implementation(Libs.Coroutines.jdk8)
   implementation(Libs.Pulsar.client)
   implementation(Libs.Pulsar.clientAdmin)
 }

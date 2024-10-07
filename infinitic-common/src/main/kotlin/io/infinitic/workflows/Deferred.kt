@@ -23,9 +23,6 @@
 package io.infinitic.workflows
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import com.fasterxml.jackson.core.JsonGenerator
-import com.fasterxml.jackson.databind.SerializerProvider
-import com.fasterxml.jackson.databind.ser.std.StdSerializer
 import io.infinitic.common.workflows.WorkflowDispatcher
 import io.infinitic.common.workflows.data.steps.Step
 import kotlinx.serialization.KSerializer
@@ -171,18 +168,9 @@ private object DeferredSerializer : KSerializer<Deferred<*>> {
       Deferred<Any>(decoder.decodeSerializableValue(Step.serializer()))
 }
 
-/**
- * Jackson Serializer for Deferred objects.
- */
-internal class DeferredJacksonSerializer : StdSerializer<Deferred<*>>(Deferred::class.java) {
-  override fun serialize(value: Deferred<*>, gen: JsonGenerator, provider: SerializerProvider) {
-    throwInvalidParameterException()
-  }
-}
-
 private fun throwInvalidParameterException(): Nothing =
     throw InvalidParameterException(
         "Invalid usage detected. " +
-            "Deferred objects should not be present in Workflow properties or any method arguments. " +
+            "Deferred objects should not be present in Workflow properties or any public method arguments. " +
             "Please ensure to use deferred objects in their context.",
     )

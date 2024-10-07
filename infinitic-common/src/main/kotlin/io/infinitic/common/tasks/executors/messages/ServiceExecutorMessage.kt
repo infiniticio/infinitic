@@ -98,7 +98,7 @@ data class ExecuteTask(
   val clientWaiting: Boolean,
   val methodName: MethodName,
   val methodParameterTypes: MethodParameterTypes?,
-  val methodParameters: MethodArgs,
+  @SerialName("methodParameters") val methodArgs: MethodArgs,
   val lastError: ExecutionError?,
   @Deprecated("Not used since version 0.13.0") @AvroDefault(Avro.NULL) val workflowVersion: WorkflowVersion? = null
 ) : ServiceExecutorMessage() {
@@ -136,7 +136,7 @@ data class ExecuteTask(
         clientWaiting = msg.clientWaiting,
         methodName = msg.methodName,
         methodParameterTypes = msg.methodParameterTypes,
-        methodParameters = msg.methodParameters,
+        methodArgs = msg.methodArgs,
         lastError = cause.getExecutionError(emitterName),
     )
   }

@@ -26,7 +26,7 @@ import io.infinitic.common.transport.InfiniticConsumer
 import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.transport.InfiniticResources
 
-sealed class TransportConfig: AutoCloseable {
+sealed class TransportConfig : AutoCloseable {
   /**
    * Specifies the duration, in seconds, allowed for the system to gracefully shut down.
    * During this period, the system will attempt to complete handle ongoing messages
@@ -36,7 +36,7 @@ sealed class TransportConfig: AutoCloseable {
   /**
    * This property denotes the origin of the CloudEvents being generated or consumed.
    */
-  abstract val cloudEventSource: String
+  abstract val cloudEventSourcePrefix: String
 
   /**
    * This property provides methods to fetch available services and workflows,

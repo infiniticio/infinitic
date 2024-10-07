@@ -23,7 +23,7 @@
 package io.infinitic.workers.config
 
 import com.sksamuel.hoplite.ConfigException
-import io.infinitic.common.workers.config.ExponentialBackoffRetryPolicy
+import io.infinitic.common.workers.config.WithExponentialBackoffRetry
 import io.infinitic.tasks.WithRetry
 import io.infinitic.tasks.WithTimeout
 import io.infinitic.workers.samples.ServiceA
@@ -58,7 +58,7 @@ internal class ServiceExecutorConfigTests : StringSpec(
       }
 
       "Can create ServiceExecutorConfig through builder with all parameters" {
-        val withRetry = ExponentialBackoffRetryPolicy()
+        val withRetry = WithExponentialBackoffRetry()
         val config = shouldNotThrowAny {
           ServiceExecutorConfig.builder()
               .setServiceName(serviceName)
@@ -123,7 +123,7 @@ class: ${ServiceAImpl::class.java.name}
       }
 
       "Can create ServiceExecutorConfig through YAML with all parameters" {
-        val withRetry = ExponentialBackoffRetryPolicy(minimumSeconds = 4.0)
+        val withRetry = WithExponentialBackoffRetry(minimumSeconds = 4.0)
         val config = shouldNotThrowAny {
           ServiceExecutorConfig.fromYamlString(
               """

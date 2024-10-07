@@ -22,30 +22,32 @@
  */
 package io.infinitic.common.workflows.engine.messages
 
+import com.github.avrokotlin.avro4k.AvroName
 import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.requester.Requester
 import kotlinx.serialization.Serializable
 
 @Serializable
-sealed interface WorkflowCmdMessage : WorkflowStateEngineMessage {
+sealed interface WorkflowStateEngineCmdMessage : WorkflowStateEngineMessage {
   val requester: Requester?
 }
 
-fun WorkflowCmdMessage.type(): WorkflowCmdMessageType = when (this) {
-  is CancelWorkflow -> WorkflowCmdMessageType.CANCEL_WORKFLOW
-  is CompleteTimers -> WorkflowCmdMessageType.COMPLETE_TIMERS
-  is CompleteWorkflow -> WorkflowCmdMessageType.COMPLETE_WORKFLOW
-  is DispatchMethod -> WorkflowCmdMessageType.DISPATCH_METHOD
-  is DispatchWorkflow -> WorkflowCmdMessageType.DISPATCH_WORKFLOW
-  is RetryTasks -> WorkflowCmdMessageType.RETRY_TASKS
-  is RetryWorkflowTask -> WorkflowCmdMessageType.RETRY_WORKFLOW_TASK
-  is SendSignal -> WorkflowCmdMessageType.SEND_SIGNAL
-  is WaitWorkflow -> WorkflowCmdMessageType.WAIT_WORKFLOW
+fun WorkflowStateEngineCmdMessage.type(): WorkflowStateEngineCmdMessageType = when (this) {
+  is CancelWorkflow -> WorkflowStateEngineCmdMessageType.CANCEL_WORKFLOW
+  is CompleteTimers -> WorkflowStateEngineCmdMessageType.COMPLETE_TIMERS
+  is CompleteWorkflow -> WorkflowStateEngineCmdMessageType.COMPLETE_WORKFLOW
+  is DispatchMethod -> WorkflowStateEngineCmdMessageType.DISPATCH_METHOD
+  is DispatchWorkflow -> WorkflowStateEngineCmdMessageType.DISPATCH_WORKFLOW
+  is RetryTasks -> WorkflowStateEngineCmdMessageType.RETRY_TASKS
+  is RetryWorkflowTask -> WorkflowStateEngineCmdMessageType.RETRY_WORKFLOW_TASK
+  is SendSignal -> WorkflowStateEngineCmdMessageType.SEND_SIGNAL
+  is WaitWorkflow -> WorkflowStateEngineCmdMessageType.WAIT_WORKFLOW
 }
 
 @Serializable
 @AvroNamespace("io.infinitic.workflows.engine")
-enum class WorkflowCmdMessageType {
+@AvroName("WorkflowCmdMessageType")
+enum class WorkflowStateEngineCmdMessageType {
   WAIT_WORKFLOW,
   CANCEL_WORKFLOW,
   RETRY_WORKFLOW_TASK,

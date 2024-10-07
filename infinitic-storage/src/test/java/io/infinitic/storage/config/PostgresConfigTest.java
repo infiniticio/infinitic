@@ -36,7 +36,7 @@ class PostgresConfigTest {
         builder = PostgresStorageConfig.builder()
                 .setHost("localhost")
                 .setPort(5432)
-                .setUserName("postgres")
+                .setUsername("postgres")
                 .setPassword("password");
     }
 
@@ -59,7 +59,7 @@ class PostgresConfigTest {
                 IllegalArgumentException.class,
                 () -> PostgresStorageConfig.builder()
                         .setHost("localhost")
-                        .setUserName("root")
+                        .setUsername("root")
                         .build()
         );
         assertTrue(e.getMessage().contains("port"));
@@ -71,7 +71,7 @@ class PostgresConfigTest {
                 IllegalArgumentException.class,
                 () -> PostgresStorageConfig.builder()
                         .setHost("localhost")
-                        .setUserName("root")
+                        .setUsername("root")
                         .build()
         );
         assertTrue(e.getMessage().contains("port"));

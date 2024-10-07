@@ -21,10 +21,14 @@
 #
 # Licensor: infinitic.io
 
-pulsar:
-  brokerServiceUrl: pulsar://localhost:6650
-  webServiceUrl: http://localhost:8080
-  tenant: public
-  namespace: default
+transport:
+  pulsar:
+    brokerServiceUrl: pulsar://localhost:6650
+    webServiceUrl: http://localhost:8080
+    tenant: public
+    namespace: default
+    client:
+      listenerName: external
 
-port: 9800
+dashboard:
+  port: 9800

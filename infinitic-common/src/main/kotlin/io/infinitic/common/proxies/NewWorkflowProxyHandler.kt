@@ -26,7 +26,7 @@ import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 
-class NewWorkflowProxyHandler<K : Any>(
+data class NewWorkflowProxyHandler<K : Any>(
   override val klass: Class<K>,
   val workflowTags: Set<WorkflowTag>,
   val workflowMeta: WorkflowMeta,

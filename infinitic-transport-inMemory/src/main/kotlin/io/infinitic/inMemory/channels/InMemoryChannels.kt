@@ -20,7 +20,7 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.inMemory
+package io.infinitic.inMemory.channels
 
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.MillisDuration
@@ -30,20 +30,20 @@ import io.infinitic.common.tasks.events.messages.ServiceExecutorEventMessage
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.tasks.tags.messages.ServiceTagMessage
 import io.infinitic.common.transport.ClientTopic
-import io.infinitic.common.transport.RetryServiceExecutorTopic
-import io.infinitic.common.transport.RetryWorkflowExecutorTopic
 import io.infinitic.common.transport.ServiceExecutorEventTopic
+import io.infinitic.common.transport.ServiceExecutorRetryTopic
 import io.infinitic.common.transport.ServiceExecutorTopic
 import io.infinitic.common.transport.ServiceTagEngineTopic
 import io.infinitic.common.transport.Topic
 import io.infinitic.common.transport.WorkflowExecutorEventTopic
+import io.infinitic.common.transport.WorkflowExecutorRetryTopic
 import io.infinitic.common.transport.WorkflowExecutorTopic
 import io.infinitic.common.transport.WorkflowStateCmdTopic
 import io.infinitic.common.transport.WorkflowStateEngineTopic
 import io.infinitic.common.transport.WorkflowStateEventTopic
 import io.infinitic.common.transport.WorkflowStateTimerTopic
 import io.infinitic.common.transport.WorkflowTagEngineTopic
-import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineEventMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
 import kotlinx.coroutines.channels.Channel
@@ -51,40 +51,43 @@ import java.util.concurrent.ConcurrentHashMap
 
 class InMemoryChannels {
 
+  // Channels for messages
   internal val clientChannels =
-      ConcurrentHashMap<String, Channel<ClientMessage>>(100)
+      ConcurrentHashMap<String, Channel<ClientMessage>>()
   internal val serviceTagEngineChannels =
-      ConcurrentHashMap<String, Channel<ServiceTagMessage>>(100)
+      ConcurrentHashMap<String, Channel<ServiceTagMessage>>()
   internal val workflowTagEngineChannels =
-      ConcurrentHashMap<String, Channel<WorkflowTagEngineMessage>>(100)
+      ConcurrentHashMap<String, Channel<WorkflowTagEngineMessage>>()
   internal val serviceExecutorChannels =
-      ConcurrentHashMap<String, Channel<ServiceExecutorMessage>>(100)
+      ConcurrentHashMap<String, Channel<ServiceExecutorMessage>>()
   internal val serviceExecutorEventsChannels =
-      ConcurrentHashMap<String, Channel<ServiceExecutorEventMessage>>(100)
-  internal val retryServiceExecutorChannels =
-      ConcurrentHashMap<String, Channel<DelayedMessage<ServiceExecutorMessage>>>(100)
+      ConcurrentHashMap<String, Channel<ServiceExecutorEventMessage>>()
   internal val workflowStateCmdChannels =
-      ConcurrentHashMap<String, Channel<WorkflowStateEngineMessage>>(100)
+      ConcurrentHashMap<String, Channel<WorkflowStateEngineMessage>>()
   internal val workflowStateEngineChannels =
-      ConcurrentHashMap<String, Channel<WorkflowStateEngineMessage>>(100)
-  internal val workflowStateTimerChannels =
-      ConcurrentHashMap<String, Channel<DelayedMessage<WorkflowStateEngineMessage>>>(100)
+      ConcurrentHashMap<String, Channel<WorkflowStateEngineMessage>>()
   internal val workflowStateEventChannels =
-      ConcurrentHashMap<String, Channel<WorkflowEventMessage>>(100)
+      ConcurrentHashMap<String, Channel<WorkflowStateEngineEventMessage>>()
   internal val workflowExecutorChannels =
-      ConcurrentHashMap<String, Channel<ServiceExecutorMessage>>(100)
+      ConcurrentHashMap<String, Channel<ServiceExecutorMessage>>()
   internal val workflowExecutorEventChannels =
-      ConcurrentHashMap<String, Channel<ServiceExecutorEventMessage>>(100)
-  internal val retryWorkflowExecutorChannels =
-      ConcurrentHashMap<String, Channel<DelayedMessage<ServiceExecutorMessage>>>(100)
+      ConcurrentHashMap<String, Channel<ServiceExecutorEventMessage>>()
+
+  // Channels for Delayed messages
+  internal val serviceExecutorRetryChannels =
+      ConcurrentHashMap<String, Channel<DelayedMessage<ServiceExecutorMessage>>>()
+  internal val workflowStateTimerChannels =
+      ConcurrentHashMap<String, Channel<DelayedMessage<WorkflowStateEngineMessage>>>()
+  internal val workflowExecutorRetryChannels =
+      ConcurrentHashMap<String, Channel<DelayedMessage<ServiceExecutorMessage>>>()
 
   @Suppress("UNCHECKED_CAST")
   fun <S : Message> Topic<S>.channel(entity: String): Channel<S> = when (this) {
     ClientTopic -> clientChannels.getOrPut(entity, newChannel())
     ServiceTagEngineTopic -> serviceTagEngineChannels.getOrPut(entity, newChannel())
-    WorkflowTagEngineTopic -> workflowTagEngineChannels.getOrPut(entity, newChannel())
     ServiceExecutorTopic -> serviceExecutorChannels.getOrPut(entity, newChannel())
     ServiceExecutorEventTopic -> serviceExecutorEventsChannels.getOrPut(entity, newChannel())
+    WorkflowTagEngineTopic -> workflowTagEngineChannels.getOrPut(entity, newChannel())
     WorkflowStateCmdTopic -> workflowStateCmdChannels.getOrPut(entity, newChannel())
     WorkflowStateEngineTopic -> workflowStateEngineChannels.getOrPut(entity, newChannel())
     WorkflowStateEventTopic -> workflowStateEventChannels.getOrPut(entity, newChannel())
@@ -96,16 +99,9 @@ class InMemoryChannels {
   @Suppress("UNCHECKED_CAST")
   fun <S : Message> Topic<S>.channelForDelayed(entity: String): Channel<DelayedMessage<S>> {
     return when (this) {
-      RetryServiceExecutorTopic -> retryServiceExecutorChannels.getOrPut(entity, newChannel())
-      WorkflowStateTimerTopic -> workflowStateTimerChannels.getOrPut(
-          entity,
-          newChannel(),
-      )
-
-      RetryWorkflowExecutorTopic -> retryWorkflowExecutorChannels.getOrPut(
-          entity,
-          newChannel(),
-      )
+      ServiceExecutorRetryTopic -> serviceExecutorRetryChannels.getOrPut(entity, newChannel())
+      WorkflowStateTimerTopic -> workflowStateTimerChannels.getOrPut(entity, newChannel())
+      WorkflowExecutorRetryTopic -> workflowExecutorRetryChannels.getOrPut(entity, newChannel())
 
       else -> thisShouldNotHappen()
     } as Channel<DelayedMessage<S>>

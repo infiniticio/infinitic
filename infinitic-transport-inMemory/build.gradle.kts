@@ -21,13 +21,13 @@
  * Licensor: infinitic.io
  */
 dependencies {
-  api(project(":infinitic-common"))
-  api(project(":infinitic-storage"))
+  implementation(project(":infinitic-common"))
+  implementation(project(":infinitic-storage"))
   implementation(project(":infinitic-cache"))
   implementation(project(":infinitic-workflow-tag"))
   implementation(project(":infinitic-workflow-engine"))
   implementation(project(":infinitic-task-executor"))
-  
+
   implementation(Libs.Coroutines.core)
   implementation(Libs.Coroutines.jdk8)
 }

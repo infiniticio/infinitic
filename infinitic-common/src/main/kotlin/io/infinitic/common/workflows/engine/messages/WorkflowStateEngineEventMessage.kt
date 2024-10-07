@@ -22,6 +22,7 @@
  */
 package io.infinitic.common.workflows.engine.messages
 
+import com.github.avrokotlin.avro4k.AvroName
 import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.MillisInstant
@@ -33,29 +34,30 @@ import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import kotlinx.serialization.Serializable
 
 @Serializable
-sealed interface WorkflowEventMessage : WorkflowMessageInterface {
+sealed interface WorkflowStateEngineEventMessage : WorkflowMessageInterface {
   val workflowVersion: WorkflowVersion?
 }
 
-fun WorkflowEventMessage.type(): WorkflowEventMessageType = when (this) {
-  is WorkflowCompletedEvent -> WorkflowEventMessageType.WORKFLOW_COMPLETED
-  is WorkflowCanceledEvent -> WorkflowEventMessageType.WORKFLOW_CANCELED
-  is MethodCommandedEvent -> WorkflowEventMessageType.METHOD_DISPATCHED
-  is MethodCompletedEvent -> WorkflowEventMessageType.METHOD_COMPLETED
-  is MethodFailedEvent -> WorkflowEventMessageType.METHOD_FAILED
-  is MethodCanceledEvent -> WorkflowEventMessageType.METHOD_CANCELED
-  is MethodTimedOutEvent -> WorkflowEventMessageType.METHOD_TIMED_OUT
-  is TaskDispatchedEvent -> WorkflowEventMessageType.TASK_DISPATCHED
-  is RemoteMethodDispatchedEvent -> WorkflowEventMessageType.REMOTE_METHOD_DISPATCHED
-  is TimerDispatchedEvent -> WorkflowEventMessageType.TIMER_DISPATCHED
-  is SignalDispatchedEvent -> WorkflowEventMessageType.REMOTE_SIGNAL_DISPATCHED
-  is SignalDiscardedEvent -> WorkflowEventMessageType.SIGNAL_DISCARDED
-  is SignalReceivedEvent -> WorkflowEventMessageType.SIGNAL_RECEIVED
+fun WorkflowStateEngineEventMessage.type(): WorkflowStateEngineEventMessageType = when (this) {
+  is WorkflowCompletedEvent -> WorkflowStateEngineEventMessageType.WORKFLOW_COMPLETED
+  is WorkflowCanceledEvent -> WorkflowStateEngineEventMessageType.WORKFLOW_CANCELED
+  is MethodCommandedEvent -> WorkflowStateEngineEventMessageType.METHOD_DISPATCHED
+  is MethodCompletedEvent -> WorkflowStateEngineEventMessageType.METHOD_COMPLETED
+  is MethodFailedEvent -> WorkflowStateEngineEventMessageType.METHOD_FAILED
+  is MethodCanceledEvent -> WorkflowStateEngineEventMessageType.METHOD_CANCELED
+  is MethodTimedOutEvent -> WorkflowStateEngineEventMessageType.METHOD_TIMED_OUT
+  is TaskDispatchedEvent -> WorkflowStateEngineEventMessageType.TASK_DISPATCHED
+  is RemoteMethodDispatchedEvent -> WorkflowStateEngineEventMessageType.REMOTE_METHOD_DISPATCHED
+  is TimerDispatchedEvent -> WorkflowStateEngineEventMessageType.TIMER_DISPATCHED
+  is SignalDispatchedEvent -> WorkflowStateEngineEventMessageType.REMOTE_SIGNAL_DISPATCHED
+  is SignalDiscardedEvent -> WorkflowStateEngineEventMessageType.SIGNAL_DISCARDED
+  is SignalReceivedEvent -> WorkflowStateEngineEventMessageType.SIGNAL_RECEIVED
 }
 
 @Serializable
 @AvroNamespace("io.infinitic.workflows.events")
-enum class WorkflowEventMessageType {
+@AvroName("WorkflowEventMessageType")
+enum class WorkflowStateEngineEventMessageType {
   WORKFLOW_COMPLETED,
   WORKFLOW_CANCELED,
   METHOD_DISPATCHED,
