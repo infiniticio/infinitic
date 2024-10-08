@@ -47,6 +47,7 @@ import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineEventMes
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import java.util.concurrent.ConcurrentHashMap
 
 class InMemoryChannels {
@@ -107,7 +108,7 @@ class InMemoryChannels {
     } as Channel<DelayedMessage<S>>
   }
 
-  private fun <S> newChannel(): () -> Channel<S> = { Channel(10000) }
+  private fun <S> newChannel(): () -> Channel<S> = { Channel(UNLIMITED) }
 }
 
 internal val Channel<*>.id

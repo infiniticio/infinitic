@@ -28,7 +28,6 @@ import io.infinitic.common.transport.TransportMessage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.future.await
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlin.coroutines.cancellation.CancellationException
@@ -48,7 +47,7 @@ internal fun <S : TransportMessage> TransportConsumer<S>.startConsuming(): Chann
   scope.launch {
     while (isActive) {
       try {
-        val msg = receiveAsync().await().also { trace { "consuming: received $it" } }
+        val msg = receive().also { trace { "consuming: received $it" } }
         channel.send(Result.success(msg, msg))
       } catch (e: CancellationException) {
         // do nothing, will exit if calling scope is not active anymore

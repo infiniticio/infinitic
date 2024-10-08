@@ -22,21 +22,23 @@
  */
 package io.infinitic.pulsar.consumers
 
+import io.infinitic.common.transport.TransportConsumer
+import kotlinx.coroutines.future.await
 import org.apache.pulsar.client.api.Consumer
-import java.util.concurrent.CompletableFuture
 
 class PulsarConsumer<E>(
   private val pulsarConsumer: Consumer<E>
-) : io.infinitic.common.transport.TransportConsumer<PulsarTransportMessage<E>> {
-  override fun receiveAsync(): CompletableFuture<PulsarTransportMessage<E>> =
-      pulsarConsumer.receiveAsync().thenApply { PulsarTransportMessage(it) }
+) : TransportConsumer<PulsarTransportMessage<E>> {
 
-  override fun negativeAcknowledgeAsync(message: PulsarTransportMessage<E>): CompletableFuture<Unit> {
+  override suspend fun receive(): PulsarTransportMessage<E> =
+      PulsarTransportMessage(pulsarConsumer.receiveAsync().await())
+
+  override suspend fun negativeAcknowledge(message: PulsarTransportMessage<E>) {
     pulsarConsumer.negativeAcknowledge(message.toPulsarMessage())
-    return CompletableFuture.completedFuture(Unit)
   }
 
-  override fun acknowledgeAsync(message: PulsarTransportMessage<E>): CompletableFuture<Unit> =
-      pulsarConsumer.acknowledgeAsync(message.toPulsarMessage()).thenApply { }
+  override suspend fun acknowledge(message: PulsarTransportMessage<E>) {
+    pulsarConsumer.acknowledgeAsync(message.toPulsarMessage()).await()
+  }
 }
 

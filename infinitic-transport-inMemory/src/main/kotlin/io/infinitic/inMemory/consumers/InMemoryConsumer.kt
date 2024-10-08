@@ -25,44 +25,31 @@ package io.infinitic.inMemory.consumers
 import io.infinitic.common.messages.Message
 import io.infinitic.common.transport.TransportConsumer
 import io.infinitic.inMemory.channels.DelayedMessage
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.future.future
-import java.util.concurrent.CompletableFuture
 
 class InMemoryConsumer<S : Message>(
   private val channel: Channel<S>
 ) : TransportConsumer<InMemoryTransportMessage<S>> {
-  val scope = CoroutineScope(Dispatchers.IO)
 
-  override fun receiveAsync(): CompletableFuture<InMemoryTransportMessage<S>> = scope.future {
-    InMemoryTransportMessage(channel.receive())
-  }
+  override suspend fun receive() = InMemoryTransportMessage(channel.receive())
 
-  override fun negativeAcknowledgeAsync(message: InMemoryTransportMessage<S>): CompletableFuture<Unit> =
-      scope.future {}
+  override suspend fun negativeAcknowledge(message: InMemoryTransportMessage<S>) {}
 
-  override fun acknowledgeAsync(message: InMemoryTransportMessage<S>): CompletableFuture<Unit> =
-      scope.future {}
+  override suspend fun acknowledge(message: InMemoryTransportMessage<S>) {}
 }
 
 class InMemoryDelayedConsumer<S : Message>(
   private val channel: Channel<DelayedMessage<S>>
 ) : TransportConsumer<InMemoryTransportMessage<S>> {
-  val scope = CoroutineScope(Dispatchers.IO)
 
-  override fun receiveAsync(): CompletableFuture<InMemoryTransportMessage<S>> = scope.future {
-    channel.receive().let { message ->
-      delay(message.after.millis)
-      InMemoryTransportMessage(message.message)
-    }
+  override suspend fun receive(): InMemoryTransportMessage<S> {
+    val message = channel.receive()
+    delay(message.after.millis)
+    return InMemoryTransportMessage(message.message)
   }
 
-  override fun negativeAcknowledgeAsync(message: InMemoryTransportMessage<S>): CompletableFuture<Unit> =
-      scope.future {}
+  override suspend fun negativeAcknowledge(message: InMemoryTransportMessage<S>) {}
 
-  override fun acknowledgeAsync(message: InMemoryTransportMessage<S>): CompletableFuture<Unit> =
-      scope.future {}
+  override suspend fun acknowledge(message: InMemoryTransportMessage<S>) {}
 }

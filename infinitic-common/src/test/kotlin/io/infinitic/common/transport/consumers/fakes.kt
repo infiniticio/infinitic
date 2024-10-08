@@ -31,9 +31,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.future.future
 import java.util.*
-import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.random.Random
 
@@ -64,22 +62,18 @@ internal open class IntConsumer : TransportConsumer<IntMessage> {
     counter.set(0)
   }
 
-  override fun receiveAsync() = scope.future {
-    IntMessage(counter.incrementAndGet())
-        .also { receivedList.add(it.value) }
+  override suspend fun receive() = IntMessage(counter.incrementAndGet())
+      .also { receivedList.add(it.value) }
+
+  override suspend fun negativeAcknowledge(message: IntMessage) {
+    delay(Random.nextLong(5))
+        .also { negativeAcknowledgedList.add(message.value) }
   }
 
-  override fun negativeAcknowledgeAsync(message: IntMessage): CompletableFuture<Unit> =
-      scope.future {
-        delay(Random.nextLong(5))
-            .also { negativeAcknowledgedList.add(message.value) }
-      }
-
-  override fun acknowledgeAsync(message: IntMessage): CompletableFuture<Unit> =
-      scope.future {
-        delay(Random.nextLong(5))
-            .also { acknowledgedList.add(message.value) }
-      }
+  override suspend fun acknowledge(message: IntMessage) {
+    delay(Random.nextLong(5))
+        .also { acknowledgedList.add(message.value) }
+  }
 }
 
 internal suspend fun deserialize(value: IntMessage) = DeserializedIntMessage(value).also {

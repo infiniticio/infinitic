@@ -193,21 +193,25 @@ class TaskExecutor(
     }
   }
 
-  private suspend fun ExecuteTask.process() = coroutineScope {
-    // Signal that the task has started
-    sendTaskStarted()
+  private suspend fun ExecuteTask.process() {
+    logDebug { "Start processing $this" }
+    coroutineScope {
+      // Signal that the task has started
+      sendTaskStarted()
 
-    // Parse the task data. If parsing fails, return without proceeding
-    val taskData = parseTask().getOrElse { return@coroutineScope }
+      // Parse the task data. If parsing fails, return without proceeding
+      val taskData = parseTask().getOrElse { return@coroutineScope }
 
-    // Get the task timeout. If this operation fails, return without proceeding
-    val timeout = getTaskTimeout(taskData).getOrElse { return@coroutineScope }
+      // Get the task timeout. If this operation fails, return without proceeding
+      val timeout = getTaskTimeout(taskData).getOrElse { return@coroutineScope }
 
-    // Execute the task with the specified timeout. If this operation fails, return without proceeding
-    val output = executeWithTimeout(taskData, timeout).getOrElse { return@coroutineScope }
+      // Execute the task with the specified timeout. If this operation fails, return without proceeding
+      val output = executeWithTimeout(taskData, timeout).getOrElse { return@coroutineScope }
 
-    // Signal that the task has completed successfully
-    sendTaskCompleted(output, taskData)
+      // Signal that the task has completed successfully
+      sendTaskCompleted(output, taskData)
+    }
+    logTrace { "Ended processing $this" }
   }
 
   private suspend fun List<ExecuteTask>.sendTaskStarted() = coroutineScope {

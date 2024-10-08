@@ -54,7 +54,7 @@ interface InfiniticProducer {
     after: MillisDuration = MillisDuration(0)
   ) {
     require(after <= 0 || topic.acceptDelayed) { thisShouldNotHappen("Trying to send to $topic with a delay $after") }
-
+    
     // Switch to workflow-related topics for workflowTasks
     val t = when (this) {
       is ServiceExecutorMessage -> if (isWorkflowTask()) topic.forWorkflow else topic

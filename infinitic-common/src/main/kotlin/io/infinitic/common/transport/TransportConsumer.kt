@@ -22,15 +22,8 @@
  */
 package io.infinitic.common.transport
 
-import kotlinx.coroutines.future.await
-import java.util.concurrent.CompletableFuture
-
 interface TransportConsumer<T : TransportMessage> {
-  fun receiveAsync(): CompletableFuture<T>
-
-  fun acknowledgeAsync(message: T): CompletableFuture<Unit>
-  fun negativeAcknowledgeAsync(message: T): CompletableFuture<Unit>
-
-  suspend fun acknowledge(message: T): Unit = acknowledgeAsync(message).await()
-  suspend fun negativeAcknowledge(message: T): Unit = negativeAcknowledgeAsync(message).await()
+  suspend fun receive(): T
+  suspend fun acknowledge(message: T)
+  suspend fun negativeAcknowledge(message: T)
 }

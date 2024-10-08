@@ -35,6 +35,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlin.random.Random
 
@@ -84,9 +85,7 @@ internal class BatchByTests : StringSpec(
 
       "should be able to batch by max duration, up to scope cancellation" {
         class SlowConsumer : IntConsumer() {
-          override fun receiveAsync() = super.receiveAsync().thenApply {
-            it.also { Thread.sleep(70) }
-          }
+          override suspend fun receive() = super.receive().also { delay(70) }
         }
 
         with(logger) {
