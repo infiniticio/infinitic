@@ -113,5 +113,9 @@ internal class BatchesWorkflowTests : StringSpec(
 
         batchWorkflow.foo5(9, 9) shouldBe Input(foo = 45 * 2, bar = 9)
       }
+
+      "If Task contains a batch key, all batches should have the same key" {
+        batchWorkflow.withKey(20) shouldBe true
+      }
     },
 )

@@ -97,6 +97,7 @@ internal class InfiniticWorkerTests : StringSpec(
               .setTransport(transport)
               .setEventListener(eventListener)
               .build()
+
         }
         worker.getEventListenerConfig() shouldBe eventListener
       }
@@ -152,6 +153,7 @@ services:
               .build()
         }
         worker.getServiceTagEngineConfig(serviceName) shouldBe serviceTagEngine
+        worker.close()
       }
 
       "Can create Infinitic Worker as Service Tag Engine through Yaml" {
@@ -422,6 +424,7 @@ workflows:
         }
         worker.startAsync()
         flag shouldBe false
+        worker.close()
       }
 
       "start() should block, and be released when closed" {
@@ -442,6 +445,7 @@ workflows:
         }
         worker.start()
         flag shouldBe true
+        worker.close()
       }
     },
 )

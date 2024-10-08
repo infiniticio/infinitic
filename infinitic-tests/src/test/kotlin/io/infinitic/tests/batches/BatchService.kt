@@ -27,6 +27,7 @@ package io.infinitic.tests.batches
 import io.infinitic.annotations.Batch
 import io.infinitic.annotations.Name
 import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.tasks.Task
 import io.mockk.InternalPlatformDsl.toArray
 
 fun main() {
@@ -49,6 +50,7 @@ internal interface BatchService {
   fun foo3(input: Input): Int
   fun foo4(foo: Int): Input
   fun foo5(input: Input): Input
+  fun haveSameKey(i: Int): Boolean
 }
 
 internal class BatchServiceImpl : BatchService {
@@ -58,6 +60,7 @@ internal class BatchServiceImpl : BatchService {
   override fun foo3(input: Input) = thisShouldNotHappen()
   override fun foo4(foo: Int) = thisShouldNotHappen()
   override fun foo5(input: Input) = thisShouldNotHappen()
+  override fun haveSameKey(i: Int) = thisShouldNotHappen()
 
   @Batch(maxMessages = 10, maxSeconds = 1.0)
   fun foo(list: Map<String, Int>): Map<String, Int> =
@@ -78,6 +81,18 @@ internal class BatchServiceImpl : BatchService {
   @Batch(maxMessages = 10, maxSeconds = 1.0)
   fun foo5(list: Map<String, Input>): Map<String, Input> =
       list.mapValues { Input(list.values.sumOf { it.sum() }, it.value.bar) }
+
+  @Batch(maxMessages = 10, maxSeconds = 2.0)
+  fun haveSameKey(all: Map<String, Int>): Map<String, Boolean> {
+    // get batch key for the first element
+    val batchKeys = all.keys.map { Task.getContext(it)!!.batchKey }
+    println("batchKeys = $batchKeys")
+    println("all = $all")
+    val batchKey = batchKeys.first()
+    // if all have the same batch keys then this should return Map<String, true>
+    val allHaveSameKey = batchKeys.all { it == batchKey }
+    return all.mapValues { allHaveSameKey }
+  }
 }
 
 internal data class Input(val foo: Int, val bar: Int) {

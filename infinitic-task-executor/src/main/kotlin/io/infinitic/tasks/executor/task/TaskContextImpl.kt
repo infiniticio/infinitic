@@ -26,6 +26,7 @@ import io.infinitic.clients.InfiniticClientInterface
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
+import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.data.TaskRetrySequence
 import io.infinitic.common.tasks.executors.errors.ExecutionError
@@ -52,4 +53,6 @@ data class TaskContextImpl(
   override val withTimeout: WithTimeout?,
   override val withRetry: WithRetry?,
   override val client: InfiniticClientInterface
-) : TaskContext
+) : TaskContext {
+  override val batchKey get() = meta[TaskMeta.BATCH_KEY]?.let { String(it) }
+}

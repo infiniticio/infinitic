@@ -40,9 +40,7 @@ import io.infinitic.inMemory.consumers.InMemoryDelayedConsumer
 import io.infinitic.inMemory.consumers.InMemoryTransportMessage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
 class InMemoryInfiniticConsumer(
@@ -84,10 +82,10 @@ class InMemoryInfiniticConsumer(
 
     return when (subscription.withKey) {
       true -> {
-        // build the consumers synchronously (but in parallel)
-        val consumers: List<TransportConsumer<InMemoryTransportMessage<S>>> = coroutineScope {
-          List(concurrency) { async { buildConsumer(it) } }.map { it.await() }
-        }
+        // build the consumers synchronously
+        val consumers: List<TransportConsumer<InMemoryTransportMessage<S>>> =
+            List(concurrency) { buildConsumer(it) }
+
         launch {
           repeat(concurrency) {
             val processor = ProcessorConsumer<InMemoryTransportMessage<S>, S>(consumers[it], null)
@@ -102,7 +100,7 @@ class InMemoryInfiniticConsumer(
         val processor = ProcessorConsumer<InMemoryTransportMessage<S>, S>(consumer, null)
         with(processor) {
           startAsync(
-              1,
+              concurrency,
               loggedDeserialize,
               loggedHandler,
               batchConfig,

@@ -125,10 +125,6 @@ class InfiniticWorker(
   /** Coroutine scope used to launch consumers and await their termination */
   private lateinit var scope: CoroutineScope
 
-  init {
-    Runtime.getRuntime().addShutdownHook(Thread { close() })
-  }
-
   override fun close() {
     if (isStarted.compareAndSet(true, false)) runBlocking {
       logger.info { "Closing worker..." }
@@ -257,6 +253,8 @@ class InfiniticWorker(
    */
   fun startAsync(): CompletableFuture<Unit> {
     if (isStarted.compareAndSet(false, true)) {
+      // Add close hook
+      Runtime.getRuntime().addShutdownHook(Thread { close() })
 
       // create a new scope
       scope = CoroutineScope(Dispatchers.IO)
@@ -443,15 +441,17 @@ class InfiniticWorker(
         }
       }
 
-      loggedConsumer.startAsync(
-          subscription = MainSubscription(ServiceExecutorTopic),
-          entity = config.serviceName,
-          concurrency = config.concurrency,
-          process = handler,
-          beforeDlq = beforeDlq,
-          batchConfig = taskExecutor::getBatchConfig,
-          batchProcess = handlerBatch,
-      )
+      with(logger) {
+        loggedConsumer.startAsync(
+            subscription = MainSubscription(ServiceExecutorTopic),
+            entity = config.serviceName,
+            concurrency = config.concurrency,
+            process = handler,
+            beforeDlq = beforeDlq,
+            batchConfig = { msg -> taskExecutor.getBatchConfig(msg) },
+            batchProcess = handlerBatch,
+        )
+      }
     }
 
     // TASK-EXECUTOR-RETRY

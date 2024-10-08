@@ -24,6 +24,8 @@ package io.infinitic.tests.batches
 
 import io.infinitic.annotations.Name
 import io.infinitic.workflows.Workflow
+import io.infinitic.workflows.and
+import kotlin.random.Random
 
 @Name("batchWorkflow")
 internal interface BatchWorkflow {
@@ -32,16 +34,31 @@ internal interface BatchWorkflow {
   fun foo3(foo: Int, bar: Int): Int
   fun foo4(foo: Int, bar: Int): Input
   fun foo5(foo: Int, bar: Int): Input
+  fun withKey(n: Int): Boolean
 }
 
 @Suppress("unused")
 internal class BatchWorkflowImpl : Workflow(), BatchWorkflow {
 
   private val batchService = newService(BatchService::class.java)
+  private val metaFoo: Map<String, ByteArray> = mapOf("batchKey" to "Foo".toByteArray())
+  private val metaBar: Map<String, ByteArray> = mapOf("batchKey" to "Bar".toByteArray())
+  private val batchServiceWithKeyFoo = newService(BatchService::class.java, null, metaFoo)
+  private val batchServiceWithKeyBar = newService(BatchService::class.java, null, metaBar)
 
   override fun add(value: Int) = batchService.foo(value)
   override fun foo2(foo: Int, bar: Int) = batchService.foo2(foo, bar)
   override fun foo3(foo: Int, bar: Int) = batchService.foo3(Input(foo, bar))
   override fun foo4(foo: Int, bar: Int) = batchService.foo4(foo)
   override fun foo5(foo: Int, bar: Int) = batchService.foo5(Input(foo, bar))
+  override fun withKey(n: Int): Boolean {
+    val deferredList = List(n) {
+      when (inline { Random.nextBoolean() }) {
+        true -> dispatch(batchServiceWithKeyFoo::haveSameKey, it)
+        false -> dispatch(batchServiceWithKeyBar::haveSameKey, it)
+      }
+    }
+    // return true if all true
+    return deferredList.and().await().all { it }
+  }
 }
