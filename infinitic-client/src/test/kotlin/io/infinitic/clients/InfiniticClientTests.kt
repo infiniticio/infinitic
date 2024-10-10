@@ -427,33 +427,36 @@ internal class InfiniticClientTests : StringSpec(
         val deferred2 = future2.await()
         // then
         workflowCmdSlots.size shouldBe 2
-        workflowCmdSlots[0] shouldBe DispatchWorkflow(
-            workflowName = WorkflowName(FakeWorkflow::class.java.name),
-            workflowId = WorkflowId(deferred1.id),
-            methodName = MethodName("m3"),
-            methodParameters = methodParametersFrom(0, "a"),
-            methodParameterTypes =
-            MethodParameterTypes(listOf(Int::class.java.name, String::class.java.name)),
-            workflowTags = setOf(),
-            workflowMeta = WorkflowMeta(),
-            requester = ClientRequester(clientName = ClientName.from(emitterNameTest)),
-            clientWaiting = false,
-            emitterName = emitterNameTest,
-            emittedAt = null,
-        )
-        workflowCmdSlots[1] shouldBe DispatchWorkflow(
-            workflowName = WorkflowName(FakeWorkflow::class.java.name),
-            workflowId = WorkflowId(deferred2.id),
-            methodName = MethodName("m2"),
-            methodParameters = methodParametersFrom("b"),
-            methodParameterTypes =
-            MethodParameterTypes(listOf(String::class.java.name)),
-            workflowTags = setOf(),
-            workflowMeta = WorkflowMeta(),
-            requester = ClientRequester(clientName = ClientName.from(emitterNameTest)),
-            clientWaiting = false,
-            emitterName = emitterNameTest,
-            emittedAt = null,
+        // we do not know what will be the order
+        setOf(workflowCmdSlots[0], workflowCmdSlots[1]) shouldBe setOf(
+            DispatchWorkflow(
+                workflowName = WorkflowName(FakeWorkflow::class.java.name),
+                workflowId = WorkflowId(deferred1.id),
+                methodName = MethodName("m3"),
+                methodParameters = methodParametersFrom(0, "a"),
+                methodParameterTypes =
+                MethodParameterTypes(listOf(Int::class.java.name, String::class.java.name)),
+                workflowTags = setOf(),
+                workflowMeta = WorkflowMeta(),
+                requester = ClientRequester(clientName = ClientName.from(emitterNameTest)),
+                clientWaiting = false,
+                emitterName = emitterNameTest,
+                emittedAt = null,
+            ),
+            DispatchWorkflow(
+                workflowName = WorkflowName(FakeWorkflow::class.java.name),
+                workflowId = WorkflowId(deferred2.id),
+                methodName = MethodName("m2"),
+                methodParameters = methodParametersFrom("b"),
+                methodParameterTypes =
+                MethodParameterTypes(listOf(String::class.java.name)),
+                workflowTags = setOf(),
+                workflowMeta = WorkflowMeta(),
+                requester = ClientRequester(clientName = ClientName.from(emitterNameTest)),
+                clientWaiting = false,
+                emitterName = emitterNameTest,
+                emittedAt = null,
+            ),
         )
       }
 

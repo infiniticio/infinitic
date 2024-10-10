@@ -22,7 +22,7 @@
  */
 package io.infinitic.common.transport
 
-interface TransportConsumer<T : TransportMessage> {
+interface TransportConsumer<T> {
   suspend fun receive(): T
   suspend fun acknowledge(message: T)
   suspend fun negativeAcknowledge(message: T)

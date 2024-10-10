@@ -20,10 +20,10 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.workers.config
+package io.infinitic.events.config
 
 import io.infinitic.cloudEvents.CloudEventListener
-import io.infinitic.cloudEvents.SelectionConfig
+import io.infinitic.cloudEvents.EntityListConfig
 import io.infinitic.common.utils.annotatedName
 import io.infinitic.common.utils.getInstance
 import io.infinitic.config.loadFromYamlFile
@@ -34,18 +34,18 @@ sealed class EventListenerConfig {
   abstract val listener: CloudEventListener
   abstract val concurrency: Int
   abstract val subscriptionName: String?
-  abstract val allowedServices: List<String>?
-  abstract val disallowedServices: List<String>
-  abstract val allowedWorkflows: List<String>?
-  abstract val disallowedWorkflows: List<String>
-  abstract val refreshDelaySeconds: Double
+  abstract val batchConfig: EventListenerBatchConfig
+  abstract val serviceListConfig: EntityListConfig
+  abstract val workflowListConfig: EntityListConfig
 
   fun includeService(service: String): Boolean {
-    return !disallowedServices.contains(service) && (allowedServices?.contains(service) != false)
+    return !serviceListConfig.disallow.contains(service) &&
+        (serviceListConfig.allow?.contains(service) != false)
   }
 
   fun includeWorkflow(workflow: String): Boolean {
-    return !disallowedWorkflows.contains(workflow) && (allowedWorkflows?.contains(workflow) != false)
+    return !workflowListConfig.disallow.contains(workflow) &&
+        (workflowListConfig.allow?.contains(workflow) != false)
   }
 
   companion object {
@@ -70,8 +70,8 @@ sealed class EventListenerConfig {
      * Create EventListenerConfig from yaml strings
      */
     @JvmStatic
-    fun fromYamlString(vararg yamls: String): EventListenerConfig =
-        loadFromYamlString<LoadedEventListenerConfig>(*yamls)
+    fun fromYamlString(vararg yaml: String): EventListenerConfig =
+        loadFromYamlString<LoadedEventListenerConfig>(*yaml)
   }
 
   /**
@@ -82,10 +82,12 @@ sealed class EventListenerConfig {
     private var concurrency: Int = 1
     private var subscriptionName: String? = null
     private var allowedServices: MutableList<String>? = null
-    private val disallowedServices: MutableList<String> = mutableListOf()
     private var allowedWorkflows: MutableList<String>? = null
+    private val disallowedServices: MutableList<String> = mutableListOf()
     private val disallowedWorkflows: MutableList<String> = mutableListOf()
-    private var refreshDelaySeconds: Double = 60.0
+    private var serviceListRefreshSeconds: Double = 60.0
+    private var workflowListRefreshSeconds: Double = 60.0
+    private var batchConfig = EventListenerBatchConfig()
 
     fun setListener(cloudEventListener: CloudEventListener) =
         apply { this.listener = cloudEventListener }
@@ -128,8 +130,15 @@ sealed class EventListenerConfig {
     fun allowWorkflows(vararg workflows: Class<*>) =
         apply { allowWorkflows(*(workflows.map { it.annotatedName }.toTypedArray())) }
 
-    fun setRefreshDelaySeconds(refreshDelaySeconds: Double) =
-        apply { this.refreshDelaySeconds = refreshDelaySeconds }
+    fun setServiceListRefreshSeconds(listRefreshSeconds: Double) =
+        apply { this.serviceListRefreshSeconds = listRefreshSeconds }
+
+    fun setWorkflowListRefreshSeconds(listRefreshSeconds: Double) =
+        apply { this.workflowListRefreshSeconds = listRefreshSeconds }
+
+    fun setBatch(maxEvents: Int, maxSeconds: Double) {
+      this.batchConfig = EventListenerBatchConfig(maxEvents, maxSeconds)
+    }
 
     fun build(): EventListenerConfig {
       require(listener != null) { "${EventListenerConfig::listener.name} must not be null" }
@@ -138,11 +147,17 @@ sealed class EventListenerConfig {
           listener!!,
           concurrency,
           subscriptionName,
-          refreshDelaySeconds,
-          allowedServices,
-          disallowedServices,
-          allowedWorkflows,
-          disallowedWorkflows,
+          batchConfig,
+          EntityListConfig(
+              listRefreshSeconds = serviceListRefreshSeconds,
+              allow = allowedServices,
+              disallow = disallowedServices,
+          ),
+          EntityListConfig(
+              listRefreshSeconds = workflowListRefreshSeconds,
+              allow = allowedWorkflows,
+              disallow = disallowedWorkflows,
+          ),
       )
     }
   }
@@ -155,11 +170,9 @@ data class BuiltEventListenerConfig(
   override val listener: CloudEventListener,
   override val concurrency: Int,
   override val subscriptionName: String?,
-  override val refreshDelaySeconds: Double,
-  override val allowedServices: MutableList<String>?,
-  override val disallowedServices: MutableList<String>,
-  override val allowedWorkflows: MutableList<String>?,
-  override val disallowedWorkflows: MutableList<String>,
+  override val batchConfig: EventListenerBatchConfig,
+  override val serviceListConfig: EntityListConfig,
+  override val workflowListConfig: EntityListConfig,
 ) : EventListenerConfig()
 
 /**
@@ -169,16 +182,15 @@ data class LoadedEventListenerConfig(
   val `class`: String,
   override val concurrency: Int = 1,
   override val subscriptionName: String? = null,
-  override val refreshDelaySeconds: Double = 60.0,
-  val services: SelectionConfig = SelectionConfig(),
-  val workflows: SelectionConfig = SelectionConfig()
+  val batch: EventListenerBatchConfig = EventListenerBatchConfig(),
+  val services: EntityListConfig = EntityListConfig(),
+  val workflows: EntityListConfig = EntityListConfig()
 ) : EventListenerConfig() {
 
   override val listener: CloudEventListener
-  override var allowedServices = services.allow
-  override val disallowedServices = services.disallow
-  override var allowedWorkflows = workflows.allow
-  override val disallowedWorkflows = workflows.disallow
+  override val batchConfig = batch
+  override val serviceListConfig = services
+  override val workflowListConfig = workflows
 
   init {
     with(`class`) {
@@ -192,12 +204,22 @@ data class LoadedEventListenerConfig(
 
     require(concurrency > 0) { error("'${::concurrency.name}' must be > 0, but was $concurrency") }
 
-    require(refreshDelaySeconds >= 0) { error("'${::refreshDelaySeconds.name}' must be >= 0, but was $refreshDelaySeconds") }
-
     subscriptionName?.let {
       require(it.isNotEmpty()) { error("'when provided, ${::subscriptionName.name}' must not be empty") }
     }
   }
+}
 
-  private fun error(txt: String) = "eventListener: $txt"
+private fun error(txt: String) = "eventListener: $txt"
+
+data class EventListenerBatchConfig(
+  val maxEvents: Int = 1000,
+  val maxSeconds: Double = 1.0
+) {
+  init {
+    require(maxEvents > 0) { error("'${::maxEvents.name}' must be > 0, but was $maxEvents") }
+    require(maxSeconds > 0) { error("'${::maxSeconds.name}' must be > 0, but was $maxSeconds") }
+  }
+
+  val maxMillis = (maxSeconds * 1000).toLong()
 }

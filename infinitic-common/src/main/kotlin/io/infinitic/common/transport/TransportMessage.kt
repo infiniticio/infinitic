@@ -24,8 +24,16 @@ package io.infinitic.common.transport
 
 import io.infinitic.common.data.MillisInstant
 
-interface TransportMessage {
+/**
+ * Represents a transport message that can be deserialized.
+ *
+ * @param M The type of the payload contained within the message.
+ */
+interface TransportMessage<out M> {
   val messageId: String
   val redeliveryCount: Int
   val publishTime: MillisInstant
+
+  suspend fun deserialize(): M
 }
+

@@ -27,13 +27,13 @@ import io.infinitic.cloudEvents.CloudEventListener
 
 
 internal class EventListenerImpl : CloudEventListener {
-  override fun onEvent(event: CloudEvent) {
+  override fun onEvents(cloudEvents: CloudEvent) {
     // do nothing
   }
 }
 
 internal class EventListenerFake : CloudEventListener {
-  override fun onEvent(event: CloudEvent) {
+  override fun onEvents(cloudEvents: CloudEvent) {
     // do nothing
   }
 }

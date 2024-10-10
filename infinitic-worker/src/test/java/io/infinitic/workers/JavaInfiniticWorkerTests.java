@@ -23,6 +23,7 @@
 package io.infinitic.workers;
 
 import io.infinitic.common.workers.config.WithExponentialBackoffRetry;
+import io.infinitic.events.config.EventListenerConfig;
 import io.infinitic.storage.config.PostgresStorageConfig;
 import io.infinitic.storage.config.StorageConfig;
 import io.infinitic.transport.config.PulsarTransportConfig;

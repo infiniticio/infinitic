@@ -23,21 +23,19 @@
 package io.infinitic.pulsar.consumers
 
 import io.infinitic.common.data.MillisInstant
+import io.infinitic.common.messages.Envelope
+import io.infinitic.common.messages.Message
 import io.infinitic.common.transport.TransportMessage
-import org.apache.pulsar.client.api.Messages
 import org.apache.pulsar.client.api.Message as PulsarMessage
+import org.apache.pulsar.client.api.MessageId as PulsarMessageId
 
-class PulsarTransportMessage<E>(private val pulsarMessage: PulsarMessage<E>) : TransportMessage {
+class PulsarTransportMessage<M : Message>(private val pulsarMessage: PulsarMessage<Envelope<M>>) :
+  TransportMessage<M> {
   override val messageId: String = pulsarMessage.messageId.toString()
   override val redeliveryCount: Int = pulsarMessage.redeliveryCount
   override val publishTime: MillisInstant = MillisInstant(pulsarMessage.publishTime)
-  internal fun toPulsarMessage() = pulsarMessage
-}
 
-internal class PulsarMessages<E>(val messages: List<PulsarMessage<E>>) : Messages<E> {
-  override fun iterator() = messages.toMutableList().iterator()
-  override fun size() = messages.size
-}
+  override suspend fun deserialize(): M = pulsarMessage.value.message()
 
-internal fun <E> List<PulsarTransportMessage<E>>.toPulsarMessages() =
-    PulsarMessages(map { it.toPulsarMessage() })
+  val pulsarMessageId: PulsarMessageId = pulsarMessage.messageId
+}

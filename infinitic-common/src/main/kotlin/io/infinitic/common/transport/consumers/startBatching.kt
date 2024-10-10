@@ -40,10 +40,10 @@ import kotlinx.coroutines.withTimeoutOrNull
  * @param outputChannel The channel to send the batched messages to. Defaults to a new channel.
  */
 context(CoroutineScope, KLogger)
-internal fun <M : Any, I> Channel<Result<M, I>>.startBatching(
+fun <S> Channel<S>.startBatching(
   maxMessages: Int,
   maxDuration: Long,
-  outputChannel: Channel<OneOrMany<Result<M, I>>>,
+  outputChannel: Channel<in Many<S>>,
 ) = launch {
   var isOpen = true
   debug { "batching: adding producer on output channel ${this.hashCode()} " }

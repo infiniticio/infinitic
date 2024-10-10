@@ -49,6 +49,8 @@ internal fun <M : Any, I, O> Channel<OneOrMany<Result<M, I>>>.batchProcess(
   val callingScope: CoroutineScope = this@CoroutineScope
   val outputChannel: Channel<Result<M, O>> = Channel()
 
+  debug { "batchProcess: starting listening channel ${this@batchProcess.hashCode()}" }
+
   suspend fun process(one: One<Result<M, I>>) {
     val result = one.datum
     if (result.isFailure) {
@@ -84,11 +86,11 @@ internal fun <M : Any, I, O> Channel<OneOrMany<Result<M, I>>>.batchProcess(
 
   launch {
     withContext(NonCancellable) {
-      repeat(concurrency) {
+      repeat(concurrency) { index ->
         launch {
-          debug { "batchProcess: adding producer $it to ${outputChannel.hashCode()}" }
+          debug { "batchProcess: adding producer $index to ${outputChannel.hashCode()}" }
           outputChannel.addProducer()
-          trace { "batchProcess: added producer $it to ${outputChannel.hashCode()}" }
+          trace { "batchProcess: producer $index added to ${outputChannel.hashCode()}" }
           while (true) {
             try {
               // the only way to quit this loop is to close the input channel
@@ -107,9 +109,9 @@ internal fun <M : Any, I, O> Channel<OneOrMany<Result<M, I>>>.batchProcess(
               callingScope.cancel()
             }
           }
-          debug { "batchProcess: removing producer $it to ${outputChannel.hashCode()}" }
+          debug { "batchProcess: exiting, removing producer $index from ${outputChannel.hashCode()}" }
           outputChannel.removeProducer()
-          trace { "batchProcess: removed producer $it to ${outputChannel.hashCode()}" }
+          trace { "batchProcess: exited, producer $index removed from ${outputChannel.hashCode()}" }
         }
       }
     }

@@ -24,10 +24,11 @@
 package io.infinitic.workers.config
 
 import io.infinitic.clients.config.InfiniticClientConfigInterface
+import io.infinitic.events.config.EventListenerConfig
 import io.infinitic.storage.config.StorageConfig
 
 @Suppress("unused")
-interface InfiniticWorkerConfigInterface: InfiniticClientConfigInterface {
+interface InfiniticWorkerConfigInterface : InfiniticClientConfigInterface {
   /** Default storage */
   val storage: StorageConfig?
 

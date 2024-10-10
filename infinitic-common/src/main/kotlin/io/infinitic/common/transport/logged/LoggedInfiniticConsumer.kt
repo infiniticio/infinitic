@@ -28,6 +28,8 @@ import io.infinitic.common.messages.Message
 import io.infinitic.common.transport.BatchConfig
 import io.infinitic.common.transport.InfiniticConsumer
 import io.infinitic.common.transport.Subscription
+import io.infinitic.common.transport.TransportConsumer
+import io.infinitic.common.transport.TransportMessage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 
@@ -36,23 +38,30 @@ class LoggedInfiniticConsumer(
   private val consumer: InfiniticConsumer,
 ) : InfiniticConsumer {
 
+  override suspend fun <M : Message> buildConsumers(
+    subscription: Subscription<M>,
+    entity: String,
+    occurrence: Int?
+  ): List<TransportConsumer<out TransportMessage<M>>> =
+      consumer.buildConsumers(subscription, entity, occurrence)
+
   context(CoroutineScope)
-  override suspend fun <S : Message> startAsync(
-    subscription: Subscription<S>,
+  override suspend fun <M : Message> startAsync(
+    subscription: Subscription<M>,
     entity: String,
     concurrency: Int,
-    process: suspend (S, MillisInstant) -> Unit,
-    beforeDlq: (suspend (S?, Exception) -> Unit)?,
-    batchConfig: (suspend (S) -> BatchConfig?)?,
-    batchProcess: (suspend (List<S>, List<MillisInstant>) -> Unit)?
+    process: suspend (M, MillisInstant) -> Unit,
+    beforeDlq: (suspend (M?, Exception) -> Unit)?,
+    batchConfig: (suspend (M) -> BatchConfig?)?,
+    batchProcess: (suspend (List<M>, List<MillisInstant>) -> Unit)?
   ): Job {
-    val loggedHandler: suspend (S, MillisInstant) -> Unit = { message, instant ->
+    val loggedHandler: suspend (M, MillisInstant) -> Unit = { message, instant ->
       logger.debug { formatLog(message.id(), "Processing:", message) }
       process(message, instant)
       logger.trace { formatLog(message.id(), "Processed:", message) }
     }
 
-    val loggedBeforeDlq: suspend (S?, Exception) -> Unit = { message, e ->
+    val loggedBeforeDlq: suspend (M?, Exception) -> Unit = { message, e ->
       logger.error(e) { "Sending message to DLQ: ${message ?: "(Not Deserialized)"}." }
       beforeDlq?.let {
         logger.debug { "BeforeDlq processing..." }

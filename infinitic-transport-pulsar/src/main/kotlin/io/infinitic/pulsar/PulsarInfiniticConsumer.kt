@@ -31,11 +31,12 @@ import io.infinitic.common.transport.EventListenerSubscription
 import io.infinitic.common.transport.InfiniticConsumer
 import io.infinitic.common.transport.MainSubscription
 import io.infinitic.common.transport.Subscription
+import io.infinitic.common.transport.TransportConsumer
+import io.infinitic.common.transport.TransportMessage
 import io.infinitic.common.transport.consumers.ProcessorConsumer
 import io.infinitic.pulsar.client.InfiniticPulsarClient
 import io.infinitic.pulsar.config.PulsarConsumerConfig
-import io.infinitic.pulsar.consumers.PulsarConsumer
-import io.infinitic.pulsar.consumers.PulsarTransportMessage
+import io.infinitic.pulsar.consumers.PulsarTransportConsumer
 import io.infinitic.pulsar.resources.PulsarResources
 import io.infinitic.pulsar.resources.defaultName
 import io.infinitic.pulsar.resources.defaultNameDLQ
@@ -56,17 +57,11 @@ class PulsarInfiniticConsumer(
   private val pulsarResources: PulsarResources,
 ) : InfiniticConsumer {
 
-  context(CoroutineScope)
-  override suspend fun <S : Message> startAsync(
-    subscription: Subscription<S>,
+  override suspend fun <M : Message> buildConsumers(
+    subscription: Subscription<M>,
     entity: String,
-    concurrency: Int,
-    process: suspend (S, MillisInstant) -> Unit,
-    beforeDlq: (suspend (S?, Exception) -> Unit)?,
-    batchConfig: (suspend (S) -> BatchConfig?)?,
-    batchProcess: (suspend (List<S>, List<MillisInstant>) -> Unit)?
-  ): Job {
-
+    occurrence: Int?
+  ): List<TransportConsumer<out TransportMessage<M>>> {
     // Retrieve the name of the topic and of the DLQ topic
     // Create them if they do not exist.
     val (topicName, topicDLQName) = coroutineScope {
@@ -83,9 +78,42 @@ class PulsarInfiniticConsumer(
       Pair(deferredTopic.await(), deferredTopicDLQ.await())
     }
 
-    val loggedDeserialize: suspend (PulsarTransportMessage<Envelope<out S>>) -> S = { message ->
+    return coroutineScope {
+      List(occurrence ?: 1) { index ->
+        async {
+          val consumerName = entity + (occurrence?.let { "-${index + 1}" } ?: "")
+          logger.debug { "Creating consumer '${consumerName}' for $topicName" }
+          getConsumer(
+              schema = subscription.topic.schema,
+              topic = topicName,
+              topicDlq = topicDLQName,
+              subscriptionName = subscription.name,
+              subscriptionNameDlq = subscription.nameDLQ,
+              subscriptionType = subscription.type,
+              consumerName = consumerName,
+          ).getOrThrow().let { PulsarTransportConsumer(it) }.also {
+            logger.trace { "Consumer '${consumerName}' created for $topicName" }
+          }
+        }
+      }.map { it.await() }
+    }
+  }
+
+
+  context(CoroutineScope)
+  override suspend fun <S : Message> startAsync(
+    subscription: Subscription<S>,
+    entity: String,
+    concurrency: Int,
+    process: suspend (S, MillisInstant) -> Unit,
+    beforeDlq: (suspend (S?, Exception) -> Unit)?,
+    batchConfig: (suspend (S) -> BatchConfig?)?,
+    batchProcess: (suspend (List<S>, List<MillisInstant>) -> Unit)?
+  ): Job {
+
+    val loggedDeserialize: suspend (TransportMessage<S>) -> S = { message ->
       logger.debug { "Deserializing message: ${message.messageId}" }
-      message.toPulsarMessage().value.message().also {
+      message.deserialize().also {
         logger.trace { "Deserialized message: ${message.messageId}" }
       }
     }
@@ -96,7 +124,7 @@ class PulsarInfiniticConsumer(
       logger.trace { "Processed $message" }
     }
 
-    val beforeNegativeAcknowledgement: suspend (PulsarTransportMessage<Envelope<out S>>, S?, Exception) -> Unit =
+    val beforeNegativeAcknowledgement: suspend (TransportMessage<S>, S?, Exception) -> Unit =
         { message, deserialized, cause ->
           if (message.redeliveryCount == pulsarConsumerConfig.maxRedeliverCount) {
             beforeDlq?.let {
@@ -107,47 +135,26 @@ class PulsarInfiniticConsumer(
           }
         }
 
-    fun buildConsumer(index: Int? = null): PulsarConsumer<Envelope<out S>> {
-      logger.debug { "Creating consumer ${index?.let { "${it + 1} " } ?: ""}for $topicName" }
-      return getConsumer(
-          schema = subscription.topic.schema,
-          topic = topicName,
-          topicDlq = topicDLQName,
-          subscriptionName = subscription.name,
-          subscriptionNameDlq = subscription.nameDLQ,
-          subscriptionType = subscription.type,
-          consumerName = entity + (index?.let { "-$it" } ?: ""),
-      ).getOrThrow().let { PulsarConsumer(it) }.also {
-        logger.trace { "Consumer created ${index?.let { "${it + 1} " } ?: ""}for $topicName" }
-      }
-    }
-
     return when (subscription.withKey) {
       true -> {
         // build the consumers synchronously (but in parallel)
-        val consumers = coroutineScope {
-          List(concurrency) { async { buildConsumer(it) } }.map { it.await() }
-        }
+        val consumers = buildConsumers(subscription, entity, concurrency)
         launch {
-          List(concurrency) { index ->
+          repeat(concurrency) { index ->
             val processor = ProcessorConsumer(consumers[index], beforeNegativeAcknowledgement)
-            with(processor) { startAsync(1, loggedDeserialize, loggedHandler) }
+            with(processor) {
+              startAsync(1, loggedDeserialize, loggedHandler)
+            }
           }
         }
       }
 
       false -> {
         // build the unique consumer synchronously
-        val consumer = buildConsumer()
+        val consumer = buildConsumer(subscription, entity)
         val processor = ProcessorConsumer(consumer, beforeNegativeAcknowledgement)
         with(processor) {
-          startAsync(
-              concurrency,
-              loggedDeserialize,
-              loggedHandler,
-              batchConfig,
-              batchProcess,
-          )
+          startAsync(concurrency, loggedDeserialize, loggedHandler, batchConfig, batchProcess)
         }
       }
     }
@@ -165,7 +172,7 @@ class PulsarInfiniticConsumer(
       is EventListenerSubscription -> name?.let { "$it-dlq" } ?: defaultNameDLQ
     }
 
-  private fun <S : Envelope<out Message>> getConsumer(
+  private fun <S : Envelope<M>, M : Message> getConsumer(
     schema: Schema<S>,
     topic: String,
     topicDlq: String?,

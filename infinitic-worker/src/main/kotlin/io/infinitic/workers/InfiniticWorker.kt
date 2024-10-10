@@ -33,7 +33,6 @@ import io.infinitic.cloudEvents.logs.LOGS_WORKFLOW_STATE_ENGINE
 import io.infinitic.cloudEvents.logs.LOGS_WORKFLOW_TAG_ENGINE
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.messages.Message
-import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.events.messages.ServiceExecutorEventMessage
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
@@ -43,7 +42,6 @@ import io.infinitic.common.transport.ServiceExecutorEventTopic
 import io.infinitic.common.transport.ServiceExecutorRetryTopic
 import io.infinitic.common.transport.ServiceExecutorTopic
 import io.infinitic.common.transport.ServiceTagEngineTopic
-import io.infinitic.common.transport.SubscriptionType
 import io.infinitic.common.transport.WorkflowExecutorEventTopic
 import io.infinitic.common.transport.WorkflowExecutorRetryTopic
 import io.infinitic.common.transport.WorkflowExecutorTopic
@@ -52,17 +50,15 @@ import io.infinitic.common.transport.WorkflowStateEngineTopic
 import io.infinitic.common.transport.WorkflowStateEventTopic
 import io.infinitic.common.transport.WorkflowStateTimerTopic
 import io.infinitic.common.transport.WorkflowTagEngineTopic
-import io.infinitic.common.transport.create
 import io.infinitic.common.transport.logged.LoggedInfiniticConsumer
 import io.infinitic.common.transport.logged.LoggedInfiniticProducer
-import io.infinitic.common.transport.logged.LoggedInfiniticResources
-import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.emptyWorkflowContext
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineCmdMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineEventMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
-import io.infinitic.events.EventListener
+import io.infinitic.events.config.EventListenerConfig
+import io.infinitic.events.listeners.startEventListener
 import io.infinitic.events.toJsonString
 import io.infinitic.events.toServiceCloudEvent
 import io.infinitic.events.toWorkflowCloudEvent
@@ -75,7 +71,6 @@ import io.infinitic.tasks.executor.TaskRetryHandler
 import io.infinitic.tasks.tag.TaskTagEngine
 import io.infinitic.tasks.tag.storage.LoggedTaskTagStorage
 import io.infinitic.workers.config.ConfigGetterInterface
-import io.infinitic.workers.config.EventListenerConfig
 import io.infinitic.workers.config.InfiniticWorkerConfig
 import io.infinitic.workers.config.InfiniticWorkerConfigInterface
 import io.infinitic.workers.config.ServiceConfig
@@ -100,11 +95,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.future.future
 import kotlinx.coroutines.job
 import kotlinx.coroutines.joinAll
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import java.util.concurrent.CompletableFuture
@@ -281,7 +274,15 @@ class InfiniticWorker(
           workflowConfig.executor?.let { jobs.addAll(startWorkflowExecutor(it)) }
         }
 
-        config.eventListener?.let { jobs.addAll(startEventListener(it)) }
+        config.eventListener?.let {
+          logEventListenerStart(it)
+
+          with(logger) {
+            jobs.add(
+                consumer.startEventListener(resources, it, cloudEventSourcePrefix),
+            )
+          }
+        }
 
         val workerName = producer.getName()
 
@@ -712,245 +713,8 @@ class InfiniticWorker(
     return listOf(jobExecutor, jobRetry, jobEvents)
   }
 
-  private fun CoroutineScope.startEventListener(config: EventListenerConfig): List<Job> {
-    logEventListenerStart(config)
-
-    val jobServices = checkNewServices(config) { serviceName ->
-      logger.info { "EventListener starting listening Service $serviceName" }
-
-      startServiceEventListener(
-          ServiceName(serviceName),
-          config.concurrency,
-          config.subscriptionName,
-          SubscriptionType.EVENT_LISTENER,
-      ) { message: Message, publishedAt: MillisInstant ->
-        message.toServiceCloudEvent(publishedAt, cloudEventSourcePrefix)?.let { cloudEvent ->
-          config.listener.onEvent(cloudEvent)
-        }
-      }.joinAll()
-    }
-
-    val jobWorkflows = checkNewWorkflows(config) { workflowName ->
-      logger.info { "EventListener starting listening Workflow $workflowName" }
-      val jobs = mutableListOf<Job>()
-      jobs.addAll(
-          startWorkflowExecutorEventListener(
-              WorkflowName(workflowName),
-              config.concurrency,
-              config.subscriptionName,
-              SubscriptionType.EVENT_LISTENER,
-          ) { message, publishedAt ->
-            message.toServiceCloudEvent(publishedAt, cloudEventSourcePrefix)?.let { cloudEvent ->
-              config.listener.onEvent(cloudEvent)
-            }
-          },
-      )
-      jobs.addAll(
-          startWorkflowStateEventListener(
-              WorkflowName(workflowName),
-              config.concurrency,
-              config.subscriptionName,
-              SubscriptionType.EVENT_LISTENER,
-          ) { message, publishedAt ->
-            message.toWorkflowCloudEvent(publishedAt, cloudEventSourcePrefix)?.let { cloudEvent ->
-              config.listener.onEvent(cloudEvent)
-            }
-          },
-      )
-      jobs.joinAll()
-    }
-
-    return listOf(jobServices, jobWorkflows)
-  }
-
-  private fun CoroutineScope.checkNewServices(
-    config: EventListenerConfig,
-    starter: suspend (String) -> Unit
-  ) = launch {
-    val processedServices = mutableSetOf<String>()
-    val loggedResources = LoggedInfiniticResources(EventListener.logger, resources)
-
-    while (true) {
-      // Retrieve the list of services
-      loggedResources.getServices().onSuccess { services ->
-        val currentServices = services.filter { config.includeService(it) }
-
-        // Determine new services that haven't been processed
-        val newServices = currentServices.filterNot { it in processedServices }
-
-        // Launch starter for each new service
-        for (service in newServices) {
-          starter(service)
-          // Add the service to the set of processed services
-          processedServices.add(service)
-        }
-      }
-
-      delay((config.refreshDelaySeconds * 1000).toLong())
-    }
-  }
-
-  private fun CoroutineScope.checkNewWorkflows(
-    config: EventListenerConfig,
-    starter: suspend (String) -> Unit
-  ) = launch {
-    val processedWorkflows = mutableSetOf<String>()
-    val loggedResources = LoggedInfiniticResources(EventListener.logger, resources)
-
-    while (true) {
-      // Retrieve the list of workflows
-      loggedResources.getWorkflows().onSuccess { workflows ->
-        val currentWorkflows = workflows.filter { config.includeWorkflow(it) }
-
-        // Determine new workflows that haven't been processed
-        val newWorkflows = currentWorkflows.filterNot { it in processedWorkflows }
-
-        // Launch starter for each new workflow
-        for (workflow in newWorkflows) {
-          starter(workflow)
-          // Add the workflow to the set of processed workflows
-          processedWorkflows.add(workflow)
-        }
-      }
-
-      delay((config.refreshDelaySeconds * 1000).toLong())
-    }
-  }
-
   private val logMessageSentToDLQ = { message: Message?, e: Exception ->
     logger.error(e) { "Sending message to DLQ ${message ?: "(Not Deserialized)"}" }
-  }
-
-  private suspend fun startServiceEventListener(
-    serviceName: ServiceName,
-    concurrency: Int,
-    subscriptionName: String?,
-    subscriptionType: SubscriptionType,
-    handler: (Message, MillisInstant) -> Unit
-  ): List<Job> {
-    val loggedConsumer = LoggedInfiniticConsumer(EventListener.logger, consumer)
-
-    // TASK-EXECUTOR topic
-    val jobExecutor = with(scope) {
-      loggedConsumer.startAsync(
-          subscription = subscriptionType.create(ServiceExecutorTopic, subscriptionName),
-          entity = serviceName.toString(),
-          concurrency = concurrency,
-          process = handler,
-          beforeDlq = logMessageSentToDLQ,
-      )
-    }
-    // TASK-RETRY topic
-    val jobRetry = with(scope) {
-      loggedConsumer.startAsync(
-          subscription = subscriptionType.create(ServiceExecutorRetryTopic, subscriptionName),
-          entity = serviceName.toString(),
-          concurrency = concurrency,
-          process = handler,
-          beforeDlq = logMessageSentToDLQ,
-      )
-    }
-    // TASK-EVENTS topic
-    val jobEvents = with(scope) {
-      loggedConsumer.startAsync(
-          subscription = subscriptionType.create(ServiceExecutorEventTopic, subscriptionName),
-          entity = serviceName.toString(),
-          concurrency = concurrency,
-          process = handler,
-          beforeDlq = logMessageSentToDLQ,
-      )
-    }
-
-    return listOf(jobExecutor, jobRetry, jobEvents)
-  }
-
-  private suspend fun startWorkflowExecutorEventListener(
-    workflowName: WorkflowName,
-    concurrency: Int,
-    subscriptionName: String?,
-    subscriptionType: SubscriptionType,
-    handler: (Message, MillisInstant) -> Unit
-  ): List<Job> {
-    val loggedConsumer = LoggedInfiniticConsumer(EventListener.logger, consumer)
-
-    // WORKFLOW-TASK-EXECUTOR topic
-    val jobExecutor = with(scope) {
-      loggedConsumer.startAsync(
-          subscription = subscriptionType.create(WorkflowExecutorTopic, subscriptionName),
-          entity = workflowName.toString(),
-          concurrency = concurrency,
-          process = handler,
-          beforeDlq = logMessageSentToDLQ,
-      )
-    }
-    // WORKFLOW-TASK-RETRY topic
-    val jobRetry = with(scope) {
-      loggedConsumer.startAsync(
-          subscription = subscriptionType.create(WorkflowExecutorRetryTopic, subscriptionName),
-          entity = workflowName.toString(),
-          concurrency = concurrency,
-          process = handler,
-          beforeDlq = logMessageSentToDLQ,
-      )
-    }
-    // WORKFLOW-TASK-EVENTS topic
-    val jobEvents = with(scope) {
-      loggedConsumer.startAsync(
-          subscription = subscriptionType.create(WorkflowExecutorEventTopic, subscriptionName),
-          entity = workflowName.toString(),
-          concurrency = concurrency,
-          process = handler,
-          beforeDlq = logMessageSentToDLQ,
-      )
-    }
-    return listOf(jobExecutor, jobRetry, jobEvents)
-  }
-
-  private suspend fun startWorkflowStateEventListener(
-    workflowName: WorkflowName,
-    concurrency: Int,
-    subscriptionName: String?,
-    subscriptionType: SubscriptionType,
-    handler: (Message, MillisInstant) -> Unit
-  ): List<Job> {
-    // WORKFLOW-CMD topic
-    val jobWorkflowCmd = with(scope) {
-      consumer.startAsync(
-          subscription = subscriptionType.create(WorkflowStateCmdTopic, subscriptionName),
-          entity = workflowName.toString(),
-          concurrency = concurrency,
-          process = handler,
-          beforeDlq = logMessageSentToDLQ,
-      )
-    }
-
-    // WORKFLOW-STATE-ENGINE topic
-    val jobWorkflowEngine = with(scope) {
-      consumer.startAsync(
-          subscription = subscriptionType.create(WorkflowStateEngineTopic, subscriptionName),
-          entity = workflowName.toString(),
-          concurrency = concurrency,
-          process = { message: Message, publishedAt: MillisInstant ->
-            // the event handler is not applied for WorkflowCmdMessage from clients
-            // as the event has already been handled in the workflow-cmd topic
-            if (message !is WorkflowStateEngineCmdMessage) handler(message, publishedAt)
-          },
-          beforeDlq = logMessageSentToDLQ,
-      )
-    }
-
-    // WORKFLOW-EVENTS topic
-    val jobWorkflowEvents = with(scope) {
-      consumer.startAsync(
-          subscription = subscriptionType.create(WorkflowStateEventTopic, subscriptionName),
-          entity = workflowName.toString(),
-          concurrency = concurrency,
-          process = handler,
-          beforeDlq = logMessageSentToDLQ,
-      )
-    }
-
-    return listOf(jobWorkflowCmd, jobWorkflowEngine, jobWorkflowEvents)
   }
 
   private fun KLogger.logCloudEvent(

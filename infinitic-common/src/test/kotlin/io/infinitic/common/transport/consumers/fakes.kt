@@ -35,10 +35,12 @@ import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.random.Random
 
-internal data class IntMessage(val value: Int) : TransportMessage {
+internal data class IntMessage(val value: Int) : TransportMessage<DeserializedIntMessage> {
   override val messageId: String = value.toString()
   override val redeliveryCount: Int = Random.nextInt(3)
   override val publishTime: MillisInstant = MillisInstant.now()
+  override suspend fun deserialize(): DeserializedIntMessage = DeserializedIntMessage(this)
+
   override fun toString(): String = value.toString()
 }
 

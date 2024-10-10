@@ -24,12 +24,13 @@ package io.infinitic.common.transport.consumers
 
 import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.common.transport.TransportConsumer
-import io.infinitic.common.transport.TransportMessage
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.coroutines.cancellation.CancellationException
 
 /**
@@ -40,11 +41,17 @@ import kotlin.coroutines.cancellation.CancellationException
  * @return A channel that emits Result objects containing the original and resulting messages.
  */
 context(CoroutineScope, KLogger)
-internal fun <S : TransportMessage> TransportConsumer<S>.startConsuming(): Channel<Result<S, S>> {
-  val channel = Channel<Result<S, S>>()
+fun <T> TransportConsumer<T>.startConsuming(
+  channel: Channel<Result<T, T>> = Channel(),
+): Channel<Result<T, T>> {
   val scope = this@CoroutineScope
 
-  scope.launch {
+  debug { "startConsuming: starting producing on channel ${channel.hashCode()}" }
+
+  launch {
+    debug { "startConsuming: adding producer to consuming channel ${channel.hashCode()}" }
+    channel.addProducer()
+    trace { "startConsuming: producer added to consuming channel ${channel.hashCode()}" }
     while (isActive) {
       try {
         val msg = receive().also { trace { "consuming: received $it" } }
@@ -55,12 +62,16 @@ internal fun <S : TransportMessage> TransportConsumer<S>.startConsuming(): Chann
         warn(e) { "Exception when receiving message from $this" }
       } catch (e: Error) {
         warn(e) { "Error when receiving message from $this" }
-        // canceling current scope
+        // canceling current scope (warning scope is different from inside launch)
+        // that's why we define the scope variable at the very beginning
         scope.cancel()
       }
     }
-    debug { "consuming: exiting" }
-    channel.close()
+    withContext(NonCancellable) {
+      debug { "startConsuming: exiting, removing producer from consuming channel ${channel.hashCode()}" }
+      channel.removeProducer()
+      trace { "startConsuming: exited, producer removed from consuming channel ${channel.hashCode()}" }
+    }
   }
 
   return channel

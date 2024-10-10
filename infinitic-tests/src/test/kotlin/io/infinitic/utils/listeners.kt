@@ -30,8 +30,8 @@ import io.infinitic.cloudEvents.CloudEventListener
 import java.util.concurrent.ConcurrentHashMap
 
 class Listener : CloudEventListener {
-  override fun onEvent(event: CloudEvent) {
-    events.add(event)
+  override fun onEvents(cloudEvents: List<CloudEvent>) {
+    cloudEvents.forEach { events.add(it) }
   }
 
   companion object {

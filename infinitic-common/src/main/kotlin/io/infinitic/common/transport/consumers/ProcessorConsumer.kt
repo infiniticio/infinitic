@@ -38,15 +38,15 @@ import kotlinx.coroutines.launch
  * - single and batch processing,
  * - acknowledgement and negative acknowledgement.
  *
- * @param S The type of the message implementing the interface [TransportMessage].
- * @param D The type of the deserialized message.
+ * @param T The type of the message implementing the interface [TransportMessage].
+ * @param M The type of the deserialized message.
  *
  * @param consumer the transport consumer responsible for receiving messages.
  * @param beforeNegativeAcknowledgement A suspend function called before negatively acknowledging a message.
  */
-class ProcessorConsumer<S : TransportMessage, D : Any>(
-  private val consumer: TransportConsumer<S>,
-  private val beforeNegativeAcknowledgement: (suspend (S, D?, Exception) -> Unit)?,
+class ProcessorConsumer<T : TransportMessage<M>, M : Any>(
+  private val consumer: TransportConsumer<T>,
+  private val beforeNegativeAcknowledgement: (suspend (T, M?, Exception) -> Unit)?,
 ) {
 
   /**
@@ -66,10 +66,10 @@ class ProcessorConsumer<S : TransportMessage, D : Any>(
    */
   fun CoroutineScope.startAsync(
     concurrency: Int,
-    deserialize: suspend (S) -> D,
-    process: suspend (D, MillisInstant) -> Unit,
-    batchConfig: (suspend (D) -> BatchConfig?)? = null,
-    batchProcess: (suspend (List<D>, List<MillisInstant>) -> Unit)? = null,
+    deserialize: suspend (T) -> M,
+    process: suspend (M, MillisInstant) -> Unit,
+    batchConfig: (suspend (M) -> BatchConfig?)? = null,
+    batchProcess: (suspend (List<M>, List<MillisInstant>) -> Unit)? = null,
   ): Job = launch {
     with(logger) {
       consumer
@@ -102,14 +102,14 @@ class ProcessorConsumer<S : TransportMessage, D : Any>(
   }
 
   context(KLogger)
-  private suspend fun acknowledge(message: S, deserialize: D) = try {
+  private suspend fun acknowledge(message: T, deserialize: M) = try {
     consumer.acknowledge(message)
   } catch (e: Exception) {
     logWarn(e) { "Error when acknowledging ${deserialize.string}" }
   }
 
   context(KLogger)
-  private suspend fun negativeAcknowledge(message: S, deserialized: D?, e: Exception) {
+  private suspend fun negativeAcknowledge(message: T, deserialized: M?, e: Exception) {
     try {
       beforeNegativeAcknowledgement?.let { it(message, deserialized, e) }
     } catch (e: Exception) {

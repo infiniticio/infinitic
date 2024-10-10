@@ -20,25 +20,29 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.pulsar.consumers
+package io.infinitic.cloudEvents
 
-import io.infinitic.common.transport.TransportConsumer
-import kotlinx.coroutines.future.await
-import org.apache.pulsar.client.api.Consumer
+@Suppress("unused")
+data class EntityListConfig(
+  val listRefreshSeconds: Double = 60.0,
+  val allow: List<String>? = null,
+  val disallow: List<String> = listOf()
+) {
+  val listRefreshMillis = (listRefreshSeconds * 1000).toLong()
 
-class PulsarConsumer<E>(
-  private val pulsarConsumer: Consumer<E>
-) : TransportConsumer<PulsarTransportMessage<E>> {
+  init {
+    require(listRefreshSeconds >= 0) { error("'${::listRefreshSeconds.name}' must be >= 0, but was $listRefreshSeconds") }
 
-  override suspend fun receive(): PulsarTransportMessage<E> =
-      PulsarTransportMessage(pulsarConsumer.receiveAsync().await())
-
-  override suspend fun negativeAcknowledge(message: PulsarTransportMessage<E>) {
-    pulsarConsumer.negativeAcknowledge(message.toPulsarMessage())
+    allow?.forEach {
+      require(it.isNotEmpty()) { error("'${::allow.name}' must not contain empty element") }
+    }
+    disallow.forEach {
+      require(it.isNotEmpty()) { error("'${::disallow.name}' must not contain empty element") }
+    }
   }
 
-  override suspend fun acknowledge(message: PulsarTransportMessage<E>) {
-    pulsarConsumer.acknowledgeAsync(message.toPulsarMessage()).await()
-  }
+  fun isIncluded(name: String) =
+      (allow == null || allow.contains(name)) && !disallow.contains(name)
+
+  private fun error(txt: String) = "eventListener: $txt"
 }
-

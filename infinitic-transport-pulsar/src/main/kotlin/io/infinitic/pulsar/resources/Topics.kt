@@ -105,7 +105,7 @@ internal fun Topic<*>.nameDLQ(entity: String) =
  * @param S The type of the message contained in the topic.
  * @return The schema of the topic.
  */
-internal val <S : Message> Topic<S>.schema: Schema<Envelope<out S>>
+internal val <S : Message> Topic<S>.schema: Schema<Envelope<S>>
   get() = Schema.AVRO(schemaDefinition(envelopeClass))
 
 
@@ -159,7 +159,7 @@ internal fun getWorkflowNameFromTopicName(topicName: String): String? {
  * @return The envelope class that is associated with the topic.
  */
 @Suppress("UNCHECKED_CAST")
-internal val <S : Message> Topic<S>.envelopeClass: KClass<Envelope<out S>>
+internal val <S : Message> Topic<S>.envelopeClass: KClass<Envelope<S>>
   get() = when (this) {
     NamingTopic -> thisShouldNotHappen()
     ClientTopic -> ClientEnvelope::class
@@ -172,7 +172,7 @@ internal val <S : Message> Topic<S>.envelopeClass: KClass<Envelope<out S>>
     ServiceTagEngineTopic -> ServiceTagEnvelope::class
     ServiceExecutorTopic, ServiceExecutorRetryTopic -> ServiceExecutorEnvelope::class
     ServiceExecutorEventTopic -> ServiceEventEnvelope::class
-  } as KClass<Envelope<out S>>
+  } as KClass<Envelope<S>>
 
 @Suppress("UNCHECKED_CAST")
 internal fun <S : Message> Topic<S>.envelope(message: S) =

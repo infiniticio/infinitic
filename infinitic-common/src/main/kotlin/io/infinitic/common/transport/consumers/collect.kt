@@ -43,6 +43,8 @@ internal fun <S> Channel<S>.collect(
 ) {
   val callingScope: CoroutineScope = this@CoroutineScope
 
+  debug { "collect: starting listening channel ${this@collect.hashCode()}" }
+
   launch {
     withContext(NonCancellable) {
       while (true) {

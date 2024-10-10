@@ -30,14 +30,13 @@ import io.infinitic.common.transport.EventListenerSubscription
 import io.infinitic.common.transport.InfiniticConsumer
 import io.infinitic.common.transport.MainSubscription
 import io.infinitic.common.transport.Subscription
-import io.infinitic.common.transport.TransportConsumer
+import io.infinitic.common.transport.TransportMessage
 import io.infinitic.common.transport.acceptDelayed
 import io.infinitic.common.transport.consumers.ProcessorConsumer
 import io.infinitic.inMemory.channels.DelayedMessage
 import io.infinitic.inMemory.channels.InMemoryChannels
 import io.infinitic.inMemory.consumers.InMemoryConsumer
 import io.infinitic.inMemory.consumers.InMemoryDelayedConsumer
-import io.infinitic.inMemory.consumers.InMemoryTransportMessage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -47,6 +46,18 @@ class InMemoryInfiniticConsumer(
   private val mainChannels: InMemoryChannels,
   private val eventListenerChannels: InMemoryChannels,
 ) : InfiniticConsumer {
+
+  override suspend fun <S : Message> buildConsumers(
+    subscription: Subscription<S>,
+    entity: String,
+    occurrence: Int?
+  ) = List(occurrence ?: 1) {
+    logger.debug { "Creating consumer ${occurrence?.let { "${it + 1} " } ?: ""}on ${subscription.topic} for $entity " }
+    when (subscription.topic.acceptDelayed) {
+      true -> InMemoryDelayedConsumer(subscription.getChannelForDelayed(entity))
+      false -> InMemoryConsumer(subscription.getChannel(entity))
+    }
+  }
 
   context(CoroutineScope)
   override suspend fun <S : Message> startAsync(
@@ -59,9 +70,9 @@ class InMemoryInfiniticConsumer(
     batchProcess: (suspend (List<S>, List<MillisInstant>) -> Unit)?
   ): Job {
 
-    val loggedDeserialize: suspend (InMemoryTransportMessage<S>) -> S = { message ->
+    val loggedDeserialize: suspend (TransportMessage<S>) -> S = { message ->
       logger.debug { "Deserializing message: ${message.messageId}" }
-      message.toMessage().also {
+      message.deserialize().also {
         logger.trace { "Deserialized message: ${message.messageId}" }
       }
     }
@@ -72,23 +83,13 @@ class InMemoryInfiniticConsumer(
       logger.trace { "Processed $message" }
     }
 
-    fun buildConsumer(index: Int? = null): TransportConsumer<InMemoryTransportMessage<S>> {
-      logger.debug { "Creating consumer ${index?.let { "${it + 1} " } ?: ""}on ${subscription.topic} for $entity " }
-      return when (subscription.topic.acceptDelayed) {
-        true -> InMemoryDelayedConsumer(subscription.getChannelForDelayed(entity))
-        false -> InMemoryConsumer(subscription.getChannel(entity))
-      }
-    }
-
     return when (subscription.withKey) {
       true -> {
         // build the consumers synchronously
-        val consumers: List<TransportConsumer<InMemoryTransportMessage<S>>> =
-            List(concurrency) { buildConsumer(it) }
-
+        val consumers = buildConsumers(subscription, entity, concurrency)
         launch {
-          repeat(concurrency) {
-            val processor = ProcessorConsumer<InMemoryTransportMessage<S>, S>(consumers[it], null)
+          repeat(concurrency) { index ->
+            val processor = ProcessorConsumer(consumers[index], null)
             with(processor) { startAsync(1, loggedDeserialize, loggedHandler) }
           }
         }
@@ -96,8 +97,8 @@ class InMemoryInfiniticConsumer(
 
       false -> {
         // build the consumer synchronously
-        val consumer = buildConsumer()
-        val processor = ProcessorConsumer<InMemoryTransportMessage<S>, S>(consumer, null)
+        val consumer = buildConsumer(subscription, entity)
+        val processor = ProcessorConsumer(consumer, null)
         with(processor) {
           startAsync(
               concurrency,

@@ -25,11 +25,11 @@ package io.infinitic.workers
 import io.cloudevents.CloudEvent
 import io.infinitic.cloudEvents.CloudEventListener
 import io.infinitic.common.fixtures.later
+import io.infinitic.events.config.EventListenerConfig
 import io.infinitic.storage.config.InMemoryConfig
 import io.infinitic.storage.config.InMemoryStorageConfig
 import io.infinitic.storage.config.MySQLConfig
 import io.infinitic.transport.config.InMemoryTransportConfig
-import io.infinitic.workers.config.EventListenerConfig
 import io.infinitic.workers.config.InfiniticWorkerConfig
 import io.infinitic.workers.config.ServiceExecutorConfig
 import io.infinitic.workers.config.ServiceTagEngineConfig
@@ -51,7 +51,7 @@ internal class InfiniticWorkerTests : StringSpec(
       val transport = InMemoryTransportConfig()
 
       class TestEventListener : CloudEventListener {
-        override fun onEvent(event: CloudEvent) {}
+        override fun onEvents(cloudEvents: CloudEvent) {}
       }
 
       val eventListener = EventListenerConfig.builder()
@@ -439,13 +439,12 @@ workflows:
             .build()
 
         var flag = false
-        later(2000) {
+        later(1000) {
           flag = true
           worker.close()
         }
         worker.start()
         flag shouldBe true
-        worker.close()
       }
     },
 )

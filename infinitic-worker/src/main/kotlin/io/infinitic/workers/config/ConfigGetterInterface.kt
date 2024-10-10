@@ -22,6 +22,8 @@
  */
 package io.infinitic.workers.config
 
+import io.infinitic.events.config.EventListenerConfig
+
 interface ConfigGetterInterface {
   fun getEventListenerConfig(): EventListenerConfig?
 

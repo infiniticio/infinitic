@@ -20,7 +20,6 @@
  *
  * Licensor: infinitic.io
  */
-
 package io.infinitic.events
 
 import io.github.oshai.kotlinlogging.KotlinLogging

@@ -85,10 +85,10 @@ import io.infinitic.common.workflows.engine.messages.WorkflowCompletedEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineCmdMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineEventMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
+import io.infinitic.events.config.EventListenerConfig
 import io.infinitic.storage.config.InMemoryStorageConfig
 import io.infinitic.transport.config.InMemoryTransportConfig
 import io.infinitic.workers.InfiniticWorker
-import io.infinitic.workers.config.EventListenerConfig
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.Runs
@@ -105,7 +105,7 @@ import kotlin.reflect.full.isSubclassOf
 
 private val events = mutableListOf<CloudEvent>()
 private val eventListener = mockk<CloudEventListener> {
-  every { onEvent(capture(events)) } just Runs
+  every { onEvents(capture(events)) } just Runs
 }
 
 private val transport = InMemoryTransportConfig()
@@ -116,15 +116,16 @@ private val worker = InfiniticWorker.builder()
     .setEventListener(
         EventListenerConfig.builder()
             .setListener(eventListener)
-            .setRefreshDelaySeconds(0.0)
+            .setServiceListRefreshSeconds(0.0)
+            .setWorkflowListRefreshSeconds(0.0)
             .setConcurrency(2),
     )
     .build()
 
 private suspend fun <T : Message> T.sendToTopic(topic: Topic<T>) {
   with(transport.producer) { sendTo(topic) }
-  // wait a bit to let listener do its work
-  // and the listener to discover new services and workflows
+// wait a bit to let listener do its work
+// and the listener to discover new services and workflows
   delay(100)
 }
 
@@ -211,7 +212,7 @@ internal class CloudEventTests : StringSpec(
           val message = TestFactory.random(it, mapOf("serviceName" to ServiceName("ServiceA")))
           message.sendToTopic(ServiceExecutorTopic)
 
-          // first test is slow down in GitHub
+// first test is slow down in GitHub
           delay(2000)
 
           events.size shouldBe 1
@@ -336,7 +337,7 @@ internal class CloudEventTests : StringSpec(
         }
       }
 
-      // TODO complete this test and add similar tests for all other events
+// TODO complete this test and add similar tests for all other events
       "Check infinitic.task.dispatched data" {
         val message = TestFactory.random<ExecuteTask>(
             mapOf("serviceName" to ServiceName("ServiceA")),
@@ -441,3 +442,4 @@ internal class CloudEventTests : StringSpec(
 ) {
 
 }
+
