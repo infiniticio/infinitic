@@ -41,7 +41,7 @@ import kotlinx.coroutines.withContext
  * @return A channel where the results of the processed elements will be sent.
  */
 context(CoroutineScope, KLogger)
-internal fun <M : Any, I, O> Channel<OneOrMany<Result<M, I>>>.batchProcess(
+fun <M : Any, I, O> Channel<OneOrMany<Result<M, I>>>.batchProcess(
   concurrency: Int = 1,
   singleProcess: suspend (M, I) -> O,
   batchProcess: suspend (List<M>, List<I>) -> List<O>,

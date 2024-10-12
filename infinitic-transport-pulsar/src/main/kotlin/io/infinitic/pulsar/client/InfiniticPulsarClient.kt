@@ -224,6 +224,8 @@ class InfiniticPulsarClient(private val pulsarClient: PulsarClient) {
     consumerDefDlq: ConsumerDef? = null,
   ): Result<Consumer<S>> {
 
+    logger.info { "Creating consumer with $consumerDef" }
+
     val (topic,
         subscriptionName,
         subscriptionType,

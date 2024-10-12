@@ -26,16 +26,27 @@ import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.messages.Message
 import io.infinitic.common.transport.TransportMessage
+import kotlinx.coroutines.future.await
+import org.apache.pulsar.client.api.Consumer as PulsarConsumer
 import org.apache.pulsar.client.api.Message as PulsarMessage
-import org.apache.pulsar.client.api.MessageId as PulsarMessageId
 
-class PulsarTransportMessage<M : Message>(private val pulsarMessage: PulsarMessage<Envelope<M>>) :
-  TransportMessage<M> {
-  override val messageId: String = pulsarMessage.messageId.toString()
-  override val redeliveryCount: Int = pulsarMessage.redeliveryCount
-  override val publishTime: MillisInstant = MillisInstant(pulsarMessage.publishTime)
+class PulsarTransportMessage<M : Message>(
+  private val pulsarMessage: PulsarMessage<Envelope<M>>
+) : TransportMessage<M> {
+  override val publishTime = MillisInstant(pulsarMessage.publishTime)
+  override val messageId = pulsarMessage.messageId.toString()
 
-  override suspend fun deserialize(): M = pulsarMessage.value.message()
+  lateinit var pulsarConsumer: PulsarConsumer<Envelope<M>>
 
-  val pulsarMessageId: PulsarMessageId = pulsarMessage.messageId
+  override fun deserialize(): M = pulsarMessage.value.message()
+
+  override suspend fun acknowledge() {
+    pulsarConsumer.acknowledgeAsync(pulsarMessage).await()
+  }
+
+  override suspend fun negativeAcknowledge(): Int {
+    pulsarConsumer.negativeAcknowledge(pulsarMessage)
+
+    return pulsarMessage.redeliveryCount + 1
+  }
 }

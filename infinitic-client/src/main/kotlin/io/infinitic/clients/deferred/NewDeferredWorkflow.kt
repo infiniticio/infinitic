@@ -50,7 +50,7 @@ class NewDeferredWorkflow<R> internal constructor(
   override fun retryAsync() =
       dispatcher.retryWorkflowTaskAsync(workflowName, RequestByWorkflowId(workflowId))
 
-  override fun await(): R = dispatcher.awaitNewWorkflow(this, true)
+  override suspend fun await(): R = dispatcher.awaitNewWorkflow(this, true)
 
   override val id: String = workflowId.toString()
 

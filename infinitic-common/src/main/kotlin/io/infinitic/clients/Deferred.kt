@@ -29,7 +29,7 @@ interface Deferred<R> {
 
   val id: String
 
-  fun await(): R
+  suspend fun await(): R
 
   fun cancelAsync(): CompletableFuture<Unit>
 

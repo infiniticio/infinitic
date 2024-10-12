@@ -22,8 +22,22 @@
  */
 package io.infinitic.common.transport
 
-interface TransportConsumer<T> {
+interface TransportConsumer<T : TransportMessage<*>> {
+  /**
+   * Receives a transport message from the consumer.
+   *
+   * @return A message of type [T] received from the transport.
+   */
   suspend fun receive(): T
-  suspend fun acknowledge(message: T)
-  suspend fun negativeAcknowledge(message: T)
+
+  /**
+   * Defines the maximum number of times a message can be redelivered
+   * when processing messages from a transport consumer.
+   */
+  val maxRedeliver: Int
+
+  /**
+   * Represents the name of the TransportConsumer. Used for Logging only
+   */
+  val name: String
 }

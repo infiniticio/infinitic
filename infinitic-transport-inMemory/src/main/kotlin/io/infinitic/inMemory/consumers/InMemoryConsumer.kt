@@ -28,17 +28,30 @@ import io.infinitic.inMemory.channels.DelayedMessage
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 
+/**
+ * An in-memory implementation of a transport consumer that consumes messages from a Kotlin Coroutine [Channel].
+ *
+ * @param S The type of message being consumed, which must extend the [Message] interface.
+ * @property channel The channel from which messages are consumed.
+ */
 class InMemoryConsumer<S : Message>(
   private val channel: Channel<S>
 ) : TransportConsumer<InMemoryTransportMessage<S>> {
 
   override suspend fun receive() = InMemoryTransportMessage(channel.receive())
 
-  override suspend fun negativeAcknowledge(message: InMemoryTransportMessage<S>) {}
+  override val maxRedeliver = 1
 
-  override suspend fun acknowledge(message: InMemoryTransportMessage<S>) {}
+  override val name: String = toString()
 }
 
+/**
+ * An implementation of [TransportConsumer] that receives [InMemoryTransportMessage]
+ * instances from a Kotlin [Channel] containing delayed messages.
+ *
+ * @param S The type of the messages being consumed, which must implement [Message].
+ * @param channel A channel to receive delayed messages from.
+ */
 class InMemoryDelayedConsumer<S : Message>(
   private val channel: Channel<DelayedMessage<S>>
 ) : TransportConsumer<InMemoryTransportMessage<S>> {
@@ -49,7 +62,7 @@ class InMemoryDelayedConsumer<S : Message>(
     return InMemoryTransportMessage(message.message)
   }
 
-  override suspend fun negativeAcknowledge(message: InMemoryTransportMessage<S>) {}
+  override val maxRedeliver = 1
 
-  override suspend fun acknowledge(message: InMemoryTransportMessage<S>) {}
+  override val name: String = toString()
 }

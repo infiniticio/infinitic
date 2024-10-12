@@ -29,17 +29,17 @@ import kotlinx.coroutines.future.await
 import org.apache.pulsar.client.api.Consumer
 
 class PulsarTransportConsumer<M : Message>(
-  private val pulsarConsumer: Consumer<Envelope<M>>
+  private val pulsarConsumer: Consumer<Envelope<M>>,
+  override val maxRedeliver: Int
 ) : TransportConsumer<PulsarTransportMessage<M>> {
 
-  override suspend fun receive(): PulsarTransportMessage<M> =
-      PulsarTransportMessage(pulsarConsumer.receiveAsync().await())
+  override suspend fun receive(): PulsarTransportMessage<M> {
+    val message = pulsarConsumer.receiveAsync().await()
 
-  override suspend fun negativeAcknowledge(message: PulsarTransportMessage<M>) {
-    pulsarConsumer.negativeAcknowledge(message.pulsarMessageId)
+    return PulsarTransportMessage(message).apply {
+      pulsarConsumer = this@PulsarTransportConsumer.pulsarConsumer
+    }
   }
 
-  override suspend fun acknowledge(message: PulsarTransportMessage<M>) {
-    pulsarConsumer.acknowledgeAsync(message.pulsarMessageId).await()
-  }
+  override val name: String = pulsarConsumer.consumerName
 }

@@ -20,25 +20,37 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.inMemory.consumers
+package io.infinitic.common.transport.consumers
 
+import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.messages.Message
+import io.infinitic.common.transport.BatchConfig
 import io.infinitic.common.transport.TransportMessage
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.channels.Channel
 
-class InMemoryTransportMessage<S : Message>(private val message: S) :
-  TransportMessage<S> {
-  override val messageId: String = message.messageId.toString()
-  override val publishTime: MillisInstant = MillisInstant.now()
+context(CoroutineScope, KLogger)
+fun <T : TransportMessage<M>, M : Any> Channel<Result<T, T>>.completeProcess(
+  concurrency: Int,
+  deserialize: suspend (T) -> M,
+  process: suspend (M, MillisInstant) -> Unit,
+  beforeDlq: (suspend (M, Exception) -> Unit)? = null,
+  batchConfig: (suspend (M) -> BatchConfig?)? = null,
+  batchProcess: (suspend (List<M>, List<MillisInstant>) -> Unit)? = null,
+  maxRedeliver: Int,
+): Unit = this
+    .process(
+        concurrency,
+        { _, message -> deserialize(message) },
+    )
+    .batchBy { datum ->
+      batchConfig?.invoke(datum)
+    }
+    .batchProcess(
+        concurrency,
+        { message, datum -> process(datum, message.publishTime); datum },
+        { messages, data -> batchProcess!!(data, messages.map { it.publishTime }); data },
+    )
+    .collect(maxRedeliver, beforeDlq)
 
-  override fun deserialize() = message
 
-  override suspend fun negativeAcknowledge(): Int {
-    //  nothing to do
-    return 1
-  }
-
-  override suspend fun acknowledge() {
-    //  nothing to do
-  }
-}

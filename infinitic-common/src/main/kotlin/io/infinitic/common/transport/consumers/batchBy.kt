@@ -46,7 +46,7 @@ import kotlinx.coroutines.withContext
  *         either a [SingleMessage] or a [MultipleMessages] instance.
  */
 context(CoroutineScope, KLogger)
-internal fun <M : Any, I> Channel<Result<M, I>>.batchBy(
+fun <M : Any, I> Channel<Result<M, I>>.batchBy(
   getBatchConfig: suspend (I) -> BatchConfig?,
 ): Channel<OneOrMany<Result<M, I>>> {
   val callingScope: CoroutineScope = this@CoroutineScope

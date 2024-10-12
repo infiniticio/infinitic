@@ -22,6 +22,7 @@
  */
 package io.infinitic.clients
 
+import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.clients.config.InfiniticClientConfig
 import io.infinitic.clients.deferred.ExistingDeferredWorkflow
 import io.infinitic.clients.samples.FakeClass
@@ -109,6 +110,7 @@ private val taskSlot = slot<ServiceExecutorMessage>()
 private val workflowCmdSlots = CopyOnWriteArrayList<WorkflowStateEngineCmdMessage>()
 private val delaySlot = slot<MillisDuration>()
 private val scopeSlot = slot<CoroutineScope>()
+private val loggerSlot = slot<KLogger>()
 
 private val clientNameTest = ClientName("clientTest")
 private val emitterNameTest = EmitterName("clientTest")
@@ -147,20 +149,22 @@ internal val mockedProducer = mockk<InMemoryInfiniticProducer> {
     getName()
   } returns "$clientNameTest"
   coEvery {
-    internalSendTo(capture(taskTagSlots), ServiceTagEngineTopic)
+    with(capture(taskTagSlots)) { sendTo(ServiceTagEngineTopic) }
   } answers { }
   coEvery {
-    internalSendTo(capture(workflowTagSlots), WorkflowTagEngineTopic)
+    with(capture(workflowTagSlots)) { sendTo(WorkflowTagEngineTopic) }
   } coAnswers { tagResponse() }
   coEvery {
-    internalSendTo(capture(workflowCmdSlots), WorkflowStateCmdTopic)
+    with(capture(workflowCmdSlots)) { sendTo(WorkflowStateCmdTopic) }
   } coAnswers { engineResponse() }
 }
 
 internal val mockedConsumer = mockk<InMemoryInfiniticConsumer> {
   coEvery {
     with(capture(scopeSlot)) {
-      startAsync(any<Subscription<*>>(), "$clientNameTest", 1, any(), any())
+      with(capture(loggerSlot)) {
+        startAsync(any<Subscription<*>>(), "$clientNameTest", 1, any(), any())
+      }
     }
   } answers {
     scopeSlot.captured.launch { delay(Long.MAX_VALUE) }
@@ -192,6 +196,7 @@ internal class InfiniticClientTests : StringSpec(
       val fakeWorkflowWithTags = client.newWorkflow(FakeWorkflow::class.java, tags = tags)
 
       beforeTest {
+        loggerSlot.clear()
         scopeSlot.clear()
         delaySlot.clear()
         taskTagSlots.clear()
@@ -227,13 +232,15 @@ internal class InfiniticClientTests : StringSpec(
         // when asynchronously dispatching a workflow, the consumer should not be started
         coVerify(exactly = 0) {
           with(client.clientScope) {
-            mockedConsumer.start(
-                MainSubscription(ClientTopic),
-                "$clientNameTest",
-                1,
-                any(),
-                any(),
-            )
+            with(InfiniticClient.logger) {
+              mockedConsumer.startAsync(
+                  MainSubscription(ClientTopic),
+                  "$clientNameTest",
+                  1,
+                  any(),
+                  any(),
+              )
+            }
           }
         }
       }
@@ -514,13 +521,15 @@ internal class InfiniticClientTests : StringSpec(
         // when waiting for a workflow, the consumer should be started
         coVerify {
           with(client.clientScope) {
-            mockedConsumer.startAsync(
-                MainSubscription(ClientTopic),
-                "$clientNameTest",
-                1,
-                any(),
-                any(),
-            )
+            with(InfiniticClient.logger) {
+              mockedConsumer.startAsync(
+                  MainSubscription(ClientTopic),
+                  "$clientNameTest",
+                  1,
+                  any(),
+                  any(),
+              )
+            }
           }
         }
 
@@ -530,13 +539,15 @@ internal class InfiniticClientTests : StringSpec(
         // the consumer should be started only once
         coVerify(exactly = 1) {
           with(client.clientScope) {
-            mockedConsumer.startAsync(
-                MainSubscription(ClientTopic),
-                "$clientNameTest",
-                1,
-                any(),
-                any(),
-            )
+            with(InfiniticClient.logger) {
+              mockedConsumer.startAsync(
+                  MainSubscription(ClientTopic),
+                  "$clientNameTest",
+                  1,
+                  any(),
+                  any(),
+              )
+            }
           }
         }
       }

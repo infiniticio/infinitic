@@ -22,6 +22,7 @@
  */
 package io.infinitic.inMemory
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.tasks.data.ServiceName
@@ -43,6 +44,7 @@ import kotlin.system.measureTimeMillis
 
 class InMemoryInfiniticConsumerTests : StringSpec(
     {
+      val logger = KotlinLogging.logger {}
       val serviceName = ServiceName("ServiceTest")
       val mainChannels = InMemoryChannels()
       val eventListenerChannels = InMemoryChannels()
@@ -60,27 +62,29 @@ class InMemoryInfiniticConsumerTests : StringSpec(
       val executeTask = TestFactory.random<ExecuteTask>().copy(serviceName = serviceName)
 
       "Tasks should be processed in parallel" {
-        val scope = CoroutineScope(Dispatchers.IO)
+        with(logger) {
+          val scope = CoroutineScope(Dispatchers.IO)
 
-        val job = with(scope) {
-          consumer.startAsync(
-              MainSubscription(ServiceExecutorTopic),
-              serviceName.toString(),
-              10,
-              ::process,
-              null,
-          )
-        }
+          val job = with(scope) {
+            consumer.startAsync(
+                MainSubscription(ServiceExecutorTopic),
+                serviceName.toString(),
+                10,
+                ::process,
+                null,
+            )
+          }
 
-        repeat(10) {
-          val m = executeTask.copy(taskId = TaskId())
-          with(producer) { m.sendTo(ServiceExecutorTopic) }
+          repeat(10) {
+            val m = executeTask.copy(taskId = TaskId())
+            with(producer) { m.sendTo(ServiceExecutorTopic) }
+          }
+          delay(100)
+          scope.cancel()
+          val duration = measureTimeMillis { job.join() }
+          duration shouldBeLessThan 1200L
+          counter.get() shouldBe 10
         }
-        delay(100)
-        scope.cancel()
-        val duration = measureTimeMillis { job.join() }
-        duration shouldBeLessThan 1200L
-        counter.get() shouldBe 10
       }
     },
 )

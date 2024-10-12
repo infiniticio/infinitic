@@ -24,6 +24,7 @@ package io.infinitic.common.transport.consumers
 
 import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.common.transport.TransportConsumer
+import io.infinitic.common.transport.TransportMessage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.cancel
@@ -41,12 +42,10 @@ import kotlin.coroutines.cancellation.CancellationException
  * @return A channel that emits Result objects containing the original and resulting messages.
  */
 context(CoroutineScope, KLogger)
-fun <T> TransportConsumer<T>.startConsuming(
-  channel: Channel<Result<T, T>> = Channel(),
+fun <T : TransportMessage<M>, M> TransportConsumer<T>.startConsuming(
+  channel: Channel<Result<TransportMessage<M>, TransportMessage<M>>> = Channel(),
 ): Channel<Result<T, T>> {
-  val scope = this@CoroutineScope
-
-  debug { "startConsuming: starting producing on channel ${channel.hashCode()}" }
+  debug { "startConsuming: starting producing on channel ${channel.hashCode()} from ${this@startConsuming.name}" }
 
   launch {
     debug { "startConsuming: adding producer to consuming channel ${channel.hashCode()}" }
@@ -54,7 +53,8 @@ fun <T> TransportConsumer<T>.startConsuming(
     trace { "startConsuming: producer added to consuming channel ${channel.hashCode()}" }
     while (isActive) {
       try {
-        val msg = receive().also { trace { "consuming: received $it" } }
+        val msg =
+            receive().also { trace { "consuming: received $it from ${this@startConsuming.name}" } }
         channel.send(Result.success(msg, msg))
       } catch (e: CancellationException) {
         // do nothing, will exit if calling scope is not active anymore
@@ -64,7 +64,7 @@ fun <T> TransportConsumer<T>.startConsuming(
         warn(e) { "Error when receiving message from $this" }
         // canceling current scope (warning scope is different from inside launch)
         // that's why we define the scope variable at the very beginning
-        scope.cancel()
+        this@CoroutineScope.cancel()
       }
     }
     withContext(NonCancellable) {
@@ -74,5 +74,6 @@ fun <T> TransportConsumer<T>.startConsuming(
     }
   }
 
-  return channel
+  @Suppress("UNCHECKED_CAST")
+  return channel as Channel<Result<T, T>>
 }

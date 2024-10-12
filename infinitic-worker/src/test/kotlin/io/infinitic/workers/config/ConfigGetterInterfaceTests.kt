@@ -39,7 +39,7 @@ import io.kotest.matchers.shouldBe
 internal class ConfigGetterInterfaceTests : StringSpec(
     {
       class TestEventListener : CloudEventListener {
-        override fun onEvents(cloudEvents: CloudEvent) {}
+        override fun onEvents(cloudEvents: List<CloudEvent>) {}
       }
 
       val transport = InMemoryTransportConfig()

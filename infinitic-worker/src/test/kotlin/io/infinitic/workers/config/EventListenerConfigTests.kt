@@ -38,7 +38,9 @@ import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.types.shouldBeInstanceOf
 
 internal class TestEventListener : CloudEventListener {
-  override fun onEvents(cloudEvents: CloudEvent) {}
+  override fun onEvents(cloudEvents: List<CloudEvent>) {
+    // do nothing
+  }
 }
 
 internal class EventListenerConfigTests : StringSpec(

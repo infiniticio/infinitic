@@ -23,6 +23,7 @@
 
 package io.infinitic.pulsar
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.fixtures.later
 import io.infinitic.common.messages.Envelope
@@ -63,6 +64,7 @@ import org.apache.pulsar.client.api.Message as PulsarMessage
 
 class PulsarInfiniticConsumerTests : StringSpec(
     {
+      val logger = KotlinLogging.logger {}
       val clientName = ClientName("clientTest")
       val workflowName = WorkflowName("workflowTest")
       val serviceName = ServiceName("serviceTest")
@@ -93,6 +95,7 @@ class PulsarInfiniticConsumerTests : StringSpec(
           delay(10)
           CompletableFuture<PulsarMessage<Envelope<out Message>>>()
         }
+        every { consumerName } returns "consumerName"
       }
 
       val client = mockk<InfiniticPulsarClient> {
@@ -106,249 +109,271 @@ class PulsarInfiniticConsumerTests : StringSpec(
 
       fun getScope(): CoroutineScope {
         val scope = CoroutineScope(Dispatchers.IO)
-        later(1000) { scope.cancel() }
+        later(500) { scope.cancel() }
         return scope
       }
 
       "should init client-response topic before consuming it" {
-        val name = "$clientName"
+        with(logger) {
+          val name = "$clientName"
 
-        with(getScope()) {
-          pulsarInfiniticConsumer.start(
-              subscription = MainSubscription(ClientTopic),
-              entity = name,
-              concurrency = 1,
-              process = { _, _ -> },
-              beforeDlq = { _, _ -> },
-          )
-        }
+          with(getScope()) {
+            pulsarInfiniticConsumer.start(
+                subscription = MainSubscription(ClientTopic),
+                entity = name,
+                concurrency = 1,
+                process = { _, _ -> },
+                beforeDlq = { _, _ -> },
+            )
+          }
 
-        coVerify {
-          pulsarResources.initTopicOnce(
-              "persistent://$tenant/$namespace/response:$name",
-              isPartitioned = false,
-              isTimer = false,
-          )
+          coVerify {
+            pulsarResources.initTopicOnce(
+                "persistent://$tenant/$namespace/response:$name",
+                isPartitioned = false,
+                isTimer = false,
+            )
+          }
         }
       }
 
       "should init workflow-tag topic before consuming it" {
-        val name = "$workflowName"
+        with(logger) {
+          val name = "$workflowName"
 
-        with(getScope()) {
-          pulsarInfiniticConsumer.start(
-              subscription = MainSubscription(WorkflowTagEngineTopic),
-              entity = name,
-              concurrency = 1,
-              process = { _, _ -> },
-              beforeDlq = { _, _ -> },
-          )
-        }
+          with(getScope()) {
+            pulsarInfiniticConsumer.start(
+                subscription = MainSubscription(WorkflowTagEngineTopic),
+                entity = name,
+                concurrency = 1,
+                process = { _, _ -> },
+                beforeDlq = { _, _ -> },
+            )
+          }
 
-        coVerify {
-          pulsarResources.initTopicOnce(
-              "persistent://$tenant/$namespace/workflow-tag:$name",
-              isPartitioned = true,
-              isTimer = false,
-          )
+          coVerify {
+            pulsarResources.initTopicOnce(
+                "persistent://$tenant/$namespace/workflow-tag:$name",
+                isPartitioned = true,
+                isTimer = false,
+            )
+          }
         }
       }
 
       "should init workflow-cmd topic before consuming it" {
-        val name = "$workflowName"
+        with(logger) {
+          val name = "$workflowName"
 
-        with(getScope()) {
-          pulsarInfiniticConsumer.start(
-              subscription = MainSubscription(WorkflowStateCmdTopic),
-              entity = name,
-              concurrency = 1,
-              process = { _, _ -> },
-              beforeDlq = { _, _ -> },
-          )
-        }
+          with(getScope()) {
+            pulsarInfiniticConsumer.start(
+                subscription = MainSubscription(WorkflowStateCmdTopic),
+                entity = name,
+                concurrency = 1,
+                process = { _, _ -> },
+                beforeDlq = { _, _ -> },
+            )
+          }
 
-        coVerify {
-          pulsarResources.initTopicOnce(
-              "persistent://$tenant/$namespace/workflow-cmd:$name",
-              isPartitioned = true,
-              isTimer = false,
-          )
+          coVerify {
+            pulsarResources.initTopicOnce(
+                "persistent://$tenant/$namespace/workflow-cmd:$name",
+                isPartitioned = true,
+                isTimer = false,
+            )
+          }
         }
       }
 
       "should init workflow-engine topic before consuming it" {
-        val name = "$workflowName"
+        with(logger) {
+          val name = "$workflowName"
 
-        with(getScope()) {
-          pulsarInfiniticConsumer.start(
-              subscription = MainSubscription(WorkflowStateEngineTopic),
-              entity = name,
-              concurrency = 1,
-              process = { _, _ -> },
-              beforeDlq = { _, _ -> },
-          )
-        }
+          with(getScope()) {
+            pulsarInfiniticConsumer.start(
+                subscription = MainSubscription(WorkflowStateEngineTopic),
+                entity = name,
+                concurrency = 1,
+                process = { _, _ -> },
+                beforeDlq = { _, _ -> },
+            )
+          }
 
-        coVerify {
-          pulsarResources.initTopicOnce(
-              "persistent://$tenant/$namespace/workflow-engine:$name",
-              isPartitioned = true,
-              isTimer = false,
-          )
+          coVerify {
+            pulsarResources.initTopicOnce(
+                "persistent://$tenant/$namespace/workflow-engine:$name",
+                isPartitioned = true,
+                isTimer = false,
+            )
+          }
         }
       }
 
       "should init workflow-delay topic before consuming it" {
-        val name = "$workflowName"
+        with(logger) {
+          val name = "$workflowName"
 
-        with(getScope()) {
-          pulsarInfiniticConsumer.start(
-              subscription = MainSubscription(WorkflowStateTimerTopic),
-              entity = name,
-              concurrency = 10,
-              process = { _, _ -> },
-              beforeDlq = { _, _ -> },
-          )
-        }
+          with(getScope()) {
+            pulsarInfiniticConsumer.start(
+                subscription = MainSubscription(WorkflowStateTimerTopic),
+                entity = name,
+                concurrency = 10,
+                process = { _, _ -> },
+                beforeDlq = { _, _ -> },
+            )
+          }
 
-        coVerify {
-          pulsarResources.initTopicOnce(
-              "persistent://$tenant/$namespace/workflow-delay:$name",
-              isPartitioned = true,
-              isTimer = true,
-          )
+          coVerify {
+            pulsarResources.initTopicOnce(
+                "persistent://$tenant/$namespace/workflow-delay:$name",
+                isPartitioned = true,
+                isTimer = true,
+            )
+          }
         }
       }
 
       "should init workflow-events topic before consuming it" {
-        val name = "$workflowName"
+        with(logger) {
+          val name = "$workflowName"
 
-        with(getScope()) {
-          pulsarInfiniticConsumer.start(
-              subscription = MainSubscription(WorkflowStateEventTopic),
-              entity = name,
-              concurrency = 10,
-              process = { _, _ -> },
-              beforeDlq = { _, _ -> },
-          )
-        }
+          with(getScope()) {
+            pulsarInfiniticConsumer.start(
+                subscription = MainSubscription(WorkflowStateEventTopic),
+                entity = name,
+                concurrency = 10,
+                process = { _, _ -> },
+                beforeDlq = { _, _ -> },
+            )
+          }
 
-        coVerify {
-          pulsarResources.initTopicOnce(
-              "persistent://$tenant/$namespace/workflow-events:$name",
-              isPartitioned = true,
-              isTimer = false,
-          )
+          coVerify {
+            pulsarResources.initTopicOnce(
+                "persistent://$tenant/$namespace/workflow-events:$name",
+                isPartitioned = true,
+                isTimer = false,
+            )
+          }
         }
       }
 
       "should init workflow-task-executor topic before consuming it" {
-        val name = "$workflowName"
+        with(logger) {
+          val name = "$workflowName"
 
-        with(getScope()) {
-          pulsarInfiniticConsumer.start(
-              subscription = MainSubscription(WorkflowExecutorTopic),
-              entity = name,
-              concurrency = 1,
-              process = { _, _ -> },
-              beforeDlq = { _, _ -> },
-          )
-        }
+          with(getScope()) {
+            pulsarInfiniticConsumer.start(
+                subscription = MainSubscription(WorkflowExecutorTopic),
+                entity = name,
+                concurrency = 1,
+                process = { _, _ -> },
+                beforeDlq = { _, _ -> },
+            )
+          }
 
-        coVerify {
-          pulsarResources.initTopicOnce(
-              "persistent://$tenant/$namespace/workflow-task-executor:$name",
-              isPartitioned = true,
-              isTimer = false,
-          )
+          coVerify {
+            pulsarResources.initTopicOnce(
+                "persistent://$tenant/$namespace/workflow-task-executor:$name",
+                isPartitioned = true,
+                isTimer = false,
+            )
+          }
         }
       }
 
       "should init workflow-task-events topic before consuming it" {
-        val name = "$workflowName"
+        with(logger) {
+          val name = "$workflowName"
 
-        with(getScope()) {
-          pulsarInfiniticConsumer.start(
-              subscription = MainSubscription(WorkflowExecutorEventTopic),
-              entity = name,
-              concurrency = 10,
-              process = { _, _ -> },
-              beforeDlq = { _, _ -> },
-          )
-        }
+          with(getScope()) {
+            pulsarInfiniticConsumer.start(
+                subscription = MainSubscription(WorkflowExecutorEventTopic),
+                entity = name,
+                concurrency = 10,
+                process = { _, _ -> },
+                beforeDlq = { _, _ -> },
+            )
+          }
 
-        coVerify {
-          pulsarResources.initTopicOnce(
-              "persistent://$tenant/$namespace/workflow-task-events:$name",
-              isPartitioned = true,
-              isTimer = false,
-          )
+          coVerify {
+            pulsarResources.initTopicOnce(
+                "persistent://$tenant/$namespace/workflow-task-events:$name",
+                isPartitioned = true,
+                isTimer = false,
+            )
+          }
         }
       }
 
       "should init task-tag topic before consuming it" {
-        val name = "$serviceName"
+        with(logger) {
+          val name = "$serviceName"
 
-        with(getScope()) {
-          pulsarInfiniticConsumer.start(
-              subscription = MainSubscription(ServiceTagEngineTopic),
-              entity = name,
-              concurrency = 1,
-              process = { _, _ -> },
-              beforeDlq = { _, _ -> },
-          )
-        }
+          with(getScope()) {
+            pulsarInfiniticConsumer.start(
+                subscription = MainSubscription(ServiceTagEngineTopic),
+                entity = name,
+                concurrency = 1,
+                process = { _, _ -> },
+                beforeDlq = { _, _ -> },
+            )
+          }
 
-        coVerify {
-          pulsarResources.initTopicOnce(
-              "persistent://$tenant/$namespace/task-tag:$name",
-              isPartitioned = true,
-              isTimer = false,
-          )
+          coVerify {
+            pulsarResources.initTopicOnce(
+                "persistent://$tenant/$namespace/task-tag:$name",
+                isPartitioned = true,
+                isTimer = false,
+            )
+          }
         }
       }
 
       "should init task-executor topic before consuming it" {
-        val name = "$serviceName"
+        with(logger) {
+          val name = "$serviceName"
 
-        with(getScope()) {
-          pulsarInfiniticConsumer.start(
-              subscription = MainSubscription(ServiceExecutorTopic),
-              entity = name,
-              concurrency = 10,
-              process = { _, _ -> },
-              beforeDlq = { _, _ -> },
-          )
-        }
+          with(getScope()) {
+            pulsarInfiniticConsumer.start(
+                subscription = MainSubscription(ServiceExecutorTopic),
+                entity = name,
+                concurrency = 10,
+                process = { _, _ -> },
+                beforeDlq = { _, _ -> },
+            )
+          }
 
-        coVerify {
-          pulsarResources.initTopicOnce(
-              "persistent://$tenant/$namespace/task-executor:$name",
-              isPartitioned = true,
-              isTimer = false,
-          )
+          coVerify {
+            pulsarResources.initTopicOnce(
+                "persistent://$tenant/$namespace/task-executor:$name",
+                isPartitioned = true,
+                isTimer = false,
+            )
+          }
         }
       }
 
       "should init task-events topic before consuming it" {
-        val name = "$serviceName"
+        with(logger) {
+          val name = "$serviceName"
 
-        with(getScope()) {
-          pulsarInfiniticConsumer.start(
-              subscription = MainSubscription(ServiceExecutorEventTopic),
-              entity = name,
-              concurrency = 10,
-              process = { _, _ -> },
-              beforeDlq = { _, _ -> },
-          )
-        }
+          with(getScope()) {
+            pulsarInfiniticConsumer.start(
+                subscription = MainSubscription(ServiceExecutorEventTopic),
+                entity = name,
+                concurrency = 10,
+                process = { _, _ -> },
+                beforeDlq = { _, _ -> },
+            )
+          }
 
-        coVerify {
-          pulsarResources.initTopicOnce(
-              "persistent://$tenant/$namespace/task-events:$name",
-              isPartitioned = true,
-              isTimer = false,
-          )
+          coVerify {
+            pulsarResources.initTopicOnce(
+                "persistent://$tenant/$namespace/task-events:$name",
+                isPartitioned = true,
+                isTimer = false,
+            )
+          }
         }
       }
     },

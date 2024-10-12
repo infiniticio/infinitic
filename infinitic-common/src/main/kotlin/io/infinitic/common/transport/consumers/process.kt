@@ -44,7 +44,7 @@ import kotlinx.coroutines.withContext
  * @return A new channel that contains the processed results.
  */
 context(CoroutineScope, KLogger)
-internal fun <M : Any, I, O> Channel<Result<M, I>>.process(
+fun <M : Any, I, O> Channel<Result<M, I>>.process(
   concurrency: Int = 1,
   process: suspend (M, I) -> O,
 ): Channel<Result<M, O>> {

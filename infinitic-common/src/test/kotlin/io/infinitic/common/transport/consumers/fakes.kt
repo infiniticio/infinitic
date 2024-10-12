@@ -27,9 +27,6 @@ import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.transport.BatchConfig
 import io.infinitic.common.transport.TransportConsumer
 import io.infinitic.common.transport.TransportMessage
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
@@ -37,9 +34,17 @@ import kotlin.random.Random
 
 internal data class IntMessage(val value: Int) : TransportMessage<DeserializedIntMessage> {
   override val messageId: String = value.toString()
-  override val redeliveryCount: Int = Random.nextInt(3)
   override val publishTime: MillisInstant = MillisInstant.now()
-  override suspend fun deserialize(): DeserializedIntMessage = DeserializedIntMessage(this)
+
+  override fun deserialize(): DeserializedIntMessage = DeserializedIntMessage(this)
+  override suspend fun negativeAcknowledge(): Int {
+    negativeAcknowledgedList.add(value)
+    return 1
+  }
+
+  override suspend fun acknowledge() {
+    acknowledgedList.add(value)
+  }
 
   override fun toString(): String = value.toString()
 }
@@ -53,12 +58,9 @@ internal val deserializedList = Collections.synchronizedList(mutableListOf<Int>(
 internal val processedList = Collections.synchronizedList(mutableListOf<Int>())
 internal val acknowledgedList = Collections.synchronizedList(mutableListOf<Int>())
 internal val negativeAcknowledgedList = Collections.synchronizedList(mutableListOf<Int>())
-internal val beforeNegativeAcknowledgedList = Collections.synchronizedList(mutableListOf<Int>())
 
 internal open class IntConsumer : TransportConsumer<IntMessage> {
   private val counter = AtomicInteger(0)
-
-  private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
   fun reset() {
     counter.set(0)
@@ -67,38 +69,29 @@ internal open class IntConsumer : TransportConsumer<IntMessage> {
   override suspend fun receive() = IntMessage(counter.incrementAndGet())
       .also { receivedList.add(it.value) }
 
-  override suspend fun negativeAcknowledge(message: IntMessage) {
-    delay(Random.nextLong(5))
-        .also { negativeAcknowledgedList.add(message.value) }
-  }
-
-  override suspend fun acknowledge(message: IntMessage) {
-    delay(Random.nextLong(5))
-        .also { acknowledgedList.add(message.value) }
-  }
+  override val maxRedeliver = 1
+  override val name: String = this.toString()
 }
 
-internal suspend fun deserialize(value: IntMessage) = DeserializedIntMessage(value).also {
-  println("start deserializing...$value")
-  delay(Random.nextLong(5))
+internal fun deserialize(message: IntMessage) = DeserializedIntMessage(message).also {
+  println("start deserializing...$message")
   deserializedList.add(it.value.value)
-  println("end   deserializing...$value")
+  println("end   deserializing...$message")
 }
 
-
-internal suspend fun process(message: DeserializedIntMessage, publishTime: MillisInstant) {
-  println("start processing......${message.value.value}")
+internal suspend fun process(deserialized: DeserializedIntMessage, publishTime: MillisInstant) {
+  println("start processing......${deserialized.value.value}")
   delay(Random.nextLong(100))
-  println("end   processing......${message.value.value}")
-  processedList.add(message.value.value)
+  println("end   processing......${deserialized.value.value}")
+  processedList.add(deserialized.value.value)
 }
 
 internal fun processBatch(batch: List<DeserializedIntMessage>, publishTimes: List<MillisInstant>) {
   processedList.addAll(batch.map { it.value.value })
 }
 
-internal fun getBatchingConfig(value: DeserializedIntMessage): BatchConfig? {
-  val i = value.value.value
+internal fun batchConfig(deserialized: DeserializedIntMessage): BatchConfig? {
+  val i = deserialized.value.value
   return when {
     (i % 3) == 0 -> null
     (i % 3) == 1 -> BatchConfig("1", 20, MillisDuration(1000 * 3600 * 50))
@@ -107,10 +100,3 @@ internal fun getBatchingConfig(value: DeserializedIntMessage): BatchConfig? {
   }
 }
 
-internal fun beforeNegativeAcknowledgement(
-  message: IntMessage,
-  deserialized: DeserializedIntMessage?,
-  e: Exception
-) {
-  beforeNegativeAcknowledgedList.add(message.value)
-}

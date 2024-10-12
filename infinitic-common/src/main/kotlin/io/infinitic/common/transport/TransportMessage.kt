@@ -30,10 +30,25 @@ import io.infinitic.common.data.MillisInstant
  * @param M The type of the payload contained within the message.
  */
 interface TransportMessage<out M> {
-  val messageId: String
-  val redeliveryCount: Int
   val publishTime: MillisInstant
+  val messageId: String
 
-  suspend fun deserialize(): M
+  /**
+   * Deserializes the message into its original form.
+   *
+   * @return The deserialized message.
+   */
+  fun deserialize(): M
+
+  /**
+   * Acknowledges the given message.
+   */
+  suspend fun acknowledge()
+
+  /**
+   * Processes a negative acknowledgment for the given message.
+   *
+   * @return An integer representing the count the negative acknowledgment (including the current one).
+   */
+  suspend fun negativeAcknowledge(): Int
 }
-

@@ -22,66 +22,51 @@
  */
 package io.infinitic.events.listeners
 
-import io.infinitic.common.data.MillisInstant
+import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.common.messages.Message
 import io.infinitic.common.transport.InfiniticConsumer
 import io.infinitic.common.transport.SubscriptionType
+import io.infinitic.common.transport.TransportMessage
 import io.infinitic.common.transport.WorkflowExecutorEventTopic
 import io.infinitic.common.transport.WorkflowExecutorRetryTopic
 import io.infinitic.common.transport.WorkflowExecutorTopic
+import io.infinitic.common.transport.consumers.Result
+import io.infinitic.common.transport.consumers.startConsuming
 import io.infinitic.common.transport.create
-import io.infinitic.common.transport.logged.LoggedInfiniticConsumer
 import io.infinitic.common.workflows.data.workflows.WorkflowName
-import io.infinitic.events.EventListener
-import io.infinitic.events.config.EventListenerConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 
-context(CoroutineScope)
-fun InfiniticConsumer.startWorkflowExecutorEventListener(
+context(CoroutineScope, KLogger)
+fun InfiniticConsumer.listenToWorkflowExecutorTopics(
   workflowName: WorkflowName,
-  config: EventListenerConfig,
-  process: suspend (Message, MillisInstant) -> Unit,
-  logMessageSentToDLQ: (Message?, Exception) -> Unit
+  subscriptionName: String?,
+  inChannel: Channel<Result<TransportMessage<Message>, TransportMessage<Message>>>,
 ): Job = launch {
-  val logger = EventListener.logger
 
-  val loggedConsumer = LoggedInfiniticConsumer(logger, this@startWorkflowExecutorEventListener)
-
-  // WORKFLOW-TASK-EXECUTOR topic
-  loggedConsumer.startAsync(
-      subscription = SubscriptionType.EVENT_LISTENER.create(
-          WorkflowExecutorTopic,
-          config.subscriptionName,
-      ),
-      entity = workflowName.toString(),
-      concurrency = config.concurrency,
-      process = process,
-      beforeDlq = logMessageSentToDLQ,
+  // Send messages from WorkflowExecutorTopic to inChannel
+  val workflowExecutorSubscription = SubscriptionType.EVENT_LISTENER.create(
+      WorkflowExecutorTopic,
+      subscriptionName,
   )
+  buildConsumer(workflowExecutorSubscription, workflowName.toString())
+      .startConsuming(inChannel)
 
-  // WORKFLOW-TASK-RETRY topic
-  loggedConsumer.startAsync(
-      subscription = SubscriptionType.EVENT_LISTENER.create(
-          WorkflowExecutorRetryTopic,
-          config.subscriptionName,
-      ),
-      entity = workflowName.toString(),
-      concurrency = config.concurrency,
-      process = process,
-      beforeDlq = logMessageSentToDLQ,
+  // Send messages from WorkflowExecutorEventTopic to inChannel
+  val workflowExecutorEventSubscription = SubscriptionType.EVENT_LISTENER.create(
+      WorkflowExecutorEventTopic,
+      subscriptionName,
   )
+  buildConsumer(workflowExecutorEventSubscription, workflowName.toString())
+      .startConsuming(inChannel)
 
-  // WORKFLOW-TASK-EVENTS topic
-  loggedConsumer.startAsync(
-      subscription = SubscriptionType.EVENT_LISTENER.create(
-          WorkflowExecutorEventTopic,
-          config.subscriptionName,
-      ),
-      entity = workflowName.toString(),
-      concurrency = config.concurrency,
-      process = process,
-      beforeDlq = logMessageSentToDLQ,
+  // Send messages from WorkflowExecutorRetryTopic to inChannel
+  val workflowExecutorRetrySubscription = SubscriptionType.EVENT_LISTENER.create(
+      WorkflowExecutorRetryTopic,
+      subscriptionName,
   )
+  buildConsumer(workflowExecutorRetrySubscription, workflowName.toString())
+      .startConsuming(inChannel)
 }

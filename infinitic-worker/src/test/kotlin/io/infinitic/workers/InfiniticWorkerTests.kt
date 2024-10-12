@@ -51,7 +51,7 @@ internal class InfiniticWorkerTests : StringSpec(
       val transport = InMemoryTransportConfig()
 
       class TestEventListener : CloudEventListener {
-        override fun onEvents(cloudEvents: CloudEvent) {}
+        override fun onEvents(cloudEvents: List<CloudEvent>) {}
       }
 
       val eventListener = EventListenerConfig.builder()
