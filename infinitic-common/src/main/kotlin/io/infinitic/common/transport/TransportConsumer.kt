@@ -34,7 +34,7 @@ interface TransportConsumer<T : TransportMessage<*>> {
    * Defines the maximum number of times a message can be redelivered
    * when processing messages from a transport consumer.
    */
-  val maxRedeliver: Int
+  val maxRedeliveryCount: Int
 
   /**
    * Represents the name of the TransportConsumer. Used for Logging only

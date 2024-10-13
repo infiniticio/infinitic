@@ -23,6 +23,7 @@
 package io.infinitic.inMemory.consumers
 
 import io.infinitic.common.messages.Message
+import io.infinitic.common.transport.Topic
 import io.infinitic.common.transport.TransportConsumer
 import io.infinitic.inMemory.channels.DelayedMessage
 import kotlinx.coroutines.channels.Channel
@@ -35,12 +36,13 @@ import kotlinx.coroutines.delay
  * @property channel The channel from which messages are consumed.
  */
 class InMemoryConsumer<S : Message>(
+  private val topic: Topic<S>,
   private val channel: Channel<S>
 ) : TransportConsumer<InMemoryTransportMessage<S>> {
 
-  override suspend fun receive() = InMemoryTransportMessage(channel.receive())
+  override suspend fun receive() = InMemoryTransportMessage(channel.receive(), topic)
 
-  override val maxRedeliver = 1
+  override val maxRedeliveryCount = 1
 
   override val name: String = toString()
 }
@@ -53,16 +55,17 @@ class InMemoryConsumer<S : Message>(
  * @param channel A channel to receive delayed messages from.
  */
 class InMemoryDelayedConsumer<S : Message>(
+  private val topic: Topic<S>,
   private val channel: Channel<DelayedMessage<S>>
 ) : TransportConsumer<InMemoryTransportMessage<S>> {
 
   override suspend fun receive(): InMemoryTransportMessage<S> {
     val message = channel.receive()
     delay(message.after.millis)
-    return InMemoryTransportMessage(message.message)
+    return InMemoryTransportMessage(message.message, topic)
   }
 
-  override val maxRedeliver = 1
+  override val maxRedeliveryCount = 1
 
   override val name: String = toString()
 }

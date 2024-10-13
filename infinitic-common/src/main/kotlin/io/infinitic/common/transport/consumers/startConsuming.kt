@@ -53,8 +53,9 @@ fun <T : TransportMessage<M>, M> TransportConsumer<T>.startConsuming(
     trace { "startConsuming: producer added to consuming channel ${channel.hashCode()}" }
     while (isActive) {
       try {
-        val msg =
-            receive().also { trace { "consuming: received $it from ${this@startConsuming.name}" } }
+        val msg = receive().also {
+          trace { "consuming: received $it from ${this@startConsuming.name}" }
+        }
         channel.send(Result.success(msg, msg))
       } catch (e: CancellationException) {
         // do nothing, will exit if calling scope is not active anymore

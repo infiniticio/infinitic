@@ -136,9 +136,8 @@ sealed class EventListenerConfig {
     fun setWorkflowListRefreshSeconds(listRefreshSeconds: Double) =
         apply { this.workflowListRefreshSeconds = listRefreshSeconds }
 
-    fun setBatch(maxEvents: Int, maxSeconds: Double) {
-      this.batchConfig = EventListenerBatchConfig(maxEvents, maxSeconds)
-    }
+    fun setBatch(maxEvents: Int, maxSeconds: Double) =
+        apply { this.batchConfig = EventListenerBatchConfig(maxEvents, maxSeconds) }
 
     fun build(): EventListenerConfig {
       require(listener != null) { "${EventListenerConfig::listener.name} must not be null" }

@@ -24,21 +24,25 @@ package io.infinitic.inMemory.consumers
 
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.messages.Message
+import io.infinitic.common.transport.Topic
 import io.infinitic.common.transport.TransportMessage
 
-class InMemoryTransportMessage<S : Message>(private val message: S) :
+class InMemoryTransportMessage<S : Message>(private val message: S, override val topic: Topic<S>) :
   TransportMessage<S> {
+  private var hasBeenNegativelyAcknowledged = false
+
   override val messageId: String = message.messageId.toString()
   override val publishTime: MillisInstant = MillisInstant.now()
 
   override fun deserialize() = message
 
-  override suspend fun negativeAcknowledge(): Int {
-    //  nothing to do
-    return 1
+  override suspend fun negativeAcknowledge() {
+    hasBeenNegativelyAcknowledged = true
   }
 
   override suspend fun acknowledge() {
     //  nothing to do
   }
+
+  override val hasBeenSentToDeadLetterQueue: Boolean = hasBeenNegativelyAcknowledged
 }

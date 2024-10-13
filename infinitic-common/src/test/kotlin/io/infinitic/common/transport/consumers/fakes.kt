@@ -25,6 +25,7 @@ package io.infinitic.common.transport.consumers
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.transport.BatchConfig
+import io.infinitic.common.transport.Topic
 import io.infinitic.common.transport.TransportConsumer
 import io.infinitic.common.transport.TransportMessage
 import kotlinx.coroutines.delay
@@ -36,15 +37,19 @@ internal data class IntMessage(val value: Int) : TransportMessage<DeserializedIn
   override val messageId: String = value.toString()
   override val publishTime: MillisInstant = MillisInstant.now()
 
+  override lateinit var topic: Topic<*>
+  
   override fun deserialize(): DeserializedIntMessage = DeserializedIntMessage(this)
-  override suspend fun negativeAcknowledge(): Int {
+
+  override suspend fun negativeAcknowledge() {
     negativeAcknowledgedList.add(value)
-    return 1
   }
 
   override suspend fun acknowledge() {
     acknowledgedList.add(value)
   }
+
+  override val hasBeenSentToDeadLetterQueue = negativeAcknowledgedList.contains(value)
 
   override fun toString(): String = value.toString()
 }
@@ -69,7 +74,7 @@ internal open class IntConsumer : TransportConsumer<IntMessage> {
   override suspend fun receive() = IntMessage(counter.incrementAndGet())
       .also { receivedList.add(it.value) }
 
-  override val maxRedeliver = 1
+  override val maxRedeliveryCount = 1
   override val name: String = this.toString()
 }
 

@@ -36,21 +36,15 @@ fun <T : TransportMessage<M>, M : Any> Channel<Result<T, T>>.completeProcess(
   process: suspend (M, MillisInstant) -> Unit,
   beforeDlq: (suspend (M, Exception) -> Unit)? = null,
   batchConfig: (suspend (M) -> BatchConfig?)? = null,
-  batchProcess: (suspend (List<M>, List<MillisInstant>) -> Unit)? = null,
-  maxRedeliver: Int,
+  batchProcess: (suspend (List<M>, List<MillisInstant>) -> Unit)? = null
 ): Unit = this
-    .process(
-        concurrency,
-        { _, message -> deserialize(message) },
-    )
-    .batchBy { datum ->
-      batchConfig?.invoke(datum)
-    }
+    .process(concurrency, { _, message -> deserialize(message) })
+    .batchBy { datum -> batchConfig?.invoke(datum) }
     .batchProcess(
         concurrency,
-        { message, datum -> process(datum, message.publishTime); datum },
-        { messages, data -> batchProcess!!(data, messages.map { it.publishTime }); data },
+        { message, datum -> process(datum, message.publishTime) },
+        { messages, data -> batchProcess!!(data, messages.map { it.publishTime }) },
     )
-    .collect(maxRedeliver, beforeDlq)
+    .acknowledge(beforeDlq)
 
 

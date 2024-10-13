@@ -53,9 +53,9 @@ import io.infinitic.common.transport.WorkflowTopic
 import io.infinitic.common.workflows.engine.messages.WorkflowCmdEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEventEnvelope
-import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineCmdMessage
-import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineEventMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateCmdMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateEventMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEnvelope
 import io.infinitic.pulsar.schemas.schemaDefinition
@@ -180,9 +180,9 @@ internal fun <S : Message> Topic<S>.envelope(message: S) =
       NamingTopic -> thisShouldNotHappen()
       ClientTopic -> ClientEnvelope.from(message as ClientMessage)
       WorkflowTagEngineTopic -> WorkflowTagEnvelope.from(message as WorkflowTagEngineMessage)
-      WorkflowStateCmdTopic -> WorkflowCmdEnvelope.from(message as WorkflowStateEngineCmdMessage)
+      WorkflowStateCmdTopic -> WorkflowCmdEnvelope.from(message as WorkflowStateCmdMessage)
       WorkflowStateEngineTopic, WorkflowStateTimerTopic -> WorkflowEngineEnvelope.from(message as WorkflowStateEngineMessage)
-      WorkflowStateEventTopic -> WorkflowEventEnvelope.from(message as WorkflowStateEngineEventMessage)
+      WorkflowStateEventTopic -> WorkflowEventEnvelope.from(message as WorkflowStateEventMessage)
       WorkflowExecutorTopic, WorkflowExecutorRetryTopic ->
         ServiceExecutorEnvelope.from(message as ServiceExecutorMessage)
 

@@ -58,6 +58,5 @@ fun <T : TransportMessage<M>, M : Any> TransportConsumer<T>.startAsync(
           beforeDlq,
           batchConfig,
           batchProcess,
-          maxRedeliver,
       )
 }

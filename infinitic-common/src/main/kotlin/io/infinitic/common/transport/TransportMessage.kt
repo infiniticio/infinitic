@@ -32,6 +32,7 @@ import io.infinitic.common.data.MillisInstant
 interface TransportMessage<out M> {
   val publishTime: MillisInstant
   val messageId: String
+  val topic: Topic<*>
 
   /**
    * Deserializes the message into its original form.
@@ -47,8 +48,13 @@ interface TransportMessage<out M> {
 
   /**
    * Processes a negative acknowledgment for the given message.
-   *
-   * @return An integer representing the count the negative acknowledgment (including the current one).
    */
-  suspend fun negativeAcknowledge(): Int
+  suspend fun negativeAcknowledge()
+
+  /**
+   * This property reflects the state where the message has failed to process successfully
+   * repeatedly, and the total count of negative acknowledgments has reached a predefined limit
+   * after which the message will be sent to DLQ
+   */
+  val hasBeenSentToDeadLetterQueue: Boolean
 }

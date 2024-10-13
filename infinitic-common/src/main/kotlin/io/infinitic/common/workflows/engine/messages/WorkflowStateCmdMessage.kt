@@ -28,26 +28,26 @@ import io.infinitic.common.requester.Requester
 import kotlinx.serialization.Serializable
 
 @Serializable
-sealed interface WorkflowStateEngineCmdMessage : WorkflowStateEngineMessage {
+sealed interface WorkflowStateCmdMessage : WorkflowStateEngineMessage {
   val requester: Requester?
 }
 
-fun WorkflowStateEngineCmdMessage.type(): WorkflowStateEngineCmdMessageType = when (this) {
-  is CancelWorkflow -> WorkflowStateEngineCmdMessageType.CANCEL_WORKFLOW
-  is CompleteTimers -> WorkflowStateEngineCmdMessageType.COMPLETE_TIMERS
-  is CompleteWorkflow -> WorkflowStateEngineCmdMessageType.COMPLETE_WORKFLOW
-  is DispatchMethod -> WorkflowStateEngineCmdMessageType.DISPATCH_METHOD
-  is DispatchWorkflow -> WorkflowStateEngineCmdMessageType.DISPATCH_WORKFLOW
-  is RetryTasks -> WorkflowStateEngineCmdMessageType.RETRY_TASKS
-  is RetryWorkflowTask -> WorkflowStateEngineCmdMessageType.RETRY_WORKFLOW_TASK
-  is SendSignal -> WorkflowStateEngineCmdMessageType.SEND_SIGNAL
-  is WaitWorkflow -> WorkflowStateEngineCmdMessageType.WAIT_WORKFLOW
+fun WorkflowStateCmdMessage.type(): WorkflowStateCmdMessageType = when (this) {
+  is CancelWorkflow -> WorkflowStateCmdMessageType.CANCEL_WORKFLOW
+  is CompleteTimers -> WorkflowStateCmdMessageType.COMPLETE_TIMERS
+  is CompleteWorkflow -> WorkflowStateCmdMessageType.COMPLETE_WORKFLOW
+  is DispatchMethod -> WorkflowStateCmdMessageType.DISPATCH_METHOD
+  is DispatchWorkflow -> WorkflowStateCmdMessageType.DISPATCH_WORKFLOW
+  is RetryTasks -> WorkflowStateCmdMessageType.RETRY_TASKS
+  is RetryWorkflowTask -> WorkflowStateCmdMessageType.RETRY_WORKFLOW_TASK
+  is SendSignal -> WorkflowStateCmdMessageType.SEND_SIGNAL
+  is WaitWorkflow -> WorkflowStateCmdMessageType.WAIT_WORKFLOW
 }
 
 @Serializable
 @AvroNamespace("io.infinitic.workflows.engine")
 @AvroName("WorkflowCmdMessageType")
-enum class WorkflowStateEngineCmdMessageType {
+enum class WorkflowStateCmdMessageType {
   WAIT_WORKFLOW,
   CANCEL_WORKFLOW,
   RETRY_WORKFLOW_TASK,

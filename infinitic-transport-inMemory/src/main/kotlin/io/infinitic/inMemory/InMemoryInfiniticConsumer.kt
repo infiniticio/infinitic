@@ -56,8 +56,8 @@ class InMemoryInfiniticConsumer(
     occurrence: Int?
   ): List<TransportConsumer<InMemoryTransportMessage<S>>> = List(occurrence ?: 1) {
     when (subscription.topic.acceptDelayed) {
-      true -> InMemoryDelayedConsumer(subscription.getChannelForDelayed(entity))
-      false -> InMemoryConsumer(subscription.getChannel(entity))
+      true -> InMemoryDelayedConsumer(subscription.topic, subscription.getChannelForDelayed(entity))
+      false -> InMemoryConsumer(subscription.topic, subscription.getChannel(entity))
     }
   }
 

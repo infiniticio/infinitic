@@ -23,7 +23,6 @@
 package io.infinitic.common.transport.consumers
 
 import io.github.oshai.kotlinlogging.KLogger
-import io.infinitic.common.transport.TransportMessage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.cancel
@@ -62,72 +61,4 @@ fun <S> Channel<S>.collect(
       trace { "collect: exiting" }
     }
   }
-}
-
-/**
- * Collects and processes results from the channel. Upon successful message processing,
- * the message is acknowledged. If an exception occurs and the negative acknowledgment
- * count reaches the max limit, the message is sent to the dead letter queue (DLQ).
- *
- * @param T Represents a type that extends TransportMessage<M>.
- * @param M Type of the payload contained within the message.
- * @param I Type of additional information passed along with the result.
- * @param maxNegativeAcknowledgement Maximum number of negative acknowledgments
- *        allowed before the message is considered for DLQ.
- * @param beforeDlq A suspending lambda function to be executed before sending
- *        the message to the DLQ. Receives the deserialized message and the exception
- *        that caused the failure as parameters.
- */
-context(CoroutineScope, KLogger)
-fun <T : TransportMessage<M>, M : Any, I> Channel<Result<T, I>>.collect(
-  maxNegativeAcknowledgement: Int? = null,
-  beforeDlq: (suspend (M, Exception) -> Unit)? = null,
-) = collect { result ->
-  val message = result.message()
-
-  result.onSuccess {
-    message.tryAcknowledge()
-  }
-
-  result.onFailure { exception ->
-    val negAckCount = message.tryNegativeAcknowledge()
-
-    if (negAckCount == maxNegativeAcknowledgement) {
-      val deserialized = message.deserializeOrNull()
-      // log as error as this message will be skipped
-      error(exception) {
-        "Sending message to DLQ: ${deserialized?.string ?: message.messageId}"
-      }
-      if (deserialized != null && beforeDlq != null) {
-        try {
-          beforeDlq(deserialized, exception)
-        } catch (e: Exception) {
-          warn(e) {
-            "Error when calling dead letter hook for message ${deserialized.string}"
-          }
-        }
-      }
-    }
-  }
-}
-
-context(KLogger)
-private suspend fun <S> TransportMessage<S>.tryAcknowledge() = try {
-  acknowledge()
-} catch (e: Exception) {
-  warn(e) { "Error when acknowledging ${deserializeOrNull()?.string ?: messageId}" }
-}
-
-context(KLogger)
-private suspend fun <S> TransportMessage<S>.tryNegativeAcknowledge() = try {
-  negativeAcknowledge()
-} catch (e: Exception) {
-  warn(e) { "Error when negatively acknowledging ${deserializeOrNull()?.string ?: messageId}" }
-  null
-}
-
-private fun <S> TransportMessage<S>.deserializeOrNull(): S? = try {
-  deserialize()
-} catch (e: Exception) {
-  null
 }

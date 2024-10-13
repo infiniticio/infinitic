@@ -24,21 +24,21 @@ package io.infinitic.pulsar.consumers
 
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.messages.Message
+import io.infinitic.common.transport.Topic
 import io.infinitic.common.transport.TransportConsumer
 import kotlinx.coroutines.future.await
 import org.apache.pulsar.client.api.Consumer
 
 class PulsarTransportConsumer<M : Message>(
+  private val topic: Topic<M>,
   private val pulsarConsumer: Consumer<Envelope<M>>,
-  override val maxRedeliver: Int
+  override val maxRedeliveryCount: Int
 ) : TransportConsumer<PulsarTransportMessage<M>> {
 
   override suspend fun receive(): PulsarTransportMessage<M> {
-    val message = pulsarConsumer.receiveAsync().await()
+    val pulsarMessage = pulsarConsumer.receiveAsync().await()
 
-    return PulsarTransportMessage(message).apply {
-      pulsarConsumer = this@PulsarTransportConsumer.pulsarConsumer
-    }
+    return PulsarTransportMessage(pulsarMessage, pulsarConsumer, topic, maxRedeliveryCount)
   }
 
   override val name: String = pulsarConsumer.consumerName

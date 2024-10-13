@@ -76,7 +76,7 @@ import io.infinitic.common.workflows.engine.messages.RetryTasks
 import io.infinitic.common.workflows.engine.messages.SendSignal
 import io.infinitic.common.workflows.engine.messages.WaitWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
-import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineCmdMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateCmdMessage
 import io.infinitic.common.workflows.tags.messages.AddTagToWorkflow
 import io.infinitic.common.workflows.tags.messages.CancelWorkflowByTag
 import io.infinitic.common.workflows.tags.messages.DispatchMethodByTag
@@ -107,7 +107,7 @@ import java.util.concurrent.CopyOnWriteArrayList
 private val taskTagSlots = CopyOnWriteArrayList<ServiceTagMessage>()
 private val workflowTagSlots = CopyOnWriteArrayList<WorkflowTagEngineMessage>()
 private val taskSlot = slot<ServiceExecutorMessage>()
-private val workflowCmdSlots = CopyOnWriteArrayList<WorkflowStateEngineCmdMessage>()
+private val workflowCmdSlots = CopyOnWriteArrayList<WorkflowStateCmdMessage>()
 private val delaySlot = slot<MillisDuration>()
 private val scopeSlot = slot<CoroutineScope>()
 private val loggerSlot = slot<KLogger>()

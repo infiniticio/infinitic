@@ -86,7 +86,13 @@ class PulsarInfiniticConsumer(
       }.map { deferred ->
         deferred.await()
             .getOrThrow() // failed synchronously
-            .let { PulsarTransportConsumer(it, pulsarConsumerConfig.getMaxRedeliverCount()) }
+            .let {
+              PulsarTransportConsumer(
+                  subscription.topic,
+                  it,
+                  pulsarConsumerConfig.getMaxRedeliverCount(),
+              )
+            }
       }
     }
   }

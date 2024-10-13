@@ -31,9 +31,12 @@ import io.infinitic.common.transport.InfiniticConsumer
 import io.infinitic.common.transport.InfiniticResources
 import io.infinitic.common.transport.TransportMessage
 import io.infinitic.common.transport.consumers.Result
-import io.infinitic.common.transport.consumers.completeProcess
+import io.infinitic.common.transport.consumers.acknowledge
+import io.infinitic.common.transport.consumers.batchBy
+import io.infinitic.common.transport.consumers.batchProcess
+import io.infinitic.common.transport.consumers.process
 import io.infinitic.events.config.EventListenerConfig
-import io.infinitic.events.toServiceCloudEvent
+import io.infinitic.events.toCloudEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -59,32 +62,36 @@ fun InfiniticConsumer.startEventListener(
   // Launch the complete processing of outChannel
   launch {
     outChannel
-        .completeProcess(
-            concurrency = config.concurrency,
-            deserialize = { it.deserialize() },
-            process = { message, publishTime -> thisShouldNotHappen() },
-            batchConfig = { batchConfig },
-            batchProcess = { messages, publishingTimes ->
-              val cloudEvents = messages.zip(publishingTimes) { message, publishTime ->
-                message.toServiceCloudEvent(publishTime, cloudEventSourcePrefix)
+        .process(config.concurrency, { _, message -> message.deserialize() })
+        .batchBy { batchConfig }
+        .batchProcess(
+            config.concurrency,
+            { _, _ -> thisShouldNotHappen() },
+            { transportMessages, messages ->
+              val cloudEvents = messages.zip(transportMessages) { message, transportMessage ->
+                message.toCloudEvent(
+                    transportMessage.topic,
+                    transportMessage.publishTime,
+                    cloudEventSourcePrefix,
+                )
               }.filterNotNull()
               if (cloudEvents.isNotEmpty()) {
                 config.listener.onEvents(cloudEvents)
               }
             },
-            maxRedeliver = 3, // TODO
         )
+        .acknowledge(null)
   }
 
   // Listen service topics, for each service found
-  resources.checkNewServices(config) { serviceName ->
+  resources.refreshServiceListAsync(config) { serviceName ->
     info { "EventListener starts listening Service $serviceName" }
 
     listenToServiceExecutorTopics(serviceName, config.subscriptionName, outChannel)
   }
 
   // Listen workflow topics, for each workflow found
-  resources.checkNewWorkflows(config) { workflowName ->
+  resources.refreshWorkflowListAsync(config) { workflowName ->
     info { "EventListener starts listening Workflow $workflowName" }
 
     listenToWorkflowExecutorTopics(workflowName, config.subscriptionName, outChannel)

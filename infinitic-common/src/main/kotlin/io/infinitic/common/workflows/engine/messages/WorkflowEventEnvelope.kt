@@ -49,7 +49,7 @@ data class WorkflowEventEnvelope(
   @AvroName("signalDiscarded") private val signalDiscardedEvent: SignalDiscardedEvent? = null,
   @AvroName("signalReceived") private val signalReceivedEvent: SignalReceivedEvent? = null,
 
-  ) : Envelope<WorkflowStateEngineEventMessage> {
+  ) : Envelope<WorkflowStateEventMessage> {
   init {
     val noNull = listOfNotNull(
         workflowCompletedEvent,
@@ -73,7 +73,7 @@ data class WorkflowEventEnvelope(
   }
 
   companion object {
-    fun from(msg: WorkflowStateEngineEventMessage) = when (msg) {
+    fun from(msg: WorkflowStateEventMessage) = when (msg) {
 
       is WorkflowCompletedEvent -> WorkflowEventEnvelope(
           workflowId = msg.workflowId,
@@ -162,7 +162,7 @@ data class WorkflowEventEnvelope(
     val writerSchema = AvroSerDe.currentSchema(serializer())
   }
 
-  override fun message(): WorkflowStateEngineEventMessage = when (type) {
+  override fun message(): WorkflowStateEventMessage = when (type) {
     WorkflowStateEngineEventMessageType.WORKFLOW_COMPLETED -> workflowCompletedEvent
     WorkflowStateEngineEventMessageType.WORKFLOW_CANCELED -> workflowCanceledEvent
     WorkflowStateEngineEventMessageType.METHOD_DISPATCHED -> methodDispatchedEvent

@@ -35,19 +35,22 @@ import kotlinx.coroutines.withContext
  * Processes elements received in this channel either individually or in batches,
  * allowing for concurrent processing and returning the results in an output channel.
  *
+ * To prevent some sneaky errors that would lead to un-acknowledged messages when the batchProcess
+ * function filters some messages, we restrict the batch processing to function that returns nothing.
+ *
  * @param concurrency The number of concurrent coroutines that will process the elements. Default is 1.
  * @param singleProcess Function to process a single element.
  * @param batchProcess Function to process a batch of elements.
  * @return A channel where the results of the processed elements will be sent.
  */
 context(CoroutineScope, KLogger)
-fun <M : Any, I, O> Channel<OneOrMany<Result<M, I>>>.batchProcess(
+fun <M : Any, I> Channel<OneOrMany<Result<M, I>>>.batchProcess(
   concurrency: Int = 1,
-  singleProcess: suspend (M, I) -> O,
-  batchProcess: suspend (List<M>, List<I>) -> List<O>,
-): Channel<Result<M, O>> {
+  singleProcess: suspend (M, I) -> Unit,
+  batchProcess: suspend (List<M>, List<I>) -> Unit,
+): Channel<Result<M, I>> {
   val callingScope: CoroutineScope = this@CoroutineScope
-  val outputChannel: Channel<Result<M, O>> = Channel()
+  val outputChannel: Channel<Result<M, I>> = Channel()
 
   debug { "batchProcess: starting listening channel ${this@batchProcess.hashCode()}" }
 
@@ -58,8 +61,8 @@ fun <M : Any, I, O> Channel<OneOrMany<Result<M, I>>>.batchProcess(
     }
     if (result.isSuccess) {
       try {
-        val o = singleProcess(result.message(), result.value())
-        outputChannel.send(result.success(o))
+        singleProcess(result.message(), result.value())
+        outputChannel.send(result)
       } catch (e: Exception) {
         outputChannel.send(result.failure(e))
       }
@@ -72,10 +75,8 @@ fun <M : Any, I, O> Channel<OneOrMany<Result<M, I>>>.batchProcess(
     // At this point, all results should be a success
     val values = results.map { it.value() }
     try {
-      val output = batchProcess(messages, values)
-      messages.zip(output).forEach { (message, value) ->
-        outputChannel.send(Result.success(message, value))
-      }
+      batchProcess(messages, values)
+      results.forEach { outputChannel.send(it) }
     } catch (e: Exception) {
       warn(e) { "batchProcess: exception when batch processing messages: ${messages.map { it.string }}" }
       messages.forEach { message ->

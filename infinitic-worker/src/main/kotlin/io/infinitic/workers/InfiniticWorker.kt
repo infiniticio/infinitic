@@ -22,15 +22,9 @@
  */
 package io.infinitic.workers
 
-import io.cloudevents.CloudEvent
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.clients.InfiniticClient
-import io.infinitic.cloudEvents.logs.LOGS_SERVICE_EXECUTOR
-import io.infinitic.cloudEvents.logs.LOGS_SERVICE_TAG_ENGINE
-import io.infinitic.cloudEvents.logs.LOGS_WORKFLOW_EXECUTOR
-import io.infinitic.cloudEvents.logs.LOGS_WORKFLOW_STATE_ENGINE
-import io.infinitic.cloudEvents.logs.LOGS_WORKFLOW_TAG_ENGINE
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.events.messages.ServiceExecutorEventMessage
@@ -52,16 +46,12 @@ import io.infinitic.common.transport.WorkflowStateTimerTopic
 import io.infinitic.common.transport.WorkflowTagEngineTopic
 import io.infinitic.common.transport.logged.LoggedInfiniticProducer
 import io.infinitic.common.workflows.emptyWorkflowContext
-import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineCmdMessage
-import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineEventMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateEventMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
+import io.infinitic.events.CloudEventLogger
 import io.infinitic.events.config.EventListenerConfig
 import io.infinitic.events.listeners.startEventListener
-import io.infinitic.events.toJsonString
-import io.infinitic.events.toServiceCloudEvent
-import io.infinitic.events.toWorkflowCloudEvent
-import io.infinitic.logger.ignoreNull
 import io.infinitic.tasks.Task
 import io.infinitic.tasks.WithTimeout
 import io.infinitic.tasks.executor.TaskEventHandler
@@ -376,20 +366,22 @@ class InfiniticWorker(
     // Log Service Tag Engine configuration
     logServiceTagEngineStart(config)
 
-    val logsEventLogger = KotlinLogging.logger(
-        "$LOGS_SERVICE_TAG_ENGINE.${config.serviceName}",
-    ).ignoreNull()
-
     // TASK-TAG
     return with(TaskTagEngine.logger) {
       val loggedStorage = LoggedTaskTagStorage(this, config.serviceTagStorage)
       val loggedProducer = LoggedInfiniticProducer(this, producer)
-
       val taskTagEngine = TaskTagEngine(loggedStorage, loggedProducer)
+
+      val cloudEventLogger = CloudEventLogger(
+          ServiceTagEngineTopic,
+          config.serviceName,
+          cloudEventSourcePrefix,
+          beautifyLogs,
+      )
 
       val handler: suspend (ServiceTagMessage, MillisInstant) -> Unit =
           { message, publishedAt ->
-            logsEventLogger.logServiceCloudEvent(message, publishedAt, cloudEventSourcePrefix)
+            cloudEventLogger.log(message, publishedAt)
             taskTagEngine.handle(message, publishedAt)
           }
 
@@ -408,10 +400,6 @@ class InfiniticWorker(
     // Log Service Executor configuration
     logServiceExecutorStart(config)
 
-    val logsEventLogger = KotlinLogging.logger(
-        "$LOGS_SERVICE_EXECUTOR.${config.serviceName}",
-    ).ignoreNull()
-
     // init batch methods for current factory
     config.initBatchMethods()
 
@@ -420,16 +408,23 @@ class InfiniticWorker(
       val loggedProducer = LoggedInfiniticProducer(this, producer)
       val taskExecutor = TaskExecutor(registry, loggedProducer, client)
 
+      val cloudEventLogger = CloudEventLogger(
+          ServiceExecutorTopic,
+          config.serviceName,
+          cloudEventSourcePrefix,
+          beautifyLogs,
+      )
+
       val handler: suspend (ServiceExecutorMessage, MillisInstant) -> Unit =
           { message, publishedAt ->
-            logsEventLogger.logServiceCloudEvent(message, publishedAt, cloudEventSourcePrefix)
+            cloudEventLogger.log(message, publishedAt)
             taskExecutor.handle(message, publishedAt)
           }
 
       val handlerBatch: suspend (List<ServiceExecutorMessage>, List<MillisInstant>) -> Unit =
           { messages, publishedAtList ->
             messages.zip(publishedAtList).forEach { (message, publishedAt) ->
-              logsEventLogger.logServiceCloudEvent(message, publishedAt, cloudEventSourcePrefix)
+              cloudEventLogger.log(message, publishedAt)
             }
             taskExecutor.handleBatch(messages)
           }
@@ -456,7 +451,6 @@ class InfiniticWorker(
     // TASK-EXECUTOR-RETRY
     val jobRetry = with(TaskRetryHandler.logger) {
       val loggedProducer = LoggedInfiniticProducer(this, producer)
-
       val taskRetryHandler = TaskRetryHandler(loggedProducer)
 
       consumer.startAsync(
@@ -473,9 +467,16 @@ class InfiniticWorker(
       val loggedProducer = LoggedInfiniticProducer(this, producer)
       val taskEventHandler = TaskEventHandler(loggedProducer)
 
+      val cloudEventLogger = CloudEventLogger(
+          ServiceExecutorEventTopic,
+          config.serviceName,
+          cloudEventSourcePrefix,
+          beautifyLogs,
+      )
+
       val handler: suspend (ServiceExecutorEventMessage, MillisInstant) -> Unit =
           { message, publishedAt ->
-            logsEventLogger.logServiceCloudEvent(message, publishedAt, cloudEventSourcePrefix)
+            cloudEventLogger.log(message, publishedAt)
             taskEventHandler.handle(message, publishedAt)
           }
 
@@ -496,20 +497,22 @@ class InfiniticWorker(
     // Log Workflow State Engine configuration
     logWorkflowTagEngineStart(config)
 
-    val logsEventLogger = KotlinLogging.logger(
-        "$LOGS_WORKFLOW_TAG_ENGINE.${config.workflowName}",
-    ).ignoreNull()
-
     // WORKFLOW-TAG
     return with(WorkflowTagEngine.logger) {
       val loggedStorage = LoggedWorkflowTagStorage(this, config.workflowTagStorage)
       val loggedProducer = LoggedInfiniticProducer(this, producer)
-
       val workflowTagEngine = WorkflowTagEngine(loggedStorage, loggedProducer)
+
+      val cloudEventLogger = CloudEventLogger(
+          WorkflowTagEngineTopic,
+          config.workflowName,
+          cloudEventSourcePrefix,
+          beautifyLogs,
+      )
 
       val handler: suspend (WorkflowTagEngineMessage, MillisInstant) -> Unit =
           { message, publishedAt ->
-            logsEventLogger.logWorkflowCloudEvent(message, publishedAt, cloudEventSourcePrefix)
+            cloudEventLogger.log(message, publishedAt)
             workflowTagEngine.handle(message, publishedAt)
           }
 
@@ -528,18 +531,21 @@ class InfiniticWorker(
     // Log Workflow State Engine configuration
     logWorkflowStateEngineStart(config)
 
-    val logsEventLogger = KotlinLogging.logger(
-        "$LOGS_WORKFLOW_STATE_ENGINE.${config.workflowName}",
-    ).ignoreNull()
-
-    // WORKFLOW-CMD
+    // WORKFLOW-STATE-CMD
     val jobCmd = with(WorkflowStateCmdHandler.logger) {
       val loggedProducer = LoggedInfiniticProducer(this, producer)
       val workflowStateCmdHandler = WorkflowStateCmdHandler(loggedProducer)
 
+      val cloudEventLogger = CloudEventLogger(
+          WorkflowStateCmdTopic,
+          config.workflowName,
+          cloudEventSourcePrefix,
+          beautifyLogs,
+      )
+
       val handler: suspend (WorkflowStateEngineMessage, MillisInstant) -> Unit =
           { message, publishedAt ->
-            logsEventLogger.logWorkflowCloudEvent(message, publishedAt, cloudEventSourcePrefix)
+            cloudEventLogger.log(message, publishedAt)
             workflowStateCmdHandler.handle(message, publishedAt)
           }
 
@@ -556,14 +562,18 @@ class InfiniticWorker(
     val jobEngine = with(WorkflowStateEngine.logger) {
       val loggedStorage = LoggedWorkflowStateStorage(this, config.workflowStateStorage)
       val loggedProducer = LoggedInfiniticProducer(this, producer)
-
       val workflowStateEngine = WorkflowStateEngine(loggedStorage, loggedProducer)
+
+      val cloudEventLogger = CloudEventLogger(
+          WorkflowStateEngineTopic,
+          config.workflowName,
+          cloudEventSourcePrefix,
+          beautifyLogs,
+      )
 
       val handler: suspend (WorkflowStateEngineMessage, MillisInstant) -> Unit =
           { message, publishedAt ->
-            if (message !is WorkflowStateEngineCmdMessage) {
-              logsEventLogger.logWorkflowCloudEvent(message, publishedAt, cloudEventSourcePrefix)
-            }
+            cloudEventLogger.log(message, publishedAt)
             workflowStateEngine.handle(message, publishedAt)
           }
 
@@ -576,10 +586,9 @@ class InfiniticWorker(
       )
     }
 
-    // WORKFLOW TIMERS
+    // WORKFLOW-STATE-TIMERS
     val jobTimers = with(WorkflowStateTimerHandler.logger) {
       val loggedProducer = LoggedInfiniticProducer(this, producer)
-
       val workflowStateTimerHandler = WorkflowStateTimerHandler(loggedProducer)
 
       consumer.startAsync(
@@ -591,15 +600,21 @@ class InfiniticWorker(
       )
     }
 
-    // WORKFLOW-EVENTS
+    // WORKFLOW-STATE-EVENTS
     val jobEvents = with(WorkflowStateEventHandler.logger) {
       val loggedProducer = LoggedInfiniticProducer(this, producer)
-
       val workflowStateEventHandler = WorkflowStateEventHandler(loggedProducer)
 
-      val handler: suspend (WorkflowStateEngineEventMessage, MillisInstant) -> Unit =
+      val cloudEventLogger = CloudEventLogger(
+          WorkflowStateEventTopic,
+          config.workflowName,
+          cloudEventSourcePrefix,
+          beautifyLogs,
+      )
+
+      val handler: suspend (WorkflowStateEventMessage, MillisInstant) -> Unit =
           { message, publishedAt ->
-            logsEventLogger.logWorkflowCloudEvent(message, publishedAt, cloudEventSourcePrefix)
+            cloudEventLogger.log(message, publishedAt)
             workflowStateEventHandler.handle(message, publishedAt)
           }
 
@@ -620,18 +635,21 @@ class InfiniticWorker(
     // Log Workflow Executor configuration
     logWorkflowExecutorStart(config)
 
-    val logsEventLogger = KotlinLogging.logger(
-        "$LOGS_WORKFLOW_EXECUTOR.${config.workflowName}",
-    ).ignoreNull()
-
     // WORKFLOW-EXECUTOR
     val jobExecutor = with(TaskExecutor.logger) {
       val loggedProducer = LoggedInfiniticProducer(this, producer)
       val workflowTaskExecutor = TaskExecutor(registry, loggedProducer, client)
 
+      val cloudEventLogger = CloudEventLogger(
+          WorkflowExecutorTopic,
+          config.workflowName,
+          cloudEventSourcePrefix,
+          beautifyLogs,
+      )
+
       val handler: suspend (ServiceExecutorMessage, MillisInstant) -> Unit =
           { message, publishedAt ->
-            logsEventLogger.logServiceCloudEvent(message, publishedAt, cloudEventSourcePrefix)
+            cloudEventLogger.log(message, publishedAt)
             workflowTaskExecutor.handle(message, publishedAt)
           }
 
@@ -671,9 +689,16 @@ class InfiniticWorker(
       val loggedProducer = LoggedInfiniticProducer(this, producer)
       val workflowTaskEventHandler = TaskEventHandler(loggedProducer)
 
+      val cloudEventLogger = CloudEventLogger(
+          WorkflowExecutorEventTopic,
+          config.workflowName,
+          cloudEventSourcePrefix,
+          beautifyLogs,
+      )
+
       val handler: suspend (ServiceExecutorEventMessage, MillisInstant) -> Unit =
           { message, publishedAt ->
-            logsEventLogger.logServiceCloudEvent(message, publishedAt, cloudEventSourcePrefix)
+            cloudEventLogger.log(message, publishedAt)
             workflowTaskEventHandler.handle(message, publishedAt)
           }
 
@@ -692,36 +717,4 @@ class InfiniticWorker(
   private val logMessageSentToDLQ = { message: Message?, e: Exception ->
     logger.error(e) { "Sending message to DLQ ${message ?: "(Not Deserialized)"}" }
   }
-
-  private fun KLogger.logCloudEvent(
-    message: Message,
-    publishedAt: MillisInstant,
-    prefix: String,
-    eventProducer: Message.(MillisInstant, String) -> CloudEvent?
-  ) {
-    try {
-      debug {
-        message.eventProducer(publishedAt, prefix)?.toJsonString(beautifyLogs)
-      }
-    } catch (e: Exception) {
-      // Failure to log shouldn't break the application
-      try {
-        error(e) { "Error while logging the CloudEvent json of: $message" }
-      } catch (error: Exception) {
-        System.err.println("Failed to log the original exception due to ${error.message}\n${error.stackTraceToString()}")
-      }
-    }
-  }
-
-  private fun KLogger.logWorkflowCloudEvent(
-    message: Message,
-    publishedAt: MillisInstant,
-    prefix: String,
-  ) = logCloudEvent(message, publishedAt, prefix, Message::toWorkflowCloudEvent)
-
-  private fun KLogger.logServiceCloudEvent(
-    message: Message,
-    publishedAt: MillisInstant,
-    prefix: String,
-  ) = logCloudEvent(message, publishedAt, prefix, Message::toServiceCloudEvent)
 }
