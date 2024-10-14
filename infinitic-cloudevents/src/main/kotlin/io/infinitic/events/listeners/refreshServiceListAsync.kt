@@ -31,7 +31,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 context(CoroutineScope, KLogger)
-fun InfiniticResources.refreshServiceListAsync(
+internal fun InfiniticResources.refreshServiceListAsync(
   config: EventListenerConfig,
   start: suspend (ServiceName) -> Unit
 ) = launch {

@@ -51,7 +51,7 @@ import io.infinitic.common.workflows.engine.messages.WorkflowStateEventMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
 import io.infinitic.events.CloudEventLogger
 import io.infinitic.events.config.EventListenerConfig
-import io.infinitic.events.listeners.startEventListener
+import io.infinitic.events.listeners.startCloudEventListener
 import io.infinitic.tasks.Task
 import io.infinitic.tasks.WithTimeout
 import io.infinitic.tasks.executor.TaskEventHandler
@@ -272,7 +272,7 @@ class InfiniticWorker(
 
           with(logger) {
             jobs.add(
-                consumer.startEventListener(resources, it, cloudEventSourcePrefix),
+                consumer.startCloudEventListener(resources, it, cloudEventSourcePrefix),
             )
           }
         }

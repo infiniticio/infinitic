@@ -40,10 +40,10 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 
 context(CoroutineScope, KLogger)
-fun InfiniticConsumer.listenToWorkflowExecutorTopics(
+internal fun InfiniticConsumer.listenToWorkflowExecutorTopics(
   workflowName: WorkflowName,
   subscriptionName: String?,
-  inChannel: Channel<Result<TransportMessage<Message>, TransportMessage<Message>>>,
+  outChannel: Channel<Result<TransportMessage<Message>, TransportMessage<Message>>>,
 ): Job = launch {
 
   // Send messages from WorkflowExecutorTopic to inChannel
@@ -52,7 +52,7 @@ fun InfiniticConsumer.listenToWorkflowExecutorTopics(
       subscriptionName,
   )
   buildConsumer(workflowExecutorSubscription, workflowName.toString())
-      .startConsuming(inChannel)
+      .startConsuming(outChannel)
 
   // Send messages from WorkflowExecutorEventTopic to inChannel
   val workflowExecutorEventSubscription = SubscriptionType.EVENT_LISTENER.create(
@@ -60,7 +60,7 @@ fun InfiniticConsumer.listenToWorkflowExecutorTopics(
       subscriptionName,
   )
   buildConsumer(workflowExecutorEventSubscription, workflowName.toString())
-      .startConsuming(inChannel)
+      .startConsuming(outChannel)
 
   // Send messages from WorkflowExecutorRetryTopic to inChannel
   val workflowExecutorRetrySubscription = SubscriptionType.EVENT_LISTENER.create(
@@ -68,5 +68,5 @@ fun InfiniticConsumer.listenToWorkflowExecutorTopics(
       subscriptionName,
   )
   buildConsumer(workflowExecutorRetrySubscription, workflowName.toString())
-      .startConsuming(inChannel)
+      .startConsuming(outChannel)
 }

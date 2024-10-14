@@ -43,7 +43,6 @@ import io.infinitic.events.data.workflows.toJson
 import io.infinitic.events.data.workflows.workflowType
 import java.net.URI
 import java.net.URLEncoder
-import java.time.OffsetDateTime
 
 private fun <S : Message> S.isRedundantIn(topic: Topic<*>) = when (topic) {
   is WorkflowStateEngineTopic -> this is WorkflowStateCmdMessage
@@ -59,7 +58,7 @@ fun <S : Message> S.toCloudEvent(
     null -> null
     else -> CloudEventBuilder()
         .withId(messageId.toString())
-        .withTime(time(publishedAt))
+        .withTime(publishedAt.toOffsetDateTime())
         .withType(type)
         .withSubject(subject())
         .withSource(source(prefix))
@@ -115,15 +114,5 @@ private fun Message.dataBytes(): ByteArray = when (this) {
   else -> thisShouldNotHappen()
 }.toString().toByteArray()
 
-private fun Message.time(publishedAt: MillisInstant): OffsetDateTime = when (this) {
-  is WorkflowStateCmdMessage -> publishedAt
-  is WorkflowStateEngineMessage -> emittedAt ?: publishedAt
-  is WorkflowStateEventMessage -> publishedAt
-  is ServiceExecutorMessage -> publishedAt
-  is ServiceExecutorEventMessage -> publishedAt
-  else -> thisShouldNotHappen()
-}.toOffsetDateTime()
-
-
-val Name?.encoded
+internal val Name?.encoded: String
   get() = URLEncoder.encode(toString(), Charsets.UTF_8)

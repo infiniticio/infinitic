@@ -82,23 +82,25 @@ fun Class<*>.getBatchMethods(): List<BatchMethod> =
 
           1 -> if (!batch.hasBatchReturnTypeOf(singles[0])) throw Exception(
               "The return type of the @Batch method $name:${batch.name} should be " +
-                  "List<${singles[0].genericReturnType}>, but is ${batch.genericReturnType}",
+                  "Map<String, ${singles[0].genericReturnType}>, but is ${batch.genericReturnType}",
           )
 
           else -> {
             // This is to cover a special case in Kotlin where the single method returns
-            // Nothing ( fun myMethod() = thiswhouldNnothappen())
+            // Nothing ( fun myMethod() = thisshouldnothappen())
             singles.forEach { single ->
               if ((single.returnType != Void::class.java) && !batch.hasBatchReturnTypeOf(single))
                 throw Exception(
                     "The return type of the @Batch method $name:${batch.name} should be " +
-                        "List<${single.genericReturnType}>, but is ${batch.genericReturnType}",
+                        "Mat<String, ${single.genericReturnType}>, but is ${batch.genericReturnType}",
                 )
             }
           }
         }
       }
     }.map { (batch, singles) ->
+      // ensure batch method is accessible even if private
+      batch.isAccessible = true
       singles.map { single ->
         BatchMethod(
             single,

@@ -43,7 +43,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 
 context(CoroutineScope, KLogger)
-fun InfiniticConsumer.startEventListener(
+fun InfiniticConsumer.startCloudEventListener(
   resources: InfiniticResources,
   config: EventListenerConfig,
   cloudEventSourcePrefix: String,
@@ -59,10 +59,10 @@ fun InfiniticConsumer.startEventListener(
       maxDuration = MillisDuration(config.batchConfig.maxMillis),
   )
 
-  // Launch the complete processing of outChannel
+  // Launch the processing of outChannel
   launch {
     outChannel
-        .process(config.concurrency, { _, message -> message.deserialize() })
+        .process(config.concurrency) { _, message -> message.deserialize() }
         .batchBy { batchConfig }
         .batchProcess(
             config.concurrency,
@@ -80,7 +80,7 @@ fun InfiniticConsumer.startEventListener(
               }
             },
         )
-        .acknowledge(null)
+        .acknowledge()
   }
 
   // Listen service topics, for each service found

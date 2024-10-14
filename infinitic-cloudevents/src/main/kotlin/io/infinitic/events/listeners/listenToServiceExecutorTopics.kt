@@ -40,10 +40,10 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 
 context(CoroutineScope, KLogger)
-fun InfiniticConsumer.listenToServiceExecutorTopics(
+internal fun InfiniticConsumer.listenToServiceExecutorTopics(
   serviceName: ServiceName,
   subscriptionName: String?,
-  inChannel: Channel<Result<TransportMessage<Message>, TransportMessage<Message>>>,
+  outChannel: Channel<Result<TransportMessage<Message>, TransportMessage<Message>>>,
 ): Job = launch {
 
   // Send messages from ServiceExecutorTopic to inChannel
@@ -52,7 +52,7 @@ fun InfiniticConsumer.listenToServiceExecutorTopics(
       subscriptionName,
   )
   buildConsumer(serviceExecutorSubscription, serviceName.toString())
-      .startConsuming(inChannel)
+      .startConsuming(outChannel)
 
   // Send messages from ServiceExecutorEventTopic to inChannel
   val serviceExecutorEventSubscription = SubscriptionType.EVENT_LISTENER.create(
@@ -60,7 +60,7 @@ fun InfiniticConsumer.listenToServiceExecutorTopics(
       subscriptionName,
   )
   buildConsumer(serviceExecutorEventSubscription, serviceName.toString())
-      .startConsuming(inChannel)
+      .startConsuming(outChannel)
 
   // Send messages from ServiceExecutorRetryTopic to inChannel
   val serviceExecutorRetrySubscription = SubscriptionType.EVENT_LISTENER.create(
@@ -68,5 +68,5 @@ fun InfiniticConsumer.listenToServiceExecutorTopics(
       subscriptionName,
   )
   buildConsumer(serviceExecutorRetrySubscription, serviceName.toString())
-      .startConsuming(inChannel)
+      .startConsuming(outChannel)
 }

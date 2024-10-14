@@ -40,10 +40,10 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 
 context(CoroutineScope, KLogger)
-fun InfiniticConsumer.listenToWorkflowStateTopics(
+internal fun InfiniticConsumer.listenToWorkflowStateTopics(
   workflowName: WorkflowName,
   subscriptionName: String?,
-  inChannel: Channel<Result<TransportMessage<Message>, TransportMessage<Message>>>,
+  outChannel: Channel<Result<TransportMessage<Message>, TransportMessage<Message>>>,
 ): Job = launch {
 
   // Send messages from WorkflowStateCmdTopic to inChannel
@@ -52,7 +52,7 @@ fun InfiniticConsumer.listenToWorkflowStateTopics(
       subscriptionName,
   )
   buildConsumer(workflowStateCmdSubscription, workflowName.toString())
-      .startConsuming(inChannel)
+      .startConsuming(outChannel)
 
   // Send messages from WorkflowStateEngineTopic to inChannel
   val workflowStateEngineSubscription = SubscriptionType.EVENT_LISTENER.create(
@@ -60,7 +60,7 @@ fun InfiniticConsumer.listenToWorkflowStateTopics(
       subscriptionName,
   )
   buildConsumer(workflowStateEngineSubscription, workflowName.toString())
-      .startConsuming(inChannel)
+      .startConsuming(outChannel)
 
   // Send messages from WorkflowStateEventTopic to inChannel
   val workflowStateEventSubscription = SubscriptionType.EVENT_LISTENER.create(
@@ -68,5 +68,5 @@ fun InfiniticConsumer.listenToWorkflowStateTopics(
       subscriptionName,
   )
   buildConsumer(workflowStateEventSubscription, workflowName.toString())
-      .startConsuming(inChannel)
+      .startConsuming(outChannel)
 }

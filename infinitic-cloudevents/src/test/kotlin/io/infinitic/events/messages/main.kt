@@ -117,7 +117,7 @@ suspend fun main() {
 
   // wait a bit to let listener do its work
   // and the listener to discover new services and workflows
-  delay(2200)
+  delay(1200)
 
   display()
 

@@ -26,10 +26,13 @@ package io.infinitic.events.messages
 import io.cloudevents.CloudEvent
 import io.infinitic.cloudEvents.CloudEventListener
 import io.infinitic.common.clients.data.ClientName
+import io.infinitic.common.data.MillisInstant
+import io.infinitic.common.data.methods.MethodArgs
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.messages.Message
 import io.infinitic.common.requester.ClientRequester
+import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.events.messages.ServiceExecutorEventMessage
 import io.infinitic.common.tasks.events.messages.TaskCompletedEvent
@@ -84,6 +87,8 @@ import io.infinitic.common.workflows.engine.messages.WorkflowStateCmdMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEventMessage
 import io.infinitic.events.config.EventListenerConfig
+import io.infinitic.events.toCloudEvent
+import io.infinitic.events.toJsonString
 import io.infinitic.storage.config.InMemoryStorageConfig
 import io.infinitic.transport.config.InMemoryTransportConfig
 import io.infinitic.workers.InfiniticWorker
@@ -140,10 +145,36 @@ internal class CloudEventTests : StringSpec(
         events.clear()
       }
 
+      "Checking ExecuteTask" {
+        val random = TestFactory.random(
+            ExecuteTask::class,
+            mapOf("serviceName" to ServiceName("ServiceA")),
+        )
+
+        val args = listOf("a", 1, 2.0, true)
+        val message = random.copy(
+            methodArgs = MethodArgs(
+                args.mapIndexed { _, value ->
+                  SerializedData.encode(
+                      value,
+                      type = value::class.javaObjectType,
+                      jsonViewClass = null,
+                  )
+                }.toList(),
+            ),
+        )
+        val event = message.toCloudEvent(ServiceExecutorTopic, MillisInstant.now(), "test")!!
+        println(event.toJsonString(true))
+      }
+
       ServiceExecutorMessage::class.sealedSubclasses.forEach {
         "Check ${it.simpleName} event envelope from Service Executor topic" {
           val message = TestFactory.random(it, mapOf("serviceName" to ServiceName("ServiceA")))
+          if (message is ExecuteTask) {
+            message.methodArgs
+          }
           message.sendToTopic(ServiceExecutorTopic)
+          println(message)
           // first test slow down for GitHub
           delay(2000)
 

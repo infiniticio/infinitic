@@ -31,7 +31,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 context(CoroutineScope, KLogger)
-fun InfiniticResources.refreshWorkflowListAsync(
+internal fun InfiniticResources.refreshWorkflowListAsync(
   config: EventListenerConfig,
   start: suspend (WorkflowName) -> Unit
 ) = launch {
