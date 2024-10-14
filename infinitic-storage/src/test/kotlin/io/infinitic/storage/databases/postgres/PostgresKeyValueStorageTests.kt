@@ -38,7 +38,7 @@ class PostgresKeyValueStorageTests :
               startupAttempts = 1
               withUsername("test")
               withPassword("password")
-              withDatabaseName("infinitic")
+              withDatabaseName("storageTest")
             }
             .also { it.start() }
 
@@ -48,6 +48,7 @@ class PostgresKeyValueStorageTests :
             username = postgresServer.username,
             password = postgresServer.password,
             database = postgresServer.databaseName,
+            schema = "infiniticTest",
         )
 
         val storage = PostgresKeyValueStorage.from(config)

@@ -64,6 +64,7 @@ interface PostgresConfigInterface {
   val username: String
   val password: String?
   val database: String
+  val schema: String
   val keySetTable: String
   val keyValueTable: String
   val maximumPoolSize: Int?
@@ -80,6 +81,7 @@ data class PostgresConfig(
   override val username: String,
   override val password: String? = null,
   override val database: String = DEFAULT_DATABASE,
+  override val schema: String = DEFAULT_SCHEMA,
   override val keySetTable: String = DEFAULT_KEY_SET_TABLE,
   override val keyValueTable: String = DEFAULT_KEY_VALUE_TABLE,
   override val maximumPoolSize: Int? = null,
@@ -89,8 +91,8 @@ data class PostgresConfig(
   override val maxLifetime: Long? = null // milli seconds
 ) : PostgresConfigInterface {
 
-  private val jdbcUrl = "jdbc:postgresql://$host:$port/$database"
-  private val jdbcUrlDefault = "jdbc:postgresql://$host:$port/postgres"
+  private val jdbcUrlBase = "jdbc:postgresql://$host:$port"
+  private val jdbcUrl = "$jdbcUrlBase/$database"
   private val driverClassName = "org.postgresql.Driver"
 
   init {
@@ -111,13 +113,16 @@ data class PostgresConfig(
     }
 
     require(database.isValidDatabaseName()) {
-      "Invalid value for '${::database.name}': '$database' is not a valid MySQL database name"
+      "Invalid value for '${::database.name}': '$database' is not a valid Postgres database name"
+    }
+    require(database.isValidSchemaName()) {
+      "Invalid value for '${::schema.name}': '$schema' is not a valid Postgres database name"
     }
     require(keySetTable.isValidTableName()) {
-      "Invalid value for '${::keySetTable.name}': '$keySetTable' is not a valid MySQL table name"
+      "Invalid value for '${::keySetTable.name}': '$keySetTable' is not a valid Postgres table name"
     }
     require(keyValueTable.isValidTableName()) {
-      "Invalid value for '${::keyValueTable.name}': '$keyValueTable' is not a valid MySQL table name"
+      "Invalid value for '${::keyValueTable.name}': '$keyValueTable' is not a valid Postgres table name"
     }
   }
 
@@ -127,7 +132,7 @@ data class PostgresConfig(
    */
   override fun toString() =
       "${this::class.java.simpleName}(host='$host', port=$port, username='$username', password='******', " +
-          "database=$database, keySetTable=$keySetTable, keyValueTable=$keyValueTable" +
+          "database=$database, schema=$schema, keySetTable=$keySetTable, keyValueTable=$keyValueTable" +
           (maximumPoolSize?.let { ", maximumPoolSize=$it" } ?: "") +
           (minimumIdle?.let { ", minimumIdle=$it" } ?: "") +
           (idleTimeout?.let { ", idleTimeout=$it" } ?: "") +
@@ -140,7 +145,8 @@ data class PostgresConfig(
 
     internal const val DEFAULT_KEY_VALUE_TABLE = "key_value_storage"
     internal const val DEFAULT_KEY_SET_TABLE = "key_set_storage"
-    internal const val DEFAULT_DATABASE = "infinitic"
+    internal const val DEFAULT_DATABASE = "postgres"
+    internal const val DEFAULT_SCHEMA = "infinitic"
   }
 
   fun close() {
@@ -151,6 +157,8 @@ data class PostgresConfig(
   fun getPool(): HikariDataSource = pools.getOrPut(this) {
     // Create the Database if needed
     initDatabase()
+    // Create the Schema if needed
+    initSchema()
     // create pool
     HikariDataSource(hikariConfig)
   }
@@ -162,6 +170,7 @@ data class PostgresConfig(
       driverClassName = config.driverClassName
       username = config.username
       password = config.password
+      schema = config.schema
       config.maximumPoolSize?.let { maximumPoolSize = it }
       config.minimumIdle?.let { minimumIdle = it }
       config.idleTimeout?.let { idleTimeout = it }
@@ -185,7 +194,7 @@ data class PostgresConfig(
       }
 
   private fun initDatabase() {
-    getDefaultPool().use { pool ->
+    getDefaultPool(DEFAULT_DATABASE).use { pool ->
       if (!pool.databaseExists(database)) {
         pool.connection.use { connection ->
           connection.createStatement().use {
@@ -196,10 +205,31 @@ data class PostgresConfig(
     }
   }
 
-  private fun getDefaultPool() = HikariDataSource(
+  private fun HikariDataSource.schemaExists(schemaName: String): Boolean =
+      connection.use { conn ->
+        conn.metaData.schemas.use { resultSet ->
+          generateSequence {
+            if (resultSet.next()) resultSet.getString("TABLE_SCHEM") else null
+          }.any { it.lowercase() == schemaName.lowercase() }
+        }
+      }
+
+  private fun initSchema() {
+    getDefaultPool(database).use { pool ->
+      if (!pool.schemaExists(schema)) {
+        pool.connection.use { connection ->
+          connection.createStatement().use { statement ->
+            statement.executeUpdate("CREATE SCHEMA $schema")
+          }
+        }
+      }
+    }
+  }
+
+  private fun getDefaultPool(database: String) = HikariDataSource(
       HikariConfig().apply {
         // use a default source
-        jdbcUrl = this@PostgresConfig.jdbcUrlDefault
+        jdbcUrl = this@PostgresConfig.jdbcUrlBase + "/$database"
         driverClassName = this@PostgresConfig.driverClassName
         username = this@PostgresConfig.username
         password = this@PostgresConfig.password
@@ -208,6 +238,11 @@ data class PostgresConfig(
 
   private fun String.isValidDatabaseName(): Boolean {
     val regex = "^[a-zA-Z_][a-zA-Z0-9_\$]{0,62}$".toRegex()
+    return isNotEmpty() && matches(regex)
+  }
+
+  private fun String.isValidSchemaName(): Boolean {
+    val regex = "^[a-zA-Z_][a-zA-Z0-9_]{0,62}$".toRegex()
     return isNotEmpty() && matches(regex)
   }
 

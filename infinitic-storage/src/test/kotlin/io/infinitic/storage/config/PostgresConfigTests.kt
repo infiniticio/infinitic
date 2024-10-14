@@ -38,7 +38,8 @@ class PostgresConfigTests : StringSpec(
       }
 
       "Check PostgresConfig default values do not change to ensure backward compatibility" {
-        config.database shouldBe "infinitic"
+        config.database shouldBe "postgres"
+        config.schema shouldBe "infinitic"
         config.keySetTable shouldBe "key_set_storage"
         config.keyValueTable shouldBe "key_value_storage"
       }
@@ -101,7 +102,7 @@ class PostgresConfigTests : StringSpec(
 
       "toString() should obfuscate password" {
         config.toString() shouldBe "PostgresConfig(host='${config.host}', port=${config.port}, username='${config.username}', password='******', " +
-            "database=${config.database}, keySetTable=${config.keySetTable}, keyValueTable=${config.keyValueTable})"
+            "database=${config.database}, schema=${config.schema}, keySetTable=${config.keySetTable}, keyValueTable=${config.keyValueTable})"
       }
 
       "Can not load from yaml with no host" {
@@ -165,6 +166,7 @@ storage:
             yaml + """
     password: pass
     database: azerty
+    schema: infinitic
     keySetTable: keySet
     keyValueTable: keyVal
     maximumPoolSize: 1
@@ -182,6 +184,7 @@ storage:
                 "root",
                 "pass",
                 "azerty",
+                "infinitic",
                 "keySet",
                 "keyVal",
                 1,

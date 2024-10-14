@@ -48,7 +48,8 @@ class PostgresConfigTest {
         assertEquals(5432, config.getPort());
         assertEquals("postgres", config.getUsername());
         assertEquals("password", config.getPassword());
-        assertEquals("infinitic", config.getDatabase());
+        assertEquals("postgres", config.getDatabase());
+        assertEquals("infinitic", config.getSchema());
         assertEquals("key_set_storage", config.getKeySetTable());
         assertEquals("key_value_storage", config.getKeyValueTable());
     }

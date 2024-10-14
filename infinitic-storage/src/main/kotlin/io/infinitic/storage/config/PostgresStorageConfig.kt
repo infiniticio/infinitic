@@ -27,6 +27,7 @@ import io.infinitic.storage.compression.CompressionConfig
 import io.infinitic.storage.config.PostgresConfig.Companion.DEFAULT_DATABASE
 import io.infinitic.storage.config.PostgresConfig.Companion.DEFAULT_KEY_SET_TABLE
 import io.infinitic.storage.config.PostgresConfig.Companion.DEFAULT_KEY_VALUE_TABLE
+import io.infinitic.storage.config.PostgresConfig.Companion.DEFAULT_SCHEMA
 import io.infinitic.storage.databases.postgres.PostgresKeySetStorage
 import io.infinitic.storage.databases.postgres.PostgresKeyValueStorage
 import io.infinitic.storage.keySet.KeySetStorage
@@ -64,6 +65,7 @@ data class PostgresStorageConfig(
     private var username: String? = null
     private var password: String? = null
     private var database: String = DEFAULT_DATABASE
+    private var schema: String = DEFAULT_SCHEMA
     private var keySetTable: String = DEFAULT_KEY_SET_TABLE
     private var keyValueTable: String = DEFAULT_KEY_VALUE_TABLE
     private var maximumPoolSize: Int? = null
@@ -79,6 +81,7 @@ data class PostgresStorageConfig(
     fun setUsername(user: String) = apply { this.username = user }
     fun setPassword(password: String) = apply { this.password = password }
     fun setDatabase(database: String) = apply { this.database = database }
+    fun setSchema(schema: String) = apply { this.schema = schema }
     fun setKeySetTable(keySetTable: String) = apply { this.keySetTable = keySetTable }
     fun setKeyValueTable(keyValueTable: String) = apply { this.keyValueTable = keyValueTable }
     fun setMaximumPoolSize(maximumPoolSize: Int) = apply { this.maximumPoolSize = maximumPoolSize }
@@ -98,6 +101,7 @@ data class PostgresStorageConfig(
           username = username!!,
           password = password,
           database = database,
+          schema = schema,
           keySetTable = keySetTable,
           keyValueTable = keyValueTable,
           maximumPoolSize = maximumPoolSize,
