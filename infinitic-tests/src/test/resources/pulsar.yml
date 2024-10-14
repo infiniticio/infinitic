@@ -29,7 +29,7 @@ transport:
     brokerServiceUrl: "pulsar://localhost:6650/"
     webServiceUrl: "http://localhost:8080"
     tenant: infinitic
-    namespace: dev
+    namespace: infinitic-tests
     consumer:
       negativeAckRedeliveryDelaySeconds: 0.3
 
