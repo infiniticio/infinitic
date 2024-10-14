@@ -30,12 +30,16 @@ import kotlin.math.ceil
 
 class PostgresKeyValueStorage(
   internal val pool: HikariDataSource,
-  private val tableName: String
+  private val tableName: String,
+  private val schema: String
 ) : KeyValueStorage {
 
   companion object {
-    fun from(config: PostgresConfig) =
-        PostgresKeyValueStorage(config.getPool(), config.keyValueTable)
+    fun from(config: PostgresConfig) = PostgresKeyValueStorage(
+        config.getPool(),
+        config.keyValueTable,
+        config.schema,
+    )
   }
 
   init {
@@ -49,7 +53,7 @@ class PostgresKeyValueStorage(
 
   override suspend fun get(key: String): ByteArray? =
       pool.connection.use { connection ->
-        connection.prepareStatement("SELECT value FROM $tableName WHERE key=?")
+        connection.prepareStatement("SELECT value FROM $schema.$tableName WHERE key=?")
             .use {
               it.setString(1, key)
               it.executeQuery().use { resultSet ->
@@ -64,7 +68,7 @@ class PostgresKeyValueStorage(
     pool.connection.use { connection ->
       connection
           .prepareStatement(
-              "INSERT INTO $tableName (key, value, value_size_in_KiB) VALUES (?, ?, ?) " +
+              "INSERT INTO $schema.$tableName (key, value, value_size_in_KiB) VALUES (?, ?, ?) " +
                   "ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value",
           )
           .use {
@@ -78,7 +82,7 @@ class PostgresKeyValueStorage(
 
   override suspend fun del(key: String) {
     pool.connection.use { connection ->
-      connection.prepareStatement("DELETE FROM $tableName WHERE key=?").use {
+      connection.prepareStatement("DELETE FROM $schema.$tableName WHERE key=?").use {
         it.setString(1, key)
         it.executeUpdate()
       }
@@ -88,14 +92,14 @@ class PostgresKeyValueStorage(
   @TestOnly
   override fun flush() {
     pool.connection.use { connection ->
-      connection.prepareStatement("TRUNCATE $tableName").use { it.executeUpdate() }
+      connection.prepareStatement("TRUNCATE $schema.$tableName").use { it.executeUpdate() }
     }
   }
 
   private fun initKeyValueTable() {
     pool.connection.use { connection ->
       connection.prepareStatement(
-          "CREATE TABLE IF NOT EXISTS $tableName (" +
+          "CREATE TABLE IF NOT EXISTS $schema.$tableName (" +
               "id BIGSERIAL PRIMARY KEY," +
               "key VARCHAR(255) NOT NULL UNIQUE," +
               "value BYTEA NOT NULL," +
@@ -105,7 +109,7 @@ class PostgresKeyValueStorage(
       ).use { it.executeUpdate() }
 
       connection.prepareStatement(
-          "CREATE INDEX IF NOT EXISTS value_size_index ON $tableName(value_size_in_KiB);",
+          "CREATE INDEX IF NOT EXISTS value_size_index ON $schema.$tableName(value_size_in_KiB);",
       ).use { it.executeUpdate() }
     }
   }

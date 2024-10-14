@@ -35,7 +35,7 @@ internal val pulsarConfigTest
         brokerServiceUrl = it.pulsarBrokerUrl,
         webServiceUrl = it.httpServiceUrl,
         tenant = "infinitic",
-        namespace = "tests",
+        namespace = "infinitic-transport-pulsar",
     )
   }
 

@@ -29,11 +29,16 @@ import org.jetbrains.annotations.TestOnly
 
 class PostgresKeySetStorage(
   internal val pool: HikariDataSource,
-  private val tableName: String
+  private val tableName: String,
+  private val schema: String
 ) : KeySetStorage {
 
   companion object {
-    fun from(config: PostgresConfig) = PostgresKeySetStorage(config.getPool(), config.keySetTable)
+    fun from(config: PostgresConfig) = PostgresKeySetStorage(
+        config.getPool(),
+        config.keySetTable,
+        config.schema,
+    )
   }
 
   init {
@@ -47,7 +52,9 @@ class PostgresKeySetStorage(
 
   override suspend fun get(key: String): Set<ByteArray> =
       pool.connection.use { connection ->
-        connection.prepareStatement("SELECT value FROM $tableName WHERE key = ?")
+        connection.prepareStatement(
+            "SELECT value FROM $schema.$tableName WHERE key = ?",
+        )
             .use { statement ->
               statement.setString(1, key)
               statement.executeQuery().use {
@@ -62,7 +69,7 @@ class PostgresKeySetStorage(
 
   override suspend fun add(key: String, value: ByteArray) {
     pool.connection.use { connection ->
-      connection.prepareStatement("INSERT INTO $tableName (key, value) VALUES (?, ?)").use {
+      connection.prepareStatement("INSERT INTO $schema.$tableName (key, value) VALUES (?, ?)").use {
         it.setString(1, key)
         it.setBytes(2, value)
         it.executeUpdate()
@@ -72,18 +79,19 @@ class PostgresKeySetStorage(
 
   override suspend fun remove(key: String, value: ByteArray) {
     pool.connection.use { connection ->
-      connection.prepareStatement("DELETE FROM $tableName WHERE key = ? AND value = ?").use {
-        it.setString(1, key)
-        it.setBytes(2, value)
-        it.executeUpdate()
-      }
+      connection.prepareStatement("DELETE FROM $schema.$tableName WHERE key = ? AND value = ?")
+          .use {
+            it.setString(1, key)
+            it.setBytes(2, value)
+            it.executeUpdate()
+          }
     }
   }
 
   @TestOnly
   override fun flush() {
     pool.connection.use { connection ->
-      connection.prepareStatement("TRUNCATE $tableName").use { it.executeUpdate() }
+      connection.prepareStatement("TRUNCATE $schema.$tableName").use { it.executeUpdate() }
     }
   }
 
@@ -92,7 +100,7 @@ class PostgresKeySetStorage(
     // And value is typically a workflowId
     pool.connection.use { connection ->
       connection.prepareStatement(
-          "CREATE TABLE IF NOT EXISTS $tableName (" +
+          "CREATE TABLE IF NOT EXISTS $schema.$tableName (" +
               "id SERIAL PRIMARY KEY," +
               "key VARCHAR(255) NOT NULL," +
               "value BYTEA NOT NULL" +
@@ -100,11 +108,11 @@ class PostgresKeySetStorage(
       ).use { it.executeUpdate() }
 
       connection.prepareStatement(
-          "CREATE INDEX IF NOT EXISTS index_key ON $tableName (key);",
+          "CREATE INDEX IF NOT EXISTS index_key ON $schema.$tableName (key);",
       ).use { it.executeUpdate() }
 
       connection.prepareStatement(
-          "CREATE INDEX IF NOT EXISTS index_key_value ON $tableName (key, value);",
+          "CREATE INDEX IF NOT EXISTS index_key_value ON $schema.$tableName (key, value);",
       ).use { it.executeUpdate() }
     }
   }
