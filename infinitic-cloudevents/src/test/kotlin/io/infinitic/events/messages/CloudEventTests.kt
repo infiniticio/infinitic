@@ -174,7 +174,6 @@ internal class CloudEventTests : StringSpec(
             message.methodArgs
           }
           message.sendToTopic(ServiceExecutorTopic)
-          println(message)
           // first test slow down for GitHub
           delay(2000)
 
@@ -185,7 +184,7 @@ internal class CloudEventTests : StringSpec(
           event.dataContentType shouldBe "application/json"
           event.subject shouldBe message.taskId.toString()
           event.type shouldBe when (it) {
-            ExecuteTask::class -> "infinitic.task.start"
+            ExecuteTask::class -> "infinitic.task.dispatch"
             else -> thisShouldNotHappen()
           }
         }
@@ -234,7 +233,7 @@ internal class CloudEventTests : StringSpec(
           event.source shouldBe URI("inMemory/workflows/executor/WorkflowA")
           event.subject shouldBe message.taskId.toString()
           event.type shouldBe when (it) {
-            ExecuteTask::class -> "infinitic.task.start"
+            ExecuteTask::class -> "infinitic.task.dispatch"
             else -> thisShouldNotHappen()
           }
         }
@@ -283,8 +282,8 @@ internal class CloudEventTests : StringSpec(
 
             CompleteTimers::class -> null
             CompleteWorkflow::class -> null
-            DispatchMethod::class -> "infinitic.workflow.startMethod"
-            DispatchWorkflow::class -> "infinitic.workflow.start"
+            DispatchMethod::class -> "infinitic.workflow.dispatchMethod"
+            DispatchWorkflow::class -> "infinitic.workflow.dispatch"
             RetryTasks::class -> "infinitic.workflow.retryTask"
             RetryWorkflowTask::class -> "infinitic.workflow.retryExecutor"
             SendSignal::class -> "infinitic.workflow.signal"
@@ -329,9 +328,6 @@ internal class CloudEventTests : StringSpec(
               ),
           )
           message.sendToTopic(WorkflowStateEngineTopic)
-          if (events.isCaptured) {
-            println(events.captured)
-          }
           events.isCaptured shouldBe false
         }
       }
@@ -387,9 +383,9 @@ internal class CloudEventTests : StringSpec(
           delay(100)
 
           val type = when (it) {
-            WorkflowCompletedEvent::class -> "infinitic.workflow.ended"
+            WorkflowCompletedEvent::class -> "infinitic.workflow.completed"
             WorkflowCanceledEvent::class -> "infinitic.workflow.canceled"
-            MethodCommandedEvent::class -> "infinitic.workflow.startMethod"
+            MethodCommandedEvent::class -> "infinitic.workflow.dispatchMethod"
             MethodCompletedEvent::class -> "infinitic.workflow.methodCompleted"
             MethodFailedEvent::class -> "infinitic.workflow.methodFailed"
             MethodCanceledEvent::class -> "infinitic.workflow.methodCanceled"
