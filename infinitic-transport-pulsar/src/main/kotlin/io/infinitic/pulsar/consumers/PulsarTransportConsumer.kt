@@ -20,24 +20,26 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.cloudEvents
+package io.infinitic.pulsar.consumers
 
-@Suppress("unused")
-data class SelectionConfig(
-  val allow: List<String>? = null,
-  val disallow: List<String> = listOf()
-) {
-  init {
-    allow?.forEach {
-      require(it.isNotEmpty()) { error("'${::allow.name}' must not contain empty element") }
-    }
-    disallow.forEach {
-      require(it.isNotEmpty()) { error("'${::disallow.name}' must not contain empty element") }
-    }
+import io.infinitic.common.messages.Envelope
+import io.infinitic.common.messages.Message
+import io.infinitic.common.transport.Topic
+import io.infinitic.common.transport.TransportConsumer
+import kotlinx.coroutines.future.await
+import org.apache.pulsar.client.api.Consumer
+
+class PulsarTransportConsumer<M : Message>(
+  private val topic: Topic<M>,
+  private val pulsarConsumer: Consumer<Envelope<M>>,
+  override val maxRedeliveryCount: Int
+) : TransportConsumer<PulsarTransportMessage<M>> {
+
+  override suspend fun receive(): PulsarTransportMessage<M> {
+    val pulsarMessage = pulsarConsumer.receiveAsync().await()
+
+    return PulsarTransportMessage(pulsarMessage, pulsarConsumer, topic, maxRedeliveryCount)
   }
 
-  fun isIncluded(name: String) =
-      (allow == null || allow.contains(name)) && !disallow.contains(name)
-
-  private fun error(txt: String) = "eventListener: $txt"
+  override val name: String = pulsarConsumer.consumerName
 }

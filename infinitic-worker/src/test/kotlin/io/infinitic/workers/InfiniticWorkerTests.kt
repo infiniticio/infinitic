@@ -25,11 +25,11 @@ package io.infinitic.workers
 import io.cloudevents.CloudEvent
 import io.infinitic.cloudEvents.CloudEventListener
 import io.infinitic.common.fixtures.later
+import io.infinitic.events.config.EventListenerConfig
 import io.infinitic.storage.config.InMemoryConfig
 import io.infinitic.storage.config.InMemoryStorageConfig
 import io.infinitic.storage.config.MySQLConfig
 import io.infinitic.transport.config.InMemoryTransportConfig
-import io.infinitic.workers.config.EventListenerConfig
 import io.infinitic.workers.config.InfiniticWorkerConfig
 import io.infinitic.workers.config.ServiceExecutorConfig
 import io.infinitic.workers.config.ServiceTagEngineConfig
@@ -51,7 +51,7 @@ internal class InfiniticWorkerTests : StringSpec(
       val transport = InMemoryTransportConfig()
 
       class TestEventListener : CloudEventListener {
-        override fun onEvent(event: CloudEvent) {}
+        override fun onEvents(cloudEvents: List<CloudEvent>) {}
       }
 
       val eventListener = EventListenerConfig.builder()
@@ -97,6 +97,7 @@ internal class InfiniticWorkerTests : StringSpec(
               .setTransport(transport)
               .setEventListener(eventListener)
               .build()
+
         }
         worker.getEventListenerConfig() shouldBe eventListener
       }
@@ -152,6 +153,7 @@ services:
               .build()
         }
         worker.getServiceTagEngineConfig(serviceName) shouldBe serviceTagEngine
+        worker.close()
       }
 
       "Can create Infinitic Worker as Service Tag Engine through Yaml" {
@@ -422,6 +424,7 @@ workflows:
         }
         worker.startAsync()
         flag shouldBe false
+        worker.close()
       }
 
       "start() should block, and be released when closed" {
@@ -436,7 +439,7 @@ workflows:
             .build()
 
         var flag = false
-        later(2000) {
+        later(1000) {
           flag = true
           worker.close()
         }

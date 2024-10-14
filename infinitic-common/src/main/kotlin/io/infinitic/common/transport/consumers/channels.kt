@@ -34,13 +34,13 @@ private val producerCounters = mutableMapOf<Channel<*>, Int>()
 
 context(KLogger)
 internal suspend fun Channel<*>.addProducer() = producersMutex.withLock {
-  debug { "Adding one producer from ${producerCounters[this]} to channel ${this.hashCode()}" }
+  trace { "Adding one producer from ${producerCounters[this]} to channel ${this.hashCode()}" }
   producerCounters[this] = (producerCounters[this] ?: 0) + 1
 }
 
 context(KLogger)
 internal suspend fun Channel<*>.removeProducer() = producersMutex.withLock {
-  debug { "Removing one producer from ${producerCounters[this]} from channel ${this.hashCode()}" }
+  trace { "Removing one producer from ${producerCounters[this]} from channel ${this.hashCode()}" }
   when (val count = producerCounters[this]) {
     null -> thisShouldNotHappen()
     1 -> {

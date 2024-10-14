@@ -88,7 +88,7 @@ class TimeoutsWorkflowImpl : Workflow(), TimeoutsWorkflow {
 
 interface ITimeoutWorkflow : WithTimeout {
 
-  // the workflow method 'withMethodTimeout' has a 100ms timeout
+  // the workflow method 'withMethodTimeout' has a 1s timeout
   fun withTimeoutOnMethod(duration: Long): Long
 
   override fun getTimeoutSeconds(): Double? = 0.4

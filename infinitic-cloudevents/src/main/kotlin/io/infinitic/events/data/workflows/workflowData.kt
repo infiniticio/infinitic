@@ -77,9 +77,9 @@ import io.infinitic.common.workflows.engine.messages.TimerDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.WaitWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowCanceledEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowCompletedEvent
-import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineCmdMessage
-import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineEventMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateCmdMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateEventMessage
 import io.infinitic.events.errors.toJson
 import io.infinitic.events.types.REMOTE_METHOD_DISPATCHED
 import io.infinitic.events.types.SIGNAL_DISCARDED
@@ -88,7 +88,7 @@ import io.infinitic.events.types.SIGNAL_RECEIVED
 import io.infinitic.events.types.TIMER_DISPATCHED
 import kotlinx.serialization.json.JsonObject
 
-fun WorkflowStateEngineCmdMessage.toJson(): JsonObject = when (this) {
+fun WorkflowStateCmdMessage.toJson(): JsonObject = when (this) {
   is DispatchWorkflow -> JsonObject(
       mapOf(
           workflowSimpleType()!! to JsonObject(
@@ -186,7 +186,7 @@ fun WorkflowStateEngineCmdMessage.toJson(): JsonObject = when (this) {
 
 fun WorkflowStateEngineMessage.toJson(): JsonObject = when (this) {
 
-  is WorkflowStateEngineCmdMessage -> thisShouldNotHappen()
+  is WorkflowStateCmdMessage -> thisShouldNotHappen()
 
   is RemoteMethodCompleted -> JsonObject(
       mapOf(
@@ -313,7 +313,7 @@ fun WorkflowStateEngineMessage.toJson(): JsonObject = when (this) {
   )
 }
 
-fun WorkflowStateEngineEventMessage.toJson(): JsonObject = when (this) {
+fun WorkflowStateEventMessage.toJson(): JsonObject = when (this) {
 
   is WorkflowCompletedEvent -> JsonObject(
       mapOf(

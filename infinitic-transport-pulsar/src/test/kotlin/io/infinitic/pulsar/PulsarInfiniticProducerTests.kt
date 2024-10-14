@@ -45,9 +45,9 @@ import io.infinitic.common.transport.WorkflowStateEventTopic
 import io.infinitic.common.transport.WorkflowStateTimerTopic
 import io.infinitic.common.transport.WorkflowTagEngineTopic
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTask
-import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineCmdMessage
-import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineEventMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateCmdMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateEventMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
 import io.infinitic.pulsar.admin.InfiniticPulsarAdmin
 import io.infinitic.pulsar.client.InfiniticPulsarClient
@@ -133,7 +133,7 @@ class PulsarInfiniticProducerTests : StringSpec(
       }
 
       "publishing to an absent WorkflowCmdTopic should not throw, should create the topic" {
-        val message = TestFactory.random<WorkflowStateEngineCmdMessage>()
+        val message = TestFactory.random<WorkflowStateCmdMessage>()
 
         // publishing to an absent WorkflowCmdTopic should not throw
         shouldNotThrowAny {
@@ -173,7 +173,7 @@ class PulsarInfiniticProducerTests : StringSpec(
       }
 
       "publishing to an absent WorkflowEventTopic should not throw, should create the topic" {
-        val message = TestFactory.random<WorkflowStateEngineEventMessage>()
+        val message = TestFactory.random<WorkflowStateEventMessage>()
 
 
         // publishing to an absent WorkflowEventsTopic should not throw

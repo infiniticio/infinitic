@@ -35,9 +35,9 @@ import io.infinitic.common.proxies.RequestByWorkflowId
 import io.infinitic.common.proxies.RequestByWorkflowTag
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.transport.logged.LoggedInfiniticConsumer
-import io.infinitic.common.transport.logged.LoggedInfiniticProducer
-import io.infinitic.common.transport.logged.LoggedInfiniticResources
+import io.infinitic.common.transport.InfiniticConsumer
+import io.infinitic.common.transport.InfiniticProducer
+import io.infinitic.common.transport.InfiniticResources
 import io.infinitic.common.utils.annotatedName
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
@@ -63,16 +63,12 @@ class InfiniticClient(
   val config: InfiniticClientConfigInterface
 ) : InfiniticClientInterface {
 
-  private val resources by lazy {
-    LoggedInfiniticResources(logger, config.transport.resources)
-  }
-  private val consumer by lazy {
-    LoggedInfiniticConsumer(logger, config.transport.consumer)
-  }
-  private val producer by lazy {
-    LoggedInfiniticProducer(logger, config.transport.producer).apply {
-      config.name?.let { setSuggestedName(it) }
-    }
+  private val resources: InfiniticResources by lazy { config.transport.resources }
+
+  private val consumer: InfiniticConsumer by lazy { config.transport.consumer }
+
+  private val producer: InfiniticProducer by lazy {
+    config.transport.producer.apply { config.name?.let { setSuggestedName(it) } }
   }
 
   private val shutdownGracePeriodSeconds = config.transport.shutdownGracePeriodSeconds
@@ -82,7 +78,7 @@ class InfiniticClient(
   // Scope used to asynchronously send message, and also to consumes messages
   internal val clientScope = CoroutineScope(Dispatchers.IO)
 
-  private val dispatcher by lazy { ClientDispatcher(clientScope, consumer, producer, logger) }
+  private val dispatcher by lazy { ClientDispatcher(clientScope, consumer, producer) }
 
   override suspend fun getName() = producer.getName()
 
@@ -202,19 +198,20 @@ class InfiniticClient(
 
 
   /** get ids of a stub, associated to a specific tag */
-  override fun <T : Any> getIds(stub: T): Set<String> =
-      when (val handler = getProxyHandler(stub)) {
-        is ExistingWorkflowProxyHandler -> when (handler.requestBy) {
-          is RequestByWorkflowTag -> dispatcher.getWorkflowIdsByTag(
-              handler.workflowName,
-              (handler.requestBy as RequestByWorkflowTag).workflowTag,
-          )
+  override fun <T : Any> getIds(stub: T): Set<String> = runBlocking {
+    when (val handler = getProxyHandler(stub)) {
+      is ExistingWorkflowProxyHandler -> when (handler.requestBy) {
+        is RequestByWorkflowTag -> dispatcher.getWorkflowIdsByTag(
+            handler.workflowName,
+            (handler.requestBy as RequestByWorkflowTag).workflowTag,
+        )
 
-          is RequestByWorkflowId -> throw InvalidIdTagSelectionException("$stub")
-        }
-
-        else -> throw InvalidStubException("$stub")
+        is RequestByWorkflowId -> throw InvalidIdTagSelectionException("$stub")
       }
+
+      else -> throw InvalidStubException("$stub")
+    }
+  }
 
   override fun <R> startAsync(invoke: () -> R): CompletableFuture<Deferred<R>> {
     val handler = ProxyHandler.async(invoke) ?: throw InvalidStubException()
@@ -270,7 +267,7 @@ class InfiniticClient(
 
   companion object {
 
-    private val logger = KotlinLogging.logger {}
+    internal val logger = KotlinLogging.logger {}
 
     /** Create InfiniticClient with config from resources directory */
     @JvmStatic

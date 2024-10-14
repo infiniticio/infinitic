@@ -26,6 +26,7 @@ package io.infinitic.workers.config
 import io.infinitic.config.loadFromYamlFile
 import io.infinitic.config.loadFromYamlResource
 import io.infinitic.config.loadFromYamlString
+import io.infinitic.events.config.EventListenerConfig
 import io.infinitic.storage.config.StorageConfig
 import io.infinitic.transport.config.TransportConfig
 

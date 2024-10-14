@@ -44,19 +44,23 @@ import kotlinx.coroutines.withContext
  * @return A new channel that contains the processed results.
  */
 context(CoroutineScope, KLogger)
-internal fun <M : Any, I, O> Channel<Result<M, I>>.process(
+fun <M : Any, I, O> Channel<Result<M, I>>.process(
   concurrency: Int = 1,
   process: suspend (M, I) -> O,
 ): Channel<Result<M, O>> {
   val callingScope = this@CoroutineScope
   val outputChannel = Channel<Result<M, O>>()
 
+  debug { "process: starting listening channel ${this@process.hashCode()}" }
+
   launch {
     // start a non cancellable scope
     withContext(NonCancellable) {
-      repeat(concurrency) {
+      repeat(concurrency) { index ->
         launch {
+          debug { "process: adding producer $index to output channel ${outputChannel.hashCode()}" }
           outputChannel.addProducer()
+          trace { "process: producer added $index to output channel ${outputChannel.hashCode()}" }
           while (true) {
             try {
               // the only way to quit this loop is to close the input channel
@@ -81,9 +85,9 @@ internal fun <M : Any, I, O> Channel<Result<M, I>>.process(
               callingScope.cancel()
             }
           }
+          debug { "process: exiting, removing producer $index from output channel ${outputChannel.hashCode()}" }
           outputChannel.removeProducer()
-          // cancel current scope
-          trace { "process: exiting" }
+          trace { "process: exited, producer $index removed from output channel ${outputChannel.hashCode()}" }
         }
       }
     }

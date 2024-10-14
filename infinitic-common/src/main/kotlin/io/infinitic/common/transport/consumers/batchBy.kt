@@ -46,13 +46,15 @@ import kotlinx.coroutines.withContext
  *         either a [SingleMessage] or a [MultipleMessages] instance.
  */
 context(CoroutineScope, KLogger)
-internal fun <M : Any, I> Channel<Result<M, I>>.batchBy(
+fun <M : Any, I> Channel<Result<M, I>>.batchBy(
   getBatchConfig: suspend (I) -> BatchConfig?,
 ): Channel<OneOrMany<Result<M, I>>> {
   val callingScope: CoroutineScope = this@CoroutineScope
 
   // output channel where result after processing are sent
   val outputChannel = Channel<OneOrMany<Result<M, I>>>()
+
+  debug { "batchBy: starting listening channel ${this@batchBy.hashCode()}" }
 
   // channels where messages are sent to be batched (one channel per key)
   val batchingMutex = Mutex()
@@ -70,7 +72,7 @@ internal fun <M : Any, I> Channel<Result<M, I>>.batchBy(
       ): Channel<Result<M, I>> = Channel<Result<M, I>>().also {
         debug { "batchBy: adding producer to batching channel ${it.hashCode()}" }
         it.addProducer()
-        trace { "batchBy: added producer to batching channel ${it.hashCode()}" }
+        trace { "batchBy: producer added to batching channel ${it.hashCode()}" }
         it.startBatching(maxMessages, maxDuration, outputChannel)
       }
 
@@ -84,7 +86,7 @@ internal fun <M : Any, I> Channel<Result<M, I>>.batchBy(
 
       debug { "batchBy: adding producer to output channel ${outputChannel.hashCode()}" }
       outputChannel.addProducer()
-      trace { "batchBy: added producer to output channel ${outputChannel.hashCode()}" }
+      trace { "batchBy: producer added to output channel ${outputChannel.hashCode()}" }
       // For batching channels, the addProducer method is called at creation
       while (true) {
         try {
@@ -116,7 +118,7 @@ internal fun <M : Any, I> Channel<Result<M, I>>.batchBy(
       outputChannel.removeProducer()
       batchingMutex.withLock {
         batchingChannels.forEach { (key, channel) ->
-          trace { "batchBy: exiting, removing producer from $key batching channel ${channel.hashCode()}" }
+          trace { "batchBy: exited, producer removed from $key batching channel ${channel.hashCode()}" }
           channel.removeProducer()
         }
       }

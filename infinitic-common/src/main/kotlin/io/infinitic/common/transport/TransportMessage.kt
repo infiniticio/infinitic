@@ -24,8 +24,37 @@ package io.infinitic.common.transport
 
 import io.infinitic.common.data.MillisInstant
 
-interface TransportMessage {
-  val messageId: String
-  val redeliveryCount: Int
+/**
+ * Represents a transport message that can be deserialized.
+ *
+ * @param M The type of the payload contained within the message.
+ */
+interface TransportMessage<out M> {
   val publishTime: MillisInstant
+  val messageId: String
+  val topic: Topic<*>
+
+  /**
+   * Deserializes the message into its original form.
+   *
+   * @return The deserialized message.
+   */
+  fun deserialize(): M
+
+  /**
+   * Acknowledges the given message.
+   */
+  suspend fun acknowledge()
+
+  /**
+   * Processes a negative acknowledgment for the given message.
+   */
+  suspend fun negativeAcknowledge()
+
+  /**
+   * This property reflects the state where the message has failed to process successfully
+   * repeatedly, and the total count of negative acknowledgments has reached a predefined limit
+   * after which the message will be sent to DLQ
+   */
+  val hasBeenSentToDeadLetterQueue: Boolean
 }

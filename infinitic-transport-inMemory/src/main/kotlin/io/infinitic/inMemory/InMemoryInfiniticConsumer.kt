@@ -22,7 +22,7 @@
  */
 package io.infinitic.inMemory
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.messages.Message
 import io.infinitic.common.transport.BatchConfig
@@ -31,8 +31,9 @@ import io.infinitic.common.transport.InfiniticConsumer
 import io.infinitic.common.transport.MainSubscription
 import io.infinitic.common.transport.Subscription
 import io.infinitic.common.transport.TransportConsumer
+import io.infinitic.common.transport.TransportMessage
 import io.infinitic.common.transport.acceptDelayed
-import io.infinitic.common.transport.consumers.ProcessorConsumer
+import io.infinitic.common.transport.consumers.startAsync
 import io.infinitic.inMemory.channels.DelayedMessage
 import io.infinitic.inMemory.channels.InMemoryChannels
 import io.infinitic.inMemory.consumers.InMemoryConsumer
@@ -40,9 +41,7 @@ import io.infinitic.inMemory.consumers.InMemoryDelayedConsumer
 import io.infinitic.inMemory.consumers.InMemoryTransportMessage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
 class InMemoryInfiniticConsumer(
@@ -50,65 +49,76 @@ class InMemoryInfiniticConsumer(
   private val eventListenerChannels: InMemoryChannels,
 ) : InfiniticConsumer {
 
-  context(CoroutineScope)
+  context(KLogger)
+  override suspend fun <S : Message> buildConsumers(
+    subscription: Subscription<S>,
+    entity: String,
+    occurrence: Int?
+  ): List<TransportConsumer<InMemoryTransportMessage<S>>> = List(occurrence ?: 1) {
+    when (subscription.topic.acceptDelayed) {
+      true -> InMemoryDelayedConsumer(subscription.topic, subscription.getChannelForDelayed(entity))
+      false -> InMemoryConsumer(subscription.topic, subscription.getChannel(entity))
+    }
+  }
+
+  context(KLogger)
+  override suspend fun <S : Message> buildConsumer(
+    subscription: Subscription<S>,
+    entity: String,
+  ): TransportConsumer<InMemoryTransportMessage<S>> =
+      buildConsumers(subscription, entity, 1).first()
+
+  context(CoroutineScope, KLogger)
   override suspend fun <S : Message> startAsync(
     subscription: Subscription<S>,
     entity: String,
     concurrency: Int,
     process: suspend (S, MillisInstant) -> Unit,
-    beforeDlq: (suspend (S?, Exception) -> Unit)?,
+    beforeDlq: (suspend (S, Exception) -> Unit)?,
     batchConfig: (suspend (S) -> BatchConfig?)?,
     batchProcess: (suspend (List<S>, List<MillisInstant>) -> Unit)?
   ): Job {
 
-    val loggedDeserialize: suspend (InMemoryTransportMessage<S>) -> S = { message ->
-      logger.debug { "Deserializing message: ${message.messageId}" }
-      message.toMessage().also {
-        logger.trace { "Deserialized message: ${message.messageId}" }
+    val loggedDeserialize: suspend (TransportMessage<S>) -> S = { message ->
+      debug { "Deserializing message: ${message.messageId}" }
+      message.deserialize().also {
+        trace { "Deserialized message: ${message.messageId}" }
       }
     }
 
-    val loggedHandler: suspend (S, MillisInstant) -> Unit = { message, publishTime ->
-      logger.debug { "Processing $message" }
+    val loggedProcess: suspend (S, MillisInstant) -> Unit = { message, publishTime ->
+      debug { "Processing $message" }
       process(message, publishTime)
-      logger.trace { "Processed $message" }
-    }
-
-    fun buildConsumer(index: Int? = null): TransportConsumer<InMemoryTransportMessage<S>> {
-      logger.debug { "Creating consumer ${index?.let { "${it + 1} " } ?: ""}on ${subscription.topic} for $entity " }
-      return when (subscription.topic.acceptDelayed) {
-        true -> InMemoryDelayedConsumer(subscription.getChannelForDelayed(entity))
-        false -> InMemoryConsumer(subscription.getChannel(entity))
-      }
+      trace { "Processed $message" }
     }
 
     return when (subscription.withKey) {
       true -> {
-        // build the consumers synchronously (but in parallel)
-        val consumers: List<TransportConsumer<InMemoryTransportMessage<S>>> = coroutineScope {
-          List(concurrency) { async { buildConsumer(it) } }.map { it.await() }
-        }
+        // build the consumers synchronously
+        val consumers = buildConsumers(subscription, entity, concurrency)
         launch {
-          repeat(concurrency) {
-            val processor = ProcessorConsumer<InMemoryTransportMessage<S>, S>(consumers[it], null)
-            with(processor) { startAsync(1, loggedDeserialize, loggedHandler) }
+          repeat(concurrency) { index ->
+            consumers[index].startAsync(
+                1,
+                loggedDeserialize,
+                loggedProcess,
+                beforeDlq,
+            )
           }
         }
       }
 
       false -> {
         // build the consumer synchronously
-        val consumer = buildConsumer()
-        val processor = ProcessorConsumer<InMemoryTransportMessage<S>, S>(consumer, null)
-        with(processor) {
-          startAsync(
-              1,
-              loggedDeserialize,
-              loggedHandler,
-              batchConfig,
-              batchProcess,
-          )
-        }
+        val consumer = buildConsumer(subscription, entity)
+        consumer.startAsync(
+            concurrency,
+            loggedDeserialize,
+            loggedProcess,
+            beforeDlq,
+            batchConfig,
+            batchProcess,
+        )
       }
     }
   }
@@ -125,8 +135,5 @@ class InMemoryInfiniticConsumer(
         is EventListenerSubscription -> with(eventListenerChannels) { topic.channel(entity) }
       }
 
-  companion object {
-    private val logger = KotlinLogging.logger {}
-  }
 }
 

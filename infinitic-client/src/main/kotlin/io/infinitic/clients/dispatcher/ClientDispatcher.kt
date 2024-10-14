@@ -24,6 +24,7 @@ package io.infinitic.clients.dispatcher
 
 import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.clients.Deferred
+import io.infinitic.clients.InfiniticClient
 import io.infinitic.clients.deferred.DeferredChannel
 import io.infinitic.clients.deferred.DeferredSend
 import io.infinitic.clients.deferred.ExistingDeferredWorkflow
@@ -105,7 +106,6 @@ import kotlinx.coroutines.runBlocking
 import org.jetbrains.annotations.TestOnly
 import java.lang.reflect.Method
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.CompletionException
 import java.util.concurrent.atomic.AtomicBoolean
 import io.infinitic.common.workflows.engine.messages.RetryTasks as RetryTaskInWorkflow
 import io.infinitic.common.workflows.tags.messages.RetryTasksByTag as RetryTaskInWorkflowByTag
@@ -115,7 +115,6 @@ internal class ClientDispatcher(
   private val clientScope: CoroutineScope,
   private val consumer: InfiniticConsumer,
   private val producer: InfiniticProducer,
-  private val logger: KLogger
 ) : ProxyDispatcher {
 
   // Name of the client
@@ -146,7 +145,7 @@ internal class ClientDispatcher(
 
   // asynchronous call: dispatch(stub::method)(*args)
   fun <R : Any?> dispatchAsync(handler: ProxyHandler<*>): CompletableFuture<Deferred<R>> =
-      clientScope.runAsync {
+      runAsync {
         when (handler) {
           is NewWorkflowProxyHandler -> handler.dispatchMethod()
           is ExistingWorkflowProxyHandler -> handler.dispatchMethod()
@@ -157,14 +156,15 @@ internal class ClientDispatcher(
       }
 
   // synchronous call: stub.method(*args)
-  override fun <R : Any?> dispatchAndWait(handler: ProxyHandler<*>): R =
-      when (handler) {
-        is NewWorkflowProxyHandler -> handler.dispatchMethodAndWait()
-        is ExistingWorkflowProxyHandler -> handler.dispatchMethodAndWait()
-        is ChannelProxyHandler -> handler.dispatchSignal<R>().await()
-        is ExistingServiceProxyHandler -> thisShouldNotHappen()
-        is NewServiceProxyHandler -> thisShouldNotHappen()
-      }
+  override fun <R : Any?> dispatchAndWait(handler: ProxyHandler<*>): R = runBlocking {
+    when (handler) {
+      is NewWorkflowProxyHandler -> handler.dispatchMethodAndWait()
+      is ExistingWorkflowProxyHandler -> handler.dispatchMethodAndWait()
+      is ChannelProxyHandler -> handler.dispatchSignal<R>().await()
+      is ExistingServiceProxyHandler -> thisShouldNotHappen()
+      is NewServiceProxyHandler -> thisShouldNotHappen()
+    }
+  }
 
   private suspend fun <T> awaitNewWorkflowAsync(
     deferred: NewDeferredWorkflow<T>,
@@ -178,17 +178,15 @@ internal class ClientDispatcher(
       clientWaiting,
   )
 
-  internal fun <T> awaitNewWorkflow(
+  internal suspend fun <T> awaitNewWorkflow(
     deferred: NewDeferredWorkflow<T>,
     clientWaiting: Boolean
-  ): T = clientScope.run {
-    awaitNewWorkflowAsync(deferred, clientWaiting).await().getValue(
-        deferred.workflowName,
-        deferred.workflowId,
-        deferred.method,
-        WorkflowMethodId.from(deferred.workflowId),
-    )
-  }
+  ): T = awaitNewWorkflowAsync(deferred, clientWaiting).await().getValue(
+      deferred.workflowName,
+      deferred.workflowId,
+      deferred.method,
+      WorkflowMethodId.from(deferred.workflowId),
+  )
 
   private suspend fun <T> awaitExistingWorkflowAsync(
     deferred: ExistingDeferredWorkflow<T>,
@@ -206,27 +204,25 @@ internal class ClientDispatcher(
     is RequestByWorkflowTag -> TODO()
   }
 
-  internal fun <T> awaitExistingWorkflow(
+  internal suspend fun <T> awaitExistingWorkflow(
     deferred: ExistingDeferredWorkflow<T>,
     clientWaiting: Boolean
-  ): T = clientScope.run {
-    when (deferred.requestBy) {
-      is RequestByWorkflowId -> awaitWorkflowAsync(
-          deferred.workflowName,
-          deferred.requestBy.workflowId,
-          deferred.workflowMethodId,
-          deferred.methodTimeout,
-          deferred.dispatchTime,
-          clientWaiting,
-      ).await().getValue(
-          deferred.workflowName,
-          deferred.requestBy.workflowId,
-          deferred.method,
-          deferred.workflowMethodId,
-      ) as T
+  ): T = when (deferred.requestBy) {
+    is RequestByWorkflowId -> awaitWorkflowAsync(
+        deferred.workflowName,
+        deferred.requestBy.workflowId,
+        deferred.workflowMethodId,
+        deferred.methodTimeout,
+        deferred.dispatchTime,
+        clientWaiting,
+    ).await().getValue(
+        deferred.workflowName,
+        deferred.requestBy.workflowId,
+        deferred.method,
+        deferred.workflowMethodId,
+    ) as T
 
-      is RequestByWorkflowTag -> TODO()
-    }
+    is RequestByWorkflowTag -> TODO()
   }
 
   // wait for the completion of a method
@@ -273,7 +269,7 @@ internal class ClientDispatcher(
     workflowName: WorkflowName,
     requestBy: RequestBy,
     workflowMethodId: WorkflowMethodId?,
-  ): CompletableFuture<Unit> = clientScope.runAsync {
+  ): CompletableFuture<Unit> = runAsync {
     when (requestBy) {
       is RequestByWorkflowId -> {
         val msg = CancelWorkflow(
@@ -307,7 +303,7 @@ internal class ClientDispatcher(
   fun retryWorkflowTaskAsync(
     workflowName: WorkflowName,
     requestBy: RequestBy
-  ): CompletableFuture<Unit> = clientScope.runAsync {
+  ): CompletableFuture<Unit> = runAsync {
     when (requestBy) {
       is RequestByWorkflowId -> {
         val msg = RetryWorkflowTask(
@@ -339,7 +335,7 @@ internal class ClientDispatcher(
     serviceName: ServiceName,
     taskId: TaskId,
     returnValue: MethodReturnValue
-  ): CompletableFuture<Unit> = clientScope.runAsync {
+  ): CompletableFuture<Unit> = runAsync {
     val msg = CompleteDelegatedTask(
         serviceName = serviceName,
         taskId = taskId,
@@ -353,7 +349,7 @@ internal class ClientDispatcher(
     workflowName: WorkflowName,
     requestBy: RequestBy,
     workflowMethodId: WorkflowMethodId?
-  ): CompletableFuture<Unit> = clientScope.runAsync {
+  ): CompletableFuture<Unit> = runAsync {
     when (requestBy) {
       is RequestByWorkflowId -> {
         val msg = CompleteTimers(
@@ -389,7 +385,7 @@ internal class ClientDispatcher(
     taskId: TaskId?,
     taskStatus: DeferredStatus?,
     serviceName: ServiceName?
-  ): CompletableFuture<Unit> = clientScope.runAsync {
+  ): CompletableFuture<Unit> = runAsync {
     when (requestBy) {
       is RequestByWorkflowId -> {
         val msg = RetryTaskInWorkflow(
@@ -423,11 +419,10 @@ internal class ClientDispatcher(
     }
   }
 
-
-  fun getWorkflowIdsByTag(
+  suspend fun getWorkflowIdsByTag(
     workflowName: WorkflowName,
     workflowTag: WorkflowTag
-  ): Set<String> = clientScope.run {
+  ): Set<String> {
     // lazily starts client consumer if not already started and waits
     val waiting = awaitAsync {
       (it is WorkflowIdsByTag) &&
@@ -447,7 +442,7 @@ internal class ClientDispatcher(
 
     val workflowIdsByTag = waiting.await() as WorkflowIdsByTag
 
-    workflowIdsByTag.workflowIds.map { it.toString() }.toSet()
+    return workflowIdsByTag.workflowIds.map { it.toString() }.toSet()
   }
 
   private suspend fun <R : Any?> NewWorkflowProxyHandler<*>.dispatchMethod(): Deferred<R> =
@@ -467,7 +462,7 @@ internal class ClientDispatcher(
       }
 
   // synchronous call: stub.method(*args)
-  private fun <R : Any?> NewWorkflowProxyHandler<*>.dispatchMethodAndWait(): R =
+  private suspend fun <R : Any?> NewWorkflowProxyHandler<*>.dispatchMethodAndWait(): R =
       when (isChannelGetter()) {
         true -> throw InvalidChannelUsageException()
         false -> {
@@ -479,19 +474,17 @@ internal class ClientDispatcher(
               getTimeout(),
           )
 
-          clientScope.run {
-            val future = awaitNewWorkflowAsync(deferredWorkflow, false)
+          val future = awaitNewWorkflowAsync(deferredWorkflow, false)
 
-            // synchronously send the message to get errors
-            dispatchMethod(deferredWorkflow, true)
+          // synchronously send the message to get errors
+          dispatchMethod(deferredWorkflow, true)
 
-            future.await().getValue(
-                workflowName,
-                deferredWorkflow.workflowId,
-                deferredWorkflow.method,
-                WorkflowMethodId.from(deferredWorkflow.workflowId),
-            ) as R
-          }
+          future.await().getValue(
+              workflowName,
+              deferredWorkflow.workflowId,
+              deferredWorkflow.method,
+              WorkflowMethodId.from(deferredWorkflow.workflowId),
+          ) as R
         }
       }
 
@@ -598,7 +591,7 @@ internal class ClientDispatcher(
 
   // synchronous call: stub.method(*args)
   @Suppress("UNCHECKED_CAST")
-  private fun <R : Any?> ExistingWorkflowProxyHandler<*>.dispatchMethodAndWait(): R =
+  private suspend fun <R : Any?> ExistingWorkflowProxyHandler<*>.dispatchMethodAndWait(): R =
       when (isChannelGetter()) {
         true -> {
           // special case of getting a channel from a workflow
@@ -614,19 +607,17 @@ internal class ClientDispatcher(
               getTimeout(),
           )
 
-          clientScope.run {
-            val future = awaitExistingWorkflowAsync(deferred, false)
+          val future = awaitExistingWorkflowAsync(deferred, false)
 
-            // send the message synchronously to get errors
-            dispatchMethod(deferred, true)
+          // send the message synchronously to get errors
+          dispatchMethod(deferred, true)
 
-            future.await().getValue(
-                deferred.workflowName,
-                deferred.requestBy.workflowId!!,
-                deferred.method,
-                deferred.workflowMethodId,
-            ) as R
-          }
+          future.await().getValue(
+              deferred.workflowName,
+              deferred.requestBy.workflowId!!,
+              deferred.method,
+              deferred.workflowMethodId,
+          ) as R
         }
       }
 
@@ -685,12 +676,12 @@ internal class ClientDispatcher(
   }
 
   // asynchronous call: dispatch(stub.channel::send, signal)
-  private fun <S : Any?> ChannelProxyHandler<*>.dispatchSignal() =
+  private suspend fun <S : Any?> ChannelProxyHandler<*>.dispatchSignal() =
       deferredSend<S>().also { dispatchSignal(it) }
 
-  private fun ChannelProxyHandler<*>.dispatchSignal(
+  private suspend fun ChannelProxyHandler<*>.dispatchSignal(
     deferredSend: DeferredSend<*>,
-  ) = clientScope.run {
+  ) {
     if (annotatedMethodName.toString() != SendChannel<*>::send.name) thisShouldNotHappen()
 
     when (requestBy) {
@@ -785,21 +776,40 @@ internal class ClientDispatcher(
     else -> thisShouldNotHappen("Unexpected $this")
   }
 
+
+  /**
+   * Starts listening asynchronously for incoming messages for a specific client.
+   *
+   * This method ensures that a consumer client, identified by `emitterName`, is created and started
+   * only once. It launches a coroutine to handle the listening process and ensures that messages
+   * are emitted to the response flow or any errors are propagated appropriately.
+   *
+   * This function must be called with an active CoroutineScope and KLogger context.
+   *
+   * The function performs the following tasks:
+   * - It checks if the consumer client has already started using `hasClientConsumerStarted`.
+   * - Logs the starting message for the client using `KLogger`.
+   * - Invokes `consumer.startAsync` to start listening to the specified subscription synchronously.
+   * - Launches a coroutine to handle the asynchronous listening process, which waits for messages
+   *   and emits them to `responseFlow`.
+   * - Catches any exceptions during message processing and emits them to the `responseFlow` before rethrowing.
+   *
+   * This function suspends until the consumer client is successfully started and the listening coroutine is launched.
+   */
+  context(CoroutineScope, KLogger)
   private suspend fun startListeningAsync() {
     if (hasClientConsumerStarted.compareAndSet(false, true)) {
-      logger.info { "Starting consumer client for client $emitterName" }
+      info { "Starting consumer client for client $emitterName" }
       // synchronously make sure that the consumer is created and started
-      val listenerJob = with(clientScope) {
-        consumer.startAsync(
-            subscription = MainSubscription(ClientTopic),
-            entity = emitterName.toString(),
-            concurrency = 1,
-            process = { message, _ -> responseFlow.emit(message) },
-            beforeDlq = null,
-        )
-      }
+      val listenerJob =
+          consumer.startAsync(
+              subscription = MainSubscription(ClientTopic),
+              entity = emitterName.toString(),
+              concurrency = 1,
+              process = { message, _ -> responseFlow.emit(message) },
+          )
       // asynchronously listen
-      clientScope.launch {
+      launch {
         try {
           listenerJob.join()
         } catch (e: Exception) {
@@ -811,21 +821,28 @@ internal class ClientDispatcher(
     }
   }
 
+  /**
+   * Awaits until a `ClientMessage` that matches the given predicate is received
+   * or the timeout is reached, in this case response will be null
+   * Ensures that the client is listening for messages before awaiting.
+   *
+   * @param timeout The maximum time to wait for the message. Defaults to `Long.MAX_VALUE`.
+   * @param predicate A suspend function that determines if a received `ClientMessage` matches the criteria.
+   * @return A `CoroutineDeferred` that will provide the matching `ClientMessage` or `null` if the timeout is reached.
+   */
   private suspend fun awaitAsync(
     timeout: Long = Long.MAX_VALUE,
     predicate: suspend (ClientMessage) -> Boolean
-  ): CoroutineDeferred<ClientMessage?> {
+  ): CoroutineDeferred<ClientMessage?> = with(clientScope) {
     // make sure the client is listening
-    startListeningAsync()
+    with(logger) { startListeningAsync() }
 
-    return clientScope.async {
-      responseFlow.first(timeout) { predicate(it) }
-    }
+    return async { responseFlow.first(timeout) { predicate(it) } }
   }
 
-  private fun <S> CoroutineScope.runAsync(block: suspend () -> S): CompletableFuture<S> =
+  private fun <S> runAsync(block: suspend () -> S): CompletableFuture<S> =
       CompletableFuture<S>().also {
-        launch {
+        clientScope.launch {
           try {
             it.complete(block())
           } catch (e: CancellationException) {
@@ -836,15 +853,11 @@ internal class ClientDispatcher(
         }
       }
 
-  private fun <S> CoroutineScope.run(block: suspend () -> S): S = try {
-    runAsync(block).join()
-  } catch (e: CompletionException) {
-    throw e.cause ?: e
-  }
-
   companion object {
     @TestOnly
     @JvmStatic
     private val localLastDeferred: ThreadLocal<Deferred<*>?> = ThreadLocal()
+
+    internal val logger = InfiniticClient.logger
   }
 }

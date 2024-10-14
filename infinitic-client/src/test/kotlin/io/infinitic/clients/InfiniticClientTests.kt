@@ -22,6 +22,7 @@
  */
 package io.infinitic.clients
 
+import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.clients.config.InfiniticClientConfig
 import io.infinitic.clients.deferred.ExistingDeferredWorkflow
 import io.infinitic.clients.samples.FakeClass
@@ -75,7 +76,7 @@ import io.infinitic.common.workflows.engine.messages.RetryTasks
 import io.infinitic.common.workflows.engine.messages.SendSignal
 import io.infinitic.common.workflows.engine.messages.WaitWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
-import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineCmdMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateCmdMessage
 import io.infinitic.common.workflows.tags.messages.AddTagToWorkflow
 import io.infinitic.common.workflows.tags.messages.CancelWorkflowByTag
 import io.infinitic.common.workflows.tags.messages.DispatchMethodByTag
@@ -106,9 +107,10 @@ import java.util.concurrent.CopyOnWriteArrayList
 private val taskTagSlots = CopyOnWriteArrayList<ServiceTagMessage>()
 private val workflowTagSlots = CopyOnWriteArrayList<WorkflowTagEngineMessage>()
 private val taskSlot = slot<ServiceExecutorMessage>()
-private val workflowCmdSlots = CopyOnWriteArrayList<WorkflowStateEngineCmdMessage>()
+private val workflowCmdSlots = CopyOnWriteArrayList<WorkflowStateCmdMessage>()
 private val delaySlot = slot<MillisDuration>()
 private val scopeSlot = slot<CoroutineScope>()
+private val loggerSlot = slot<KLogger>()
 
 private val clientNameTest = ClientName("clientTest")
 private val emitterNameTest = EmitterName("clientTest")
@@ -147,20 +149,22 @@ internal val mockedProducer = mockk<InMemoryInfiniticProducer> {
     getName()
   } returns "$clientNameTest"
   coEvery {
-    internalSendTo(capture(taskTagSlots), ServiceTagEngineTopic)
+    with(capture(taskTagSlots)) { sendTo(ServiceTagEngineTopic) }
   } answers { }
   coEvery {
-    internalSendTo(capture(workflowTagSlots), WorkflowTagEngineTopic)
+    with(capture(workflowTagSlots)) { sendTo(WorkflowTagEngineTopic) }
   } coAnswers { tagResponse() }
   coEvery {
-    internalSendTo(capture(workflowCmdSlots), WorkflowStateCmdTopic)
+    with(capture(workflowCmdSlots)) { sendTo(WorkflowStateCmdTopic) }
   } coAnswers { engineResponse() }
 }
 
 internal val mockedConsumer = mockk<InMemoryInfiniticConsumer> {
   coEvery {
     with(capture(scopeSlot)) {
-      startAsync(any<Subscription<*>>(), "$clientNameTest", 1, any(), any())
+      with(capture(loggerSlot)) {
+        startAsync(any<Subscription<*>>(), "$clientNameTest", 1, any(), any())
+      }
     }
   } answers {
     scopeSlot.captured.launch { delay(Long.MAX_VALUE) }
@@ -192,6 +196,7 @@ internal class InfiniticClientTests : StringSpec(
       val fakeWorkflowWithTags = client.newWorkflow(FakeWorkflow::class.java, tags = tags)
 
       beforeTest {
+        loggerSlot.clear()
         scopeSlot.clear()
         delaySlot.clear()
         taskTagSlots.clear()
@@ -227,13 +232,15 @@ internal class InfiniticClientTests : StringSpec(
         // when asynchronously dispatching a workflow, the consumer should not be started
         coVerify(exactly = 0) {
           with(client.clientScope) {
-            mockedConsumer.start(
-                MainSubscription(ClientTopic),
-                "$clientNameTest",
-                1,
-                any(),
-                any(),
-            )
+            with(InfiniticClient.logger) {
+              mockedConsumer.startAsync(
+                  MainSubscription(ClientTopic),
+                  "$clientNameTest",
+                  1,
+                  any(),
+                  any(),
+              )
+            }
           }
         }
       }
@@ -427,33 +434,36 @@ internal class InfiniticClientTests : StringSpec(
         val deferred2 = future2.await()
         // then
         workflowCmdSlots.size shouldBe 2
-        workflowCmdSlots[0] shouldBe DispatchWorkflow(
-            workflowName = WorkflowName(FakeWorkflow::class.java.name),
-            workflowId = WorkflowId(deferred1.id),
-            methodName = MethodName("m3"),
-            methodParameters = methodParametersFrom(0, "a"),
-            methodParameterTypes =
-            MethodParameterTypes(listOf(Int::class.java.name, String::class.java.name)),
-            workflowTags = setOf(),
-            workflowMeta = WorkflowMeta(),
-            requester = ClientRequester(clientName = ClientName.from(emitterNameTest)),
-            clientWaiting = false,
-            emitterName = emitterNameTest,
-            emittedAt = null,
-        )
-        workflowCmdSlots[1] shouldBe DispatchWorkflow(
-            workflowName = WorkflowName(FakeWorkflow::class.java.name),
-            workflowId = WorkflowId(deferred2.id),
-            methodName = MethodName("m2"),
-            methodParameters = methodParametersFrom("b"),
-            methodParameterTypes =
-            MethodParameterTypes(listOf(String::class.java.name)),
-            workflowTags = setOf(),
-            workflowMeta = WorkflowMeta(),
-            requester = ClientRequester(clientName = ClientName.from(emitterNameTest)),
-            clientWaiting = false,
-            emitterName = emitterNameTest,
-            emittedAt = null,
+        // we do not know what will be the order
+        setOf(workflowCmdSlots[0], workflowCmdSlots[1]) shouldBe setOf(
+            DispatchWorkflow(
+                workflowName = WorkflowName(FakeWorkflow::class.java.name),
+                workflowId = WorkflowId(deferred1.id),
+                methodName = MethodName("m3"),
+                methodParameters = methodParametersFrom(0, "a"),
+                methodParameterTypes =
+                MethodParameterTypes(listOf(Int::class.java.name, String::class.java.name)),
+                workflowTags = setOf(),
+                workflowMeta = WorkflowMeta(),
+                requester = ClientRequester(clientName = ClientName.from(emitterNameTest)),
+                clientWaiting = false,
+                emitterName = emitterNameTest,
+                emittedAt = null,
+            ),
+            DispatchWorkflow(
+                workflowName = WorkflowName(FakeWorkflow::class.java.name),
+                workflowId = WorkflowId(deferred2.id),
+                methodName = MethodName("m2"),
+                methodParameters = methodParametersFrom("b"),
+                methodParameterTypes =
+                MethodParameterTypes(listOf(String::class.java.name)),
+                workflowTags = setOf(),
+                workflowMeta = WorkflowMeta(),
+                requester = ClientRequester(clientName = ClientName.from(emitterNameTest)),
+                clientWaiting = false,
+                emitterName = emitterNameTest,
+                emittedAt = null,
+            ),
         )
       }
 
@@ -511,13 +521,15 @@ internal class InfiniticClientTests : StringSpec(
         // when waiting for a workflow, the consumer should be started
         coVerify {
           with(client.clientScope) {
-            mockedConsumer.startAsync(
-                MainSubscription(ClientTopic),
-                "$clientNameTest",
-                1,
-                any(),
-                any(),
-            )
+            with(InfiniticClient.logger) {
+              mockedConsumer.startAsync(
+                  MainSubscription(ClientTopic),
+                  "$clientNameTest",
+                  1,
+                  any(),
+                  any(),
+              )
+            }
           }
         }
 
@@ -527,13 +539,15 @@ internal class InfiniticClientTests : StringSpec(
         // the consumer should be started only once
         coVerify(exactly = 1) {
           with(client.clientScope) {
-            mockedConsumer.startAsync(
-                MainSubscription(ClientTopic),
-                "$clientNameTest",
-                1,
-                any(),
-                any(),
-            )
+            with(InfiniticClient.logger) {
+              mockedConsumer.startAsync(
+                  MainSubscription(ClientTopic),
+                  "$clientNameTest",
+                  1,
+                  any(),
+                  any(),
+              )
+            }
           }
         }
       }

@@ -20,19 +20,29 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.cloudEvents.logs
+package io.infinitic.cloudEvents
 
-private const val INFINITIC_PREFIX = "io.infinitic"
-private const val CLOUD_EVENTS = "$INFINITIC_PREFIX.cloudEvents"
+@Suppress("unused")
+data class EntityListConfig(
+  val listRefreshSeconds: Double = 60.0,
+  val allow: List<String>? = null,
+  val disallow: List<String> = listOf()
+) {
+  val listRefreshMillis = (listRefreshSeconds * 1000).toLong()
 
-private const val WORKFLOW_STATE_ENGINE = "WorkflowStateEngine"
-private const val WORKFLOW_TAG_ENGINE = "WorkflowTagEngine"
-private const val WORKFLOW_EXECUTOR = "WorkflowExecutor"
-private const val SERVICE_TAG_ENGINE = "ServiceTagEngine"
-private const val SERVICE_EXECUTOR = "ServiceExecutor"
+  init {
+    require(listRefreshSeconds >= 0) { error("'${::listRefreshSeconds.name}' must be >= 0, but was $listRefreshSeconds") }
 
-const val LOGS_WORKFLOW_STATE_ENGINE = "$CLOUD_EVENTS.$WORKFLOW_STATE_ENGINE"
-const val LOGS_WORKFLOW_TAG_ENGINE = "$CLOUD_EVENTS.$WORKFLOW_TAG_ENGINE"
-const val LOGS_WORKFLOW_EXECUTOR = "$CLOUD_EVENTS.$WORKFLOW_EXECUTOR"
-const val LOGS_SERVICE_TAG_ENGINE = "$CLOUD_EVENTS.$SERVICE_TAG_ENGINE"
-const val LOGS_SERVICE_EXECUTOR = "$CLOUD_EVENTS.$SERVICE_EXECUTOR"
+    allow?.forEach {
+      require(it.isNotEmpty()) { error("'${::allow.name}' must not contain empty element") }
+    }
+    disallow.forEach {
+      require(it.isNotEmpty()) { error("'${::disallow.name}' must not contain empty element") }
+    }
+  }
+
+  fun isIncluded(name: String) =
+      (allow == null || allow.contains(name)) && !disallow.contains(name)
+
+  private fun error(txt: String) = "eventListener: $txt"
+}

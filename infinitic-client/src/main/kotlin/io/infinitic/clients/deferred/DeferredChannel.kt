@@ -39,7 +39,7 @@ class DeferredChannel<R : SendChannel<*>> internal constructor(
     thisShouldNotHappen()
   }
 
-  override fun await(): R = channel
+  override suspend fun await(): R = channel
 
   override val id: String
     get() {

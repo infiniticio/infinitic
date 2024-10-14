@@ -34,11 +34,11 @@ import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import kotlinx.serialization.Serializable
 
 @Serializable
-sealed interface WorkflowStateEngineEventMessage : WorkflowMessageInterface {
+sealed interface WorkflowStateEventMessage : WorkflowMessageInterface {
   val workflowVersion: WorkflowVersion?
 }
 
-fun WorkflowStateEngineEventMessage.type(): WorkflowStateEngineEventMessageType = when (this) {
+fun WorkflowStateEventMessage.type(): WorkflowStateEngineEventMessageType = when (this) {
   is WorkflowCompletedEvent -> WorkflowStateEngineEventMessageType.WORKFLOW_COMPLETED
   is WorkflowCanceledEvent -> WorkflowStateEngineEventMessageType.WORKFLOW_CANCELED
   is MethodCommandedEvent -> WorkflowStateEngineEventMessageType.METHOD_DISPATCHED

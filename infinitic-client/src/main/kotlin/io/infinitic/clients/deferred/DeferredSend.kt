@@ -44,7 +44,7 @@ class DeferredSend<R : Any?> internal constructor(
   // in order to send asynchronously the message
   // despite the synchronous syntax: workflow.channel
   @Suppress("UNCHECKED_CAST")
-  override fun await(): R = Unit as R
+  override suspend fun await(): R = Unit as R
 
   override val id: String = signalId.toString()
 

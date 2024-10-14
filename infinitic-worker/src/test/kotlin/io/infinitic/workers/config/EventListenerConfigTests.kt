@@ -24,7 +24,9 @@ package io.infinitic.workers.config
 
 import io.cloudevents.CloudEvent
 import io.infinitic.cloudEvents.CloudEventListener
+import io.infinitic.cloudEvents.EntityListConfig
 import io.infinitic.common.utils.annotatedName
+import io.infinitic.events.config.EventListenerConfig
 import io.infinitic.workers.samples.ServiceA
 import io.infinitic.workers.samples.ServiceAImpl
 import io.infinitic.workers.samples.WorkflowA
@@ -36,7 +38,9 @@ import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.types.shouldBeInstanceOf
 
 internal class TestEventListener : CloudEventListener {
-  override fun onEvent(event: CloudEvent) {}
+  override fun onEvents(cloudEvents: List<CloudEvent>) {
+    // do nothing
+  }
 }
 
 internal class EventListenerConfigTests : StringSpec(
@@ -54,11 +58,8 @@ internal class EventListenerConfigTests : StringSpec(
         config.listener shouldBe listener
         config.concurrency shouldBe 1
         config.subscriptionName shouldBe null
-        config.refreshDelaySeconds shouldBe 60.0
-        config.allowedServices shouldBe null
-        config.allowedWorkflows shouldBe null
-        config.disallowedServices.size shouldBe 0
-        config.disallowedWorkflows.size shouldBe 0
+        config.serviceListConfig shouldBe EntityListConfig(60.0, null, listOf())
+        config.workflowListConfig shouldBe EntityListConfig(60.0, null, listOf())
       }
 
       "Can create EventListenerConfig through Yaml with default parameters" {
@@ -74,11 +75,8 @@ class: ${TestEventListener::class.java.name}
         config.listener::class shouldBe TestEventListener::class
         config.concurrency shouldBe 1
         config.subscriptionName shouldBe null
-        config.refreshDelaySeconds shouldBe 60.0
-        config.allowedServices shouldBe null
-        config.allowedWorkflows shouldBe null
-        config.disallowedServices.size shouldBe 0
-        config.disallowedWorkflows.size shouldBe 0
+        config.serviceListConfig shouldBe EntityListConfig(60.0, null, listOf())
+        config.workflowListConfig shouldBe EntityListConfig(60.0, null, listOf())
       }
 
       "Can create EventListenerConfig through builder with all parameters" {
@@ -87,7 +85,8 @@ class: ${TestEventListener::class.java.name}
               .setListener(listener)
               .setConcurrency(10)
               .setSubscriptionName("subscriptionName")
-              .setRefreshDelaySeconds(10.0)
+              .setServiceListRefreshSeconds(10.0)
+              .setWorkflowListRefreshSeconds(20.0)
               .allowServices("service1", "service2")
               .allowServices("service3")
               .allowServices(ServiceA::class.java)
@@ -107,30 +106,15 @@ class: ${TestEventListener::class.java.name}
         config.listener shouldBe listener
         config.concurrency shouldBe 10
         config.subscriptionName shouldBe "subscriptionName"
-        config.refreshDelaySeconds shouldBe 10.0
-        config.allowedServices shouldBe listOf(
-            "service1",
-            "service2",
-            "service3",
-            ServiceA::class.java.annotatedName,
+        config.serviceListConfig shouldBe EntityListConfig(
+            10.0,
+            listOf("service1", "service2", "service3", ServiceA::class.java.annotatedName),
+            listOf("service4", "service5", "service6", ServiceA::class.java.annotatedName),
         )
-        config.allowedWorkflows shouldBe listOf(
-            "workflow1",
-            "workflow2",
-            "workflow3",
-            WorkflowA::class.java.annotatedName,
-        )
-        config.disallowedServices shouldBe listOf(
-            "service4",
-            "service5",
-            "service6",
-            ServiceA::class.java.annotatedName,
-        )
-        config.disallowedWorkflows shouldBe listOf(
-            "workflow4",
-            "workflow5",
-            "workflow6",
-            WorkflowA::class.java.annotatedName,
+        config.workflowListConfig shouldBe EntityListConfig(
+            20.0,
+            listOf("workflow1", "workflow2", "workflow3", WorkflowA::class.java.annotatedName),
+            listOf("workflow4", "workflow5", "workflow6", WorkflowA::class.java.annotatedName),
         )
       }
 
@@ -143,6 +127,7 @@ concurrency: 10
 subscriptionName: subscriptionName
 refreshDelaySeconds: 10
 services:
+  listRefreshSeconds: 10
   allow:
     - service1
     - service2
@@ -152,6 +137,7 @@ services:
     - service5
     - service6
 workflows:
+  listRefreshSeconds: 20
   allow:
     - workflow1
     - workflow2
@@ -167,11 +153,16 @@ workflows:
         config.listener::class shouldBe TestEventListener::class
         config.concurrency shouldBe 10
         config.subscriptionName shouldBe "subscriptionName"
-        config.refreshDelaySeconds shouldBe 10.0
-        config.allowedServices shouldBe listOf("service1", "service2", "service3")
-        config.allowedWorkflows shouldBe listOf("workflow1", "workflow2", "workflow3")
-        config.disallowedServices shouldBe listOf("service4", "service5", "service6")
-        config.disallowedWorkflows shouldBe listOf("workflow4", "workflow5", "workflow6")
+        config.serviceListConfig shouldBe EntityListConfig(
+            10.0,
+            listOf("service1", "service2", "service3"),
+            listOf("service4", "service5", "service6"),
+        )
+        config.workflowListConfig shouldBe EntityListConfig(
+            20.0,
+            listOf("workflow1", "workflow2", "workflow3"),
+            listOf("workflow4", "workflow5", "workflow6"),
+        )
       }
 
       "Listener not implementing CloudEventListener should throw exception" {

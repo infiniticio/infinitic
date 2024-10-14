@@ -56,13 +56,15 @@ import io.infinitic.common.workflows.engine.messages.TimerDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.WaitWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowCanceledEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowCompletedEvent
-import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineCmdMessage
-import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineEventMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateCmdMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateEventMessage
 import io.infinitic.events.types.CANCEL
 import io.infinitic.events.types.CANCELED
 import io.infinitic.events.types.CANCEL_METHOD
-import io.infinitic.events.types.ENDED
+import io.infinitic.events.types.COMPLETED
+import io.infinitic.events.types.DISPATCH
+import io.infinitic.events.types.DISPATCH_METHOD
 import io.infinitic.events.types.EXECUTOR_COMPLETED
 import io.infinitic.events.types.EXECUTOR_DISPATCHED
 import io.infinitic.events.types.EXECUTOR_FAILED
@@ -82,8 +84,6 @@ import io.infinitic.events.types.SIGNAL
 import io.infinitic.events.types.SIGNAL_DISCARDED
 import io.infinitic.events.types.SIGNAL_DISPATCHED
 import io.infinitic.events.types.SIGNAL_RECEIVED
-import io.infinitic.events.types.START
-import io.infinitic.events.types.START_METHOD
 import io.infinitic.events.types.TASK_COMPLETED
 import io.infinitic.events.types.TASK_DISPATCHED
 import io.infinitic.events.types.TASK_FAILED
@@ -92,9 +92,9 @@ import io.infinitic.events.types.TIMER_COMPLETED
 import io.infinitic.events.types.TIMER_DISPATCHED
 import io.infinitic.events.types.TYPE_WORKFLOW
 
-internal fun WorkflowStateEngineCmdMessage.workflowSimpleType(): String? = when (this) {
-  is DispatchWorkflow -> START
-  is DispatchMethod -> START_METHOD
+internal fun WorkflowStateCmdMessage.workflowSimpleType(): String? = when (this) {
+  is DispatchWorkflow -> DISPATCH
+  is DispatchMethod -> DISPATCH_METHOD
   is CancelWorkflow -> when (workflowMethodId) {
     null -> CANCEL
     else -> CANCEL_METHOD
@@ -109,7 +109,7 @@ internal fun WorkflowStateEngineCmdMessage.workflowSimpleType(): String? = when 
 }
 
 internal fun WorkflowStateEngineMessage.workflowSimpleType(): String? = when (this) {
-  is WorkflowStateEngineCmdMessage -> null
+  is WorkflowStateCmdMessage -> null
   is RemoteTimerCompleted -> TIMER_COMPLETED
   is RemoteMethodCompleted -> REMOTE_METHOD_COMPLETED
   is RemoteMethodCanceled -> REMOTE_METHOD_CANCELED
@@ -133,10 +133,10 @@ internal fun WorkflowStateEngineMessage.workflowSimpleType(): String? = when (th
   }
 }
 
-internal fun WorkflowStateEngineEventMessage.workflowSimpleType(): String = when (this) {
-  is WorkflowCompletedEvent -> ENDED
+internal fun WorkflowStateEventMessage.workflowSimpleType(): String = when (this) {
+  is WorkflowCompletedEvent -> COMPLETED
   is WorkflowCanceledEvent -> CANCELED
-  is MethodCommandedEvent -> START_METHOD
+  is MethodCommandedEvent -> DISPATCH_METHOD
   is MethodCompletedEvent -> METHOD_COMPLETED
   is MethodFailedEvent -> METHOD_FAILED
   is MethodCanceledEvent -> METHOD_CANCELED
@@ -154,11 +154,11 @@ internal fun WorkflowStateEngineEventMessage.workflowSimpleType(): String = when
 }
 
 
-fun WorkflowStateEngineCmdMessage.workflowType(): String? =
+fun WorkflowStateCmdMessage.workflowType(): String? =
     this.workflowSimpleType()?.let { "$TYPE_WORKFLOW.$it" }
 
 fun WorkflowStateEngineMessage.workflowType(): String? =
     this.workflowSimpleType()?.let { "$TYPE_WORKFLOW.$it" }
 
-fun WorkflowStateEngineEventMessage.workflowType(): String =
+fun WorkflowStateEventMessage.workflowType(): String =
     "$TYPE_WORKFLOW." + workflowSimpleType()

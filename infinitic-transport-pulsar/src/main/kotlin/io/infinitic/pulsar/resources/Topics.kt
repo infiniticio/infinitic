@@ -53,9 +53,9 @@ import io.infinitic.common.transport.WorkflowTopic
 import io.infinitic.common.workflows.engine.messages.WorkflowCmdEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEventEnvelope
-import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineCmdMessage
-import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineEventMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateCmdMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateEventMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEnvelope
 import io.infinitic.pulsar.schemas.schemaDefinition
@@ -105,7 +105,7 @@ internal fun Topic<*>.nameDLQ(entity: String) =
  * @param S The type of the message contained in the topic.
  * @return The schema of the topic.
  */
-internal val <S : Message> Topic<S>.schema: Schema<Envelope<out S>>
+internal val <S : Message> Topic<S>.schema: Schema<Envelope<S>>
   get() = Schema.AVRO(schemaDefinition(envelopeClass))
 
 
@@ -159,7 +159,7 @@ internal fun getWorkflowNameFromTopicName(topicName: String): String? {
  * @return The envelope class that is associated with the topic.
  */
 @Suppress("UNCHECKED_CAST")
-internal val <S : Message> Topic<S>.envelopeClass: KClass<Envelope<out S>>
+internal val <S : Message> Topic<S>.envelopeClass: KClass<Envelope<S>>
   get() = when (this) {
     NamingTopic -> thisShouldNotHappen()
     ClientTopic -> ClientEnvelope::class
@@ -172,7 +172,7 @@ internal val <S : Message> Topic<S>.envelopeClass: KClass<Envelope<out S>>
     ServiceTagEngineTopic -> ServiceTagEnvelope::class
     ServiceExecutorTopic, ServiceExecutorRetryTopic -> ServiceExecutorEnvelope::class
     ServiceExecutorEventTopic -> ServiceEventEnvelope::class
-  } as KClass<Envelope<out S>>
+  } as KClass<Envelope<S>>
 
 @Suppress("UNCHECKED_CAST")
 internal fun <S : Message> Topic<S>.envelope(message: S) =
@@ -180,9 +180,9 @@ internal fun <S : Message> Topic<S>.envelope(message: S) =
       NamingTopic -> thisShouldNotHappen()
       ClientTopic -> ClientEnvelope.from(message as ClientMessage)
       WorkflowTagEngineTopic -> WorkflowTagEnvelope.from(message as WorkflowTagEngineMessage)
-      WorkflowStateCmdTopic -> WorkflowCmdEnvelope.from(message as WorkflowStateEngineCmdMessage)
+      WorkflowStateCmdTopic -> WorkflowCmdEnvelope.from(message as WorkflowStateCmdMessage)
       WorkflowStateEngineTopic, WorkflowStateTimerTopic -> WorkflowEngineEnvelope.from(message as WorkflowStateEngineMessage)
-      WorkflowStateEventTopic -> WorkflowEventEnvelope.from(message as WorkflowStateEngineEventMessage)
+      WorkflowStateEventTopic -> WorkflowEventEnvelope.from(message as WorkflowStateEventMessage)
       WorkflowExecutorTopic, WorkflowExecutorRetryTopic ->
         ServiceExecutorEnvelope.from(message as ServiceExecutorMessage)
 

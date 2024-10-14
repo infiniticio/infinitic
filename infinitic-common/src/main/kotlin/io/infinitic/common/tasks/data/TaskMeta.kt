@@ -38,7 +38,7 @@ import java.util.*
 @Serializable(with = TaskMetaSerializer::class)
 data class TaskMeta(val map: Map<String, ByteArray> = mutableMapOf()) :
   Map<String, ByteArray> by map, JsonAble {
-    
+
   override fun toJson() = JsonObject(
       map.mapValues { JsonPrimitive(Base64.getEncoder().encodeToString(it.value)) },
   )
@@ -54,6 +54,11 @@ data class TaskMeta(val map: Map<String, ByteArray> = mutableMapOf()) :
   }
 
   override fun hashCode() = map.hashCode()
+
+  companion object {
+    @JvmStatic
+    val BATCH_KEY = "batchKey"
+  }
 }
 
 object TaskMetaSerializer : KSerializer<TaskMeta> {

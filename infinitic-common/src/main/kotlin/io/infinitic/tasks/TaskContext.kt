@@ -45,6 +45,7 @@ interface TaskContext {
   val retrySequence: TaskRetrySequence
   val retryIndex: TaskRetryIndex
   val lastError: ExecutionError?
+  val batchKey: String?
   val tags: Set<String>
   val meta: MutableMap<String, ByteArray>
   val withTimeout: WithTimeout?

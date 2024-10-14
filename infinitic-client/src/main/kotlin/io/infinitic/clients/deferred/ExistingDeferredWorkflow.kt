@@ -53,7 +53,7 @@ class ExistingDeferredWorkflow<R> internal constructor(
   // this method retries workflowTask (unique for a workflow instance)
   override fun retryAsync() = dispatcher.retryWorkflowTaskAsync(workflowName, requestBy)
 
-  override fun await(): R = dispatcher.awaitExistingWorkflow(this, true)
+  override suspend fun await(): R = dispatcher.awaitExistingWorkflow(this, true)
 
   override val id by lazy {
     when (requestBy) {

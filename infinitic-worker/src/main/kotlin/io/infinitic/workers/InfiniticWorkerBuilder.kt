@@ -24,9 +24,9 @@
 
 package io.infinitic.workers
 
+import io.infinitic.events.config.EventListenerConfig
 import io.infinitic.storage.config.StorageConfig
 import io.infinitic.transport.config.TransportConfig
-import io.infinitic.workers.config.EventListenerConfig
 import io.infinitic.workers.config.InfiniticWorkerConfig
 import io.infinitic.workers.config.LogsConfig
 import io.infinitic.workers.config.ServiceConfig

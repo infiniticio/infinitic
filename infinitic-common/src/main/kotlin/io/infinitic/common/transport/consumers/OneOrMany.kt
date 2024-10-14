@@ -29,10 +29,10 @@ package io.infinitic.common.transport.consumers
  */
 sealed interface OneOrMany<D>
 
-internal class One<D>(val datum: D) : OneOrMany<D> {
+class One<D>(val datum: D) : OneOrMany<D> {
   override fun toString() = "One(${datum.toString()})"
 }
 
-internal class Many<D>(val data: List<D>) : OneOrMany<D> {
+class Many<D>(val data: List<D>) : OneOrMany<D> {
   override fun toString() = "Many($data})"
 }

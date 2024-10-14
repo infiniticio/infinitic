@@ -22,6 +22,7 @@
  */
 package io.infinitic.common.transport
 
+import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.messages.Message
 import kotlinx.coroutines.CoroutineScope
@@ -30,58 +31,65 @@ import kotlinx.coroutines.Job
 interface InfiniticConsumer {
 
   /**
-   * Starts consuming messages from a given subscription and processes them using the provided handler.
+   * Builds a list of transport consumers for a given subscription and entity.
    *
-   * The CoroutineScope context is used to start the endless loop that listen for messages
-   *
-   * @return a job corresponding to the endless loop processing
-   *
-   * @param S The type of the messages to be consumed.
+   * @param M The type of the messages to be consumed.
    * @param subscription The subscription from which to consume messages.
-   * @param entity The entity associated with this consumer. (typically a service name or workflow name)
-   * @param process The function to handle each consumed message and its publishing time.
-   * @param beforeDlq An optional function to be executed before sending the message to the dead-letter queue (DLQ).
-   * @param concurrency The number of concurrent message handlers to be used.
+   * @param entity The entity associated with this consumer.
+   * @param occurrence Optional parameter to specify the number of consumers to build.
+   * @return A list of transport consumers for the specified subscription and entity.
    */
-  context(CoroutineScope)
-  suspend fun <S : Message> startAsync(
-    subscription: Subscription<S>,
+  context(KLogger)
+  suspend fun <M : Message> buildConsumers(
+    subscription: Subscription<M>,
     entity: String,
-    concurrency: Int,
-    process: suspend (S, MillisInstant) -> Unit,
-    beforeDlq: (suspend (S?, Exception) -> Unit)?,
-    batchConfig: (suspend (S) -> BatchConfig?)? = null,
-    batchProcess: (suspend (List<S>, List<MillisInstant>) -> Unit)? = null
-  ): Job
+    occurrence: Int?
+  ): List<TransportConsumer<out TransportMessage<M>>>
+
+  context(KLogger)
+  suspend fun <M : Message> buildConsumer(
+    subscription: Subscription<M>,
+    entity: String,
+  ): TransportConsumer<out TransportMessage<M>> = buildConsumers(subscription, entity, null).first()
 
   /**
    * Starts consuming messages from a given subscription and processes them using the provided handler.
    *
    * The CoroutineScope context is used to start the endless loop that listen for messages
    *
-   * @param S The type of the messages to be consumed.
+   * @return a job corresponding to the endless loop processing
+   *
+   * @param M The type of the messages to be consumed.
    * @param subscription The subscription from which to consume messages.
    * @param entity The entity associated with this consumer. (typically a service name or workflow name)
    * @param process The function to handle each consumed message and its publishing time.
    * @param beforeDlq An optional function to be executed before sending the message to the dead-letter queue (DLQ).
    * @param concurrency The number of concurrent message handlers to be used.
    */
-  context(CoroutineScope)
-  suspend fun <S : Message> start(
-    subscription: Subscription<S>,
+  context(CoroutineScope, KLogger)
+  suspend fun <M : Message> startAsync(
+    subscription: Subscription<M>,
     entity: String,
     concurrency: Int,
-    process: suspend (S, MillisInstant) -> Unit,
-    beforeDlq: (suspend (S?, Exception) -> Unit)?,
-    batchConfig: (suspend (S) -> BatchConfig?)? = null,
-    batchProcess: (suspend (List<S>, List<MillisInstant>) -> Unit)? = null
-  ): Unit = startAsync(
-      subscription,
-      entity,
-      concurrency,
-      process,
-      beforeDlq,
-      batchConfig,
-      batchProcess,
+    process: suspend (M, MillisInstant) -> Unit,
+    beforeDlq: (suspend (M, Exception) -> Unit)? = null,
+    batchConfig: (suspend (M) -> BatchConfig?)? = null,
+    batchProcess: (suspend (List<M>, List<MillisInstant>) -> Unit)? = null
+  ): Job
+
+  /**
+   *
+   */
+  context(CoroutineScope, KLogger)
+  suspend fun <M : Message> start(
+    subscription: Subscription<M>,
+    entity: String,
+    concurrency: Int,
+    process: suspend (M, MillisInstant) -> Unit,
+    beforeDlq: (suspend (M, Exception) -> Unit)? = null,
+    batchConfig: (suspend (M) -> BatchConfig?)? = null,
+    batchProcess: (suspend (List<M>, List<MillisInstant>) -> Unit)? = null
+  ) = startAsync(
+      subscription, entity, concurrency, process, beforeDlq, batchConfig, batchProcess,
   ).join()
 }

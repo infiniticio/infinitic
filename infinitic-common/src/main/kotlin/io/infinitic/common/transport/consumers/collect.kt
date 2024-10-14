@@ -38,10 +38,12 @@ import kotlinx.coroutines.withContext
  *                If null, no processing is applied.
  */
 context(CoroutineScope, KLogger)
-internal fun <S> Channel<S>.collect(
+fun <S> Channel<S>.collect(
   process: (suspend (S) -> Unit)? = null
 ) {
   val callingScope: CoroutineScope = this@CoroutineScope
+
+  debug { "collect: starting listening channel ${this@collect.hashCode()}" }
 
   launch {
     withContext(NonCancellable) {

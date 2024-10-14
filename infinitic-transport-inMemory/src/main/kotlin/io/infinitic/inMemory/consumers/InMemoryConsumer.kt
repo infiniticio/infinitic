@@ -23,46 +23,49 @@
 package io.infinitic.inMemory.consumers
 
 import io.infinitic.common.messages.Message
+import io.infinitic.common.transport.Topic
 import io.infinitic.common.transport.TransportConsumer
 import io.infinitic.inMemory.channels.DelayedMessage
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.future.future
-import java.util.concurrent.CompletableFuture
 
+/**
+ * An in-memory implementation of a transport consumer that consumes messages from a Kotlin Coroutine [Channel].
+ *
+ * @param S The type of message being consumed, which must extend the [Message] interface.
+ * @property channel The channel from which messages are consumed.
+ */
 class InMemoryConsumer<S : Message>(
+  private val topic: Topic<S>,
   private val channel: Channel<S>
 ) : TransportConsumer<InMemoryTransportMessage<S>> {
-  val scope = CoroutineScope(Dispatchers.IO)
 
-  override fun receiveAsync(): CompletableFuture<InMemoryTransportMessage<S>> = scope.future {
-    InMemoryTransportMessage(channel.receive())
-  }
+  override suspend fun receive() = InMemoryTransportMessage(channel.receive(), topic)
 
-  override fun negativeAcknowledgeAsync(message: InMemoryTransportMessage<S>): CompletableFuture<Unit> =
-      scope.future {}
+  override val maxRedeliveryCount = 1
 
-  override fun acknowledgeAsync(message: InMemoryTransportMessage<S>): CompletableFuture<Unit> =
-      scope.future {}
+  override val name: String = toString()
 }
 
+/**
+ * An implementation of [TransportConsumer] that receives [InMemoryTransportMessage]
+ * instances from a Kotlin [Channel] containing delayed messages.
+ *
+ * @param S The type of the messages being consumed, which must implement [Message].
+ * @param channel A channel to receive delayed messages from.
+ */
 class InMemoryDelayedConsumer<S : Message>(
+  private val topic: Topic<S>,
   private val channel: Channel<DelayedMessage<S>>
 ) : TransportConsumer<InMemoryTransportMessage<S>> {
-  val scope = CoroutineScope(Dispatchers.IO)
 
-  override fun receiveAsync(): CompletableFuture<InMemoryTransportMessage<S>> = scope.future {
-    channel.receive().let { message ->
-      delay(message.after.millis)
-      InMemoryTransportMessage(message.message)
-    }
+  override suspend fun receive(): InMemoryTransportMessage<S> {
+    val message = channel.receive()
+    delay(message.after.millis)
+    return InMemoryTransportMessage(message.message, topic)
   }
 
-  override fun negativeAcknowledgeAsync(message: InMemoryTransportMessage<S>): CompletableFuture<Unit> =
-      scope.future {}
+  override val maxRedeliveryCount = 1
 
-  override fun acknowledgeAsync(message: InMemoryTransportMessage<S>): CompletableFuture<Unit> =
-      scope.future {}
+  override val name: String = toString()
 }

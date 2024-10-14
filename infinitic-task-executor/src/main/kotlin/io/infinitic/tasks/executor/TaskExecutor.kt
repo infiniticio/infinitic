@@ -22,6 +22,7 @@
  */
 package io.infinitic.tasks.executor
 
+import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.annotations.Delegated
 import io.infinitic.clients.InfiniticClientInterface
@@ -38,6 +39,7 @@ import io.infinitic.common.requester.workflowName
 import io.infinitic.common.requester.workflowVersion
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
+import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.events.messages.TaskCompletedEvent
 import io.infinitic.common.tasks.events.messages.TaskFailedEvent
 import io.infinitic.common.tasks.events.messages.TaskRetriedEvent
@@ -103,13 +105,30 @@ class TaskExecutor(
     executeTasks.process()
   }
 
+  context(KLogger)
   fun getBatchConfig(msg: ServiceExecutorMessage): BatchConfig? =
       when (msg) {
         is ExecuteTask -> msg.getBatchConfig()
       }
 
-  private fun ExecuteTask.getBatchConfig(): BatchConfig? =
-      getInstanceAndMethod().second.getBatchConfig()
+  context(KLogger)
+  private fun ExecuteTask.getBatchConfig(): BatchConfig? {
+    val (instance, method) = getInstanceAndMethod()
+    // get batch config for method
+    val methodBatchConfig = method.getBatchConfig()
+    // get batch key from message meta data
+    val messageBatchKey = taskMeta[TaskMeta.BATCH_KEY]?.let { String(it) }
+    // if messageBatchKey is defined, user should add a @batch method
+    if (methodBatchConfig == null && messageBatchKey != null) {
+      warn {
+        "Task $taskId has a batch key $messageBatchKey, but there is " +
+            "no @Batch method for method (${instance::class.java.name}.${method.name}))"
+      }
+    }
+    return methodBatchConfig?.copy(
+        batchKey = methodBatchConfig.batchKey + (messageBatchKey?.let { "_$it" } ?: ""),
+    )
+  }
 
   private data class TaskData(
     val instance: Any,
@@ -135,7 +154,8 @@ class TaskExecutor(
         .invoke(instance, batchMethod.getArgs(argsMap)) as Map<String, Any?>
   }
 
-  private fun Map<String, TaskContext>.toMetaMap() = map { (k, v) -> TaskId(k) to v.meta }.toMap()
+  private fun BatchData.toMetaMap(): Map<TaskId, MutableMap<String, ByteArray>> =
+      contextMap.mapValues { it.value.meta }
 
   private suspend fun List<ExecuteTask>.process() = coroutineScope {
     // Signal that the tasks have started
@@ -156,15 +176,14 @@ class TaskExecutor(
 
     when {
       unknownFromOutput.isNotEmpty() -> sendTaskFailed(
-          Exception("Unknown keys: ${unknownFromOutput.joinToString()}}"),
-          Task.batchContext.toMetaMap(),
+          Exception("Unknown keys: ${unknownFromOutput.joinToString()}}"), batchData.toMetaMap(),
       ) {
         "Error in the return values of the @batch ${batchData.batchMethod.batch.name} method return value"
       }
 
       missingFromOutput.isNotEmpty() -> sendTaskFailed(
           Exception("Missing keys: ${missingFromOutput.joinToString()}}"),
-          Task.batchContext.toMetaMap(),
+          batchData.toMetaMap(),
       ) {
         "Error in the return values of the @batch ${batchData.batchMethod.batch.name} method return value"
       }
@@ -174,21 +193,25 @@ class TaskExecutor(
     }
   }
 
-  private suspend fun ExecuteTask.process() = coroutineScope {
-    // Signal that the task has started
-    sendTaskStarted()
+  private suspend fun ExecuteTask.process() {
+    logDebug { "Start processing $this" }
+    coroutineScope {
+      // Signal that the task has started
+      sendTaskStarted()
 
-    // Parse the task data. If parsing fails, return without proceeding
-    val taskData = parseTask().getOrElse { return@coroutineScope }
+      // Parse the task data. If parsing fails, return without proceeding
+      val taskData = parseTask().getOrElse { return@coroutineScope }
 
-    // Get the task timeout. If this operation fails, return without proceeding
-    val timeout = getTaskTimeout(taskData).getOrElse { return@coroutineScope }
+      // Get the task timeout. If this operation fails, return without proceeding
+      val timeout = getTaskTimeout(taskData).getOrElse { return@coroutineScope }
 
-    // Execute the task with the specified timeout. If this operation fails, return without proceeding
-    val output = executeWithTimeout(taskData, timeout).getOrElse { return@coroutineScope }
+      // Execute the task with the specified timeout. If this operation fails, return without proceeding
+      val output = executeWithTimeout(taskData, timeout).getOrElse { return@coroutineScope }
 
-    // Signal that the task has completed successfully
-    sendTaskCompleted(output, taskData)
+      // Signal that the task has completed successfully
+      sendTaskCompleted(output, taskData)
+    }
+    logTrace { "Ended processing $this" }
   }
 
   private suspend fun List<ExecuteTask>.sendTaskStarted() = coroutineScope {
@@ -264,7 +287,7 @@ class TaskExecutor(
     return try {
       withTimeout(timeout) {
         coroutineScope {
-          Task.setBatchContext(batchData.contextMap.mapKeys { it.toString() })
+          batchData.contextMap.map { (k, v) -> Task.setContext(k.toString(), v) }
           Result.success(batchData.invoke())
         }
       }
@@ -275,7 +298,7 @@ class TaskExecutor(
       handleInvocationTargetException(batchData, e)
       Result.failure(e)
     } catch (e: Exception) {
-      sendTaskFailed(e, Task.batchContext.toMetaMap()) {
+      sendTaskFailed(e, batchData.toMetaMap()) {
         "An error occurred while processing batch messages"
       }
       Result.failure(e)

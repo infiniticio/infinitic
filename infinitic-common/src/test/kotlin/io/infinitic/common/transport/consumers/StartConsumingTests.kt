@@ -57,10 +57,8 @@ internal class StartConsumingTests : StringSpec(
 
       "Error in receiveAsync should close the channel and cancel the scope" {
         class ErrorConsumer : IntConsumer() {
-          override fun receiveAsync() = super.receiveAsync().thenApply {
-            it.also {
-              if (it.value == 100) throw Error("Expected Error")
-            }
+          override suspend fun receive() = super.receive().also {
+            if (it.value == 100) throw Error("Expected Error")
           }
         }
 
@@ -80,10 +78,8 @@ internal class StartConsumingTests : StringSpec(
 
       "Exception in receiveAsync should not close the channel neither cancel the scope" {
         class ExceptionConsumer : IntConsumer() {
-          override fun receiveAsync() = super.receiveAsync().thenApply {
-            it.also {
-              if (it.value == 100) throw Exception("Expected Exception")
-            }
+          override suspend fun receive() = super.receive().also {
+            if (it.value == 100) throw Exception("Expected Exception")
           }
         }
 

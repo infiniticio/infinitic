@@ -24,6 +24,7 @@ package io.infinitic.workers.config
 
 import io.cloudevents.CloudEvent
 import io.infinitic.cloudEvents.CloudEventListener
+import io.infinitic.events.config.EventListenerConfig
 import io.infinitic.storage.config.InMemoryConfig
 import io.infinitic.storage.config.InMemoryStorageConfig
 import io.infinitic.transport.config.InMemoryTransportConfig
@@ -38,7 +39,7 @@ import io.kotest.matchers.shouldBe
 internal class ConfigGetterInterfaceTests : StringSpec(
     {
       class TestEventListener : CloudEventListener {
-        override fun onEvent(event: CloudEvent) {}
+        override fun onEvents(cloudEvents: List<CloudEvent>) {}
       }
 
       val transport = InMemoryTransportConfig()

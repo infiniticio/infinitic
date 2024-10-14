@@ -22,15 +22,22 @@
  */
 package io.infinitic.common.transport
 
-import kotlinx.coroutines.future.await
-import java.util.concurrent.CompletableFuture
+interface TransportConsumer<T : TransportMessage<*>> {
+  /**
+   * Receives a transport message from the consumer.
+   *
+   * @return A message of type [T] received from the transport.
+   */
+  suspend fun receive(): T
 
-interface TransportConsumer<T : TransportMessage> {
-  fun receiveAsync(): CompletableFuture<T>
+  /**
+   * Defines the maximum number of times a message can be redelivered
+   * when processing messages from a transport consumer.
+   */
+  val maxRedeliveryCount: Int
 
-  fun acknowledgeAsync(message: T): CompletableFuture<Unit>
-  fun negativeAcknowledgeAsync(message: T): CompletableFuture<Unit>
-
-  suspend fun acknowledge(message: T): Unit = acknowledgeAsync(message).await()
-  suspend fun negativeAcknowledge(message: T): Unit = negativeAcknowledgeAsync(message).await()
+  /**
+   * Represents the name of the TransportConsumer. Used for Logging only
+   */
+  val name: String
 }

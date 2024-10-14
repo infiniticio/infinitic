@@ -23,15 +23,16 @@
 
 package io.infinitic.events.messages
 
-import com.fasterxml.jackson.module.kotlin.jsonMapper
 import io.cloudevents.CloudEvent
-import io.cloudevents.jackson.JsonFormat
 import io.infinitic.cloudEvents.CloudEventListener
 import io.infinitic.common.clients.data.ClientName
+import io.infinitic.common.data.MillisInstant
+import io.infinitic.common.data.methods.MethodArgs
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.messages.Message
 import io.infinitic.common.requester.ClientRequester
+import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.events.messages.ServiceExecutorEventMessage
 import io.infinitic.common.tasks.events.messages.TaskCompletedEvent
@@ -82,19 +83,22 @@ import io.infinitic.common.workflows.engine.messages.TimerDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.WaitWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowCanceledEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowCompletedEvent
-import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineCmdMessage
-import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineEventMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateCmdMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateEventMessage
+import io.infinitic.events.config.EventListenerConfig
+import io.infinitic.events.toCloudEvent
+import io.infinitic.events.toJsonString
 import io.infinitic.storage.config.InMemoryStorageConfig
 import io.infinitic.transport.config.InMemoryTransportConfig
 import io.infinitic.workers.InfiniticWorker
-import io.infinitic.workers.config.EventListenerConfig
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.Runs
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
+import io.mockk.slot
 import kotlinx.coroutines.delay
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
@@ -103,9 +107,9 @@ import net.bytebuddy.utility.RandomString
 import java.net.URI
 import kotlin.reflect.full.isSubclassOf
 
-private val events = mutableListOf<CloudEvent>()
+private val events = slot<List<CloudEvent>>()
 private val eventListener = mockk<CloudEventListener> {
-  every { onEvent(capture(events)) } just Runs
+  every { onEvents(capture(events)) } just Runs
 }
 
 private val transport = InMemoryTransportConfig()
@@ -116,80 +120,15 @@ private val worker = InfiniticWorker.builder()
     .setEventListener(
         EventListenerConfig.builder()
             .setListener(eventListener)
-            .setRefreshDelaySeconds(0.0)
-            .setConcurrency(2),
+            .setServiceListRefreshSeconds(0.0)
+            .setWorkflowListRefreshSeconds(0.0)
+            .setBatch(10, 0.001)
+            .setConcurrency(10),
     )
     .build()
 
 private suspend fun <T : Message> T.sendToTopic(topic: Topic<T>) {
   with(transport.producer) { sendTo(topic) }
-  // wait a bit to let listener do its work
-  // and the listener to discover new services and workflows
-  delay(100)
-}
-
-suspend fun main() {
-  worker.startAsync()
-
-  ServiceExecutorMessage::class.sealedSubclasses.forEach {
-    events.clear()
-    val message = TestFactory.random(it, mapOf("serviceName" to ServiceName("ServiceA")))
-    message.sendToTopic(ServiceExecutorTopic)
-
-    events.firstOrNull()?.let { event ->
-      val json = String(JsonFormat().serialize(event))
-      println(message)
-      println(jsonMapper().readTree(json).toPrettyString())
-    }
-  }
-
-  ServiceExecutorEventMessage::class.sealedSubclasses.forEach {
-    events.clear()
-    val message = TestFactory.random(it, mapOf("serviceName" to ServiceName("ServiceA")))
-    message.sendToTopic(ServiceExecutorEventTopic)
-    events.firstOrNull()?.let { event ->
-      val json = String(JsonFormat().serialize(event))
-      println(message)
-      println(jsonMapper().readTree(json).toPrettyString())
-    }
-  }
-
-  WorkflowStateEngineCmdMessage::class.sealedSubclasses.forEach {
-    events.clear()
-    val message = TestFactory.random(it, mapOf("workflowName" to WorkflowName("WorkflowA")))
-    message.sendToTopic(WorkflowStateCmdTopic)
-    events.firstOrNull()?.let { event ->
-      val json = String(JsonFormat().serialize(event))
-      println(message)
-      println(jsonMapper().readTree(json).toPrettyString())
-    }
-  }
-
-  WorkflowStateEngineMessage::class.sealedSubclasses.forEach {
-    if (!it.isSubclassOf(WorkflowStateEngineCmdMessage::class)) {
-      events.clear()
-      val message = TestFactory.random(it, mapOf("workflowName" to WorkflowName("WorkflowA")))
-      message.sendToTopic(WorkflowStateEngineTopic)
-      events.firstOrNull()?.let { event ->
-        val json = String(JsonFormat().serialize(event))
-        println(message)
-        println(jsonMapper().readTree(json).toPrettyString())
-      }
-    }
-  }
-
-  WorkflowStateEngineEventMessage::class.sealedSubclasses.forEach {
-    events.clear()
-    val message = TestFactory.random(it, mapOf("workflowName" to WorkflowName("WorkflowA")))
-    message.sendToTopic(WorkflowStateEventTopic)
-    events.firstOrNull()?.let { event ->
-      val json = String(JsonFormat().serialize(event))
-      println(message)
-      println(jsonMapper().readTree(json).toPrettyString())
-    }
-  }
-
-  worker.close()
 }
 
 internal class CloudEventTests : StringSpec(
@@ -206,22 +145,46 @@ internal class CloudEventTests : StringSpec(
         events.clear()
       }
 
+      "Checking ExecuteTask" {
+        val random = TestFactory.random(
+            ExecuteTask::class,
+            mapOf("serviceName" to ServiceName("ServiceA")),
+        )
+
+        val args = listOf("a", 1, 2.0, true)
+        val message = random.copy(
+            methodArgs = MethodArgs(
+                args.mapIndexed { _, value ->
+                  SerializedData.encode(
+                      value,
+                      type = value::class.javaObjectType,
+                      jsonViewClass = null,
+                  )
+                }.toList(),
+            ),
+        )
+        val event = message.toCloudEvent(ServiceExecutorTopic, MillisInstant.now(), "test")!!
+        println(event.toJsonString(true))
+      }
+
       ServiceExecutorMessage::class.sealedSubclasses.forEach {
         "Check ${it.simpleName} event envelope from Service Executor topic" {
           val message = TestFactory.random(it, mapOf("serviceName" to ServiceName("ServiceA")))
+          if (message is ExecuteTask) {
+            message.methodArgs
+          }
           message.sendToTopic(ServiceExecutorTopic)
-
-          // first test is slow down in GitHub
+          // first test slow down for GitHub
           delay(2000)
 
-          events.size shouldBe 1
-          val event = events.first()
+          events.isCaptured shouldBe true
+          val event = events.captured.first()
           event.id shouldBe message.messageId.toString()
           event.source shouldBe URI("inMemory/services/executor/ServiceA")
           event.dataContentType shouldBe "application/json"
           event.subject shouldBe message.taskId.toString()
           event.type shouldBe when (it) {
-            ExecuteTask::class -> "infinitic.task.start"
+            ExecuteTask::class -> "infinitic.task.dispatch"
             else -> thisShouldNotHappen()
           }
         }
@@ -232,8 +195,9 @@ internal class CloudEventTests : StringSpec(
           val message = TestFactory.random(it, mapOf("serviceName" to ServiceName("ServiceA")))
           message.sendToTopic(ServiceExecutorEventTopic)
 
-          events.size shouldBe 1
-          val event = events.first()
+          delay(100)
+          events.isCaptured shouldBe true
+          val event = events.captured.first()
           event.id shouldBe message.messageId.toString()
           event.source shouldBe URI("inMemory/services/executor/ServiceA")
           event.dataContentType shouldBe "application/json"
@@ -262,13 +226,14 @@ internal class CloudEventTests : StringSpec(
               ),
           )
           message.sendToTopic(WorkflowExecutorTopic)
+          delay(100)
 
-          events.size shouldBe 1
-          val event = events.first()
+          events.isCaptured shouldBe true
+          val event = events.captured.first()
           event.source shouldBe URI("inMemory/workflows/executor/WorkflowA")
           event.subject shouldBe message.taskId.toString()
           event.type shouldBe when (it) {
-            ExecuteTask::class -> "infinitic.task.start"
+            ExecuteTask::class -> "infinitic.task.dispatch"
             else -> thisShouldNotHappen()
           }
         }
@@ -287,9 +252,10 @@ internal class CloudEventTests : StringSpec(
             message = (message as TaskCompletedEvent).copy(isDelegated = false)
           }
           message.sendToTopic(WorkflowExecutorEventTopic)
+          delay(100)
 
-          events.size shouldBe 1
-          val event = events.first()
+          events.isCaptured shouldBe true
+          val event = events.captured.first()
           event.source shouldBe URI("inMemory/workflows/executor/WorkflowA")
           event.subject shouldBe message.taskId.toString()
           event.type shouldBe when (it) {
@@ -302,10 +268,11 @@ internal class CloudEventTests : StringSpec(
         }
       }
 
-      WorkflowStateEngineCmdMessage::class.sealedSubclasses.forEach {
+      WorkflowStateCmdMessage::class.sealedSubclasses.forEach {
         "Check ${it.simpleName} event envelope from cmd topic" {
           val message = TestFactory.random(it, mapOf("workflowName" to WorkflowName("WorkflowA")))
           message.sendToTopic(WorkflowStateCmdTopic)
+          delay(100)
 
           val type = when (it) {
             CancelWorkflow::class -> when ((message as CancelWorkflow).workflowMethodId) {
@@ -315,8 +282,8 @@ internal class CloudEventTests : StringSpec(
 
             CompleteTimers::class -> null
             CompleteWorkflow::class -> null
-            DispatchMethod::class -> "infinitic.workflow.startMethod"
-            DispatchWorkflow::class -> "infinitic.workflow.start"
+            DispatchMethod::class -> "infinitic.workflow.dispatchMethod"
+            DispatchWorkflow::class -> "infinitic.workflow.dispatch"
             RetryTasks::class -> "infinitic.workflow.retryTask"
             RetryWorkflowTask::class -> "infinitic.workflow.retryExecutor"
             SendSignal::class -> "infinitic.workflow.signal"
@@ -324,9 +291,9 @@ internal class CloudEventTests : StringSpec(
             else -> thisShouldNotHappen()
           }
 
-          events.size shouldBe if (type == null) 0 else 1
-          if (events.size == 1) {
-            val event = events.first()
+          events.isCaptured shouldBe (type != null)
+          if (events.isCaptured) {
+            val event = events.captured.first()
             event.id shouldBe message.messageId.toString()
             event.source shouldBe URI("inMemory/workflows/stateEngine/WorkflowA")
             event.dataContentType shouldBe "application/json"
@@ -336,20 +303,22 @@ internal class CloudEventTests : StringSpec(
         }
       }
 
-      // TODO complete this test and add similar tests for all other events
+// TODO complete this test and add similar tests for all other events
       "Check infinitic.task.dispatched data" {
         val message = TestFactory.random<ExecuteTask>(
             mapOf("serviceName" to ServiceName("ServiceA")),
         )
         message.sendToTopic(ServiceExecutorTopic)
+        delay(100)
 
-        events.size shouldBe 1
-        val event = events.first()
+        events.isCaptured shouldBe true
+        val event = events.captured.first()
         val json = Json.parseToJsonElement(String(event.data!!.toBytes())).jsonObject
         json["taskName"]!!.jsonPrimitive.content shouldBe message.methodName.toString()
       }
 
-      WorkflowStateEngineCmdMessage::class.sealedSubclasses.forEach {
+      events.clear()
+      WorkflowStateCmdMessage::class.sealedSubclasses.forEach {
         "No ${it.simpleName} event should come from engine topic" {
           val message = TestFactory.random(
               it,
@@ -359,12 +328,13 @@ internal class CloudEventTests : StringSpec(
               ),
           )
           message.sendToTopic(WorkflowStateEngineTopic)
-          events.size shouldBe 0
+          events.isCaptured shouldBe false
         }
       }
 
+      events.clear()
       WorkflowStateEngineMessage::class.sealedSubclasses.forEach {
-        if (!it.isSubclassOf(WorkflowStateEngineCmdMessage::class)) {
+        if (!it.isSubclassOf(WorkflowStateCmdMessage::class)) {
           "Check ${it.simpleName} event envelope from engine topic" {
             val message = TestFactory.random(
                 it,
@@ -373,6 +343,7 @@ internal class CloudEventTests : StringSpec(
                 ),
             )
             message.sendToTopic(WorkflowStateEngineTopic)
+            delay(100)
 
             val type = when (it) {
               RemoteMethodCanceled::class -> "infinitic.workflow.remoteMethodCanceled"
@@ -388,9 +359,9 @@ internal class CloudEventTests : StringSpec(
               else -> thisShouldNotHappen()
             }
 
-            events.size shouldBe if (type == null) 0 else 1
-            if (events.size == 1) {
-              val event = events.first()
+            events.isCaptured shouldBe (type != null)
+            if (events.isCaptured) {
+              val event = events.captured.first()
               event.id shouldBe message.messageId.toString()
               event.source shouldBe URI("inMemory/workflows/stateEngine/WorkflowA")
               event.dataContentType shouldBe "application/json"
@@ -401,18 +372,20 @@ internal class CloudEventTests : StringSpec(
         }
       }
 
-      WorkflowStateEngineEventMessage::class.sealedSubclasses.forEach {
+      events.clear()
+      WorkflowStateEventMessage::class.sealedSubclasses.forEach {
         "Check ${it.simpleName} event envelope from events topic" {
           val message = TestFactory.random(
               it,
               mapOf("workflowName" to WorkflowName("WorkflowA")),
           )
           message.sendToTopic(WorkflowStateEventTopic)
+          delay(100)
 
           val type = when (it) {
-            WorkflowCompletedEvent::class -> "infinitic.workflow.ended"
+            WorkflowCompletedEvent::class -> "infinitic.workflow.completed"
             WorkflowCanceledEvent::class -> "infinitic.workflow.canceled"
-            MethodCommandedEvent::class -> "infinitic.workflow.startMethod"
+            MethodCommandedEvent::class -> "infinitic.workflow.dispatchMethod"
             MethodCompletedEvent::class -> "infinitic.workflow.methodCompleted"
             MethodFailedEvent::class -> "infinitic.workflow.methodFailed"
             MethodCanceledEvent::class -> "infinitic.workflow.methodCanceled"
@@ -426,9 +399,9 @@ internal class CloudEventTests : StringSpec(
             else -> thisShouldNotHappen()
           }
 
-          events.size shouldBe 1
-          if (events.size == 1) {
-            val event = events.first()
+          events.isCaptured shouldBe true
+          if (events.isCaptured) {
+            val event = events.captured.first()
             event.id shouldBe message.messageId.toString()
             event.source shouldBe URI("inMemory/workflows/stateEngine/WorkflowA")
             event.dataContentType shouldBe "application/json"
@@ -441,3 +414,4 @@ internal class CloudEventTests : StringSpec(
 ) {
 
 }
+

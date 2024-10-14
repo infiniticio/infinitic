@@ -36,8 +36,8 @@ import io.infinitic.common.workflows.data.steps.Step
 import io.infinitic.common.workflows.data.steps.StepStatus
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEventEnvelope
-import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineEventMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateEventMessage
 import org.jeasy.random.EasyRandom
 import org.jeasy.random.EasyRandomParameters
 import org.jeasy.random.FieldPredicates
@@ -86,7 +86,7 @@ object TestFactory {
           WorkflowEngineEnvelope.from(random(sub))
         }
         .randomize(WorkflowEventEnvelope::class.java) {
-          val sub = WorkflowStateEngineEventMessage::class.sealedSubclasses.shuffled().first()
+          val sub = WorkflowStateEventMessage::class.sealedSubclasses.shuffled().first()
           WorkflowEventEnvelope.from(random(sub))
         }
         .randomize(ServiceEventEnvelope::class.java) {

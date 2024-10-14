@@ -22,7 +22,7 @@
  */
 package io.infinitic.common.transport.consumers
 
-internal class Result<M : Any, out T> internal constructor(
+class Result<out M, out T> internal constructor(
   private val message: M,
   private val value: Any?
 ) {
@@ -71,13 +71,13 @@ internal class Result<M : Any, out T> internal constructor(
     /**
      * Returns an instance that encapsulates the given [value] as successful value.
      */
-    fun <M : Any, T> success(message: M, value: T): Result<M, T> =
+    fun <M, T> success(message: M, value: T): Result<M, T> =
         Result(message, value)
 
     /**
      * Returns an instance that encapsulates the given [Exception] [exception] as failure.
      */
-    fun <M : Any, T> failure(message: M, exception: Exception): Result<M, T> =
+    fun <M, T> failure(message: M, exception: Exception): Result<M, T> =
         Result(message, Failure(exception))
   }
 

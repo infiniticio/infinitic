@@ -26,11 +26,12 @@ import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.common.transport.TransportConsumer
 import io.infinitic.common.transport.TransportMessage
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.future.await
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.coroutines.cancellation.CancellationException
 
 /**
@@ -41,14 +42,20 @@ import kotlin.coroutines.cancellation.CancellationException
  * @return A channel that emits Result objects containing the original and resulting messages.
  */
 context(CoroutineScope, KLogger)
-internal fun <S : TransportMessage> TransportConsumer<S>.startConsuming(): Channel<Result<S, S>> {
-  val channel = Channel<Result<S, S>>()
-  val scope = this@CoroutineScope
+fun <T : TransportMessage<M>, M> TransportConsumer<T>.startConsuming(
+  channel: Channel<Result<TransportMessage<M>, TransportMessage<M>>> = Channel(),
+): Channel<Result<T, T>> {
+  debug { "startConsuming: starting producing on channel ${channel.hashCode()} from ${this@startConsuming.name}" }
 
-  scope.launch {
+  launch {
+    debug { "startConsuming: adding producer to consuming channel ${channel.hashCode()}" }
+    channel.addProducer()
+    trace { "startConsuming: producer added to consuming channel ${channel.hashCode()}" }
     while (isActive) {
       try {
-        val msg = receiveAsync().await().also { trace { "consuming: received $it" } }
+        val msg = receive().also {
+          trace { "consuming: received $it from ${this@startConsuming.name}" }
+        }
         channel.send(Result.success(msg, msg))
       } catch (e: CancellationException) {
         // do nothing, will exit if calling scope is not active anymore
@@ -56,13 +63,18 @@ internal fun <S : TransportMessage> TransportConsumer<S>.startConsuming(): Chann
         warn(e) { "Exception when receiving message from $this" }
       } catch (e: Error) {
         warn(e) { "Error when receiving message from $this" }
-        // canceling current scope
-        scope.cancel()
+        // canceling current scope (warning scope is different from inside launch)
+        // that's why we define the scope variable at the very beginning
+        this@CoroutineScope.cancel()
       }
     }
-    debug { "consuming: exiting" }
-    channel.close()
+    withContext(NonCancellable) {
+      debug { "startConsuming: exiting, removing producer from consuming channel ${channel.hashCode()}" }
+      channel.removeProducer()
+      trace { "startConsuming: exited, producer removed from consuming channel ${channel.hashCode()}" }
+    }
   }
 
-  return channel
+  @Suppress("UNCHECKED_CAST")
+  return channel as Channel<Result<T, T>>
 }

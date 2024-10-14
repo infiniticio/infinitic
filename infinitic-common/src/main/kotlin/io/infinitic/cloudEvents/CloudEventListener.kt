@@ -27,6 +27,6 @@ import io.cloudevents.CloudEvent
 
 fun interface CloudEventListener {
 
-  fun onEvent(event: CloudEvent)
+  fun onEvents(cloudEvents: List<CloudEvent>)
 
 }
