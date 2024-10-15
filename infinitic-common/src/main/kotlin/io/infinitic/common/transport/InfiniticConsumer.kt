@@ -53,32 +53,39 @@ interface InfiniticConsumer {
   ): TransportConsumer<out TransportMessage<M>> = buildConsumers(subscription, entity, null).first()
 
   /**
-   * Starts consuming messages from a given subscription and processes them using the provided handler.
+   * Starts asynchronous processing of messages for a given subscription.
    *
-   * The CoroutineScope context is used to start the endless loop that listen for messages
-   *
-   * @return a job corresponding to the endless loop processing
-   *
-   * @param M The type of the messages to be consumed.
    * @param subscription The subscription from which to consume messages.
-   * @param entity The entity associated with this consumer. (typically a service name or workflow name)
-   * @param process The function to handle each consumed message and its publishing time.
-   * @param beforeDlq An optional function to be executed before sending the message to the dead-letter queue (DLQ).
-   * @param concurrency The number of concurrent message handlers to be used.
+   * @param entity The entity associated with the consumer.
+   * @param concurrency The number of concurrent coroutines for processing messages.
+   * @param process A suspending function to process the deserialized message along with its publishing time.
+   * @param beforeDlq An optional suspending function to execute before sending a message to DLQ.
+   * @param batchConfig An optional suspending function to configure message batching.
+   * @param batchProcess An optional suspending function to process batches of messages.
+   * @return A Job representing the coroutine that runs the consuming process.
    */
   context(CoroutineScope, KLogger)
-  suspend fun <M : Message> startAsync(
-    subscription: Subscription<M>,
+  suspend fun <S : Message> startAsync(
+    subscription: Subscription<S>,
     entity: String,
     concurrency: Int,
-    process: suspend (M, MillisInstant) -> Unit,
-    beforeDlq: (suspend (M, Exception) -> Unit)? = null,
-    batchConfig: (suspend (M) -> BatchConfig?)? = null,
-    batchProcess: (suspend (List<M>, List<MillisInstant>) -> Unit)? = null
+    process: suspend (S, MillisInstant) -> Unit,
+    beforeDlq: (suspend (S, Exception) -> Unit)? = null,
+    batchConfig: (suspend (S) -> BatchConfig?)? = null,
+    batchProcess: (suspend (List<S>, List<MillisInstant>) -> Unit)? = null
   ): Job
 
   /**
+   * Starts processing messages from a given subscription.
    *
+   * @param M The type of the messages to be consumed.
+   * @param subscription The subscription from which to consume messages.
+   * @param entity The entity associated with the consumer.
+   * @param concurrency The number of concurrent coroutines for processing messages.
+   * @param process A suspending function to process the deserialized message along with its publishing time.
+   * @param beforeDlq An optional suspending function to execute before sending a message to DLQ.
+   * @param batchConfig An optional suspending function to configure message batching.
+   * @param batchProcess An optional suspending function to process batches of messages.
    */
   context(CoroutineScope, KLogger)
   suspend fun <M : Message> start(

@@ -34,6 +34,7 @@ internal interface BatchWorkflow {
   fun foo3(foo: Int, bar: Int): Int
   fun foo4(foo: Int, bar: Int): Input
   fun foo5(foo: Int, bar: Int): Input
+  fun foo6(foo: Int, bar: Int)
   fun withKey(n: Int): Boolean
 }
 
@@ -51,6 +52,7 @@ internal class BatchWorkflowImpl : Workflow(), BatchWorkflow {
   override fun foo3(foo: Int, bar: Int) = batchService.foo3(Input(foo, bar))
   override fun foo4(foo: Int, bar: Int) = batchService.foo4(foo)
   override fun foo5(foo: Int, bar: Int) = batchService.foo5(Input(foo, bar))
+  override fun foo6(foo: Int, bar: Int) = batchService.foo6(Input(foo, bar))
   override fun withKey(n: Int): Boolean {
     val deferredList = List(n) {
       when (inline { Random.nextBoolean() }) {

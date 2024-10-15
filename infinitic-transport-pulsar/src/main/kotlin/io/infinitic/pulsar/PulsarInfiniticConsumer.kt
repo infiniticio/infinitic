@@ -101,7 +101,8 @@ class PulsarInfiniticConsumer(
   override suspend fun <M : Message> buildConsumer(
     subscription: Subscription<M>,
     entity: String,
-  ): PulsarTransportConsumer<M> = buildConsumers(subscription, entity, null).first()
+  ): PulsarTransportConsumer<M> =
+      buildConsumers(subscription, entity, null).first()
 
   context(CoroutineScope, KLogger)
   override suspend fun <S : Message> startAsync(
@@ -114,18 +115,7 @@ class PulsarInfiniticConsumer(
     batchProcess: (suspend (List<S>, List<MillisInstant>) -> Unit)?
   ): Job {
 
-    val loggedDeserialize: suspend (TransportMessage<S>) -> S = { message ->
-      debug { "Deserializing message: ${message.messageId}" }
-      message.deserialize().also {
-        trace { "Deserialized message: ${message.messageId}" }
-      }
-    }
-
-    val loggedHandler: suspend (S, MillisInstant) -> Unit = { message, publishTime ->
-      debug { "Processing $message" }
-      process(message, publishTime)
-      trace { "Processed $message" }
-    }
+    val deserialize = { message: TransportMessage<S> -> message.deserialize() }
 
     return when (subscription.withKey) {
       true -> {
@@ -135,8 +125,8 @@ class PulsarInfiniticConsumer(
           repeat(concurrency) { index ->
             consumers[index].startAsync(
                 concurrency = 1,
-                loggedDeserialize,
-                loggedHandler,
+                deserialize,
+                process,
                 beforeDlq,
             )
           }
@@ -145,11 +135,11 @@ class PulsarInfiniticConsumer(
 
       false -> {
         // unique consumer with parallel processing
-        val consumer: PulsarTransportConsumer<S> = buildConsumer(subscription, entity)
+        val consumer = buildConsumer(subscription, entity)
         consumer.startAsync(
             concurrency,
-            loggedDeserialize,
-            loggedHandler,
+            deserialize,
+            process,
             beforeDlq,
             batchConfig,
             batchProcess,

@@ -379,7 +379,7 @@ class InfiniticWorker(
           beautifyLogs,
       )
 
-      val handler: suspend (ServiceTagMessage, MillisInstant) -> Unit =
+      val process: suspend (ServiceTagMessage, MillisInstant) -> Unit =
           { message, publishedAt ->
             cloudEventLogger.log(message, publishedAt)
             taskTagEngine.handle(message, publishedAt)
@@ -389,8 +389,7 @@ class InfiniticWorker(
           subscription = MainSubscription(ServiceTagEngineTopic),
           entity = config.serviceName,
           concurrency = config.concurrency,
-          process = handler,
-          beforeDlq = null,
+          process = process,
       )
     }
   }
@@ -415,13 +414,13 @@ class InfiniticWorker(
           beautifyLogs,
       )
 
-      val handler: suspend (ServiceExecutorMessage, MillisInstant) -> Unit =
+      val process: suspend (ServiceExecutorMessage, MillisInstant) -> Unit =
           { message, publishedAt ->
             cloudEventLogger.log(message, publishedAt)
             taskExecutor.handle(message, publishedAt)
           }
 
-      val handlerBatch: suspend (List<ServiceExecutorMessage>, List<MillisInstant>) -> Unit =
+      val batchProcess: suspend (List<ServiceExecutorMessage>, List<MillisInstant>) -> Unit =
           { messages, publishedAtList ->
             messages.zip(publishedAtList).forEach { (message, publishedAt) ->
               cloudEventLogger.log(message, publishedAt)
@@ -441,10 +440,10 @@ class InfiniticWorker(
           subscription = MainSubscription(ServiceExecutorTopic),
           entity = config.serviceName,
           concurrency = config.concurrency,
-          process = handler,
+          process = process,
           beforeDlq = beforeDlq,
           batchConfig = { msg -> taskExecutor.getBatchConfig(msg) },
-          batchProcess = handlerBatch,
+          batchProcess = batchProcess,
       )
     }
 
@@ -458,7 +457,6 @@ class InfiniticWorker(
           entity = config.serviceName,
           concurrency = config.concurrency,
           process = taskRetryHandler::handle,
-          beforeDlq = null,
       )
     }
 
@@ -474,7 +472,7 @@ class InfiniticWorker(
           beautifyLogs,
       )
 
-      val handler: suspend (ServiceExecutorEventMessage, MillisInstant) -> Unit =
+      val process: suspend (ServiceExecutorEventMessage, MillisInstant) -> Unit =
           { message, publishedAt ->
             cloudEventLogger.log(message, publishedAt)
             taskEventHandler.handle(message, publishedAt)
@@ -484,8 +482,7 @@ class InfiniticWorker(
           subscription = MainSubscription(ServiceExecutorEventTopic),
           entity = config.serviceName,
           concurrency = config.concurrency,
-          process = handler,
-          beforeDlq = null,
+          process = process,
       )
     }
 
@@ -510,7 +507,7 @@ class InfiniticWorker(
           beautifyLogs,
       )
 
-      val handler: suspend (WorkflowTagEngineMessage, MillisInstant) -> Unit =
+      val process: suspend (WorkflowTagEngineMessage, MillisInstant) -> Unit =
           { message, publishedAt ->
             cloudEventLogger.log(message, publishedAt)
             workflowTagEngine.handle(message, publishedAt)
@@ -520,8 +517,7 @@ class InfiniticWorker(
           subscription = MainSubscription(WorkflowTagEngineTopic),
           entity = config.workflowName,
           concurrency = config.concurrency,
-          process = handler,
-          beforeDlq = null,
+          process = process,
       )
     }
   }
@@ -543,7 +539,7 @@ class InfiniticWorker(
           beautifyLogs,
       )
 
-      val handler: suspend (WorkflowStateEngineMessage, MillisInstant) -> Unit =
+      val process: suspend (WorkflowStateEngineMessage, MillisInstant) -> Unit =
           { message, publishedAt ->
             cloudEventLogger.log(message, publishedAt)
             workflowStateCmdHandler.handle(message, publishedAt)
@@ -553,8 +549,7 @@ class InfiniticWorker(
           subscription = MainSubscription(WorkflowStateCmdTopic),
           entity = config.workflowName,
           concurrency = config.concurrency,
-          process = handler,
-          beforeDlq = null,
+          process = process,
       )
     }
 
@@ -571,7 +566,7 @@ class InfiniticWorker(
           beautifyLogs,
       )
 
-      val handler: suspend (WorkflowStateEngineMessage, MillisInstant) -> Unit =
+      val process: suspend (WorkflowStateEngineMessage, MillisInstant) -> Unit =
           { message, publishedAt ->
             cloudEventLogger.log(message, publishedAt)
             workflowStateEngine.handle(message, publishedAt)
@@ -581,8 +576,7 @@ class InfiniticWorker(
           subscription = MainSubscription(WorkflowStateEngineTopic),
           entity = config.workflowName,
           concurrency = config.concurrency,
-          process = handler,
-          beforeDlq = null,
+          process = process,
       )
     }
 
@@ -596,7 +590,6 @@ class InfiniticWorker(
           entity = config.workflowName,
           concurrency = config.concurrency,
           process = workflowStateTimerHandler::handle,
-          beforeDlq = null,
       )
     }
 
@@ -612,7 +605,7 @@ class InfiniticWorker(
           beautifyLogs,
       )
 
-      val handler: suspend (WorkflowStateEventMessage, MillisInstant) -> Unit =
+      val process: suspend (WorkflowStateEventMessage, MillisInstant) -> Unit =
           { message, publishedAt ->
             cloudEventLogger.log(message, publishedAt)
             workflowStateEventHandler.handle(message, publishedAt)
@@ -622,8 +615,7 @@ class InfiniticWorker(
           subscription = MainSubscription(WorkflowStateEventTopic),
           entity = config.workflowName,
           concurrency = config.concurrency,
-          process = handler,
-          beforeDlq = null,
+          process = process,
       )
     }
 
@@ -647,7 +639,7 @@ class InfiniticWorker(
           beautifyLogs,
       )
 
-      val handler: suspend (ServiceExecutorMessage, MillisInstant) -> Unit =
+      val process: suspend (ServiceExecutorMessage, MillisInstant) -> Unit =
           { message, publishedAt ->
             cloudEventLogger.log(message, publishedAt)
             workflowTaskExecutor.handle(message, publishedAt)
@@ -665,7 +657,7 @@ class InfiniticWorker(
           subscription = MainSubscription(WorkflowExecutorTopic),
           entity = config.workflowName,
           concurrency = config.concurrency,
-          process = handler,
+          process = process,
           beforeDlq = beforeDlq,
       )
     }
@@ -680,7 +672,6 @@ class InfiniticWorker(
           entity = config.workflowName,
           concurrency = config.concurrency,
           process = taskRetryHandler::handle,
-          beforeDlq = null,
       )
     }
 
@@ -707,7 +698,6 @@ class InfiniticWorker(
           entity = config.workflowName,
           concurrency = config.concurrency,
           process = handler,
-          beforeDlq = null,
       )
     }
 

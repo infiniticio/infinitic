@@ -79,18 +79,7 @@ class InMemoryInfiniticConsumer(
     batchProcess: (suspend (List<S>, List<MillisInstant>) -> Unit)?
   ): Job {
 
-    val loggedDeserialize: suspend (TransportMessage<S>) -> S = { message ->
-      debug { "Deserializing message: ${message.messageId}" }
-      message.deserialize().also {
-        trace { "Deserialized message: ${message.messageId}" }
-      }
-    }
-
-    val loggedProcess: suspend (S, MillisInstant) -> Unit = { message, publishTime ->
-      debug { "Processing $message" }
-      process(message, publishTime)
-      trace { "Processed $message" }
-    }
+    val deserialize = { message: TransportMessage<S> -> message.deserialize() }
 
     return when (subscription.withKey) {
       true -> {
@@ -100,8 +89,8 @@ class InMemoryInfiniticConsumer(
           repeat(concurrency) { index ->
             consumers[index].startAsync(
                 1,
-                loggedDeserialize,
-                loggedProcess,
+                deserialize,
+                process,
                 beforeDlq,
             )
           }
@@ -113,8 +102,8 @@ class InMemoryInfiniticConsumer(
         val consumer = buildConsumer(subscription, entity)
         consumer.startAsync(
             concurrency,
-            loggedDeserialize,
-            loggedProcess,
+            deserialize,
+            process,
             beforeDlq,
             batchConfig,
             batchProcess,
