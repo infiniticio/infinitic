@@ -114,6 +114,22 @@ internal class BatchesWorkflowTests : StringSpec(
         batchWorkflow.foo5(9, 9) shouldBe Input(foo = 45 * 2, bar = 9)
       }
 
+      "No return Object(with maxSize=10)" {
+        for (i in 1..9) {
+          client.dispatch(batchWorkflow::foo6, i, i)
+        }
+
+        batchWorkflow.foo6(10, 10) shouldBe Unit
+      }
+
+      "No return Object (with maxDelaySeconds=1)" {
+        for (i in 1..8) {
+          client.dispatch(batchWorkflow::foo6, i, i)
+        }
+
+        batchWorkflow.foo6(9, 9) shouldBe Unit
+      }
+
       "If Task contains a batch key, all batches should have the same key" {
         batchWorkflow.withKey(20) shouldBe true
       }

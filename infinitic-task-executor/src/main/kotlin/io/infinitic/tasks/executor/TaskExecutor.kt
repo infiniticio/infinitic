@@ -150,8 +150,12 @@ class TaskExecutor(
     val contextMap: Map<TaskId, TaskContext>
   ) {
     @Suppress("UNCHECKED_CAST")
-    fun invoke() = batchMethod.batch
-        .invoke(instance, batchMethod.getArgs(argsMap)) as Map<String, Any?>
+    // if returns null, then all elements of the batch returns null
+    fun invoke(): Map<String, Any?> {
+      val o = batchMethod.batch.invoke(instance, batchMethod.getArgs(argsMap))
+        ?: argsMap.map { it.key.toString() to null }.toMap()
+      return o as Map<String, Any?>
+    }
   }
 
   private fun BatchData.toMetaMap(): Map<TaskId, MutableMap<String, ByteArray>> =
@@ -167,12 +171,13 @@ class TaskExecutor(
     // Get the batch timeout. If this operation fails, return without proceeding
     val timeout = getBatchTimeout(batchData).getOrElse { return@coroutineScope }
 
-    // Execute the batch with the specified timeout. If this operation fails, return without proceeding
+    // Execute the batch with the specified timeout.
+    // If this operation fails, return without proceeding
     val output = executeWithTimeout(batchData, timeout).getOrElse { return@coroutineScope }
 
     val inputTaskIds = batchData.argsMap.keys.map { it.toString() }.toSet()
-    val unknownFromOutput = output.keys.subtract(inputTaskIds).toList()
-    val missingFromOutput = inputTaskIds.subtract(output.keys).toList()
+    val unknownFromOutput = output.keys.subtract(inputTaskIds)
+    val missingFromOutput = inputTaskIds.subtract(output.keys)
 
     when {
       unknownFromOutput.isNotEmpty() -> sendTaskFailed(

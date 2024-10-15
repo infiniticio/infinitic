@@ -37,14 +37,47 @@ fun <T : TransportMessage<M>, M : Any> Channel<Result<T, T>>.completeProcess(
   beforeDlq: (suspend (M, Exception) -> Unit)? = null,
   batchConfig: (suspend (M) -> BatchConfig?)? = null,
   batchProcess: (suspend (List<M>, List<MillisInstant>) -> Unit)? = null
-): Unit = this
-    .process(concurrency, { _, message -> deserialize(message) })
-    .batchBy { datum -> batchConfig?.invoke(datum) }
-    .batchProcess(
-        concurrency,
-        { message, datum -> process(datum, message.publishTime) },
-        { messages, data -> batchProcess!!(data, messages.map { it.publishTime }) },
-    )
-    .acknowledge(beforeDlq)
+) {
+  require((batchConfig == null) == (batchProcess == null)) {
+    "batchConfig and batchProcess must be null or !null together"
+  }
 
+  val loggedDeserialize: suspend (T) -> M = { message ->
+    debug { "Deserializing message: ${message.messageId}" }
+    deserialize(message).also {
+      trace { "Deserialized message: ${message.messageId}" }
+    }
+  }
 
+  val loggedProcess: suspend (M, MillisInstant) -> Unit = { message, publishTime ->
+    debug { "Processing $message" }
+    process(message, publishTime)
+    trace { "Processed $message" }
+  }
+
+  val loggedBatchProcess: (suspend (List<M>, List<MillisInstant>) -> Unit)? = batchProcess?.let {
+    { messages, publishTimes ->
+      debug { "Processing $messages" }
+      it(messages, publishTimes)
+      trace { "Processed $messages" }
+    }
+  }
+
+  return when (batchProcess == null) {
+    true -> this
+        .process(concurrency) { transport, message ->
+          loggedProcess(loggedDeserialize(message), transport.publishTime)
+        }
+        .acknowledge(beforeDlq)
+
+    false -> this
+        .process(concurrency) { _, message -> loggedDeserialize(message) }
+        .batchBy { datum -> batchConfig?.invoke(datum) }
+        .batchProcess(
+            concurrency,
+            { message, datum -> loggedProcess(datum, message.publishTime) },
+            { messages, data -> loggedBatchProcess!!(data, messages.map { it.publishTime }) },
+        )
+        .acknowledge(beforeDlq)
+  }
+}
