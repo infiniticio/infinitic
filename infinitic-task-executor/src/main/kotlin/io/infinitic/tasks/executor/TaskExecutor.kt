@@ -232,28 +232,23 @@ class TaskExecutor(
     with(producer) { event.sendTo(ServiceExecutorEventTopic) }
   }
 
-  private suspend fun List<ExecuteTask>.parseBatch(): Result<BatchData> {
-    return try {
-      parseBatchData().let { Result.success(it) }
-    } catch (e: Exception) {
-      sendTaskFailed(
-          e,
-          associate { it.taskId to it.taskMeta },
-      ) { "Unable to parse batch of messages" }
-      Result.failure(e)
+  private suspend fun List<ExecuteTask>.parseBatch(): Result<BatchData> = try {
+    parseBatchData().let { Result.success(it) }
+  } catch (e: Exception) {
+    sendTaskFailed(e, associate { it.taskId to it.taskMeta }) {
+      "Unable to parse batch of messages"
     }
+    Result.failure(e)
   }
 
-  private suspend fun ExecuteTask.parseTask(): Result<TaskData> {
-    return try {
-      when (isWorkflowTask()) {
-        true -> parseWorkflowData()
-        false -> parseTaskData()
-      }.let { Result.success(it) }
-    } catch (e: Exception) {
-      sendTaskFailed(e, taskMeta) { "Unable to parse message $this" }
-      Result.failure(e)
-    }
+  private suspend fun ExecuteTask.parseTask(): Result<TaskData> = try {
+    when (isWorkflowTask()) {
+      true -> parseWorkflowData()
+      false -> parseTaskData()
+    }.let { Result.success(it) }
+  } catch (e: Exception) {
+    sendTaskFailed(e, taskMeta) { "Unable to parse message $this" }
+    Result.failure(e)
   }
 
   private suspend fun getTimeout(
@@ -516,15 +511,27 @@ class TaskExecutor(
     if (isDelegated && output != null) logDebug {
       "Method '${method}' has an '${Delegated::class.java.name}' annotation, so its result is ignored"
     }
-    val returnValue = method.encodeReturnValue(output, returnType)
-    val taskCompletedEvent = TaskCompletedEvent.from(
-        this,
-        getEmitterName(),
-        returnValue,
-        isDelegated,
-        meta,
-    )
-    with(producer) { taskCompletedEvent.sendTo(ServiceExecutorEventTopic) }
+    val returnValue = try {
+      Result.success(method.encodeReturnValue(output, returnType))
+    } catch (e: Exception) {
+      Result.failure(e)
+    }
+    returnValue.onSuccess {
+      val taskCompletedEvent = TaskCompletedEvent.from(
+          this,
+          getEmitterName(),
+          it,
+          isDelegated,
+          meta,
+      )
+      with(producer) { taskCompletedEvent.sendTo(ServiceExecutorEventTopic) }
+    }
+
+    returnValue.onFailure {
+      sendTaskFailed(it, meta) {
+        "Error during serialization of the task output for task $serviceName.$methodName ($taskId)"
+      }
+    }
   }
 
   private suspend fun ExecuteTask.sendTaskCompleted(output: Any?, taskData: TaskData) =
