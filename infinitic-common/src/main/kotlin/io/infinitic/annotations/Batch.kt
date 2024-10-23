@@ -24,4 +24,4 @@ package io.infinitic.annotations
 
 /** Use this annotation to define a timeout duration for tasks */
 @Target(AnnotationTarget.FUNCTION)
-annotation class Batch(val maxMessages: Int, val maxSeconds: Double)
+annotation class Batch(val maxMessages: Int = 1000, val maxSeconds: Double = 1.0)
