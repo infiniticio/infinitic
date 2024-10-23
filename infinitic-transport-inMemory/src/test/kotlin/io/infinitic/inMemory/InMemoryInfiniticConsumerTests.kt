@@ -65,6 +65,11 @@ class InMemoryInfiniticConsumerTests : StringSpec(
         with(logger) {
           val scope = CoroutineScope(Dispatchers.IO)
 
+          repeat(10) {
+            val m = executeTask.copy(taskId = TaskId())
+            with(producer) { m.sendTo(ServiceExecutorTopic) }
+          }
+
           val job = with(scope) {
             consumer.startAsync(
                 MainSubscription(ServiceExecutorTopic),
@@ -74,10 +79,6 @@ class InMemoryInfiniticConsumerTests : StringSpec(
             )
           }
 
-          repeat(10) {
-            val m = executeTask.copy(taskId = TaskId())
-            with(producer) { m.sendTo(ServiceExecutorTopic) }
-          }
           delay(200)
           val duration = measureTimeMillis {
             scope.cancel()
