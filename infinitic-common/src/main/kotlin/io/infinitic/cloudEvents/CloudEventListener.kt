@@ -25,8 +25,8 @@ package io.infinitic.cloudEvents
 
 import io.cloudevents.CloudEvent
 
+@FunctionalInterface
 fun interface CloudEventListener {
-
+  @JvmSuppressWildcards
   fun onEvents(cloudEvents: List<CloudEvent>)
-
 }
