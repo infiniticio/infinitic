@@ -71,7 +71,6 @@ class InMemoryInfiniticConsumerTests : StringSpec(
                 serviceName.toString(),
                 10,
                 ::process,
-                null,
             )
           }
 
@@ -79,9 +78,11 @@ class InMemoryInfiniticConsumerTests : StringSpec(
             val m = executeTask.copy(taskId = TaskId())
             with(producer) { m.sendTo(ServiceExecutorTopic) }
           }
-          delay(100)
-          scope.cancel()
-          val duration = measureTimeMillis { job.join() }
+          delay(200)
+          val duration = measureTimeMillis {
+            scope.cancel()
+            job.join()
+          }
           duration shouldBeLessThan 1200L
           counter.get() shouldBe 10
         }
