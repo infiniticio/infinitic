@@ -22,7 +22,7 @@
  */
 package io.infinitic.inMemory
 
-import io.infinitic.common.transport.InfiniticResources
+import io.infinitic.common.transport.interfaces.InfiniticResources
 import io.infinitic.inMemory.channels.InMemoryChannels
 
 class InMemoryInfiniticResources(

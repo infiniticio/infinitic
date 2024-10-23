@@ -29,7 +29,7 @@ import redis.clients.jedis.Protocol;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class RedisConfigTest {
+class RedisStorageConfigTest {
     RedisStorageConfig.RedisStorageConfigBuilder builder;
 
     @BeforeEach

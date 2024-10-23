@@ -24,7 +24,7 @@ package io.infinitic.workflows.engine
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.transport.InfiniticProducer
+import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.transport.WorkflowStateEngineTopic
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
 

@@ -22,7 +22,7 @@
  */
 package io.infinitic.pulsar
 
-import io.infinitic.common.transport.InfiniticResources
+import io.infinitic.common.transport.interfaces.InfiniticResources
 import io.infinitic.pulsar.resources.PulsarResources
 
 class PulsarInfiniticResources(

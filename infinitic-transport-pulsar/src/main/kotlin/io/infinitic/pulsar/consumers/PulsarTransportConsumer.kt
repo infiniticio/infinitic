@@ -25,7 +25,7 @@ package io.infinitic.pulsar.consumers
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.messages.Message
 import io.infinitic.common.transport.Topic
-import io.infinitic.common.transport.TransportConsumer
+import io.infinitic.common.transport.interfaces.TransportConsumer
 import kotlinx.coroutines.future.await
 import org.apache.pulsar.client.api.Consumer
 

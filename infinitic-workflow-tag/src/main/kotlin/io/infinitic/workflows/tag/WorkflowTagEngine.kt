@@ -30,7 +30,7 @@ import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.requester.workflowId
 import io.infinitic.common.transport.ClientTopic
-import io.infinitic.common.transport.InfiniticProducer
+import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.transport.WorkflowStateCmdTopic
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.engine.commands.dispatchRemoteMethod

@@ -35,9 +35,9 @@ import io.infinitic.common.proxies.RequestByWorkflowId
 import io.infinitic.common.proxies.RequestByWorkflowTag
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.transport.InfiniticConsumer
-import io.infinitic.common.transport.InfiniticProducer
-import io.infinitic.common.transport.InfiniticResources
+import io.infinitic.common.transport.interfaces.InfiniticConsumer
+import io.infinitic.common.transport.interfaces.InfiniticProducer
+import io.infinitic.common.transport.interfaces.InfiniticResources
 import io.infinitic.common.utils.annotatedName
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
@@ -45,6 +45,7 @@ import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.exceptions.clients.InvalidIdTagSelectionException
 import io.infinitic.exceptions.clients.InvalidStubException
 import io.infinitic.properties.isLazyInitialized
+import io.infinitic.transport.config.TransportConfig
 import io.infinitic.workflows.DeferredStatus
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -269,19 +270,47 @@ class InfiniticClient(
 
     internal val logger = KotlinLogging.logger {}
 
-    /** Create InfiniticClient with config from resources directory */
+    @JvmStatic
+    fun builder() = InfiniticClientBuilder()
+
+    /** Create InfiniticClient with YAML from resources directory */
     @JvmStatic
     fun fromYamlResource(vararg resources: String) =
         InfiniticClient(InfiniticClientConfig.fromYamlResource(*resources))
 
-    /** Create InfiniticClient with config from system file */
+    /** Create InfiniticClient with YAML from system file */
     @JvmStatic
     fun fromYamlFile(vararg files: String) =
         InfiniticClient(InfiniticClientConfig.fromYamlFile(*files))
 
-    /** Create InfiniticClient with config from yaml strings */
+    /** Create InfiniticClient with YAML from yaml strings */
     @JvmStatic
     fun fromYamlString(vararg yamls: String) =
         InfiniticClient(InfiniticClientConfig.fromYamlString(*yamls))
+  }
+
+  /**
+   * InfiniticWorker builder
+   */
+  class InfiniticClientBuilder {
+    private var name: String? = null
+    private var transport: TransportConfig? = null
+
+    fun setName(name: String) =
+        apply { this.name = name }
+
+    fun setTransport(transport: TransportConfig) =
+        apply { this.transport = transport }
+
+    fun setTransport(transport: TransportConfig.TransportConfigBuilder) =
+        setTransport(transport.build())
+
+    fun build(): InfiniticClient {
+      require(transport != null) { "transport must not be null" }
+
+      val config = InfiniticClientConfig(name, transport!!)
+
+      return InfiniticClient(config)
+    }
   }
 }

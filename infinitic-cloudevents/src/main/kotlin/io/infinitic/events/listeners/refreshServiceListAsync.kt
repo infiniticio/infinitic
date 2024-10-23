@@ -24,7 +24,7 @@ package io.infinitic.events.listeners
 
 import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.common.tasks.data.ServiceName
-import io.infinitic.common.transport.InfiniticResources
+import io.infinitic.common.transport.interfaces.InfiniticResources
 import io.infinitic.events.config.EventListenerConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay

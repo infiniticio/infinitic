@@ -55,10 +55,10 @@ import io.infinitic.common.tasks.tags.messages.RemoveTaskIdFromTag
 import io.infinitic.common.tasks.tags.messages.ServiceTagMessage
 import io.infinitic.common.tasks.tags.messages.SetDelegatedTaskData
 import io.infinitic.common.transport.ClientTopic
-import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.transport.ServiceTagEngineTopic
 import io.infinitic.common.transport.WorkflowStateEngineTopic
 import io.infinitic.common.transport.WorkflowStateTimerTopic
+import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.workers.config.WorkflowVersion
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
@@ -71,7 +71,6 @@ import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
 import io.mockk.mockk
 import io.mockk.slot
-import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CopyOnWriteArrayList
 
 private val testServiceName = ServiceName("serviceTest")
@@ -101,7 +100,6 @@ class TaskEventHandlerTests :
         val workflowEngineSlot = slot<WorkflowStateEngineMessage>()
 
         // mocks
-        fun completed() = CompletableFuture.completedFuture(Unit)
         val producerAsync = mockk<InfiniticProducer> {
           coEvery { getName() } returns "$testEmitterName"
           coEvery { capture(taskTagSlots).sendTo(ServiceTagEngineTopic) } returns Unit

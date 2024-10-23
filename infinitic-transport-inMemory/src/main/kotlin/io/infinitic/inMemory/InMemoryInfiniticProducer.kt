@@ -25,7 +25,7 @@ package io.infinitic.inMemory
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.messages.Message
-import io.infinitic.common.transport.InfiniticProducer
+import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.transport.Topic
 import io.infinitic.common.transport.acceptDelayed
 import io.infinitic.inMemory.channels.DelayedMessage

@@ -125,7 +125,6 @@ class: ${TestEventListener::class.java.name}
 class: ${TestEventListener::class.java.name}
 concurrency: 10
 subscriptionName: subscriptionName
-refreshDelaySeconds: 10
 services:
   listRefreshSeconds: 10
   allow:

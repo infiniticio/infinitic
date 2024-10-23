@@ -20,12 +20,42 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.transport
+package io.infinitic.common.transport.interfaces
 
-interface InfiniticResources {
-  suspend fun getServices(): Result<Set<String>>
+import io.infinitic.common.data.MillisInstant
+import io.infinitic.common.transport.Topic
 
-  suspend fun getWorkflows(): Result<Set<String>>
+/**
+ * Represents a transport message that can be deserialized.
+ *
+ * @param M The type of the payload contained within the message.
+ */
+interface TransportMessage<out M> {
+  val publishTime: MillisInstant
+  val messageId: String
+  val topic: Topic<*>
 
-  suspend fun deleteTopicForClient(clientName: String): Result<String?>
+  /**
+   * Deserializes the message into its original form.
+   *
+   * @return The deserialized message.
+   */
+  fun deserialize(): M
+
+  /**
+   * Acknowledges the given message.
+   */
+  suspend fun acknowledge()
+
+  /**
+   * Processes a negative acknowledgment for the given message.
+   */
+  suspend fun negativeAcknowledge()
+
+  /**
+   * This property reflects the state where the message has failed to process successfully
+   * repeatedly, and the total count of negative acknowledgments has reached a predefined limit
+   * after which the message will be sent to DLQ
+   */
+  val hasBeenSentToDeadLetterQueue: Boolean
 }

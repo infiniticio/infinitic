@@ -24,7 +24,7 @@ package io.infinitic.inMemory.consumers
 
 import io.infinitic.common.messages.Message
 import io.infinitic.common.transport.Topic
-import io.infinitic.common.transport.TransportConsumer
+import io.infinitic.common.transport.interfaces.TransportConsumer
 import io.infinitic.inMemory.channels.DelayedMessage
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay

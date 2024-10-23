@@ -26,7 +26,7 @@ import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.MethodUnknown
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.transport.ClientTopic
-import io.infinitic.common.transport.InfiniticProducer
+import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.workflows.engine.messages.WaitWorkflow
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import kotlinx.coroutines.CoroutineScope

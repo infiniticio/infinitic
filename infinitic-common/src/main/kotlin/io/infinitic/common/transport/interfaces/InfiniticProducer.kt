@@ -20,13 +20,17 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.transport
+package io.infinitic.common.transport.interfaces
 
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.events.messages.ServiceExecutorEventMessage
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
+import io.infinitic.common.transport.Topic
+import io.infinitic.common.transport.acceptDelayed
+import io.infinitic.common.transport.forWorkflow
+import io.infinitic.common.transport.withoutDelay
 
 interface InfiniticProducer {
   /**
@@ -54,7 +58,7 @@ interface InfiniticProducer {
     after: MillisDuration = MillisDuration(0)
   ) {
     require(after <= 0 || topic.acceptDelayed) { thisShouldNotHappen("Trying to send to $topic with a delay $after") }
-    
+
     // Switch to workflow-related topics for workflowTasks
     val t = when (this) {
       is ServiceExecutorMessage -> if (isWorkflowTask()) topic.forWorkflow else topic

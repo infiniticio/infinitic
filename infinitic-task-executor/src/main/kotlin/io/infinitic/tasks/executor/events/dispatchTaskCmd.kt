@@ -27,7 +27,7 @@ import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.requester.WorkflowRequester
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskRetrySequence
-import io.infinitic.common.transport.InfiniticProducer
+import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.transport.WorkflowStateEventTopic
 import io.infinitic.common.workflows.data.commands.DispatchTaskPastCommand
 import io.infinitic.common.workflows.engine.commands.dispatchTask

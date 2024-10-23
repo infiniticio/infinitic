@@ -24,7 +24,7 @@ package io.infinitic.workflows.engine.handlers
 
 import io.infinitic.common.requester.WorkflowRequester
 import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.transport.InfiniticProducer
+import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandStatus
 import io.infinitic.common.workflows.data.commands.DispatchTaskPastCommand

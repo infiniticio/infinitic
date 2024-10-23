@@ -51,7 +51,7 @@ import io.infinitic.common.tasks.events.messages.TaskStartedEvent
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.tasks.tags.messages.RemoveTaskIdFromTag
-import io.infinitic.common.transport.InfiniticProducer
+import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.transport.ServiceExecutorEventTopic
 import io.infinitic.common.transport.ServiceExecutorRetryTopic
 import io.infinitic.common.transport.ServiceExecutorTopic

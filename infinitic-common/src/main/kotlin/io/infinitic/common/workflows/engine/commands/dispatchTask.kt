@@ -30,7 +30,7 @@ import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.executors.errors.TaskTimedOutError
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.tags.messages.AddTaskIdToTag
-import io.infinitic.common.transport.InfiniticProducer
+import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.transport.ServiceExecutorTopic
 import io.infinitic.common.transport.ServiceTagEngineTopic
 import io.infinitic.common.transport.WorkflowStateTimerTopic

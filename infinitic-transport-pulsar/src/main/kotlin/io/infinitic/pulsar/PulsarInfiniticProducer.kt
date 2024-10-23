@@ -27,9 +27,9 @@ import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.messages.Message
 import io.infinitic.common.transport.ClientTopic
-import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.transport.NamingTopic
 import io.infinitic.common.transport.Topic
+import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.pulsar.client.InfiniticPulsarClient
 import io.infinitic.pulsar.config.PulsarProducerConfig
 import io.infinitic.pulsar.resources.PulsarResources

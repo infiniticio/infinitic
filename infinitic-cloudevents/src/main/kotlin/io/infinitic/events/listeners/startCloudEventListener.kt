@@ -27,9 +27,9 @@ import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.messages.Message
 import io.infinitic.common.transport.BatchConfig
-import io.infinitic.common.transport.InfiniticConsumer
-import io.infinitic.common.transport.InfiniticResources
-import io.infinitic.common.transport.TransportMessage
+import io.infinitic.common.transport.interfaces.InfiniticConsumer
+import io.infinitic.common.transport.interfaces.InfiniticResources
+import io.infinitic.common.transport.interfaces.TransportMessage
 import io.infinitic.common.transport.consumers.Result
 import io.infinitic.common.transport.consumers.acknowledge
 import io.infinitic.common.transport.consumers.batchBy

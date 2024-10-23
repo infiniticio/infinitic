@@ -26,8 +26,8 @@ import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.transport.BatchConfig
 import io.infinitic.common.transport.Topic
-import io.infinitic.common.transport.TransportConsumer
-import io.infinitic.common.transport.TransportMessage
+import io.infinitic.common.transport.interfaces.TransportConsumer
+import io.infinitic.common.transport.interfaces.TransportMessage
 import kotlinx.coroutines.delay
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
@@ -38,7 +38,7 @@ internal data class IntMessage(val value: Int) : TransportMessage<DeserializedIn
   override val publishTime: MillisInstant = MillisInstant.now()
 
   override lateinit var topic: Topic<*>
-  
+
   override fun deserialize(): DeserializedIntMessage = DeserializedIntMessage(this)
 
   override suspend fun negativeAcknowledge() {

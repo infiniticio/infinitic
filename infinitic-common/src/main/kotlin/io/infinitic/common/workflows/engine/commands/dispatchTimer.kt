@@ -25,7 +25,7 @@ package io.infinitic.common.workflows.engine.commands
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.requester.WorkflowRequester
-import io.infinitic.common.transport.InfiniticProducer
+import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.workflows.engine.messages.RemoteTimerCompleted
 import io.infinitic.common.workflows.engine.messages.data.DurationTimerDispatched
 import io.infinitic.common.workflows.engine.messages.data.InstantTimerDispatched

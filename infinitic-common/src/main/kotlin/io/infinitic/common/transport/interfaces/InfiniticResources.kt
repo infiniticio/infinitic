@@ -20,24 +20,12 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.transport
+package io.infinitic.common.transport.interfaces
 
-interface TransportConsumer<T : TransportMessage<*>> {
-  /**
-   * Receives a transport message from the consumer.
-   *
-   * @return A message of type [T] received from the transport.
-   */
-  suspend fun receive(): T
+interface InfiniticResources {
+  suspend fun getServices(): Result<Set<String>>
 
-  /**
-   * Defines the maximum number of times a message can be redelivered
-   * when processing messages from a transport consumer.
-   */
-  val maxRedeliveryCount: Int
+  suspend fun getWorkflows(): Result<Set<String>>
 
-  /**
-   * Represents the name of the TransportConsumer. Used for Logging only
-   */
-  val name: String
+  suspend fun deleteTopicForClient(clientName: String): Result<String?>
 }
