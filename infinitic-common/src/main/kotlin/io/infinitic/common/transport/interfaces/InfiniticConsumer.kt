@@ -20,11 +20,13 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.transport
+package io.infinitic.common.transport.interfaces
 
 import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.messages.Message
+import io.infinitic.common.transport.BatchConfig
+import io.infinitic.common.transport.Subscription
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 

@@ -27,7 +27,7 @@ import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.executors.errors.DeferredError
 import io.infinitic.common.tasks.executors.errors.ExecutionError
 import io.infinitic.common.tasks.executors.errors.WorkflowTaskFailedError
-import io.infinitic.common.transport.InfiniticProducer
+import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.transport.WorkflowStateEventTopic
 import io.infinitic.common.workers.data.WorkerName
 import io.infinitic.common.workflows.data.workflowMethods.awaitingRequesters

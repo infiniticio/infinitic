@@ -39,7 +39,7 @@ import io.infinitic.common.tasks.tags.messages.ServiceTagMessage
 import io.infinitic.common.tasks.tags.messages.SetDelegatedTaskData
 import io.infinitic.common.tasks.tags.storage.TaskTagStorage
 import io.infinitic.common.transport.ClientTopic
-import io.infinitic.common.transport.InfiniticProducer
+import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.transport.WorkflowStateEngineTopic
 import io.infinitic.common.workflows.engine.messages.RemoteTaskCompleted
 import kotlinx.coroutines.coroutineScope

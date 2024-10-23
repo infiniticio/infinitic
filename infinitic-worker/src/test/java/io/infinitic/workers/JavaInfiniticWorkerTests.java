@@ -66,6 +66,8 @@ class JavaInfiniticWorkerTests {
                     .disallowWorkflows("workflow2")
                     .disallowWorkflows(ServiceA.class)
                     .setConcurrency(7)
+                    .setServiceListRefreshSeconds(60.)
+                    .setWorkflowListRefreshSeconds(60.)
                     .build();
 
             ServiceExecutorConfig serviceExecutor = ServiceExecutorConfig.builder()

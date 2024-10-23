@@ -28,11 +28,11 @@ import io.infinitic.common.messages.Envelope
 import io.infinitic.common.messages.Message
 import io.infinitic.common.transport.BatchConfig
 import io.infinitic.common.transport.EventListenerSubscription
-import io.infinitic.common.transport.InfiniticConsumer
 import io.infinitic.common.transport.MainSubscription
 import io.infinitic.common.transport.Subscription
-import io.infinitic.common.transport.TransportMessage
 import io.infinitic.common.transport.consumers.startAsync
+import io.infinitic.common.transport.interfaces.InfiniticConsumer
+import io.infinitic.common.transport.interfaces.TransportMessage
 import io.infinitic.pulsar.client.InfiniticPulsarClient
 import io.infinitic.pulsar.config.PulsarConsumerConfig
 import io.infinitic.pulsar.consumers.PulsarTransportConsumer

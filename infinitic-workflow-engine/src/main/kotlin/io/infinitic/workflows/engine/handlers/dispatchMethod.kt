@@ -24,7 +24,7 @@ package io.infinitic.workflows.engine.handlers
 
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.common.transport.InfiniticProducer
+import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.workflows.data.workflowMethods.PositionInWorkflowMethod
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethod
 import io.infinitic.common.workflows.engine.messages.DispatchMethod

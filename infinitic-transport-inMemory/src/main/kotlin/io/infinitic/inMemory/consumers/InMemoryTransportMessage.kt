@@ -25,7 +25,7 @@ package io.infinitic.inMemory.consumers
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.messages.Message
 import io.infinitic.common.transport.Topic
-import io.infinitic.common.transport.TransportMessage
+import io.infinitic.common.transport.interfaces.TransportMessage
 
 class InMemoryTransportMessage<S : Message>(private val message: S, override val topic: Topic<S>) :
   TransportMessage<S> {

@@ -22,9 +22,9 @@
  */
 package io.infinitic.transport.config
 
-import io.infinitic.common.transport.InfiniticConsumer
-import io.infinitic.common.transport.InfiniticProducer
-import io.infinitic.common.transport.InfiniticResources
+import io.infinitic.common.transport.interfaces.InfiniticConsumer
+import io.infinitic.common.transport.interfaces.InfiniticProducer
+import io.infinitic.common.transport.interfaces.InfiniticResources
 
 sealed class TransportConfig : AutoCloseable {
   /**

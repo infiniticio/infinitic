@@ -26,7 +26,7 @@ import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.messages.Message
 import io.infinitic.common.transport.Topic
-import io.infinitic.common.transport.TransportMessage
+import io.infinitic.common.transport.interfaces.TransportMessage
 import kotlinx.coroutines.future.await
 import org.apache.pulsar.client.api.Consumer as PulsarConsumer
 import org.apache.pulsar.client.api.Message as PulsarMessage

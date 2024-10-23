@@ -20,41 +20,24 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.transport
+package io.infinitic.common.transport.interfaces
 
-import io.infinitic.common.data.MillisInstant
-
-/**
- * Represents a transport message that can be deserialized.
- *
- * @param M The type of the payload contained within the message.
- */
-interface TransportMessage<out M> {
-  val publishTime: MillisInstant
-  val messageId: String
-  val topic: Topic<*>
-
+interface TransportConsumer<T : TransportMessage<*>> {
   /**
-   * Deserializes the message into its original form.
+   * Receives a transport message from the consumer.
    *
-   * @return The deserialized message.
+   * @return A message of type [T] received from the transport.
    */
-  fun deserialize(): M
+  suspend fun receive(): T
 
   /**
-   * Acknowledges the given message.
+   * Defines the maximum number of times a message can be redelivered
+   * when processing messages from a transport consumer.
    */
-  suspend fun acknowledge()
+  val maxRedeliveryCount: Int
 
   /**
-   * Processes a negative acknowledgment for the given message.
+   * Represents the name of the TransportConsumer. Used for Logging only
    */
-  suspend fun negativeAcknowledge()
-
-  /**
-   * This property reflects the state where the message has failed to process successfully
-   * repeatedly, and the total count of negative acknowledgments has reached a predefined limit
-   * after which the message will be sent to DLQ
-   */
-  val hasBeenSentToDeadLetterQueue: Boolean
+  val name: String
 }

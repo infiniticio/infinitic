@@ -25,7 +25,7 @@ package io.infinitic.common.transport.consumers
 import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.transport.BatchConfig
-import io.infinitic.common.transport.TransportMessage
+import io.infinitic.common.transport.interfaces.TransportMessage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 

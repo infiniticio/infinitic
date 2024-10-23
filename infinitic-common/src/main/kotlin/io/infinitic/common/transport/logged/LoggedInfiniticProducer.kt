@@ -25,7 +25,7 @@ package io.infinitic.common.transport.logged
 import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.messages.Message
-import io.infinitic.common.transport.InfiniticProducer
+import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.transport.Topic
 
 class LoggedInfiniticProducer(

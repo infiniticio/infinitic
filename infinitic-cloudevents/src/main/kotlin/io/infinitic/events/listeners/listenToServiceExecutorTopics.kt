@@ -25,12 +25,12 @@ package io.infinitic.events.listeners
 import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.data.ServiceName
-import io.infinitic.common.transport.InfiniticConsumer
+import io.infinitic.common.transport.interfaces.InfiniticConsumer
 import io.infinitic.common.transport.ServiceExecutorEventTopic
 import io.infinitic.common.transport.ServiceExecutorRetryTopic
 import io.infinitic.common.transport.ServiceExecutorTopic
 import io.infinitic.common.transport.SubscriptionType
-import io.infinitic.common.transport.TransportMessage
+import io.infinitic.common.transport.interfaces.TransportMessage
 import io.infinitic.common.transport.consumers.Result
 import io.infinitic.common.transport.consumers.startConsuming
 import io.infinitic.common.transport.create

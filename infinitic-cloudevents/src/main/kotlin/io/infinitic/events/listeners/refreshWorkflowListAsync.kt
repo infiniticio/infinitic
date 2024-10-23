@@ -23,7 +23,7 @@
 package io.infinitic.events.listeners
 
 import io.github.oshai.kotlinlogging.KLogger
-import io.infinitic.common.transport.InfiniticResources
+import io.infinitic.common.transport.interfaces.InfiniticResources
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.events.config.EventListenerConfig
 import kotlinx.coroutines.CoroutineScope
