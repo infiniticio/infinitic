@@ -166,14 +166,17 @@ data class SerializedData(
 
   fun toJson() = json.parseToJsonElement(toJsonString())
 
-  fun toJsonString(): String = when (dataType) {
+  fun toJsonString(encodeAvro: Boolean = true): String = when (dataType) {
     SerializedDataType.NULL -> "null"
     SerializedDataType.JSON,
     SerializedDataType.JSON_JACKSON,
     SerializedDataType.JSON_KOTLIN -> String(bytes, Charsets.UTF_8)
 
     SerializedDataType.AVRO_WITH_SCHEMA -> JsonPrimitive(
-        Base64.getEncoder().encodeToString(bytes),
+        when (encodeAvro) {
+          true -> Base64.getEncoder().encodeToString(bytes)
+          false -> decodeAvroWithSchemaFingerprint().toString()
+        },
     ).toString()
   }
 
@@ -185,7 +188,7 @@ data class SerializedData(
 
   /** Readable version */
   override fun toString() = mapOf(
-      "bytes" to toJsonString().replace("\n", ""),
+      "bytes" to toJsonString(false).replace("\n", ""),
       "type" to dataType,
       "meta" to meta.mapValues { String(it.value) },
   ).toString()
