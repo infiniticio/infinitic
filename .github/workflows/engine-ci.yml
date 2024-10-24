@@ -26,39 +26,31 @@ on:
   pull_request:
     branches:
       - main
-    paths:
-      - ".github/workflows/engine-ci.yml"
-      - "infinitic-*/**"
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v2
-
-      - name: Setup Java 17
-        uses: actions/setup-java@v1
-        with:
-          java-version: 17
-
-      - name: Assemble with Gradle
-        run: ./gradlew build --no-daemon -x test -x spotlessCheck --parallel --max-workers=8 # <= -d used to debug if needed
-        timeout-minutes: 5 # max time allocated (useful if some tests hang)
-
   test:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Setup Java 17
-        uses: actions/setup-java@v1
+        uses: actions/setup-java@v3
         with:
           java-version: 17
+          distribution: 'adopt'
+
+      - name: Cache Gradle packages
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: wrapper
+          cache-read-only: false
 
       - name: Test with Gradle
-        run: ./gradlew test --no-daemon --parallel --max-workers=8  # <= -d used to debug if needed
+        run: ./gradlew test --info --scan --no-daemon --parallel --max-workers=$(nproc)  # <= -d used to debug if needed
         timeout-minutes: 12 # max time allocated (useful if some tests hang)
+
+      - name: Publish Build Scan
+        if: success()
+        run: echo "Build Scan URL is ${{ steps.build.outputs.build-scan-url }}"
