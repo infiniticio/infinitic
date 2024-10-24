@@ -67,6 +67,8 @@ interface ChannelsWorkflow {
   fun channel7(count: Int, max: Int? = null): String
 
   fun channel8(): String
+
+  fun channel9(): String
 }
 
 @Suppress("unused")
@@ -216,5 +218,20 @@ class ChannelsWorkflowImpl : Workflow(), ChannelsWorkflow {
     out += deferred.isCompleted().toString()
 
     return out
+  }
+
+  override fun channel9(): String {
+    val deferred: Deferred<String> = channelStrA.receive(1)
+
+    repeat(2) {
+      val timer = timer(Duration.ofMillis(10))
+
+      or(deferred, timer).await()
+
+      if (deferred.isCompleted()) {
+        return "nok"
+      }
+    }
+    return "ok"
   }
 }
