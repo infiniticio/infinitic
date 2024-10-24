@@ -48,7 +48,7 @@ jobs:
           cache-read-only: false
 
       - name: Test with Gradle
-        run: ./gradlew test --info --scan --no-daemon --parallel --max-workers=$(nproc)  # <= -d used to debug if needed
+        run: ./gradlew test --info --scan  # <= -d used to debug if needed
         timeout-minutes: 12 # max time allocated (useful if some tests hang)
 
       - name: Publish Build Scan
