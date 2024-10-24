@@ -177,9 +177,7 @@ internal class WorkflowDispatcherImpl(
 
     // create a new step
     val newStep = NewStep(step = deferred.step, stepPosition = positionInMethod)
-
-    deferred.step.checkAwaitIndex()
-
+    
     val result = when (val pastStep = getSimilarPastStep(newStep)) {
       // this step is not found in the history
       null -> {
@@ -215,9 +213,7 @@ internal class WorkflowDispatcherImpl(
 
         // return deferred value
         when (stepStatus) {
-          is Waiting -> {
-            thisShouldNotHappen()
-          }
+          is Waiting -> thisShouldNotHappen()
 
           is Unknown -> {
             // workflowTaskIndex is now the one where this deferred was unknowing
@@ -270,8 +266,6 @@ internal class WorkflowDispatcherImpl(
         }
       }
     }
-
-    deferred.step.nextAwaitIndex()
 
     return result
   }

@@ -67,11 +67,16 @@ internal class StartConsumingTests : StringSpec(
           val channel = with(scope) { ErrorConsumer().startConsuming() }
 
           // while no error
-          shouldNotThrowAny { repeat(99) { channel.receive() } }
+          shouldNotThrowAny { repeat(98) { channel.receive() } }
           scope.isActive shouldBe true
 
           // channel should be close to receive and scope should be canceled
-          shouldThrow<ClosedReceiveChannelException> { channel.receive() }
+          shouldThrow<ClosedReceiveChannelException> {
+            // note: the exception is thrown at the 99th receive,
+            // when the consumer loads an additional item
+            channel.receive()
+            channel.receive()
+          }
           scope.isActive shouldBe false
         }
       }

@@ -38,7 +38,6 @@ import io.infinitic.common.workflows.data.commands.CommandStatus.Unknown
 import io.infinitic.common.workflows.data.commands.PastCommand
 import io.infinitic.common.workflows.data.commands.ReceiveSignalPastCommand
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
-import io.infinitic.exceptions.workflows.OutOfBoundAwaitException
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
@@ -63,9 +62,6 @@ sealed class Step {
 
   // increase wait index and update current status
   abstract fun nextAwaitIndex()
-
-  // check wait index is valid
-  abstract fun checkAwaitIndex()
 
   /** hash provides a unique hash linked to the structure of the step (excluding commandStatus) */
   abstract fun hash(): StepHash
@@ -139,24 +135,18 @@ sealed class Step {
           is StepStatus.Completed -> true
         }
 
-    override fun checkAwaitIndex() {
-      // user is asking more than the limit, we consider it as a failure
-      if (commandStatuses != null &&
-        commandStatusLimit != null &&
-        awaitIndex >= commandStatusLimit!!) {
-        throw OutOfBoundAwaitException
-      }
-    }
-
     override fun nextAwaitIndex() {
-      awaitIndex++
-
-      // update commandStatus if needed
       if (commandStatuses != null) {
-        // update current status
-        commandStatus = commandStatuses!!.firstOrNull {
-          (it is Completed) && (it.returnIndex == awaitIndex)
-        } ?: Ongoing
+        // if there is no limit, or there is a limit but not yet reached
+        if (commandStatusLimit == null || awaitIndex + 1 < commandStatusLimit!!) {
+          awaitIndex++
+
+          // update commandStatus if needed
+          // update current status
+          commandStatus = commandStatuses!!.firstOrNull {
+            (it is Completed) && (it.returnIndex == awaitIndex)
+          } ?: Ongoing
+        }
       }
     }
 
@@ -214,7 +204,7 @@ sealed class Step {
       is StepStatus.Completed -> status.returnValue.deserialize(
           returnValueType,
           returnValueJsonViewClass,
-      )
+      ).also { nextAwaitIndex() }
 
       else -> thisShouldNotHappen(status.toString())
     }
@@ -234,10 +224,6 @@ sealed class Step {
 
     override fun isTerminatedAt(index: WorkflowTaskIndex) =
         steps.all { it.isTerminatedAt(index) }
-
-    override fun checkAwaitIndex() {
-      steps.map { it.checkAwaitIndex() }
-    }
 
     override fun nextAwaitIndex() {
       steps.map { it.nextAwaitIndex() }
@@ -299,10 +285,6 @@ sealed class Step {
 
     override fun isTerminatedAt(index: WorkflowTaskIndex) =
         steps.any { it.isTerminatedAt(index) }
-
-    override fun checkAwaitIndex() {
-      steps.map { it.checkAwaitIndex() }
-    }
 
     override fun nextAwaitIndex() {
       steps.map { it.nextAwaitIndex() }
