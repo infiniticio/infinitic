@@ -417,7 +417,7 @@ class InfiniticWorker(
       val process: suspend (ServiceExecutorMessage, MillisInstant) -> Unit =
           { message, publishedAt ->
             cloudEventLogger.log(message, publishedAt)
-            taskExecutor.handle(message, publishedAt)
+            taskExecutor.handle(message)
           }
 
       val batchProcess: suspend (List<ServiceExecutorMessage>, List<MillisInstant>) -> Unit =
@@ -642,7 +642,7 @@ class InfiniticWorker(
       val process: suspend (ServiceExecutorMessage, MillisInstant) -> Unit =
           { message, publishedAt ->
             cloudEventLogger.log(message, publishedAt)
-            workflowTaskExecutor.handle(message, publishedAt)
+            workflowTaskExecutor.handle(message)
           }
 
       val beforeDlq: suspend (ServiceExecutorMessage?, Exception) -> Unit = { message, cause ->

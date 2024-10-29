@@ -27,7 +27,6 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.annotations.Delegated
 import io.infinitic.clients.InfiniticClientInterface
 import io.infinitic.common.data.MillisDuration
-import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.data.methods.deserializeArgs
 import io.infinitic.common.data.methods.encodeReturnValue
 import io.infinitic.common.emitters.EmitterName
@@ -89,8 +88,7 @@ class TaskExecutor(
 ) {
   private suspend fun getEmitterName() = EmitterName(producer.getName())
 
-  @Suppress("UNUSED_PARAMETER")
-  suspend fun handle(msg: ServiceExecutorMessage, publishTime: MillisInstant) {
+  suspend fun handle(msg: ServiceExecutorMessage) {
     when (msg) {
       is ExecuteTask -> msg.process()
     }
