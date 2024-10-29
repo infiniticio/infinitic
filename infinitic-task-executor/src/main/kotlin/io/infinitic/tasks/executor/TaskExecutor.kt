@@ -47,9 +47,9 @@ import io.infinitic.common.tasks.events.messages.TaskStartedEvent
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.transport.BatchConfig
-import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.transport.ServiceExecutorEventTopic
 import io.infinitic.common.transport.ServiceExecutorRetryTopic
+import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.utils.BatchMethod
 import io.infinitic.common.utils.checkMode
 import io.infinitic.common.utils.getBatchConfig
@@ -161,19 +161,19 @@ class TaskExecutor(
   private fun BatchData.toMetaMap(): Map<TaskId, MutableMap<String, ByteArray>> =
       contextMap.mapValues { it.value.meta }
 
-  private suspend fun List<ExecuteTask>.process() = coroutineScope {
+  private suspend fun List<ExecuteTask>.process() {
     // Signal that the tasks have started
     sendTaskStarted()
 
     // Parse the batch. If parsing fails, return without proceeding
-    val batchData = parseBatch().getOrElse { return@coroutineScope }
+    val batchData = parseBatch().getOrElse { return }
 
     // Get the batch timeout. If this operation fails, return without proceeding
-    val timeout = getBatchTimeout(batchData).getOrElse { return@coroutineScope }
+    val timeout = getBatchTimeout(batchData).getOrElse { return }
 
     // Execute the batch with the specified timeout.
     // If this operation fails, return without proceeding
-    val output = executeWithTimeout(batchData, timeout).getOrElse { return@coroutineScope }
+    val output = executeWithTimeout(batchData, timeout).getOrElse { return }
 
     val inputTaskIds = batchData.argsMap.keys.map { it.toString() }.toSet()
     val unknownFromOutput = output.keys.subtract(inputTaskIds)
@@ -200,22 +200,21 @@ class TaskExecutor(
 
   private suspend fun ExecuteTask.process() {
     logDebug { "Start processing $this" }
-    coroutineScope {
-      // Signal that the task has started
-      sendTaskStarted()
+    // Signal that the task has started
+    sendTaskStarted()
 
-      // Parse the task data. If parsing fails, return without proceeding
-      val taskData = parseTask().getOrElse { return@coroutineScope }
+    // Parse the task data. If parsing fails, return without proceeding
+    val taskData = parseTask().getOrElse { return }
 
-      // Get the task timeout. If this operation fails, return without proceeding
-      val timeout = getTaskTimeout(taskData).getOrElse { return@coroutineScope }
+    // Get the task timeout. If this operation fails, return without proceeding
+    val timeout = getTaskTimeout(taskData).getOrElse { return }
 
-      // Execute the task with the specified timeout. If this operation fails, return without proceeding
-      val output = executeWithTimeout(taskData, timeout).getOrElse { return@coroutineScope }
+    // Execute the task with the specified timeout. If this operation fails, return without proceeding
+    val output = executeWithTimeout(taskData, timeout).getOrElse { return }
 
-      // Signal that the task has completed successfully
-      sendTaskCompleted(output, taskData)
-    }
+    // Signal that the task has completed successfully
+    sendTaskCompleted(output, taskData)
+
     logTrace { "Ended processing $this" }
   }
 
@@ -233,7 +232,7 @@ class TaskExecutor(
   }
 
   private suspend fun List<ExecuteTask>.parseBatch(): Result<BatchData> = try {
-    parseBatchData().let { Result.success(it) }
+    Result.success(parseBatchData())
   } catch (e: Exception) {
     sendTaskFailed(e, associate { it.taskId to it.taskMeta }) {
       "Unable to parse batch of messages"
