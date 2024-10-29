@@ -31,6 +31,7 @@ import io.infinitic.common.tasks.events.messages.ServiceExecutorEventMessage
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.tasks.tags.messages.ServiceTagMessage
+import io.infinitic.common.transport.BatchConfig
 import io.infinitic.common.transport.MainSubscription
 import io.infinitic.common.transport.ServiceExecutorEventTopic
 import io.infinitic.common.transport.ServiceExecutorRetryTopic
@@ -653,12 +654,25 @@ class InfiniticWorker(
           }
         }
       }
+
+      val batchProcess: suspend (List<ServiceExecutorMessage>, List<MillisInstant>) -> Unit =
+          { messages, publishedAtList ->
+            messages.zip(publishedAtList).forEach { (message, publishedAt) ->
+              cloudEventLogger.log(message, publishedAt)
+            }
+            workflowTaskExecutor.batchProcess(messages)
+          }
+
       consumer.startAsync(
           subscription = MainSubscription(WorkflowExecutorTopic),
           entity = config.workflowName,
           concurrency = config.concurrency,
           process = process,
           beforeDlq = beforeDlq,
+          batchConfig = config.batchConfig?.let { b ->
+            { BatchConfig(config.workflowName, b.maxMessages, b.maxMillis) }
+          },
+          batchProcess = batchProcess,
       )
     }
 

@@ -23,18 +23,17 @@
 package io.infinitic.events.listeners
 
 import io.github.oshai.kotlinlogging.KLogger
-import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.messages.Message
 import io.infinitic.common.transport.BatchConfig
-import io.infinitic.common.transport.interfaces.InfiniticConsumer
-import io.infinitic.common.transport.interfaces.InfiniticResources
-import io.infinitic.common.transport.interfaces.TransportMessage
 import io.infinitic.common.transport.consumers.Result
 import io.infinitic.common.transport.consumers.acknowledge
 import io.infinitic.common.transport.consumers.batchBy
 import io.infinitic.common.transport.consumers.batchProcess
 import io.infinitic.common.transport.consumers.process
+import io.infinitic.common.transport.interfaces.InfiniticConsumer
+import io.infinitic.common.transport.interfaces.InfiniticResources
+import io.infinitic.common.transport.interfaces.TransportMessage
 import io.infinitic.events.config.EventListenerConfig
 import io.infinitic.events.toCloudEvent
 import kotlinx.coroutines.CoroutineScope
@@ -55,8 +54,8 @@ fun InfiniticConsumer.startCloudEventListener(
   // all messages will have this batch config
   val batchConfig = BatchConfig(
       batchKey = "cloudEvent", // same for all
-      maxMessages = config.batchConfig.maxEvents,
-      maxDuration = MillisDuration(config.batchConfig.maxMillis),
+      maxMessages = config.batchConfig.maxMessages,
+      maxDuration = config.batchConfig.maxMillis,
   )
 
   // Launch the processing of outChannel

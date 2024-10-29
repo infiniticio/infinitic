@@ -24,6 +24,7 @@ package io.infinitic.events.config
 
 import io.infinitic.cloudEvents.CloudEventListener
 import io.infinitic.cloudEvents.EntityListConfig
+import io.infinitic.common.transport.config.LoadedBatchConfig
 import io.infinitic.common.utils.annotatedName
 import io.infinitic.common.utils.getInstance
 import io.infinitic.config.loadFromYamlFile
@@ -34,7 +35,7 @@ sealed class EventListenerConfig {
   abstract val listener: CloudEventListener
   abstract val concurrency: Int
   abstract val subscriptionName: String?
-  abstract val batchConfig: EventListenerBatchConfig
+  abstract val batchConfig: LoadedBatchConfig
   abstract val serviceListConfig: EntityListConfig
   abstract val workflowListConfig: EntityListConfig
 
@@ -87,7 +88,7 @@ sealed class EventListenerConfig {
     private val disallowedWorkflows: MutableList<String> = mutableListOf()
     private var serviceListRefreshSeconds: Double = 60.0
     private var workflowListRefreshSeconds: Double = 60.0
-    private var batchConfig = EventListenerBatchConfig()
+    private var batchConfig = LoadedBatchConfig()
 
     fun setListener(cloudEventListener: CloudEventListener) =
         apply { this.listener = cloudEventListener }
@@ -137,7 +138,7 @@ sealed class EventListenerConfig {
         apply { this.workflowListRefreshSeconds = listRefreshSeconds }
 
     fun setBatch(maxEvents: Int, maxSeconds: Double) =
-        apply { this.batchConfig = EventListenerBatchConfig(maxEvents, maxSeconds) }
+        apply { this.batchConfig = LoadedBatchConfig(maxEvents, maxSeconds) }
 
     fun build(): EventListenerConfig {
       require(listener != null) { "${EventListenerConfig::listener.name} must not be null" }
@@ -169,7 +170,7 @@ data class BuiltEventListenerConfig(
   override val listener: CloudEventListener,
   override val concurrency: Int,
   override val subscriptionName: String?,
-  override val batchConfig: EventListenerBatchConfig,
+  override val batchConfig: LoadedBatchConfig,
   override val serviceListConfig: EntityListConfig,
   override val workflowListConfig: EntityListConfig,
 ) : EventListenerConfig()
@@ -181,7 +182,7 @@ data class LoadedEventListenerConfig(
   val `class`: String,
   override val concurrency: Int = 1,
   override val subscriptionName: String? = null,
-  val batch: EventListenerBatchConfig = EventListenerBatchConfig(),
+  val batch: LoadedBatchConfig = LoadedBatchConfig(),
   val services: EntityListConfig = EntityListConfig(),
   val workflows: EntityListConfig = EntityListConfig()
 ) : EventListenerConfig() {
@@ -210,15 +211,3 @@ data class LoadedEventListenerConfig(
 }
 
 private fun error(txt: String) = "eventListener: $txt"
-
-data class EventListenerBatchConfig(
-  val maxEvents: Int = 1000,
-  val maxSeconds: Double = 1.0
-) {
-  init {
-    require(maxEvents > 0) { error("'${::maxEvents.name}' must be > 0, but was $maxEvents") }
-    require(maxSeconds > 0) { error("'${::maxSeconds.name}' must be > 0, but was $maxSeconds") }
-  }
-
-  val maxMillis = (maxSeconds * 1000).toLong()
-}

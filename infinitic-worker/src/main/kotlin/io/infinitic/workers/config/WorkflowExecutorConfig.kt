@@ -22,6 +22,7 @@
  */
 package io.infinitic.workers.config
 
+import io.infinitic.common.transport.config.LoadedBatchConfig
 import io.infinitic.common.utils.getInstance
 import io.infinitic.common.workers.config.RetryPolicy
 import io.infinitic.common.workers.config.UNSET_RETRY_POLICY
@@ -47,6 +48,7 @@ sealed class WorkflowExecutorConfig {
   abstract val withRetry: WithRetry?
   abstract val withTimeout: WithTimeout?
   abstract val checkMode: WorkflowCheckMode?
+  abstract val batchConfig: LoadedBatchConfig?
 
   companion object {
     @JvmStatic
@@ -84,6 +86,7 @@ sealed class WorkflowExecutorConfig {
     private var timeoutSeconds: Double? = UNSET_TIMEOUT
     private var withRetry: WithRetry? = WithRetry.UNSET
     private var checkMode: WorkflowCheckMode? = null
+    private var batchConfig: LoadedBatchConfig? = null
 
     fun setWorkflowName(workflowName: String) =
         apply { this.workflowName = workflowName }
@@ -102,6 +105,9 @@ sealed class WorkflowExecutorConfig {
 
     fun setCheckMode(checkMode: WorkflowCheckMode) =
         apply { this.checkMode = checkMode }
+
+    fun setBatch(maxMessages: Int, maxSeconds: Double) =
+        apply { this.batchConfig = LoadedBatchConfig(maxMessages, maxSeconds) }
 
     fun build(): WorkflowExecutorConfig {
       workflowName.checkWorkflowName()
@@ -123,6 +129,7 @@ sealed class WorkflowExecutorConfig {
           timeoutSeconds.withTimeout,
           withRetry,
           checkMode,
+          batchConfig,
       )
     }
   }
@@ -135,9 +142,10 @@ data class BuiltWorkflowExecutorConfig(
   override val workflowName: String,
   override val factories: WorkflowFactories,
   override val concurrency: Int,
-  override var withTimeout: WithTimeout? = null,
-  override var withRetry: WithRetry? = null,
-  override var checkMode: WorkflowCheckMode? = null,
+  override var withTimeout: WithTimeout?,
+  override var withRetry: WithRetry?,
+  override var checkMode: WorkflowCheckMode?,
+  override val batchConfig: LoadedBatchConfig?
 ) : WorkflowExecutorConfig()
 
 /**
@@ -151,6 +159,7 @@ data class LoadedWorkflowExecutorConfig(
   val timeoutSeconds: Double? = UNSET_TIMEOUT,
   var retry: RetryPolicy? = UNSET_RETRY_POLICY,
   override var checkMode: WorkflowCheckMode? = null,
+  val batch: LoadedBatchConfig? = null,
 ) : WorkflowExecutorConfig(), WithMutableWorkflowName {
   private val allInstances = mutableListOf<Workflow>()
 
@@ -161,6 +170,8 @@ data class LoadedWorkflowExecutorConfig(
   override val factories: WorkflowFactories by lazy {
     allInstances.map { { it::class.java.getInstance().getOrThrow() } }
   }
+
+  override val batchConfig: LoadedBatchConfig? = batch
 
   init {
     // Needed if the workflow context is referenced within the properties of the workflow

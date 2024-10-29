@@ -94,13 +94,13 @@ class TaskExecutor(
     }
   }
 
-  suspend fun batchProcess(messages: List<ServiceExecutorMessage>) = coroutineScope {
+  suspend fun batchProcess(messages: List<ServiceExecutorMessage>) {
     val executeTasks = messages.map {
       when (it) {
         is ExecuteTask -> it
       }
     }
-    executeTasks.process()
+    executeTasks.batchProcess()
   }
 
   context(KLogger)
@@ -159,7 +159,8 @@ class TaskExecutor(
   private fun BatchData.toMetaMap(): Map<TaskId, MutableMap<String, ByteArray>> =
       contextMap.mapValues { it.value.meta }
 
-  private suspend fun List<ExecuteTask>.process() {
+  @JvmName("batchExecuteTask")
+  private suspend fun List<ExecuteTask>.batchProcess() {
     // Signal that the tasks have started
     sendTaskStarted()
 
@@ -679,6 +680,10 @@ class TaskExecutor(
 
         else -> wr
       }
+
+  private suspend fun List<ExecuteTask>.parseWorkflowData(): List<TaskData> = coroutineScope {
+    map { executeTask -> async { executeTask.parseWorkflowData() } }.toList().awaitAll()
+  }
 
   private suspend fun ExecuteTask.parseWorkflowData(): TaskData {
     val serviceInstance = WorkflowTaskImpl()
