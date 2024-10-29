@@ -134,7 +134,7 @@ class TaskExecutorTests :
               workflowId = null,
           )
           // when
-          taskExecutor.handle(msg)
+          taskExecutor.process(msg)
           // then
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 2
@@ -156,7 +156,7 @@ class TaskExecutorTests :
           // with
           val msg = getExecuteTask("other", input, types)
           // when
-          taskExecutor.handle(msg)
+          taskExecutor.process(msg)
           // then
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 2
@@ -177,7 +177,7 @@ class TaskExecutorTests :
           val types = null
           val msg = getExecuteTask("other", input, types)
           // when
-          taskExecutor.handle(msg)
+          taskExecutor.process(msg)
           // then
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 2
@@ -199,7 +199,7 @@ class TaskExecutorTests :
           val msg = getExecuteTask("withThrowable", input, types)
           // when
           val throwable = shouldThrow<Throwable> {
-            taskExecutor.handle(msg)
+            taskExecutor.process(msg)
           }
           // then
           taskExecutorSlot.isCaptured shouldBe false
@@ -221,7 +221,7 @@ class TaskExecutorTests :
           val types = listOf(Int::class.java.name, String::class.java.name)
           val msg = getExecuteTask("unknown", input, types)
           // when
-          taskExecutor.handle(msg)
+          taskExecutor.process(msg)
           // then
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 2
@@ -243,7 +243,7 @@ class TaskExecutorTests :
           // with
           val msg = getExecuteTask("unknown", input, types)
           // when
-          taskExecutor.handle(msg)
+          taskExecutor.process(msg)
           // then
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 2
@@ -264,7 +264,7 @@ class TaskExecutorTests :
           // with
           val msg = getExecuteTask("unknown", input, null)
           // when
-          taskExecutor.handle(msg)
+          taskExecutor.process(msg)
           // then
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 2
@@ -285,7 +285,7 @@ class TaskExecutorTests :
           // with
           val msg = getExecuteTask("handle", input, null)
           // when
-          taskExecutor.handle(msg)
+          taskExecutor.process(msg)
           // then
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 2
@@ -305,7 +305,7 @@ class TaskExecutorTests :
           // with
           val msg = getExecuteTask("handle", arrayOf(2, "3"), null)
           // when
-          taskExecutor.handle(msg)
+          taskExecutor.process(msg)
           // then
           afterSlot.captured shouldBe MillisDuration((SimpleServiceWithRetry.DELAY * 1000).toLong())
           (taskExecutorSlot.captured).shouldBeInstanceOf<ExecuteTask>()
@@ -330,7 +330,7 @@ class TaskExecutorTests :
           // with
           val msg = getExecuteTask("handle", arrayOf(2, "3"), null)
           // when
-          taskExecutor.handle(msg)
+          taskExecutor.process(msg)
           // then
           afterSlot.captured shouldBe MillisDuration((RetryImpl.DELAY * 1000).toLong())
 
@@ -356,7 +356,7 @@ class TaskExecutorTests :
           // with
           val msg = getExecuteTask("handle", arrayOf(2, "3"), null)
           // when
-          taskExecutor.handle(msg)
+          taskExecutor.process(msg)
           // then
           afterSlot.captured shouldBe MillisDuration((RetryImpl.DELAY * 1000).toLong())
 
@@ -382,7 +382,7 @@ class TaskExecutorTests :
           // with
           val msg = getExecuteTask("handle", arrayOf(2, "3"), null)
           // when
-          taskExecutor.handle(msg)
+          taskExecutor.process(msg)
           // then
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 2
@@ -403,7 +403,7 @@ class TaskExecutorTests :
           // with
           val msg = getExecuteTask("handle", input, null)
           // when
-          taskExecutor.handle(msg)
+          taskExecutor.process(msg)
           // then
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 2
@@ -428,7 +428,7 @@ class TaskExecutorTests :
           // with
           val msg = getExecuteTask("handle", arrayOf(2, "3"), types)
           // when
-          taskExecutor.handle(msg)
+          taskExecutor.process(msg)
           // then
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 2
@@ -451,7 +451,7 @@ class TaskExecutorTests :
           // with
           val msg = getExecuteTask("handle", input, types)
           // when
-          taskExecutor.handle(msg)
+          taskExecutor.process(msg)
           // then
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 2
@@ -475,7 +475,7 @@ class TaskExecutorTests :
           // with
           val msg = getExecuteTask("handle", input, types)
           // when
-          taskExecutor.handle(msg)
+          taskExecutor.process(msg)
           // then
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 2

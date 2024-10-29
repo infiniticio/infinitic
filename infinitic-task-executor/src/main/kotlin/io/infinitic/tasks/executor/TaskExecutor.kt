@@ -88,13 +88,13 @@ class TaskExecutor(
 ) {
   private suspend fun getEmitterName() = EmitterName(producer.getName())
 
-  suspend fun handle(msg: ServiceExecutorMessage) {
+  suspend fun process(msg: ServiceExecutorMessage) {
     when (msg) {
       is ExecuteTask -> msg.process()
     }
   }
 
-  suspend fun handleBatch(messages: List<ServiceExecutorMessage>) = coroutineScope {
+  suspend fun batchProcess(messages: List<ServiceExecutorMessage>) = coroutineScope {
     val executeTasks = messages.map {
       when (it) {
         is ExecuteTask -> it
