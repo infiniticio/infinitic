@@ -31,7 +31,6 @@ import io.infinitic.common.tasks.events.messages.ServiceExecutorEventMessage
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.tasks.tags.messages.ServiceTagMessage
-import io.infinitic.common.transport.BatchConfig
 import io.infinitic.common.transport.MainSubscription
 import io.infinitic.common.transport.ServiceExecutorEventTopic
 import io.infinitic.common.transport.ServiceExecutorRetryTopic
@@ -85,9 +84,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.future.future
 import kotlinx.coroutines.job
 import kotlinx.coroutines.joinAll
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import java.util.concurrent.CompletableFuture
@@ -423,10 +424,12 @@ class InfiniticWorker(
 
       val batchProcess: suspend (List<ServiceExecutorMessage>, List<MillisInstant>) -> Unit =
           { messages, publishedAtList ->
-            messages.zip(publishedAtList).forEach { (message, publishedAt) ->
-              cloudEventLogger.log(message, publishedAt)
+            coroutineScope {
+              messages.zip(publishedAtList).forEach { (message, publishedAt) ->
+                launch { cloudEventLogger.log(message, publishedAt) }
+              }
+              launch { taskExecutor.batchProcess(messages) }
             }
-            taskExecutor.batchProcess(messages)
           }
 
       val beforeDlq: suspend (ServiceExecutorMessage, Exception) -> Unit = { message, cause ->
@@ -657,10 +660,12 @@ class InfiniticWorker(
 
       val batchProcess: suspend (List<ServiceExecutorMessage>, List<MillisInstant>) -> Unit =
           { messages, publishedAtList ->
-            messages.zip(publishedAtList).forEach { (message, publishedAt) ->
-              cloudEventLogger.log(message, publishedAt)
+            coroutineScope {
+              messages.zip(publishedAtList).forEach { (message, publishedAt) ->
+                launch { cloudEventLogger.log(message, publishedAt) }
+              }
+              launch { workflowTaskExecutor.batchProcess(messages) }
             }
-            workflowTaskExecutor.batchProcess(messages)
           }
 
       consumer.startAsync(
@@ -669,9 +674,7 @@ class InfiniticWorker(
           concurrency = config.concurrency,
           process = process,
           beforeDlq = beforeDlq,
-          batchConfig = config.batchConfig?.let { b ->
-            { BatchConfig(config.workflowName, b.maxMessages, b.maxMillis) }
-          },
+          batchConfig = { msg -> workflowTaskExecutor.getBatchConfig(msg) },
           batchProcess = batchProcess,
       )
     }

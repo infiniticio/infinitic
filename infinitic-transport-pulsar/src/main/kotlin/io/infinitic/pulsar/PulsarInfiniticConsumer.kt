@@ -128,6 +128,8 @@ class PulsarInfiniticConsumer(
                 deserialize,
                 process,
                 beforeDlq,
+                batchConfig,
+                batchProcess,
             )
           }
         }

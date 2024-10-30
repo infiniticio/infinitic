@@ -33,6 +33,6 @@ interface WorkflowTask {
   }
 }
 
-internal fun ServiceName.isWorkflowTask() = (this == WORKFLOW_SERVICE_NAME) ||
+fun ServiceName.isWorkflowTask() = (this == WORKFLOW_SERVICE_NAME) ||
     // For backward compatibility with Infinitic version < 0.13.0
     (this == ServiceName("io.infinitic.common.workflows.data.workflowTasks.WorkflowTask"))

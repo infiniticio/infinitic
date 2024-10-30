@@ -23,6 +23,7 @@
 package io.infinitic.common.registry
 
 import io.infinitic.common.tasks.data.ServiceName
+import io.infinitic.common.transport.BatchConfig
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.tasks.WithRetry
@@ -39,4 +40,5 @@ interface ExecutorRegistryInterface {
   fun getWorkflowExecutorWithTimeout(workflowName: WorkflowName): WithTimeout?
   fun getWorkflowExecutorWithRetry(workflowName: WorkflowName): WithRetry?
   fun getWorkflowExecutorCheckMode(workflowName: WorkflowName): WorkflowCheckMode?
+  fun getWorkflowExecutorBatchConfig(workflowName: WorkflowName): BatchConfig?
 }

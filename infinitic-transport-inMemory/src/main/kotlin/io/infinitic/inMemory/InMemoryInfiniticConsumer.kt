@@ -27,13 +27,13 @@ import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.messages.Message
 import io.infinitic.common.transport.BatchConfig
 import io.infinitic.common.transport.EventListenerSubscription
-import io.infinitic.common.transport.interfaces.InfiniticConsumer
 import io.infinitic.common.transport.MainSubscription
 import io.infinitic.common.transport.Subscription
-import io.infinitic.common.transport.interfaces.TransportConsumer
-import io.infinitic.common.transport.interfaces.TransportMessage
 import io.infinitic.common.transport.acceptDelayed
 import io.infinitic.common.transport.consumers.startAsync
+import io.infinitic.common.transport.interfaces.InfiniticConsumer
+import io.infinitic.common.transport.interfaces.TransportConsumer
+import io.infinitic.common.transport.interfaces.TransportMessage
 import io.infinitic.inMemory.channels.DelayedMessage
 import io.infinitic.inMemory.channels.InMemoryChannels
 import io.infinitic.inMemory.consumers.InMemoryConsumer
@@ -92,6 +92,8 @@ class InMemoryInfiniticConsumer(
                 deserialize,
                 process,
                 beforeDlq,
+                batchConfig,
+                batchProcess,
             )
           }
         }
