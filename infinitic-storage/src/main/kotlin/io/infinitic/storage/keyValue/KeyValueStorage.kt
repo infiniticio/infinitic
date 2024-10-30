@@ -30,4 +30,10 @@ interface KeyValueStorage : Flushable, AutoCloseable {
   suspend fun put(key: String, value: ByteArray)
 
   suspend fun del(key: String)
+
+  suspend fun getSet(keys: Set<String>): Map<String, ByteArray?>
+
+  suspend fun putSet(map: Map<String, ByteArray>)
+
+  suspend fun delSet(keys: Set<String>)
 }

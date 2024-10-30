@@ -50,6 +50,32 @@ open class CachedKeyValueStorage(
     cache.delValue(key)
   }
 
+  override suspend fun getSet(keys: Set<String>): Map<String, ByteArray?> {
+    val output = keys.associateWith { cache.getValue(it) }.toMutableMap()
+    val missingKeys = output.filterValues { it == null }.keys
+    val missingValuesFromStorage = storage.getSet(missingKeys)
+
+    missingValuesFromStorage.forEach { (key, value) ->
+      logger.debug { "key $key - getValue - absent from cache, get from storage" }
+      value?.let {
+        output[key] = value
+        cache.putValue(key, value)
+      }
+    }
+
+    return output
+  }
+
+  override suspend fun putSet(map: Map<String, ByteArray>) {
+    storage.putSet(map)
+    map.forEach { (key, value) -> cache.putValue(key, value) }
+  }
+
+  override suspend fun delSet(keys: Set<String>) {
+    storage.delSet(keys)
+    keys.forEach { cache.delValue(it) }
+  }
+
   override fun close() {
     storage.close()
   }

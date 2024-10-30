@@ -26,6 +26,7 @@ dependencies {
   implementation(project(":infinitic-utils"))
 
   implementation(Libs.Hoplite.core)
+  implementation(Libs.Coroutines.core)
   implementation("com.zaxxer:HikariCP:5.0.1")
 
   // Compressor

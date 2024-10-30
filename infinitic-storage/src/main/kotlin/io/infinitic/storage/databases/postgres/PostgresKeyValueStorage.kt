@@ -89,6 +89,58 @@ class PostgresKeyValueStorage(
     }
   }
 
+
+  override suspend fun getSet(keys: Set<String>): Map<String, ByteArray?> {
+    return pool.connection.use { connection ->
+      connection.prepareStatement(
+          "SELECT key, value FROM $schema.$tableName WHERE key = ANY(?)",
+      ).use { statement ->
+        val array = connection.createArrayOf("VARCHAR", keys.toTypedArray())
+        statement.setArray(1, array)
+        statement.executeQuery().use { resultSet ->
+          val results = mutableMapOf<String, ByteArray?>()
+          while (resultSet.next()) {
+            results[resultSet.getString("key")] = resultSet.getBytes("value")
+          }
+          // add missing keys
+          keys.forEach { key ->
+            results.putIfAbsent(key, null)
+          }
+          results
+        }
+      }
+    }
+  }
+
+  override suspend fun putSet(map: Map<String, ByteArray>) {
+    pool.connection.use { connection ->
+      connection.prepareStatement(
+          "INSERT INTO $schema.$tableName (key, value, value_size_in_KiB) VALUES (?, ?, ?) " +
+              "ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value",
+      ).use { statement ->
+        for ((key, value) in map) {
+          statement.setString(1, key)
+          statement.setBytes(2, value)
+          statement.setInt(3, ceil(value.size / 1024.0).toInt())
+          statement.addBatch()
+        }
+        statement.executeBatch()
+      }
+    }
+  }
+
+  override suspend fun delSet(keys: Set<String>) {
+    pool.connection.use { connection ->
+      connection.prepareStatement(
+          "DELETE FROM $schema.$tableName WHERE key = ANY(?)",
+      ).use { statement ->
+        val array = connection.createArrayOf("VARCHAR", keys.toTypedArray())
+        statement.setArray(1, array)
+        statement.executeUpdate()
+      }
+    }
+  }
+
   @TestOnly
   override fun flush() {
     pool.connection.use { connection ->

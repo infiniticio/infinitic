@@ -24,6 +24,7 @@ package io.infinitic.storage.databases.mysql
 
 import io.infinitic.storage.DockerOnly
 import io.infinitic.storage.config.MySQLConfig
+import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.annotation.EnabledIf
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -72,30 +73,78 @@ class MySQLKeyValueStorageTests :
           }
         }
 
-        "getValue should return null on unknown key" { storage.get("unknown") shouldBe null }
+        "get should return null on unknown key" {
+          storage.get("unknown") shouldBe null
+        }
 
-        "getValue should return value" {
+        "get should return value" {
           storage.get("foo").contentEquals("bar".toByteArray()) shouldBe true
         }
 
-        "putValue on new key should create value" {
+        "put on new key should create value" {
           storage.put("foo2", "bar2".toByteArray())
 
           storage.get("foo2").contentEquals("bar2".toByteArray()) shouldBe true
         }
 
-        "putValue on existing key should update value" {
+        "put on existing key should update value" {
           storage.put("foo", "bar2".toByteArray())
 
           storage.get("foo").contentEquals("bar2".toByteArray()) shouldBe true
         }
 
-        "delValue on unknown key does nothing" { storage.del("unknown") }
+        "del on unknown key does nothing" {
+          shouldNotThrowAny { storage.del("unknown") }
+        }
 
-        "delValue should delete value" {
+        "del should delete value" {
           storage.del("foo")
 
           storage.get("foo") shouldBe null
+        }
+
+        "getSet should return null on unknown key" {
+          storage.getSet(setOf("foo", "unknown")) shouldBe mapOf(
+              "foo" to "bar".toByteArray(),
+              "unknown" to null,
+          )
+        }
+
+        "putSet on new key should create value" {
+          storage.putSet(
+              mapOf(
+                  "foo2" to "bar2".toByteArray(),
+                  "foo3" to "bar3".toByteArray(),
+              ),
+          )
+
+          storage.getSet(setOf("foo2", "foo3")) shouldBe mapOf(
+              "foo2" to "bar2".toByteArray(),
+              "foo3" to "bar3".toByteArray(),
+          )
+        }
+
+        "putSet on existing key should update value" {
+          storage.putSet(
+              mapOf(
+                  "foo" to "bar2".toByteArray(),
+                  "foo3" to "bar3".toByteArray(),
+              ),
+          )
+
+          storage.getSet(setOf("foo", "foo3")) shouldBe mapOf(
+              "foo" to "bar2".toByteArray(),
+              "foo3" to "bar3".toByteArray(),
+          )
+        }
+
+        "delSet on unknown key does nothing" {
+          shouldNotThrowAny { storage.delSet(setOf("foo", "unknown")) }
+
+          storage.getSet(setOf("foo", "unknown")) shouldBe mapOf(
+              "foo" to null,
+              "unknown" to null,
+          )
         }
       },
   )

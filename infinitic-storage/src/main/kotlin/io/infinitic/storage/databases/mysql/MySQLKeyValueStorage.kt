@@ -79,6 +79,55 @@ class MySQLKeyValueStorage(
     }
   }
 
+  override suspend fun getSet(keys: Set<String>): Map<String, ByteArray?> {
+    return pool.connection.use { connection ->
+      val questionMarks = keys.joinToString(",") { "?" }
+      connection.prepareStatement("SELECT `key`, `value` FROM $tableName WHERE `key` IN ($questionMarks)")
+          .use { statement ->
+            keys.forEachIndexed { index, key -> statement.setString(index + 1, key) }
+            statement.executeQuery().use { resultSet ->
+              val result = mutableMapOf<String, ByteArray?>()
+              while (resultSet.next()) {
+                result[resultSet.getString("key")] = resultSet.getBytes("value")
+              }
+              // add missing keys
+              keys.forEach { key ->
+                result.putIfAbsent(key, null)
+              }
+              result
+            }
+          }
+    }
+  }
+
+  override suspend fun putSet(map: Map<String, ByteArray>) {
+    pool.connection.use { connection ->
+      connection.prepareStatement(
+          "INSERT INTO $tableName (`key`, `value`) VALUES (?, ?) " +
+              "ON DUPLICATE KEY UPDATE `value`=?",
+      ).use { statement ->
+        map.forEach { (key, value) ->
+          statement.setString(1, key)
+          statement.setBytes(2, value)
+          statement.setBytes(3, value)
+          statement.addBatch()
+        }
+        statement.executeBatch()
+      }
+    }
+  }
+
+  override suspend fun delSet(keys: Set<String>) {
+    pool.connection.use { connection ->
+      val questionMarks = keys.joinToString(",") { "?" }
+      connection.prepareStatement("DELETE FROM $tableName WHERE `key` IN ($questionMarks)")
+          .use { statement ->
+            keys.forEachIndexed { index, key -> statement.setString(index + 1, key) }
+            statement.executeUpdate()
+          }
+    }
+  }
+
   override fun close() {
     pool.close()
   }
