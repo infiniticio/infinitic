@@ -63,7 +63,7 @@ class PulsarInfiniticProducer(
 
   override suspend fun <T : Message> internalSendTo(
     message: T,
-    topic: Topic<T>,
+    topic: Topic<out T>,
     after: MillisDuration
   ) {
     val topicFullName = with(pulsarResources) {

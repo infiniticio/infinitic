@@ -25,9 +25,9 @@ package io.infinitic.inMemory
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.messages.Message
-import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.transport.Topic
 import io.infinitic.common.transport.acceptDelayed
+import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.inMemory.channels.DelayedMessage
 import io.infinitic.inMemory.channels.InMemoryChannels
 import io.infinitic.inMemory.channels.id
@@ -48,7 +48,7 @@ class InMemoryInfiniticProducer(
 
   override suspend fun <T : Message> internalSendTo(
     message: T,
-    topic: Topic<T>,
+    topic: Topic<out T>,
     after: MillisDuration
   ) {
     when (topic.acceptDelayed) {
@@ -70,7 +70,7 @@ class InMemoryInfiniticProducer(
     }
   }
 
-  private fun <S : Message> Topic<S>.channelsForMessage(message: S): List<Channel<S>> {
+  private fun <S : Message> Topic<out S>.channelsForMessage(message: S): List<Channel<S>> {
     val entity = message.entity()
 
     return listOf(
@@ -79,7 +79,7 @@ class InMemoryInfiniticProducer(
     )
   }
 
-  private fun <S : Message> Topic<S>.channelsForDelayedMessage(message: S): List<Channel<DelayedMessage<S>>> {
+  private fun <S : Message> Topic<out S>.channelsForDelayedMessage(message: S): List<Channel<DelayedMessage<S>>> {
     val entity = message.entity()
 
     return listOf(

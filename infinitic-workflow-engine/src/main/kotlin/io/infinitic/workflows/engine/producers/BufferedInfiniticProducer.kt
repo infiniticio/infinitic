@@ -20,52 +20,52 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.transport.logged
 
-import io.github.oshai.kotlinlogging.KLogger
+package io.infinitic.workflows.engine.producers
+
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.messages.Message
 import io.infinitic.common.transport.Topic
 import io.infinitic.common.transport.interfaces.InfiniticProducer
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
-class LoggedInfiniticProducer(
-  private val logger: KLogger,
-  private val producer: InfiniticProducer,
-) : InfiniticProducer {
+class BufferedInfiniticProducer(val producer: InfiniticProducer) : InfiniticProducer {
+  private val buffer = mutableListOf<Letter<*>>()
+  private val mutex = Mutex()
 
-  override suspend fun getName() = producer.getName()
+  override suspend fun getName(): String = producer.getName()
 
-  override fun setSuggestedName(name: String) {
-    producer.setSuggestedName(name)
-  }
+  override fun setSuggestedName(name: String) = producer.setSuggestedName(name)
 
   override suspend fun <T : Message> internalSendTo(
     message: T,
     topic: Topic<out T>,
     after: MillisDuration
   ) {
-    logSending(message, after, topic)
-    with(producer) { internalSendTo(message, topic, after) }
-    logSent(message, topic)
-  }
-
-  private fun logSending(message: Message, after: MillisDuration, topic: Topic<*>) {
-    logger.debug {
-      formatLog(
-          message.id(),
-          after.sending + " to ${topic::class.java.simpleName}:",
-          message,
-      )
+    mutex.withLock {
+      buffer.add(Letter(message, topic, after))
     }
   }
 
-  private fun logSent(message: Message, topic: Topic<*>) {
-    logger.trace { formatLog(message.id(), "Sent to ${topic::class.java.simpleName}:", message) }
-  }
-
-  private val MillisDuration?.sending
-    get() = when {
-      this == null || this <= 0 -> "Sending"
-      else -> "After $this, sending"
+  suspend fun flush() = mutex.withLock {
+    coroutineScope {
+      buffer.forEach {
+        launch {
+          with(producer) {
+            it.message.sendTo(it.topic, it.after)
+          }
+        }
+      }
     }
+    buffer.clear()
+  }
 }
+
+private data class Letter<T : Message>(
+  val message: T,
+  val topic: Topic<out T>,
+  val after: MillisDuration
+)

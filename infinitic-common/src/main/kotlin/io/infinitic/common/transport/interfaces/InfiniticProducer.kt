@@ -42,7 +42,7 @@ interface InfiniticProducer {
 
   suspend fun <T : Message> internalSendTo(
     message: T,
-    topic: Topic<T>,
+    topic: Topic<out T>,
     after: MillisDuration = MillisDuration(0),
   )
 
@@ -54,7 +54,7 @@ interface InfiniticProducer {
    * @return a CompletableFuture that completes when the message has been sent
    */
   suspend fun <T : Message> T.sendTo(
-    topic: Topic<T>,
+    topic: Topic<out Message>,
     after: MillisDuration = MillisDuration(0)
   ) {
     require(after <= 0 || topic.acceptDelayed) { thisShouldNotHappen("Trying to send to $topic with a delay $after") }

@@ -573,7 +573,7 @@ class InfiniticWorker(
       val process: suspend (WorkflowStateEngineMessage, MillisInstant) -> Unit =
           { message, publishedAt ->
             cloudEventLogger.log(message, publishedAt)
-            workflowStateEngine.handle(message, publishedAt)
+            workflowStateEngine.process(message, publishedAt)
           }
 
       consumer.startAsync(

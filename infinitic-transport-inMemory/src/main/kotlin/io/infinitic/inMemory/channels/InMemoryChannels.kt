@@ -83,7 +83,7 @@ class InMemoryChannels {
       ConcurrentHashMap<String, Channel<DelayedMessage<ServiceExecutorMessage>>>()
 
   @Suppress("UNCHECKED_CAST")
-  fun <S : Message> Topic<S>.channel(entity: String): Channel<S> = when (this) {
+  fun <S : Message> Topic<out S>.channel(entity: String): Channel<S> = when (this) {
     ClientTopic -> clientChannels.getOrPut(entity, newChannel())
     ServiceTagEngineTopic -> serviceTagEngineChannels.getOrPut(entity, newChannel())
     ServiceExecutorTopic -> serviceExecutorChannels.getOrPut(entity, newChannel())
@@ -98,7 +98,7 @@ class InMemoryChannels {
   } as Channel<S>
 
   @Suppress("UNCHECKED_CAST")
-  fun <S : Message> Topic<S>.channelForDelayed(entity: String): Channel<DelayedMessage<S>> {
+  fun <S : Message> Topic<out S>.channelForDelayed(entity: String): Channel<DelayedMessage<S>> {
     return when (this) {
       ServiceExecutorRetryTopic -> serviceExecutorRetryChannels.getOrPut(entity, newChannel())
       WorkflowStateTimerTopic -> workflowStateTimerChannels.getOrPut(entity, newChannel())

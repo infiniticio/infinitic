@@ -159,7 +159,7 @@ val Topic<*>.acceptDelayed
  * If the current [Topic] is not a delayed topic, it returns itself.
  */
 @Suppress("UNCHECKED_CAST")
-val <S : Message> Topic<S>.withoutDelay
+val <S : Message> Topic<out S>.withoutDelay
   get() = when (this) {
     WorkflowStateTimerTopic -> WorkflowStateEngineTopic
     WorkflowExecutorRetryTopic -> WorkflowExecutorTopic
@@ -171,7 +171,7 @@ val <S : Message> Topic<S>.withoutDelay
  * @return a [Topic] relative to workflowTask.
  */
 @Suppress("UNCHECKED_CAST")
-val <S : Message> Topic<S>.forWorkflow
+val <S : Message> Topic<out S>.forWorkflow
   get() = when (this) {
     ServiceExecutorTopic -> WorkflowExecutorTopic
     ServiceExecutorRetryTopic -> WorkflowExecutorRetryTopic
