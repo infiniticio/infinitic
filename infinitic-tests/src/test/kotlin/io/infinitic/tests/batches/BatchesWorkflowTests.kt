@@ -24,8 +24,15 @@ package io.infinitic.tests.batches
 
 import io.infinitic.Test
 import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.longs.shouldBeLessThan
 import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+import kotlin.system.measureTimeMillis
 import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 
 internal class BatchesWorkflowTests : StringSpec(
     {
@@ -132,6 +139,21 @@ internal class BatchesWorkflowTests : StringSpec(
 
       "If Task contains a batch key, all batches should have the same key" {
         batchWorkflow.withKey(20) shouldBe true
+      }
+
+      "checking workflow executor batching".config(timeout = 10.seconds) {
+        val scope = CoroutineScope(Dispatchers.IO)
+        val duration = measureTimeMillis {
+          scope.launch {
+            coroutineScope {
+              repeat(20) {
+                launch { batchWorkflow.withDelay(1000) }
+              }
+            }
+          }.join()
+        }
+        println("duration: $duration")
+        duration shouldBeLessThan 10000L
       }
     },
 )

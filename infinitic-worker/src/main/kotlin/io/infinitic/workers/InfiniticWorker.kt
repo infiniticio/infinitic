@@ -31,6 +31,7 @@ import io.infinitic.common.tasks.events.messages.ServiceExecutorEventMessage
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.tasks.tags.messages.ServiceTagMessage
+import io.infinitic.common.transport.BatchConfig
 import io.infinitic.common.transport.MainSubscription
 import io.infinitic.common.transport.ServiceExecutorEventTopic
 import io.infinitic.common.transport.ServiceExecutorRetryTopic
@@ -549,11 +550,27 @@ class InfiniticWorker(
             workflowStateCmdHandler.process(message, publishedAt)
           }
 
+      val batchProcess: suspend (List<WorkflowStateEngineMessage>, List<MillisInstant>) -> Unit =
+          { messages, publishedAtList ->
+            coroutineScope {
+              messages.zip(publishedAtList).forEach { (message, publishedAt) ->
+                launch { cloudEventLogger.log(message, publishedAt) }
+              }
+              launch { workflowStateCmdHandler.batchProcess(messages, publishedAtList) }
+            }
+          }
+
+      val batchConfig = config.batch?.let {
+        BatchConfig("workflowCmd:" + config.workflowName, it.maxMessages, it.maxMillis)
+      }
+
       consumer.startAsync(
           subscription = MainSubscription(WorkflowStateCmdTopic),
           entity = config.workflowName,
           concurrency = config.concurrency,
           process = process,
+          batchConfig = { _ -> batchConfig },
+          batchProcess = batchProcess,
       )
     }
 
@@ -576,11 +593,27 @@ class InfiniticWorker(
             workflowStateEngine.process(message, publishedAt)
           }
 
+      val batchProcess: suspend (List<WorkflowStateEngineMessage>, List<MillisInstant>) -> Unit =
+          { messages, publishedAtList ->
+            coroutineScope {
+              messages.zip(publishedAtList).forEach { (message, publishedAt) ->
+                launch { cloudEventLogger.log(message, publishedAt) }
+              }
+              launch { workflowStateEngine.batchProcess(messages, publishedAtList) }
+            }
+          }
+
+      val batchConfig = config.batch?.let {
+        BatchConfig("workflowState:" + config.workflowName, it.maxMessages, it.maxMillis)
+      }
+
       consumer.startAsync(
           subscription = MainSubscription(WorkflowStateEngineTopic),
           entity = config.workflowName,
           concurrency = config.concurrency,
           process = process,
+          batchConfig = { _ -> batchConfig },
+          batchProcess = batchProcess,
       )
     }
 
@@ -615,11 +648,27 @@ class InfiniticWorker(
             workflowStateEventHandler.process(message, publishedAt)
           }
 
+      val batchProcess: suspend (List<WorkflowStateEventMessage>, List<MillisInstant>) -> Unit =
+          { messages, publishedAtList ->
+            coroutineScope {
+              messages.zip(publishedAtList).forEach { (message, publishedAt) ->
+                launch { cloudEventLogger.log(message, publishedAt) }
+              }
+              launch { workflowStateEventHandler.batchProcess(messages, publishedAtList) }
+            }
+          }
+
+      val batchConfig = config.batch?.let {
+        BatchConfig("workflowEvent:" + config.workflowName, it.maxMessages, it.maxMillis)
+      }
+
       consumer.startAsync(
           subscription = MainSubscription(WorkflowStateEventTopic),
           entity = config.workflowName,
           concurrency = config.concurrency,
           process = process,
+          batchConfig = { _ -> batchConfig },
+          batchProcess = batchProcess,
       )
     }
 
@@ -658,6 +707,10 @@ class InfiniticWorker(
         }
       }
 
+      val batchConfig = config.batchConfig?.let {
+        BatchConfig("workflowExecutor:" + config.workflowName, it.maxMessages, it.maxMillis)
+      }
+
       val batchProcess: suspend (List<ServiceExecutorMessage>, List<MillisInstant>) -> Unit =
           { messages, publishedAtList ->
             coroutineScope {
@@ -674,7 +727,7 @@ class InfiniticWorker(
           concurrency = config.concurrency,
           process = process,
           beforeDlq = beforeDlq,
-          batchConfig = { msg -> workflowTaskExecutor.getBatchConfig(msg) },
+          batchConfig = { _ -> batchConfig },
           batchProcess = batchProcess,
       )
     }

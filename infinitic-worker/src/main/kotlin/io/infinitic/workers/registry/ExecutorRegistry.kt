@@ -25,7 +25,6 @@ package io.infinitic.workers.registry
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.registry.ExecutorRegistryInterface
 import io.infinitic.common.tasks.data.ServiceName
-import io.infinitic.common.transport.BatchConfig
 import io.infinitic.common.workers.config.WorkflowVersion
 import io.infinitic.common.workflows.WorkflowContext
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
@@ -81,11 +80,6 @@ class ExecutorRegistry(
 
   override fun getWorkflowExecutorCheckMode(workflowName: WorkflowName): WorkflowCheckMode? =
       getWorkflowExecutor(workflowName).checkMode
-
-  override fun getWorkflowExecutorBatchConfig(workflowName: WorkflowName): BatchConfig? =
-      getWorkflowExecutor(workflowName).batchConfig?.let {
-        BatchConfig(workflowName.toString(), it.maxMessages, it.maxMillis)
-      }
 
   private fun getService(serviceName: ServiceName): ServiceConfig? =
       services.firstOrNull { it.name == serviceName.name }

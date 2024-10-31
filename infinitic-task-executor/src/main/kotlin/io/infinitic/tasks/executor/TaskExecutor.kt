@@ -126,7 +126,7 @@ class TaskExecutor(
 
   context(KLogger)
   private fun ExecuteTask.getBatchConfig(): BatchConfig? = when (isWorkflowTask()) {
-    true -> registry.getWorkflowExecutorBatchConfig((requester as WorkflowRequester).workflowName)
+    true -> thisShouldNotHappen()
     false -> {
       val (instance, method) = getInstanceAndMethod()
       // get batch config for method

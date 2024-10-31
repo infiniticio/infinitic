@@ -34,7 +34,6 @@ import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
 import io.infinitic.common.workflows.engine.commands.dispatchTask
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
-import io.infinitic.common.workflows.engine.messages.WorkflowStateCmdMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
 import io.infinitic.common.workflows.engine.messages.requester
 import kotlinx.coroutines.coroutineScope
@@ -45,7 +44,7 @@ class WorkflowStateCmdHandler(val producer: InfiniticProducer) {
   private suspend fun getEmitterName() = EmitterName(producer.getName())
 
   suspend fun batchProcess(
-    messages: List<WorkflowStateCmdMessage>,
+    messages: List<WorkflowStateEngineMessage>,
     publishTimes: List<MillisInstant>
   ) = coroutineScope {
     messages.zip(publishTimes) { msg, publishTime -> launch { process(msg, publishTime) } }

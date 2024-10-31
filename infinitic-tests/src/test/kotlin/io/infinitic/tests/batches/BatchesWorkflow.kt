@@ -36,6 +36,7 @@ internal interface BatchWorkflow {
   fun foo5(foo: Int, bar: Int): Input
   fun foo6(foo: Int, bar: Int)
   fun withKey(n: Int): Boolean
+  fun withDelay(delay: Long)
 }
 
 @Suppress("unused")
@@ -62,5 +63,9 @@ internal class BatchWorkflowImpl : Workflow(), BatchWorkflow {
     }
     // return true if all true
     return deferredList.and().await().all { it }
+  }
+
+  override fun withDelay(delay: Long) {
+    inline { Thread.sleep(delay) }
   }
 }
