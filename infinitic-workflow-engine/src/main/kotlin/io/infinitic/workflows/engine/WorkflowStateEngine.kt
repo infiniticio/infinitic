@@ -37,6 +37,7 @@ import io.infinitic.common.transport.WorkflowStateEventTopic
 import io.infinitic.common.transport.WorkflowTagEngineTopic
 import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.transport.logged.formatLog
+import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.CompleteTimers
 import io.infinitic.common.workflows.engine.messages.CompleteWorkflow
@@ -86,6 +87,7 @@ import io.infinitic.workflows.engine.handlers.workflowTaskCompleted
 import io.infinitic.workflows.engine.handlers.workflowTaskFailed
 import io.infinitic.workflows.engine.producers.BufferedInfiniticProducer
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
@@ -102,11 +104,74 @@ class WorkflowStateEngine(
 
   private suspend fun getEmitterName() = EmitterName(_producer.getName())
 
-  suspend fun process(message: WorkflowStateEngineMessage, publishTime: MillisInstant) {
+  suspend fun batchProcess(
+    messages: List<WorkflowStateEngineMessage>,
+    publishTimes: List<MillisInstant>
+  ) {
+    val messagesMap: Map<WorkflowId, List<Pair<WorkflowStateEngineMessage, MillisInstant>>> =
+        messages.zip(publishTimes).groupBy { it.first.workflowId }
+
+    // process all messages by workflowId, in parallel
+    val producersAndStates = coroutineScope {
+      messagesMap
+          .mapValues { (workflowId, messageAndPublishTime) ->
+            async { batchProcessById(workflowId, messageAndPublishTime) }
+          }
+          .mapValues { it.value.await() }
+    }
+    // Send all messages
+    coroutineScope {
+      producersAndStates.values.forEach { (producer, _) -> launch { producer.flush() } }
+    }
+
+    // atomically stores the states
+    val states = producersAndStates.mapValues { it.value.second }
+    storage.putStates(states)
+  }
+
+  private suspend fun batchProcessById(
+    workflowId: WorkflowId,
+    messages: List<Pair<WorkflowStateEngineMessage, MillisInstant>>
+  ): Pair<BufferedInfiniticProducer, WorkflowState?> {
+    // do not send messages but buffer them
     val bufferedProducer = BufferedInfiniticProducer(_producer)
 
     // get current state
-    var state = storage.getState(message.workflowId)
+    var state: WorkflowState? = storage.getState(workflowId)
+
+    // process all received messages, starting by the oldest
+    messages
+        .sortedBy { it.second.long }
+        .forEach { (message, publishTime) ->
+          state = processSingle(bufferedProducer, state, message, publishTime)
+        }
+
+    return Pair(bufferedProducer, state)
+  }
+
+  suspend fun process(message: WorkflowStateEngineMessage, publishTime: MillisInstant) {
+    // create a producer that buffers messages
+    val bufferedProducer = BufferedInfiniticProducer(_producer)
+
+    // get current state
+    val state = storage.getState(message.workflowId)
+
+    // process this message
+    val updatedState = processSingle(bufferedProducer, state, message, publishTime)
+
+    // send new messages
+    bufferedProducer.flush()
+
+    // store updated state
+    storage.putState(message.workflowId, updatedState)
+  }
+
+  private suspend fun processSingle(
+    producer: InfiniticProducer,
+    state: WorkflowState?,
+    message: WorkflowStateEngineMessage,
+    publishTime: MillisInstant
+  ): WorkflowState? {
 
     // if a crash happened between the state update and the message acknowledgement,
     // it's possible to receive a message that has already been processed
@@ -114,38 +179,33 @@ class WorkflowStateEngine(
     if (state?.lastMessageId == message.messageId) {
       logDiscarding(message) { "as state already contains messageId ${message.messageId}" }
 
-      return
+      return state
     }
 
     // This is needed for compatibility with messages before v0.13.0
     if (message.emittedAt == null) message.emittedAt = publishTime
 
-    state = when (state) {
-      null -> processMessageWithoutState(bufferedProducer, message)
-      else -> processMessageWithState(bufferedProducer, message, state)
+    val updatedState = when (state) {
+      null -> processMessageWithoutState(producer, message)
+      else -> processMessageWithState(producer, message, state)
     }
 
-    if (state == null) {
-      bufferedProducer.flush()
-      return
-    }
-
-    when (state.workflowMethods.size) {
+    return when (updatedState?.workflowMethods?.size) {
+      // no state
+      null -> null
       // workflow is completed
       0 -> {
         // remove reference to this workflow in tags
-        removeTags(bufferedProducer, state)
-        bufferedProducer.flush()
+        removeTags(producer, updatedState)
         // delete state
-        storage.delState(message.workflowId)
+        null
       }
       // workflow is ongoing
       else -> {
-        bufferedProducer.flush()
         // record this message as the last processed
-        state.lastMessageId = message.messageId
+        updatedState.lastMessageId = message.messageId
         // update state
-        storage.putState(message.workflowId, state)
+        updatedState
       }
     }
   }
