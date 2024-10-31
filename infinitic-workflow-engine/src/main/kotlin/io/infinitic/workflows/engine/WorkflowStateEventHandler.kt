@@ -26,8 +26,8 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.transport.ClientTopic
-import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.transport.WorkflowStateEngineTopic
+import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.workflows.engine.messages.MethodCanceledEvent
 import io.infinitic.common.workflows.engine.messages.MethodCommandedEvent
 import io.infinitic.common.workflows.engine.messages.MethodCompletedEvent
@@ -42,24 +42,55 @@ import io.infinitic.common.workflows.engine.messages.TimerDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowCanceledEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowCompletedEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEventMessage
+import io.infinitic.workflows.engine.producers.BufferedInfiniticProducer
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
-class WorkflowStateEventHandler(val producer: InfiniticProducer) {
+class WorkflowStateEventHandler(private val _producer: InfiniticProducer) {
 
-  private suspend fun getEmitterName() = EmitterName(producer.getName())
+  private suspend fun getEmitterName() = EmitterName(_producer.getName())
 
-  suspend fun handle(msg: WorkflowStateEventMessage, publishTime: MillisInstant) {
+  suspend fun batchProcess(
+    messages: List<WorkflowStateEventMessage>,
+    publishTimes: List<MillisInstant>
+  ) {
+    // do not send messages but buffer them
+    val bufferedProducer = BufferedInfiniticProducer(_producer)
+
+    // process messages in parallel
+    coroutineScope {
+      messages.zip(publishTimes).forEach { (msg, publishTime) ->
+        launch { processSingle(bufferedProducer, msg, publishTime) }
+      }
+    }
+
+    // send messages
+    bufferedProducer.flush()
+  }
+
+  suspend fun process(msg: WorkflowStateEventMessage, publishTime: MillisInstant) {
+    val bufferedProducer = BufferedInfiniticProducer(_producer)
+
+    processSingle(bufferedProducer, msg, publishTime)
+
+    bufferedProducer.flush()
+  }
+
+  private suspend fun processSingle(
+    producer: InfiniticProducer,
+    msg: WorkflowStateEventMessage,
+    publishTime: MillisInstant
+  ) {
     when (msg) {
       is WorkflowCanceledEvent -> Unit
       is WorkflowCompletedEvent -> Unit
       is MethodCommandedEvent -> Unit
       is SignalDiscardedEvent -> Unit
       is SignalReceivedEvent -> Unit
-      is MethodCanceledEvent -> sendWorkflowMethodCanceled(msg, publishTime)
-      is MethodCompletedEvent -> sendWorkflowMethodCompleted(msg, publishTime)
-      is MethodFailedEvent -> sendWorkflowMethodFailed(msg, publishTime)
-      is MethodTimedOutEvent -> sendWorkflowMethodTimedOut(msg, publishTime)
+      is MethodCanceledEvent -> sendWorkflowMethodCanceled(producer, msg, publishTime)
+      is MethodCompletedEvent -> sendWorkflowMethodCompleted(producer, msg, publishTime)
+      is MethodFailedEvent -> sendWorkflowMethodFailed(producer, msg, publishTime)
+      is MethodTimedOutEvent -> sendWorkflowMethodTimedOut(producer, msg, publishTime)
       is TaskDispatchedEvent -> Unit
       is RemoteMethodDispatchedEvent -> Unit
       is TimerDispatchedEvent -> Unit
@@ -68,6 +99,7 @@ class WorkflowStateEventHandler(val producer: InfiniticProducer) {
   }
 
   private suspend fun sendWorkflowMethodCanceled(
+    producer: InfiniticProducer,
     msg: MethodCanceledEvent,
     publishTime: MillisInstant
   ) = coroutineScope {
@@ -85,6 +117,7 @@ class WorkflowStateEventHandler(val producer: InfiniticProducer) {
   }
 
   private suspend fun sendWorkflowMethodCompleted(
+    producer: InfiniticProducer,
     msg: MethodCompletedEvent,
     publishTime: MillisInstant
   ) = coroutineScope {
@@ -102,6 +135,7 @@ class WorkflowStateEventHandler(val producer: InfiniticProducer) {
   }
 
   private suspend fun sendWorkflowMethodFailed(
+    producer: InfiniticProducer,
     msg: MethodFailedEvent,
     publishTime: MillisInstant
   ) = coroutineScope {
@@ -119,6 +153,7 @@ class WorkflowStateEventHandler(val producer: InfiniticProducer) {
   }
 
   private suspend fun sendWorkflowMethodTimedOut(
+    producer: InfiniticProducer,
     msg: MethodTimedOutEvent,
     publishTime: MillisInstant
   ) = coroutineScope {

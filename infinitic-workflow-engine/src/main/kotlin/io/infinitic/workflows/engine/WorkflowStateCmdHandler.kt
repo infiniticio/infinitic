@@ -26,14 +26,15 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.transport.WorkflowStateEngineTopic
 import io.infinitic.common.transport.WorkflowStateEventTopic
+import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.utils.IdGenerator
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
 import io.infinitic.common.workflows.engine.commands.dispatchTask
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
+import io.infinitic.common.workflows.engine.messages.WorkflowStateCmdMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
 import io.infinitic.common.workflows.engine.messages.requester
 import kotlinx.coroutines.coroutineScope
@@ -43,7 +44,14 @@ class WorkflowStateCmdHandler(val producer: InfiniticProducer) {
 
   private suspend fun getEmitterName() = EmitterName(producer.getName())
 
-  suspend fun handle(msg: WorkflowStateEngineMessage, publishTime: MillisInstant) {
+  suspend fun batchProcess(
+    messages: List<WorkflowStateCmdMessage>,
+    publishTimes: List<MillisInstant>
+  ) = coroutineScope {
+    messages.zip(publishTimes) { msg, publishTime -> launch { process(msg, publishTime) } }
+  }
+
+  suspend fun process(msg: WorkflowStateEngineMessage, publishTime: MillisInstant) {
     // define emittedAt from the publishing instant if not yet defined
     msg.emittedAt = msg.emittedAt ?: publishTime
 

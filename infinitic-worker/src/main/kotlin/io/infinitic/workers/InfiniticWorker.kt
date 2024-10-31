@@ -546,7 +546,7 @@ class InfiniticWorker(
       val process: suspend (WorkflowStateEngineMessage, MillisInstant) -> Unit =
           { message, publishedAt ->
             cloudEventLogger.log(message, publishedAt)
-            workflowStateCmdHandler.handle(message, publishedAt)
+            workflowStateCmdHandler.process(message, publishedAt)
           }
 
       consumer.startAsync(
@@ -593,7 +593,7 @@ class InfiniticWorker(
           subscription = MainSubscription(WorkflowStateTimerTopic),
           entity = config.workflowName,
           concurrency = config.concurrency,
-          process = workflowStateTimerHandler::handle,
+          process = workflowStateTimerHandler::process,
       )
     }
 
@@ -612,7 +612,7 @@ class InfiniticWorker(
       val process: suspend (WorkflowStateEventMessage, MillisInstant) -> Unit =
           { message, publishedAt ->
             cloudEventLogger.log(message, publishedAt)
-            workflowStateEventHandler.handle(message, publishedAt)
+            workflowStateEventHandler.process(message, publishedAt)
           }
 
       consumer.startAsync(
