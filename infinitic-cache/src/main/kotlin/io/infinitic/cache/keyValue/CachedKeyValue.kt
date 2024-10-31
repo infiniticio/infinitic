@@ -27,7 +27,5 @@ import io.infinitic.cache.Flushable
 interface CachedKeyValue<T> : Flushable {
   fun getValue(key: String): T?
 
-  fun putValue(key: String, value: T)
-
-  fun delValue(key: String)
+  fun putValue(key: String, value: T?)
 }

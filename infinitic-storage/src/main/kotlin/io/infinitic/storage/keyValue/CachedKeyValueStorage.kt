@@ -40,14 +40,9 @@ open class CachedKeyValueStorage(
     }
   }
 
-  override suspend fun put(key: String, value: ByteArray) {
-    storage.put(key, value)
-    cache.putValue(key, value)
-  }
-
-  override suspend fun del(key: String) {
-    storage.del(key)
-    cache.delValue(key)
+  override suspend fun put(key: String, bytes: ByteArray?) {
+    storage.put(key, bytes)
+    cache.putValue(key, bytes)
   }
 
   override suspend fun getSet(keys: Set<String>): Map<String, ByteArray?> {
@@ -66,14 +61,9 @@ open class CachedKeyValueStorage(
     return output
   }
 
-  override suspend fun putSet(map: Map<String, ByteArray>) {
-    storage.putSet(map)
-    map.forEach { (key, value) -> cache.putValue(key, value) }
-  }
-
-  override suspend fun delSet(keys: Set<String>) {
-    storage.delSet(keys)
-    keys.forEach { cache.delValue(it) }
+  override suspend fun putSet(bytes: Map<String, ByteArray?>) {
+    storage.putSet(bytes)
+    bytes.forEach { (key, value) -> cache.putValue(key, value) }
   }
 
   override fun close() {

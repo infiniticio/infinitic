@@ -38,20 +38,26 @@ class LoggedWorkflowStateStorage(
     logger.trace { formatLog(workflowId, "Getting State...") }
     val workflowState = storage.getState(workflowId)
     logger.debug { formatLog(workflowId, "Get state:", workflowState) }
-
     return workflowState
   }
 
-  override suspend fun putState(workflowId: WorkflowId, workflowState: WorkflowState) {
+  override suspend fun putState(workflowId: WorkflowId, workflowState: WorkflowState?) {
     logger.trace { formatLog(workflowId, "Putting State...") }
     storage.putState(workflowId, workflowState)
     logger.debug { formatLog(workflowId, "Put state:", workflowState) }
   }
 
-  override suspend fun delState(workflowId: WorkflowId) {
-    logger.trace { formatLog(workflowId, "Deleting State...") }
-    storage.delState(workflowId)
-    logger.debug { formatLog(workflowId, "Del State") }
+  override suspend fun getStates(workflowIds: List<WorkflowId>): Map<WorkflowId, WorkflowState?> {
+    workflowIds.forEach { logger.trace { formatLog(it, "Getting State...") } }
+    val workflowStates = storage.getStates(workflowIds)
+    workflowIds.forEach { logger.debug { formatLog(it, "Get state:", workflowStates[it]) } }
+    return workflowStates
+  }
+
+  override suspend fun putStates(workflowStates: Map<WorkflowId, WorkflowState?>) {
+    workflowStates.forEach { logger.trace { formatLog(it.key, "Putting State...") } }
+    storage.putStates(workflowStates)
+    workflowStates.forEach { logger.debug { formatLog(it.key, "Put state:", it.value) } }
   }
 
   @TestOnly

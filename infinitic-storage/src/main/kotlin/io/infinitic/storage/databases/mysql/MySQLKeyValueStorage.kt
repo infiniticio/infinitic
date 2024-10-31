@@ -54,27 +54,25 @@ class MySQLKeyValueStorage(
             }
       }
 
-  override suspend fun put(key: String, value: ByteArray) {
+  override suspend fun put(key: String, bytes: ByteArray?) {
     pool.connection.use { connection ->
-      connection
-          .prepareStatement(
-              "INSERT INTO $tableName (`key`, `value`) VALUES (?, ?) " +
-                  "ON DUPLICATE KEY UPDATE `value`=?",
-          )
-          .use {
-            it.setString(1, key)
-            it.setBytes(2, value)
-            it.setBytes(3, value)
-            it.executeUpdate()
-          }
-    }
-  }
+      when (bytes) {
+        null -> connection.prepareStatement(
+            "DELETE FROM $tableName WHERE `key`=?",
+        ).use {
+          it.setString(1, key)
+          it.executeUpdate()
+        }
 
-  override suspend fun del(key: String) {
-    pool.connection.use { connection ->
-      connection.prepareStatement("DELETE FROM $tableName WHERE `key`=?").use {
-        it.setString(1, key)
-        it.executeUpdate()
+        else -> connection.prepareStatement(
+            "INSERT INTO $tableName (`key`, `value`) VALUES (?, ?) " +
+                "ON DUPLICATE KEY UPDATE `value`=?",
+        ).use {
+          it.setString(1, key)
+          it.setBytes(2, bytes)
+          it.setBytes(3, bytes)
+          it.executeUpdate()
+        }
       }
     }
   }
@@ -100,31 +98,35 @@ class MySQLKeyValueStorage(
     }
   }
 
-  override suspend fun putSet(map: Map<String, ByteArray>) {
+  override suspend fun putSet(bytes: Map<String, ByteArray?>) {
     pool.connection.use { connection ->
-      connection.prepareStatement(
-          "INSERT INTO $tableName (`key`, `value`) VALUES (?, ?) " +
-              "ON DUPLICATE KEY UPDATE `value`=?",
-      ).use { statement ->
-        map.forEach { (key, value) ->
-          statement.setString(1, key)
-          statement.setBytes(2, value)
-          statement.setBytes(3, value)
-          statement.addBatch()
-        }
-        statement.executeBatch()
-      }
-    }
-  }
-
-  override suspend fun delSet(keys: Set<String>) {
-    pool.connection.use { connection ->
-      val questionMarks = keys.joinToString(",") { "?" }
-      connection.prepareStatement("DELETE FROM $tableName WHERE `key` IN ($questionMarks)")
-          .use { statement ->
-            keys.forEachIndexed { index, key -> statement.setString(index + 1, key) }
-            statement.executeUpdate()
+      connection.autoCommit = false
+      try {
+        bytes.forEach { (key, value) ->
+          if (value == null) {
+            connection.prepareStatement("DELETE FROM $tableName WHERE `key` = ?").use { statement ->
+              statement.setString(1, key)
+              statement.executeUpdate()
+            }
+          } else {
+            connection.prepareStatement(
+                "INSERT INTO $tableName (`key`, `value`) VALUES (?, ?) " +
+                    "ON DUPLICATE KEY UPDATE `value`=?",
+            ).use { statement ->
+              statement.setString(1, key)
+              statement.setBytes(2, value)
+              statement.setBytes(3, value)
+              statement.executeUpdate()
+            }
           }
+        }
+        connection.commit()
+      } catch (e: Exception) {
+        connection.rollback()
+        throw e
+      } finally {
+        connection.autoCommit = true
+      }
     }
   }
 

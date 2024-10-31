@@ -36,17 +36,14 @@ class RedisKeyValueStorage(internal val pool: JedisPool) : KeyValueStorage {
   override suspend fun get(key: String): ByteArray? =
       pool.resource.use { it.get(key.toByteArray()) }
 
-  override suspend fun put(key: String, value: ByteArray) =
-      pool.resource.use {
-        it.set(key.toByteArray(), value)
-        Unit
+  override suspend fun put(key: String, bytes: ByteArray?) {
+    pool.resource.use { jedis ->
+      when (bytes) {
+        null -> jedis.del(key.toByteArray())
+        else -> jedis.set(key.toByteArray(), bytes)
       }
-
-  override suspend fun del(key: String) =
-      pool.resource.use {
-        it.del(key.toByteArray())
-        Unit
-      }
+    }
+  }
 
   override suspend fun getSet(keys: Set<String>): Map<String, ByteArray?> =
       pool.resource.use { jedis ->
@@ -55,18 +52,18 @@ class RedisKeyValueStorage(internal val pool: JedisPool) : KeyValueStorage {
         keys.zip(values).toMap()
       }
 
-  override suspend fun putSet(map: Map<String, ByteArray>) {
+  override suspend fun putSet(bytes: Map<String, ByteArray?>) {
     pool.resource.use { jedis ->
-      val flattenMap = map.flatMap { listOf(it.key.toByteArray(), it.value) }.toTypedArray()
-      jedis.mset(*flattenMap)
-    }
-  }
-
-
-  override suspend fun delSet(keys: Set<String>) {
-    pool.resource.use { jedis ->
-      val byteArrayKeys = keys.map { it.toByteArray() }.toTypedArray()
-      jedis.del(*byteArrayKeys)
+      jedis.multi().use { transaction ->
+        bytes.forEach { (key, value) ->
+          if (value == null) {
+            transaction.del(key.toByteArray())
+          } else {
+            transaction.set(key.toByteArray(), value)
+          }
+        }
+        transaction.exec()
+      }
     }
   }
 

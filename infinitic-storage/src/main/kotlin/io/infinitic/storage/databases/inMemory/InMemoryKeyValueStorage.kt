@@ -38,24 +38,16 @@ class InMemoryKeyValueStorage(internal val storage: ConcurrentHashMap<String, By
     return storage[key]
   }
 
-  override suspend fun put(key: String, value: ByteArray) {
-    storage[key] = value
-  }
-
-  override suspend fun del(key: String) {
-    storage.remove(key)
+  override suspend fun put(key: String, bytes: ByteArray?) {
+    bytes?.let { storage[key] = bytes } ?: storage.remove(key)
   }
 
   override suspend fun getSet(keys: Set<String>): Map<String, ByteArray?> {
     return keys.associateWith { get(it) }
   }
 
-  override suspend fun putSet(map: Map<String, ByteArray>) {
-    map.forEach { (k, v) -> put(k, v) }
-  }
-
-  override suspend fun delSet(keys: Set<String>) {
-    keys.forEach { del(it) }
+  override suspend fun putSet(bytes: Map<String, ByteArray?>) {
+    bytes.forEach { (k, v) -> put(k, v) }
   }
 
   override fun close() {

@@ -67,10 +67,10 @@ class RedisKeyValueStorageTests :
           storage.get("foo").contentEquals("bar2".toByteArray()) shouldBe true
         }
 
-        "del on unknown key does nothing" { storage.del("unknown") }
+        "del on unknown key does nothing" { storage.put("unknown", null) }
 
         "del should delete value" {
-          storage.del("foo")
+          storage.put("foo", null)
 
           storage.get("foo") shouldBe null
         }
@@ -111,7 +111,7 @@ class RedisKeyValueStorageTests :
         }
 
         "delSet on unknown key does nothing" {
-          shouldNotThrowAny { storage.delSet(setOf("foo", "unknown")) }
+          shouldNotThrowAny { storage.putSet(mapOf("foo" to null, "unknown" to null)) }
 
           storage.getSet(setOf("foo", "unknown")) shouldBe mapOf(
               "foo" to null,

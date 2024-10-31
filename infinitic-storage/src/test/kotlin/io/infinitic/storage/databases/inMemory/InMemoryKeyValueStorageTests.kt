@@ -60,11 +60,11 @@ class InMemoryKeyValueStorageTests :
         }
 
         "del on unknown key does nothing" {
-          shouldNotThrowAny { storage.del("unknown") }
+          shouldNotThrowAny { storage.put("unknown", null) }
         }
 
         "del should delete value" {
-          storage.del("foo")
+          storage.put("foo", null)
 
           storage.get("foo") shouldBe null
         }
@@ -105,7 +105,14 @@ class InMemoryKeyValueStorageTests :
         }
 
         "delSet on unknown key does nothing" {
-          shouldNotThrowAny { storage.delSet(setOf("foo", "unknown")) }
+          shouldNotThrowAny {
+            storage.putSet(
+                mapOf(
+                    "foo" to null,
+                    "unknown" to null,
+                ),
+            )
+          }
 
           storage.getSet(setOf("foo", "unknown")) shouldBe mapOf(
               "foo" to null,

@@ -33,28 +33,28 @@ class CompressedKeyValueStorage(
 
   override suspend fun get(key: String): ByteArray? =
   // As the compression method can change over time,
-  // we always detect if the state is compressed or not
+  // we always detect if the state is compressed or not,
       // independently of the provided compressor
-      decompress(storage.get(key))
+      storage.get(key)?.let { decompress(it) }
 
-  override suspend fun put(key: String, value: ByteArray) =
+  override suspend fun put(key: String, bytes: ByteArray?) =
       // apply the provided compression method, if any
-      storage.put(key, compress(value))
+      storage.put(key, bytes?.let { compress(it) })
 
   override suspend fun getSet(keys: Set<String>): Map<String, ByteArray?> = coroutineScope {
     storage.getSet(keys)
-        .mapValues { async { decompress(it.value) } }
+        .mapValues { async { it.value?.let { v -> decompress(v) } } }
         .mapValues { it.value.await() }
   }
 
-  override suspend fun putSet(map: Map<String, ByteArray>) = coroutineScope {
-    map
-        .mapValues { async { compress(it.value) } }
+  override suspend fun putSet(bytes: Map<String, ByteArray?>) = coroutineScope {
+    bytes
+        .mapValues { async { it.value?.let { v -> compress(v) } } }
         .mapValues { it.value.await() }
         .let { storage.putSet(it) }
   }
 
   private fun compress(value: ByteArray) = compressionConfig?.compress(value) ?: value
 
-  private fun decompress(value: ByteArray?) = value?.let { CompressionConfig.decompress(it) }
+  private fun decompress(value: ByteArray) = CompressionConfig.decompress(value)
 }
