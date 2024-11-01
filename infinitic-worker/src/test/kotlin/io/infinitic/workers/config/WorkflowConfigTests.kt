@@ -23,6 +23,7 @@
 package io.infinitic.workers.config
 
 import com.sksamuel.hoplite.ConfigException
+import io.infinitic.common.transport.config.LoadedBatchConfig
 import io.infinitic.workers.samples.WorkflowA
 import io.infinitic.workers.samples.WorkflowAImpl
 import io.infinitic.workers.samples.WorkflowAImpl_1
@@ -46,12 +47,16 @@ internal class WorkflowConfigTests :
 name: $workflowName
 executor:
   class: $workflowClass
+  batch:
+    maxMessages: 100
+    maxSeconds: 0.5
           """,
             )
           }
 
           config.name shouldBe workflowName
           config.executor.shouldBeInstanceOf<WorkflowExecutorConfig>()
+          config.executor!!.batchConfig shouldBe LoadedBatchConfig(100, 0.5)
           config.tagEngine shouldBe null
           config.stateEngine shouldBe null
         }

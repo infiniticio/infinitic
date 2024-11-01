@@ -50,6 +50,7 @@ import io.infinitic.common.workflows.emptyWorkflowContext
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEventMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
+import io.infinitic.config.notNullPropertiesToString
 import io.infinitic.events.CloudEventLogger
 import io.infinitic.events.config.EventListenerConfig
 import io.infinitic.events.listeners.startCloudEventListener
@@ -335,7 +336,8 @@ class InfiniticWorker(
             config.factories.map { it.invoke()::class.java }.joinToString { it.name }
           }, " +
           "timeout: ${config.withTimeout?.toLog()}, " +
-          "withRetry: ${config.withRetry ?: NONE}" +
+          "withRetry: ${config.withRetry ?: NONE}, " +
+          "batch: ${config.batchConfig?.notNullPropertiesToString() ?: NONE}" +
           (config.checkMode?.let { ", checkMode: $it" } ?: "") +
           ")"
     }
@@ -357,7 +359,8 @@ class InfiniticWorker(
           "concurrency: ${config.concurrency}, " +
           "storage: ${config.storage?.type}, " +
           "cache: ${config.storage?.cache?.type ?: NONE}, " +
-          "compression: ${config.storage?.compression ?: NONE})"
+          "compression: ${config.storage?.compression ?: NONE}, " +
+          "batch: ${config.batch?.notNullPropertiesToString() ?: NONE})"
     }
   }
 

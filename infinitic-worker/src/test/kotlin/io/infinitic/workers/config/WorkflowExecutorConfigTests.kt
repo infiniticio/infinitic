@@ -23,6 +23,7 @@
 package io.infinitic.workers.config
 
 import com.sksamuel.hoplite.ConfigException
+import io.infinitic.common.transport.config.LoadedBatchConfig
 import io.infinitic.common.workers.config.WithExponentialBackoffRetry
 import io.infinitic.common.workflows.emptyWorkflowContext
 import io.infinitic.tasks.WithRetry
@@ -138,6 +139,9 @@ class: ${WorkflowAImpl::class.java.name}
 concurrency: 10
 timeoutSeconds: 3.0
 checkMode: strict
+batch:
+  maxMessages: 100
+  maxSeconds: 0.5
 retry:
   minimumSeconds: 4
           """,
@@ -148,6 +152,7 @@ retry:
         config.withTimeout?.getTimeoutSeconds() shouldBe 3.0
         config.withRetry shouldBe withRetry
         config.checkMode shouldBe WorkflowCheckMode.strict
+        config.batchConfig shouldBe LoadedBatchConfig(100, 0.5)
       }
 
       "class is mandatory when building WorkflowExecutorConfig from YAML" {
