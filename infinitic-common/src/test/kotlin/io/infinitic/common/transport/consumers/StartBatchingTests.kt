@@ -108,19 +108,21 @@ internal class StartBatchingTests : StringSpec(
         }
       }
 
-      "should be ablen" {
-        val channel = Channel<Int>()
-        val job = launch {
-          while (true) {
-            channel.receiveIfNotClose() ?: break
+      "should be able" {
+        with(logger) {
+          val channel = Channel<Int>()
+          val job = launch {
+            while (true) {
+              channel.receiveIfNotClose() ?: break
+            }
           }
-        }
 
-        later {
-          channel.close()
-        }
+          later {
+            channel.close()
+          }
 
-        job.join()
+          job.join()
+        }
       }
     },
 )

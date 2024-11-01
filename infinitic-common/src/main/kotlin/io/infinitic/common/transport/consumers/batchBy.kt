@@ -69,20 +69,30 @@ fun <M : Any, I> Channel<Result<M, I>>.batchBy(
       suspend fun createAndStartBatchingChannel(
         maxMessages: Int,
         maxDuration: Long
-      ): Channel<Result<M, I>> = Channel<Result<M, I>>().also {
-        debug { "batchBy: adding producer to batching channel ${it.hashCode()}" }
-        it.addProducer()
-        trace { "batchBy: producer added to batching channel ${it.hashCode()}" }
-        it.startBatching(maxMessages, maxDuration, outputChannel)
+      ): Channel<Result<M, I>> {
+
+        val channel = Channel<Result<M, I>> { message ->
+          warn { "onUndeliveredElement $message" }
+        }
+        debug { "batchBy: adding producer to batching channel ${channel.hashCode()}" }
+        channel.addProducer()
+        trace { "batchBy: producer added to batching channel ${channel.hashCode()}" }
+        channel.startBatching(maxMessages, maxDuration, outputChannel)
+
+        return channel
       }
 
       // Get or create a batch channel based on configuration
-      suspend fun getBatchingChannel(config: BatchConfig): Channel<Result<M, I>> =
-          batchingMutex.withLock {
-            batchingChannels.getOrPut(config.batchKey) {
-              createAndStartBatchingChannel(config.maxMessages, config.maxDuration.millis)
-            }
+      suspend fun getBatchingChannel(config: BatchConfig): Channel<Result<M, I>> {
+        // check if the channel already exists before using a lock
+        batchingChannels[config.batchKey]?.let { return it }
+
+        return batchingMutex.withLock {
+          batchingChannels.getOrPut(config.batchKey) {
+            createAndStartBatchingChannel(config.maxMessages, config.maxDuration.millis)
           }
+        }
+      }
 
       debug { "batchBy: adding producer to output channel ${outputChannel.hashCode()}" }
       outputChannel.addProducer()
@@ -105,9 +115,16 @@ fun <M : Any, I> Channel<Result<M, I>>.batchBy(
             }
             when (batchConfig) {
               null -> outputChannel.send(One(result))
-              else -> getBatchingChannel(batchConfig).send(result)
+              else -> {
+                trace { "batchBy: sending $result" }
+                getBatchingChannel(batchConfig).send(result)
+                trace { "batchBy: sent $result" }
+              }
             }
           }
+        } catch (e: Exception) {
+          warn(e) { "Exception during batching" }
+          throw e
         } catch (e: Error) {
           warn(e) { "Error during batching, cancelling calling scope" }
           callingScope.cancel()
