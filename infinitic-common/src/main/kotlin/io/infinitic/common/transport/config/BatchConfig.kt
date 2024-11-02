@@ -24,7 +24,7 @@ package io.infinitic.common.transport.config
 
 import io.infinitic.common.data.MillisDuration
 
-data class LoadedBatchConfig(
+data class BatchConfig(
   val maxMessages: Int = 1000,
   val maxSeconds: Double = 1.0
 ) {

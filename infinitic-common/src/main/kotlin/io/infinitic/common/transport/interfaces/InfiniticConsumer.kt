@@ -25,7 +25,7 @@ package io.infinitic.common.transport.interfaces
 import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.messages.Message
-import io.infinitic.common.transport.BatchConfig
+import io.infinitic.common.transport.BatchProcessorConfig
 import io.infinitic.common.transport.Subscription
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -60,10 +60,10 @@ interface InfiniticConsumer {
    * @param subscription The subscription from which to consume messages.
    * @param entity The entity associated with the consumer.
    * @param concurrency The number of concurrent coroutines for processing messages.
-   * @param process A suspending function to process the deserialized message along with its publishing time.
+   * @param processor A suspending function to process the deserialized message along with its publishing time.
    * @param beforeDlq An optional suspending function to execute before sending a message to DLQ.
-   * @param batchConfig An optional suspending function to configure message batching.
-   * @param batchProcess An optional suspending function to process batches of messages.
+   * @param batchProcessorConfig An optional suspending function to configure message batching.
+   * @param batchProcessor An optional suspending function to process batches of messages.
    * @return A Job representing the coroutine that runs the consuming process.
    */
   context(CoroutineScope, KLogger)
@@ -71,10 +71,10 @@ interface InfiniticConsumer {
     subscription: Subscription<S>,
     entity: String,
     concurrency: Int,
-    process: suspend (S, MillisInstant) -> Unit,
+    processor: suspend (S, MillisInstant) -> Unit,
     beforeDlq: (suspend (S, Exception) -> Unit)? = null,
-    batchConfig: (suspend (S) -> BatchConfig?)? = null,
-    batchProcess: (suspend (List<S>, List<MillisInstant>) -> Unit)? = null
+    batchProcessorConfig: (suspend (S) -> BatchProcessorConfig?)? = null,
+    batchProcessor: (suspend (List<S>, List<MillisInstant>) -> Unit)? = null
   ): Job
 
   /**
@@ -86,8 +86,8 @@ interface InfiniticConsumer {
    * @param concurrency The number of concurrent coroutines for processing messages.
    * @param process A suspending function to process the deserialized message along with its publishing time.
    * @param beforeDlq An optional suspending function to execute before sending a message to DLQ.
-   * @param batchConfig An optional suspending function to configure message batching.
-   * @param batchProcess An optional suspending function to process batches of messages.
+   * @param batchProcessorConfig An optional suspending function to configure message batching.
+   * @param batchProcessor An optional suspending function to process batches of messages.
    */
   context(CoroutineScope, KLogger)
   suspend fun <M : Message> start(
@@ -96,9 +96,9 @@ interface InfiniticConsumer {
     concurrency: Int,
     process: suspend (M, MillisInstant) -> Unit,
     beforeDlq: (suspend (M, Exception) -> Unit)? = null,
-    batchConfig: (suspend (M) -> BatchConfig?)? = null,
-    batchProcess: (suspend (List<M>, List<MillisInstant>) -> Unit)? = null
+    batchProcessorConfig: (suspend (M) -> BatchProcessorConfig?)? = null,
+    batchProcessor: (suspend (List<M>, List<MillisInstant>) -> Unit)? = null
   ) = startAsync(
-      subscription, entity, concurrency, process, beforeDlq, batchConfig, batchProcess,
+      subscription, entity, concurrency, process, beforeDlq, batchProcessorConfig, batchProcessor,
   ).join()
 }

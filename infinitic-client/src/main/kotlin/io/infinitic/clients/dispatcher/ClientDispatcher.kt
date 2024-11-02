@@ -61,13 +61,13 @@ import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.executors.errors.MethodFailedError
 import io.infinitic.common.tasks.tags.messages.CompleteDelegatedTask
 import io.infinitic.common.transport.ClientTopic
-import io.infinitic.common.transport.interfaces.InfiniticConsumer
-import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.transport.MainSubscription
 import io.infinitic.common.transport.ServiceTagEngineTopic
 import io.infinitic.common.transport.Topic
 import io.infinitic.common.transport.WorkflowStateCmdTopic
 import io.infinitic.common.transport.WorkflowTagEngineTopic
+import io.infinitic.common.transport.interfaces.InfiniticConsumer
+import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.workflows.data.channels.SignalId
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflows.WorkflowCancellationReason
@@ -806,7 +806,7 @@ internal class ClientDispatcher(
               subscription = MainSubscription(ClientTopic),
               entity = emitterName.toString(),
               concurrency = 1,
-              process = { message, _ -> responseFlow.emit(message) },
+              processor = { message, _ -> responseFlow.emit(message) },
           )
       // asynchronously listen
       launch {

@@ -29,12 +29,12 @@ import io.infinitic.common.data.MillisDuration
  * Messages with the same [batchKey] will be batched together, it typically represents a task type.
  * [maxMessages] and [maxDuration] are expected to be always the same for a given [batchKey]
  */
-data class BatchConfig(
+data class BatchProcessorConfig(
   val batchKey: String,
   val maxMessages: Int,
   val maxDuration: MillisDuration,
 ) {
   companion object {
-    val NONE = BatchConfig("", 1, MillisDuration(0))
+    val NONE = BatchProcessorConfig("", 1, MillisDuration(0))
   }
 }

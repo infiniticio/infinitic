@@ -25,7 +25,7 @@ package io.infinitic.events.listeners
 import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.messages.Message
-import io.infinitic.common.transport.BatchConfig
+import io.infinitic.common.transport.BatchProcessorConfig
 import io.infinitic.common.transport.consumers.Result
 import io.infinitic.common.transport.consumers.acknowledge
 import io.infinitic.common.transport.consumers.batchBy
@@ -52,7 +52,7 @@ fun InfiniticConsumer.startCloudEventListener(
   val outChannel = Channel<Result<TransportMessage<Message>, TransportMessage<Message>>>()
 
   // all messages will have this batch config
-  val batchConfig = BatchConfig(
+  val batchProcessorConfig = BatchProcessorConfig(
       batchKey = "cloudEvent", // same for all
       maxMessages = config.batchConfig.maxMessages,
       maxDuration = config.batchConfig.maxMillis,
@@ -62,7 +62,7 @@ fun InfiniticConsumer.startCloudEventListener(
   launch {
     outChannel
         .process(config.concurrency) { _, message -> message.deserialize() }
-        .batchBy { batchConfig }
+        .batchBy { batchProcessorConfig }
         .batchProcess(
             config.concurrency,
             { _, _ -> thisShouldNotHappen() },

@@ -23,7 +23,7 @@
 package io.infinitic.workers.config
 
 import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.common.transport.config.LoadedBatchConfig
+import io.infinitic.common.transport.config.BatchConfig
 import io.infinitic.config.loadFromYamlFile
 import io.infinitic.config.loadFromYamlResource
 import io.infinitic.config.loadFromYamlString
@@ -34,7 +34,7 @@ data class WorkflowStateEngineConfig(
   override var workflowName: String = "",
   val concurrency: Int = 1,
   override var storage: StorageConfig? = null,
-  val batch: LoadedBatchConfig? = null
+  val batch: BatchConfig? = null
 ) : WithMutableWorkflowName, WithMutableStorage {
   init {
     require(concurrency >= 0) { "concurrency must be positive" }
@@ -90,7 +90,7 @@ data class WorkflowStateEngineConfig(
         apply { this.storage = storage }
 
     fun setBatch(maxMessages: Int, maxSeconds: Double) =
-        apply { this.batch = LoadedBatchConfig(maxMessages, maxSeconds) }
+        apply { this.batch = BatchConfig(maxMessages, maxSeconds) }
 
     fun build(): WorkflowStateEngineConfig {
       workflowName.checkWorkflowName()

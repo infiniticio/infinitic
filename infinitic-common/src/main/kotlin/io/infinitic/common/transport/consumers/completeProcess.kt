@@ -24,7 +24,7 @@ package io.infinitic.common.transport.consumers
 
 import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.transport.BatchConfig
+import io.infinitic.common.transport.BatchProcessorConfig
 import io.infinitic.common.transport.interfaces.TransportMessage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
@@ -35,10 +35,10 @@ fun <T : TransportMessage<M>, M : Any> Channel<Result<T, T>>.completeProcess(
   deserialize: suspend (T) -> M,
   process: suspend (M, MillisInstant) -> Unit,
   beforeDlq: (suspend (M, Exception) -> Unit)? = null,
-  batchConfig: (suspend (M) -> BatchConfig?)? = null,
+  batchProcessorConfig: (suspend (M) -> BatchProcessorConfig?)? = null,
   batchProcess: (suspend (List<M>, List<MillisInstant>) -> Unit)? = null
 ) {
-  require((batchConfig == null) == (batchProcess == null)) {
+  require((batchProcessorConfig == null) == (batchProcess == null)) {
     "batchConfig and batchProcess must be null or !null together"
   }
 
@@ -72,7 +72,7 @@ fun <T : TransportMessage<M>, M : Any> Channel<Result<T, T>>.completeProcess(
 
     false -> this
         .process(concurrency) { _, message -> loggedDeserialize(message) }
-        .batchBy { datum -> batchConfig?.invoke(datum) }
+        .batchBy { datum -> batchProcessorConfig?.invoke(datum) }
         .batchProcess(
             concurrency,
             { message, datum -> loggedProcess(datum, message.publishTime) },

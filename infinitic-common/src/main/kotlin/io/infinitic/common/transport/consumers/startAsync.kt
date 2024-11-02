@@ -24,7 +24,7 @@ package io.infinitic.common.transport.consumers
 
 import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.transport.BatchConfig
+import io.infinitic.common.transport.BatchProcessorConfig
 import io.infinitic.common.transport.interfaces.TransportConsumer
 import io.infinitic.common.transport.interfaces.TransportMessage
 import kotlinx.coroutines.CoroutineScope
@@ -37,7 +37,7 @@ import kotlinx.coroutines.launch
  * @param concurrency The number of concurrent coroutines for processing messages.
  * @param deserialize A suspending function to deserialize the transport message into its payload.
  * @param process A suspending function to process the deserialized message along with its publishing time.
- * @param batchConfig An optional suspending function to configure batching of messages.
+ * @param batchProcessorConfig An optional suspending function to configure batching of messages.
  * @param batchProcess An optional suspending function to process a batch of messages.
  * @return A Job representing the coroutine that runs the consuming process.
  */
@@ -47,7 +47,7 @@ fun <T : TransportMessage<M>, M : Any> TransportConsumer<T>.startAsync(
   deserialize: suspend (T) -> M,
   process: suspend (M, MillisInstant) -> Unit,
   beforeDlq: (suspend (M, Exception) -> Unit)? = null,
-  batchConfig: (suspend (M) -> BatchConfig?)? = null,
+  batchProcessorConfig: (suspend (M) -> BatchProcessorConfig?)? = null,
   batchProcess: (suspend (List<M>, List<MillisInstant>) -> Unit)? = null,
 ): Job = launch {
   startConsuming()
@@ -56,7 +56,7 @@ fun <T : TransportMessage<M>, M : Any> TransportConsumer<T>.startAsync(
           deserialize,
           process,
           beforeDlq,
-          batchConfig,
+          batchProcessorConfig,
           batchProcess,
       )
 }

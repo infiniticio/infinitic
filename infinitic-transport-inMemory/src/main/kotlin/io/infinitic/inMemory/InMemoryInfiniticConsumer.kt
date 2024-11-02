@@ -25,7 +25,7 @@ package io.infinitic.inMemory
 import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.messages.Message
-import io.infinitic.common.transport.BatchConfig
+import io.infinitic.common.transport.BatchProcessorConfig
 import io.infinitic.common.transport.EventListenerSubscription
 import io.infinitic.common.transport.MainSubscription
 import io.infinitic.common.transport.Subscription
@@ -73,10 +73,10 @@ class InMemoryInfiniticConsumer(
     subscription: Subscription<S>,
     entity: String,
     concurrency: Int,
-    process: suspend (S, MillisInstant) -> Unit,
+    processor: suspend (S, MillisInstant) -> Unit,
     beforeDlq: (suspend (S, Exception) -> Unit)?,
-    batchConfig: (suspend (S) -> BatchConfig?)?,
-    batchProcess: (suspend (List<S>, List<MillisInstant>) -> Unit)?
+    batchProcessorConfig: (suspend (S) -> BatchProcessorConfig?)?,
+    batchProcessor: (suspend (List<S>, List<MillisInstant>) -> Unit)?
   ): Job {
 
     val deserialize = { message: TransportMessage<S> -> message.deserialize() }
@@ -90,10 +90,10 @@ class InMemoryInfiniticConsumer(
             consumers[index].startAsync(
                 1,
                 deserialize,
-                process,
+                processor,
                 beforeDlq,
-                batchConfig,
-                batchProcess,
+                batchProcessorConfig,
+                batchProcessor,
             )
           }
         }
@@ -105,10 +105,10 @@ class InMemoryInfiniticConsumer(
         consumer.startAsync(
             concurrency,
             deserialize,
-            process,
+            processor,
             beforeDlq,
-            batchConfig,
-            batchProcess,
+            batchProcessorConfig,
+            batchProcessor,
         )
       }
     }

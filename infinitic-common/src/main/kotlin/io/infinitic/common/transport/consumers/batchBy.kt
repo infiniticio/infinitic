@@ -24,7 +24,7 @@
 package io.infinitic.common.transport.consumers
 
 import io.github.oshai.kotlinlogging.KLogger
-import io.infinitic.common.transport.BatchConfig
+import io.infinitic.common.transport.BatchProcessorConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.cancel
@@ -40,14 +40,14 @@ import kotlinx.coroutines.withContext
  * and the messages with the same batch key are grouped together.
  *
  * @param I The type of message.
- * @param getBatchConfig A suspending function that returns the batch configuration for a given message.
+ * @param getBatchProcessorConfig A suspending function that returns the batch configuration for a given message.
  *                       If null, messages are not batched.
  * @return A channel that emits batched results wrapped in a [Result] containing
  *         either a [SingleMessage] or a [MultipleMessages] instance.
  */
 context(CoroutineScope, KLogger)
 fun <M : Any, I> Channel<Result<M, I>>.batchBy(
-  getBatchConfig: suspend (I) -> BatchConfig?,
+  getBatchProcessorConfig: suspend (I) -> BatchProcessorConfig?,
 ): Channel<OneOrMany<Result<M, I>>> {
   val callingScope: CoroutineScope = this@CoroutineScope
 
@@ -83,7 +83,7 @@ fun <M : Any, I> Channel<Result<M, I>>.batchBy(
       }
 
       // Get or create a batch channel based on configuration
-      suspend fun getBatchingChannel(config: BatchConfig): Channel<Result<M, I>> {
+      suspend fun getBatchingChannel(config: BatchProcessorConfig): Channel<Result<M, I>> {
         // check if the channel already exists before using a lock
         batchingChannels[config.batchKey]?.let { return it }
 
@@ -108,7 +108,7 @@ fun <M : Any, I> Channel<Result<M, I>>.batchBy(
           }
           if (result.isSuccess) {
             val batchConfig = try {
-              getBatchConfig(result.value())
+              getBatchProcessorConfig(result.value())
             } catch (e: Exception) {
               outputChannel.send(One(result.failure(e)))
               continue

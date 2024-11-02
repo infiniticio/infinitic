@@ -31,7 +31,7 @@ import io.infinitic.common.tasks.events.messages.ServiceExecutorEventMessage
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.tasks.tags.messages.ServiceTagMessage
-import io.infinitic.common.transport.BatchConfig
+import io.infinitic.common.transport.BatchProcessorConfig
 import io.infinitic.common.transport.MainSubscription
 import io.infinitic.common.transport.ServiceExecutorEventTopic
 import io.infinitic.common.transport.ServiceExecutorRetryTopic
@@ -385,7 +385,7 @@ class InfiniticWorker(
           beautifyLogs,
       )
 
-      val process: suspend (ServiceTagMessage, MillisInstant) -> Unit =
+      val processor: suspend (ServiceTagMessage, MillisInstant) -> Unit =
           { message, publishedAt ->
             cloudEventLogger.log(message, publishedAt)
             taskTagEngine.handle(message, publishedAt)
@@ -395,7 +395,7 @@ class InfiniticWorker(
           subscription = MainSubscription(ServiceTagEngineTopic),
           entity = config.serviceName,
           concurrency = config.concurrency,
-          process = process,
+          processor = processor,
       )
     }
   }
@@ -420,13 +420,13 @@ class InfiniticWorker(
           beautifyLogs,
       )
 
-      val process: suspend (ServiceExecutorMessage, MillisInstant) -> Unit =
+      val processor: suspend (ServiceExecutorMessage, MillisInstant) -> Unit =
           { message, publishedAt ->
             cloudEventLogger.log(message, publishedAt)
             taskExecutor.process(message)
           }
 
-      val batchProcess: suspend (List<ServiceExecutorMessage>, List<MillisInstant>) -> Unit =
+      val batchProcessor: suspend (List<ServiceExecutorMessage>, List<MillisInstant>) -> Unit =
           { messages, publishedAtList ->
             coroutineScope {
               messages.zip(publishedAtList).forEach { (message, publishedAt) ->
@@ -448,10 +448,10 @@ class InfiniticWorker(
           subscription = MainSubscription(ServiceExecutorTopic),
           entity = config.serviceName,
           concurrency = config.concurrency,
-          process = process,
+          processor = processor,
           beforeDlq = beforeDlq,
-          batchConfig = { msg -> taskExecutor.getBatchConfig(msg) },
-          batchProcess = batchProcess,
+          batchProcessorConfig = { msg -> taskExecutor.getBatchConfig(msg) },
+          batchProcessor = batchProcessor,
       )
     }
 
@@ -464,7 +464,7 @@ class InfiniticWorker(
           subscription = MainSubscription(ServiceExecutorRetryTopic),
           entity = config.serviceName,
           concurrency = config.concurrency,
-          process = taskRetryHandler::handle,
+          processor = taskRetryHandler::handle,
       )
     }
 
@@ -480,7 +480,7 @@ class InfiniticWorker(
           beautifyLogs,
       )
 
-      val process: suspend (ServiceExecutorEventMessage, MillisInstant) -> Unit =
+      val processor: suspend (ServiceExecutorEventMessage, MillisInstant) -> Unit =
           { message, publishedAt ->
             cloudEventLogger.log(message, publishedAt)
             taskEventHandler.handle(message, publishedAt)
@@ -490,7 +490,7 @@ class InfiniticWorker(
           subscription = MainSubscription(ServiceExecutorEventTopic),
           entity = config.serviceName,
           concurrency = config.concurrency,
-          process = process,
+          processor = processor,
       )
     }
 
@@ -515,7 +515,7 @@ class InfiniticWorker(
           beautifyLogs,
       )
 
-      val process: suspend (WorkflowTagEngineMessage, MillisInstant) -> Unit =
+      val processor: suspend (WorkflowTagEngineMessage, MillisInstant) -> Unit =
           { message, publishedAt ->
             cloudEventLogger.log(message, publishedAt)
             workflowTagEngine.handle(message, publishedAt)
@@ -525,7 +525,7 @@ class InfiniticWorker(
           subscription = MainSubscription(WorkflowTagEngineTopic),
           entity = config.workflowName,
           concurrency = config.concurrency,
-          process = process,
+          processor = processor,
       )
     }
   }
@@ -547,13 +547,13 @@ class InfiniticWorker(
           beautifyLogs,
       )
 
-      val process: suspend (WorkflowStateEngineMessage, MillisInstant) -> Unit =
+      val processor: suspend (WorkflowStateEngineMessage, MillisInstant) -> Unit =
           { message, publishedAt ->
             cloudEventLogger.log(message, publishedAt)
             workflowStateCmdHandler.process(message, publishedAt)
           }
 
-      val batchProcess: suspend (List<WorkflowStateEngineMessage>, List<MillisInstant>) -> Unit =
+      val batchProcessor: suspend (List<WorkflowStateEngineMessage>, List<MillisInstant>) -> Unit =
           { messages, publishedAtList ->
             coroutineScope {
               messages.zip(publishedAtList).forEach { (message, publishedAt) ->
@@ -563,17 +563,17 @@ class InfiniticWorker(
             }
           }
 
-      val batchConfig = config.batch?.let {
-        BatchConfig("workflowCmd:" + config.workflowName, it.maxMessages, it.maxMillis)
+      val batchProcessorConfig = config.batch?.let {
+        BatchProcessorConfig("workflowCmd:" + config.workflowName, it.maxMessages, it.maxMillis)
       }
 
       consumer.startAsync(
           subscription = MainSubscription(WorkflowStateCmdTopic),
           entity = config.workflowName,
           concurrency = config.concurrency,
-          process = process,
-          batchConfig = { _ -> batchConfig },
-          batchProcess = batchProcess,
+          processor = processor,
+          batchProcessorConfig = { _ -> batchProcessorConfig },
+          batchProcessor = batchProcessor,
       )
     }
 
@@ -590,13 +590,13 @@ class InfiniticWorker(
           beautifyLogs,
       )
 
-      val process: suspend (WorkflowStateEngineMessage, MillisInstant) -> Unit =
+      val processor: suspend (WorkflowStateEngineMessage, MillisInstant) -> Unit =
           { message, publishedAt ->
             cloudEventLogger.log(message, publishedAt)
             workflowStateEngine.process(message, publishedAt)
           }
 
-      val batchProcess: suspend (List<WorkflowStateEngineMessage>, List<MillisInstant>) -> Unit =
+      val batchProcessor: suspend (List<WorkflowStateEngineMessage>, List<MillisInstant>) -> Unit =
           { messages, publishedAtList ->
             coroutineScope {
               messages.zip(publishedAtList).forEach { (message, publishedAt) ->
@@ -606,17 +606,17 @@ class InfiniticWorker(
             }
           }
 
-      val batchConfig = config.batch?.let {
-        BatchConfig("workflowState:" + config.workflowName, it.maxMessages, it.maxMillis)
+      val batchProcessorConfig = config.batch?.let {
+        BatchProcessorConfig("workflowState:" + config.workflowName, it.maxMessages, it.maxMillis)
       }
 
       consumer.startAsync(
           subscription = MainSubscription(WorkflowStateEngineTopic),
           entity = config.workflowName,
           concurrency = config.concurrency,
-          process = process,
-          batchConfig = { _ -> batchConfig },
-          batchProcess = batchProcess,
+          processor = processor,
+          batchProcessorConfig = { _ -> batchProcessorConfig },
+          batchProcessor = batchProcessor,
       )
     }
 
@@ -629,7 +629,7 @@ class InfiniticWorker(
           subscription = MainSubscription(WorkflowStateTimerTopic),
           entity = config.workflowName,
           concurrency = config.concurrency,
-          process = workflowStateTimerHandler::process,
+          processor = workflowStateTimerHandler::process,
       )
     }
 
@@ -645,13 +645,13 @@ class InfiniticWorker(
           beautifyLogs,
       )
 
-      val process: suspend (WorkflowStateEventMessage, MillisInstant) -> Unit =
+      val processor: suspend (WorkflowStateEventMessage, MillisInstant) -> Unit =
           { message, publishedAt ->
             cloudEventLogger.log(message, publishedAt)
             workflowStateEventHandler.process(message, publishedAt)
           }
 
-      val batchProcess: suspend (List<WorkflowStateEventMessage>, List<MillisInstant>) -> Unit =
+      val batchProcessor: suspend (List<WorkflowStateEventMessage>, List<MillisInstant>) -> Unit =
           { messages, publishedAtList ->
             coroutineScope {
               messages.zip(publishedAtList).forEach { (message, publishedAt) ->
@@ -661,17 +661,17 @@ class InfiniticWorker(
             }
           }
 
-      val batchConfig = config.batch?.let {
-        BatchConfig("workflowEvent:" + config.workflowName, it.maxMessages, it.maxMillis)
+      val batchProcessorConfig = config.batch?.let {
+        BatchProcessorConfig("workflowEvent:" + config.workflowName, it.maxMessages, it.maxMillis)
       }
 
       consumer.startAsync(
           subscription = MainSubscription(WorkflowStateEventTopic),
           entity = config.workflowName,
           concurrency = config.concurrency,
-          process = process,
-          batchConfig = { _ -> batchConfig },
-          batchProcess = batchProcess,
+          processor = processor,
+          batchProcessorConfig = { _ -> batchProcessorConfig },
+          batchProcessor = batchProcessor,
       )
     }
 
@@ -695,7 +695,7 @@ class InfiniticWorker(
           beautifyLogs,
       )
 
-      val process: suspend (ServiceExecutorMessage, MillisInstant) -> Unit =
+      val processor: suspend (ServiceExecutorMessage, MillisInstant) -> Unit =
           { message, publishedAt ->
             cloudEventLogger.log(message, publishedAt)
             workflowTaskExecutor.process(message)
@@ -710,11 +710,15 @@ class InfiniticWorker(
         }
       }
 
-      val batchConfig = config.batchConfig?.let {
-        BatchConfig("workflowExecutor:" + config.workflowName, it.maxMessages, it.maxMillis)
+      val batchProcessorConfig = config.batchConfig?.let {
+        BatchProcessorConfig(
+            "workflowExecutor:" + config.workflowName,
+            it.maxMessages,
+            it.maxMillis,
+        )
       }
 
-      val batchProcess: suspend (List<ServiceExecutorMessage>, List<MillisInstant>) -> Unit =
+      val batchProcessor: suspend (List<ServiceExecutorMessage>, List<MillisInstant>) -> Unit =
           { messages, publishedAtList ->
             coroutineScope {
               messages.zip(publishedAtList).forEach { (message, publishedAt) ->
@@ -728,10 +732,10 @@ class InfiniticWorker(
           subscription = MainSubscription(WorkflowExecutorTopic),
           entity = config.workflowName,
           concurrency = config.concurrency,
-          process = process,
+          processor = processor,
           beforeDlq = beforeDlq,
-          batchConfig = { _ -> batchConfig },
-          batchProcess = batchProcess,
+          batchProcessorConfig = { _ -> batchProcessorConfig },
+          batchProcessor = batchProcessor,
       )
     }
 
@@ -744,7 +748,7 @@ class InfiniticWorker(
           subscription = MainSubscription(WorkflowExecutorRetryTopic),
           entity = config.workflowName,
           concurrency = config.concurrency,
-          process = taskRetryHandler::handle,
+          processor = taskRetryHandler::handle,
       )
     }
 
@@ -760,7 +764,7 @@ class InfiniticWorker(
           beautifyLogs,
       )
 
-      val handler: suspend (ServiceExecutorEventMessage, MillisInstant) -> Unit =
+      val processor: suspend (ServiceExecutorEventMessage, MillisInstant) -> Unit =
           { message, publishedAt ->
             cloudEventLogger.log(message, publishedAt)
             workflowTaskEventHandler.handle(message, publishedAt)
@@ -770,7 +774,7 @@ class InfiniticWorker(
           subscription = MainSubscription(WorkflowExecutorEventTopic),
           entity = config.workflowName,
           concurrency = config.concurrency,
-          process = handler,
+          processor = processor,
       )
     }
 

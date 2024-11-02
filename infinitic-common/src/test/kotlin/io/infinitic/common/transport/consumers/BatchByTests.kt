@@ -24,7 +24,7 @@ package io.infinitic.common.transport.consumers
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.MillisDuration
-import io.infinitic.common.transport.BatchConfig
+import io.infinitic.common.transport.BatchProcessorConfig
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
@@ -44,12 +44,12 @@ internal class BatchByTests : StringSpec(
       val logger = KotlinLogging.logger {}
       fun getScope() = CoroutineScope(Dispatchers.IO)
 
-      fun getBatchingConfig(value: IntMessage): BatchConfig? {
+      fun getBatchingConfig(value: IntMessage): BatchProcessorConfig? {
         val i = value.value
         return when {
           i == 0 -> null
-          (i % 2) == 0 -> BatchConfig("even", 5, MillisDuration(1000 * 3600 * 50))
-          (i % 2) == 1 -> BatchConfig("odd", 5, MillisDuration(1000 * 3600 * 50))
+          (i % 2) == 0 -> BatchProcessorConfig("even", 5, MillisDuration(1000 * 3600 * 50))
+          (i % 2) == 1 -> BatchProcessorConfig("odd", 5, MillisDuration(1000 * 3600 * 50))
           else -> throw IllegalStateException()
         }
       }

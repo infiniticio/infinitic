@@ -23,7 +23,7 @@
 package io.infinitic.workers.config
 
 import com.sksamuel.hoplite.ConfigException
-import io.infinitic.common.transport.config.LoadedBatchConfig
+import io.infinitic.common.transport.config.BatchConfig
 import io.infinitic.workers.samples.WorkflowA
 import io.infinitic.workers.samples.WorkflowAImpl
 import io.infinitic.workers.samples.WorkflowAImpl_1
@@ -56,7 +56,7 @@ executor:
 
           config.name shouldBe workflowName
           config.executor.shouldBeInstanceOf<WorkflowExecutorConfig>()
-          config.executor!!.batchConfig shouldBe LoadedBatchConfig(100, 0.5)
+          config.executor!!.batchConfig shouldBe BatchConfig(100, 0.5)
           config.tagEngine shouldBe null
           config.stateEngine shouldBe null
         }
