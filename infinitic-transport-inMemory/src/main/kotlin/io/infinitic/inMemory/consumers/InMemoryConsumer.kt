@@ -24,10 +24,10 @@ package io.infinitic.inMemory.consumers
 
 import io.infinitic.common.messages.Message
 import io.infinitic.common.transport.Topic
+import io.infinitic.common.transport.config.BatchConfig
+import io.infinitic.common.transport.consumers.batchWithTimeout
 import io.infinitic.common.transport.interfaces.TransportConsumer
-import io.infinitic.inMemory.channels.DelayedMessage
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.delay
 
 /**
  * An in-memory implementation of a transport consumer that consumes messages from a Kotlin Coroutine [Channel].
@@ -37,32 +37,17 @@ import kotlinx.coroutines.delay
  */
 class InMemoryConsumer<S : Message>(
   private val topic: Topic<S>,
+  private val batchReceivingConfig: BatchConfig?,
   private val channel: Channel<S>
 ) : TransportConsumer<InMemoryTransportMessage<S>> {
 
   override suspend fun receive() = InMemoryTransportMessage(channel.receive(), topic)
 
-  override val maxRedeliveryCount = 1
-
-  override val name: String = toString()
-}
-
-/**
- * An implementation of [TransportConsumer] that receives [InMemoryTransportMessage]
- * instances from a Kotlin [Channel] containing delayed messages.
- *
- * @param S The type of the messages being consumed, which must implement [Message].
- * @param channel A channel to receive delayed messages from.
- */
-class InMemoryDelayedConsumer<S : Message>(
-  private val topic: Topic<S>,
-  private val channel: Channel<DelayedMessage<S>>
-) : TransportConsumer<InMemoryTransportMessage<S>> {
-
-  override suspend fun receive(): InMemoryTransportMessage<S> {
-    val message = channel.receive()
-    delay(message.after.millis)
-    return InMemoryTransportMessage(message.message, topic)
+  override suspend fun batchReceive(): List<InMemoryTransportMessage<S>> = channel.batchWithTimeout(
+      batchReceivingConfig!!.maxMessages,
+      batchReceivingConfig.maxMillis,
+  ).messages.map {
+    InMemoryTransportMessage(it, topic)
   }
 
   override val maxRedeliveryCount = 1

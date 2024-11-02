@@ -29,15 +29,13 @@ import io.infinitic.common.transport.BatchProcessorConfig
 import io.infinitic.common.transport.EventListenerSubscription
 import io.infinitic.common.transport.MainSubscription
 import io.infinitic.common.transport.Subscription
-import io.infinitic.common.transport.acceptDelayed
+import io.infinitic.common.transport.config.BatchConfig
 import io.infinitic.common.transport.consumers.startAsync
 import io.infinitic.common.transport.interfaces.InfiniticConsumer
 import io.infinitic.common.transport.interfaces.TransportConsumer
 import io.infinitic.common.transport.interfaces.TransportMessage
-import io.infinitic.inMemory.channels.DelayedMessage
 import io.infinitic.inMemory.channels.InMemoryChannels
 import io.infinitic.inMemory.consumers.InMemoryConsumer
-import io.infinitic.inMemory.consumers.InMemoryDelayedConsumer
 import io.infinitic.inMemory.consumers.InMemoryTransportMessage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -53,25 +51,25 @@ class InMemoryInfiniticConsumer(
   override suspend fun <S : Message> buildConsumers(
     subscription: Subscription<S>,
     entity: String,
+    batchConfig: BatchConfig?,
     occurrence: Int?
   ): List<TransportConsumer<InMemoryTransportMessage<S>>> = List(occurrence ?: 1) {
-    when (subscription.topic.acceptDelayed) {
-      true -> InMemoryDelayedConsumer(subscription.topic, subscription.getChannelForDelayed(entity))
-      false -> InMemoryConsumer(subscription.topic, subscription.getChannel(entity))
-    }
+    InMemoryConsumer(subscription.topic, batchConfig, subscription.getChannel(entity))
   }
 
   context(KLogger)
   override suspend fun <S : Message> buildConsumer(
     subscription: Subscription<S>,
     entity: String,
+    batchConfig: BatchConfig?,
   ): TransportConsumer<InMemoryTransportMessage<S>> =
-      buildConsumers(subscription, entity, 1).first()
+      buildConsumers(subscription, entity, batchConfig, 1).first()
 
   context(CoroutineScope, KLogger)
   override suspend fun <S : Message> startAsync(
     subscription: Subscription<S>,
     entity: String,
+    batchConsumerConfig: BatchConfig?,
     concurrency: Int,
     processor: suspend (S, MillisInstant) -> Unit,
     beforeDlq: (suspend (S, Exception) -> Unit)?,
@@ -84,10 +82,11 @@ class InMemoryInfiniticConsumer(
     return when (subscription.withKey) {
       true -> {
         // build the consumers synchronously
-        val consumers = buildConsumers(subscription, entity, concurrency)
+        val consumers = buildConsumers(subscription, entity, batchConsumerConfig, concurrency)
         launch {
           repeat(concurrency) { index ->
             consumers[index].startAsync(
+                batchConsumerConfig,
                 1,
                 deserialize,
                 processor,
@@ -101,8 +100,9 @@ class InMemoryInfiniticConsumer(
 
       false -> {
         // build the consumer synchronously
-        val consumer = buildConsumer(subscription, entity)
+        val consumer = buildConsumer(subscription, entity, batchConsumerConfig)
         consumer.startAsync(
+            batchConsumerConfig,
             concurrency,
             deserialize,
             processor,
@@ -113,12 +113,6 @@ class InMemoryInfiniticConsumer(
       }
     }
   }
-
-  private fun <S : Message> Subscription<S>.getChannelForDelayed(entity: String): Channel<DelayedMessage<S>> =
-      when (this) {
-        is MainSubscription -> with(mainChannels) { topic.channelForDelayed(entity) }
-        is EventListenerSubscription -> with(eventListenerChannels) { topic.channelForDelayed(entity) }
-      }
 
   private fun <S : Message> Subscription<S>.getChannel(entity: String): Channel<S> =
       when (this) {

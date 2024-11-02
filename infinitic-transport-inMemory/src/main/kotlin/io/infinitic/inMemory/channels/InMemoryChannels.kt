@@ -23,13 +23,13 @@
 package io.infinitic.inMemory.channels
 
 import io.infinitic.common.clients.messages.ClientMessage
-import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.events.messages.ServiceExecutorEventMessage
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.tasks.tags.messages.ServiceTagMessage
 import io.infinitic.common.transport.ClientTopic
+import io.infinitic.common.transport.NamingTopic
 import io.infinitic.common.transport.ServiceExecutorEventTopic
 import io.infinitic.common.transport.ServiceExecutorRetryTopic
 import io.infinitic.common.transport.ServiceExecutorTopic
@@ -61,26 +61,25 @@ class InMemoryChannels {
       ConcurrentHashMap<String, Channel<WorkflowTagEngineMessage>>()
   internal val serviceExecutorChannels =
       ConcurrentHashMap<String, Channel<ServiceExecutorMessage>>()
+  internal val serviceExecutorRetryChannels =
+      ConcurrentHashMap<String, Channel<ServiceExecutorMessage>>()
   internal val serviceExecutorEventsChannels =
       ConcurrentHashMap<String, Channel<ServiceExecutorEventMessage>>()
   internal val workflowStateCmdChannels =
       ConcurrentHashMap<String, Channel<WorkflowStateEngineMessage>>()
   internal val workflowStateEngineChannels =
       ConcurrentHashMap<String, Channel<WorkflowStateEngineMessage>>()
+  internal val workflowStateTimerChannels =
+      ConcurrentHashMap<String, Channel<WorkflowStateEngineMessage>>()
   internal val workflowStateEventChannels =
       ConcurrentHashMap<String, Channel<WorkflowStateEventMessage>>()
   internal val workflowExecutorChannels =
       ConcurrentHashMap<String, Channel<ServiceExecutorMessage>>()
+  internal val workflowExecutorRetryChannels =
+      ConcurrentHashMap<String, Channel<ServiceExecutorMessage>>()
   internal val workflowExecutorEventChannels =
       ConcurrentHashMap<String, Channel<ServiceExecutorEventMessage>>()
 
-  // Channels for Delayed messages
-  internal val serviceExecutorRetryChannels =
-      ConcurrentHashMap<String, Channel<DelayedMessage<ServiceExecutorMessage>>>()
-  internal val workflowStateTimerChannels =
-      ConcurrentHashMap<String, Channel<DelayedMessage<WorkflowStateEngineMessage>>>()
-  internal val workflowExecutorRetryChannels =
-      ConcurrentHashMap<String, Channel<DelayedMessage<ServiceExecutorMessage>>>()
 
   @Suppress("UNCHECKED_CAST")
   fun <S : Message> Topic<out S>.channel(entity: String): Channel<S> = when (this) {
@@ -88,25 +87,17 @@ class InMemoryChannels {
     ServiceTagEngineTopic -> serviceTagEngineChannels.getOrPut(entity, newChannel())
     ServiceExecutorTopic -> serviceExecutorChannels.getOrPut(entity, newChannel())
     ServiceExecutorEventTopic -> serviceExecutorEventsChannels.getOrPut(entity, newChannel())
+    ServiceExecutorRetryTopic -> serviceExecutorRetryChannels.getOrPut(entity, newChannel())
     WorkflowTagEngineTopic -> workflowTagEngineChannels.getOrPut(entity, newChannel())
     WorkflowStateCmdTopic -> workflowStateCmdChannels.getOrPut(entity, newChannel())
     WorkflowStateEngineTopic -> workflowStateEngineChannels.getOrPut(entity, newChannel())
+    WorkflowStateTimerTopic -> workflowStateTimerChannels.getOrPut(entity, newChannel())
     WorkflowStateEventTopic -> workflowStateEventChannels.getOrPut(entity, newChannel())
     WorkflowExecutorTopic -> workflowExecutorChannels.getOrPut(entity, newChannel())
     WorkflowExecutorEventTopic -> workflowExecutorEventChannels.getOrPut(entity, newChannel())
-    else -> thisShouldNotHappen()
+    WorkflowExecutorRetryTopic -> workflowExecutorRetryChannels.getOrPut(entity, newChannel())
+    NamingTopic -> thisShouldNotHappen()
   } as Channel<S>
-
-  @Suppress("UNCHECKED_CAST")
-  fun <S : Message> Topic<out S>.channelForDelayed(entity: String): Channel<DelayedMessage<S>> {
-    return when (this) {
-      ServiceExecutorRetryTopic -> serviceExecutorRetryChannels.getOrPut(entity, newChannel())
-      WorkflowStateTimerTopic -> workflowStateTimerChannels.getOrPut(entity, newChannel())
-      WorkflowExecutorRetryTopic -> workflowExecutorRetryChannels.getOrPut(entity, newChannel())
-
-      else -> thisShouldNotHappen()
-    } as Channel<DelayedMessage<S>>
-  }
 
   private fun <S> newChannel(): () -> Channel<S> = { Channel(UNLIMITED) }
 }
@@ -114,7 +105,3 @@ class InMemoryChannels {
 internal val Channel<*>.id
   get() = System.identityHashCode(this)
 
-data class DelayedMessage<T : Message>(
-  val message: T,
-  val after: MillisDuration
-)
