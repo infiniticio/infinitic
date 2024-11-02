@@ -31,6 +31,13 @@ interface TransportConsumer<T : TransportMessage<*>> {
   suspend fun receive(): T
 
   /**
+   * Receives a batch of transport messages from the consumer asynchronously.
+   *
+   * @return A list of messages of type [T] received from the transport.
+   */
+  suspend fun batchReceive(): List<T>
+  
+  /**
    * Defines the maximum number of times a message can be redelivered
    * when processing messages from a transport consumer.
    */

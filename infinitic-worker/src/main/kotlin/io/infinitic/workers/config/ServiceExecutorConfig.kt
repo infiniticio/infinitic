@@ -22,8 +22,9 @@
  */
 package io.infinitic.workers.config
 
+import io.infinitic.common.transport.config.BatchConfig
 import io.infinitic.common.utils.getInstance
-import io.infinitic.common.utils.initBatchMethods
+import io.infinitic.common.utils.initBatchProcessorMethods
 import io.infinitic.common.workers.config.RetryPolicy
 import io.infinitic.common.workers.config.UNSET_RETRY_POLICY
 import io.infinitic.config.loadFromYamlFile
@@ -36,8 +37,8 @@ private typealias ServiceFactory = () -> Any
 
 internal const val UNSET_TIMEOUT = Double.MAX_VALUE
 
-suspend fun ServiceExecutorConfig.initBatchMethods() {
-  factory()::class.java.initBatchMethods()
+suspend fun ServiceExecutorConfig.initBatchProcessorMethods() {
+  factory()::class.java.initBatchProcessorMethods()
 }
 
 @Suppress("unused")
@@ -46,6 +47,11 @@ sealed class ServiceExecutorConfig {
   abstract val serviceName: String
   abstract val factory: ServiceFactory
   abstract val concurrency: Int
+
+  /**
+   * Configuration settings for batch message when consuming
+   */
+  abstract val batch: BatchConfig?
 
   /**
    * WithRetry instance for this executor
@@ -96,6 +102,7 @@ sealed class ServiceExecutorConfig {
     private var concurrency: Int = 1
     private var timeoutSeconds: Double? = UNSET_TIMEOUT
     private var withRetry: WithRetry? = WithRetry.UNSET
+    private var batchConfig: BatchConfig? = null
 
     fun setServiceName(name: String) =
         apply { this.serviceName = name }
@@ -112,6 +119,10 @@ sealed class ServiceExecutorConfig {
     fun withRetry(retry: WithRetry) =
         apply { this.withRetry = retry }
 
+    fun setBatch(maxMessages: Int, maxSeconds: Double) {
+      apply { this.batchConfig = BatchConfig(maxMessages, maxSeconds) }
+    }
+
     fun build(): ServiceExecutorConfig {
       serviceName.checkServiceName()
       require(factory != null) { "${::factory.name} must not be null" }
@@ -124,13 +135,14 @@ sealed class ServiceExecutorConfig {
           concurrency,
           withRetry,
           timeoutSeconds.withTimeout,
+          batchConfig
       )
     }
   }
 }
 
 /**
- * ServiceExecutorConfig built from builder
+ * ServiceExecutorConfig built by builder
  */
 data class BuiltServiceExecutorConfig(
   override val serviceName: String,
@@ -138,6 +150,7 @@ data class BuiltServiceExecutorConfig(
   override val concurrency: Int,
   override val withRetry: WithRetry?,
   override val withTimeout: WithTimeout?,
+  override val batch: BatchConfig?
 ) : ServiceExecutorConfig()
 
 /**
@@ -149,6 +162,7 @@ data class LoadedServiceExecutorConfig(
   override val concurrency: Int = 1,
   val timeoutSeconds: Double? = UNSET_TIMEOUT,
   val retry: RetryPolicy? = UNSET_RETRY_POLICY,
+  override val batch: BatchConfig? = null
 ) : ServiceExecutorConfig(), WithMutableServiceName {
 
   override val factory: () -> Any = { `class`.getInstance().getOrThrow() }

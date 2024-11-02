@@ -27,6 +27,7 @@ import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.messages.Message
 import io.infinitic.common.transport.BatchProcessorConfig
 import io.infinitic.common.transport.Subscription
+import io.infinitic.common.transport.config.BatchConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 
@@ -45,6 +46,7 @@ interface InfiniticConsumer {
   suspend fun <M : Message> buildConsumers(
     subscription: Subscription<M>,
     entity: String,
+    batchConfig: BatchConfig?,
     occurrence: Int?
   ): List<TransportConsumer<out TransportMessage<M>>>
 
@@ -52,7 +54,8 @@ interface InfiniticConsumer {
   suspend fun <M : Message> buildConsumer(
     subscription: Subscription<M>,
     entity: String,
-  ): TransportConsumer<out TransportMessage<M>> = buildConsumers(subscription, entity, null).first()
+    batchConfig: BatchConfig?
+  ): TransportConsumer<out TransportMessage<M>> = buildConsumers(subscription, entity, batchConfig, null).first()
 
   /**
    * Starts asynchronous processing of messages for a given subscription.
@@ -70,6 +73,7 @@ interface InfiniticConsumer {
   suspend fun <S : Message> startAsync(
     subscription: Subscription<S>,
     entity: String,
+    batchConsumerConfig: BatchConfig? = null,
     concurrency: Int,
     processor: suspend (S, MillisInstant) -> Unit,
     beforeDlq: (suspend (S, Exception) -> Unit)? = null,
@@ -93,12 +97,20 @@ interface InfiniticConsumer {
   suspend fun <M : Message> start(
     subscription: Subscription<M>,
     entity: String,
+    batchConsumerConfig: BatchConfig? = null,
     concurrency: Int,
     process: suspend (M, MillisInstant) -> Unit,
     beforeDlq: (suspend (M, Exception) -> Unit)? = null,
     batchProcessorConfig: (suspend (M) -> BatchProcessorConfig?)? = null,
     batchProcessor: (suspend (List<M>, List<MillisInstant>) -> Unit)? = null
   ) = startAsync(
-      subscription, entity, concurrency, process, beforeDlq, batchProcessorConfig, batchProcessor,
+      subscription,
+      entity,
+      batchConsumerConfig,
+      concurrency,
+      process,
+      beforeDlq,
+      batchProcessorConfig,
+      batchProcessor,
   ).join()
 }

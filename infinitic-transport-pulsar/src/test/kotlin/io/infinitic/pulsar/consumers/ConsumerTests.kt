@@ -152,7 +152,7 @@ class ConsumerTests : StringSpec(
 
           try {
             with(scope) {
-              consumer.start(subscription, entity, 1, handler, null)
+              consumer.start(subscription, entity, null, 1, handler, null)
             }
           } catch (e: CancellationException) {
             // do nothing
@@ -200,7 +200,7 @@ class ConsumerTests : StringSpec(
 
           try {
             with(scope) {
-              consumer.start(subscription, entity, 100, handler, null)
+              consumer.start(subscription, entity, null, 100, handler, null)
             }
           } catch (e: CancellationException) {
             // do nothing
@@ -245,7 +245,7 @@ class ConsumerTests : StringSpec(
 
           try {
             with(scope) {
-              consumer.start(subscription, entity, 1, handler, null)
+              consumer.start(subscription, entity, null, 1, handler, null)
             }
           } catch (e: CancellationException) {
             // do nothing
@@ -287,7 +287,7 @@ class ConsumerTests : StringSpec(
 
           try {
             val job = with(scope) {
-              consumer.startAsync(subscription, entity, 100, process, null)
+              consumer.startAsync(subscription, entity, null, 100, process, null)
             }
             // on the consumer created, we send the messages
             // to avoid that the first consumer up captures all keys right-away

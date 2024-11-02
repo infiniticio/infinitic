@@ -61,7 +61,7 @@ internal class ProcessorConsumerWithBatchTests : StringSpec(
 
           with(scope) {
             consumer
-                .startAsync(3, ::deserialize, ::process, null, ::batchConfig, ::processBatch)
+                .startAsync(null, 3, ::deserialize, ::process, null, ::batchConfig, ::processBatch)
                 .join()
           }
           receivedList.size shouldBeGreaterThan 0
@@ -77,6 +77,7 @@ internal class ProcessorConsumerWithBatchTests : StringSpec(
           with(getScope()) {
             consumer
                 .startAsync(
+                    null,
                     3,
                     ::deserializeWitError,
                     ::process,
@@ -106,6 +107,7 @@ internal class ProcessorConsumerWithBatchTests : StringSpec(
           with(getScope()) {
             consumer
                 .startAsync(
+                    null,
                     3,
                     ::deserialize,
                     ::processWithError,
@@ -132,6 +134,7 @@ internal class ProcessorConsumerWithBatchTests : StringSpec(
           with(getScope()) {
             consumer
                 .startAsync(
+                    null,
                     3,
                     ::deserialize,
                     ::process,
@@ -158,6 +161,7 @@ internal class ProcessorConsumerWithBatchTests : StringSpec(
           with(getScope()) {
             consumer
                 .startAsync(
+                    null,
                     3,
                     ::deserialize,
                     ::process,
@@ -185,6 +189,7 @@ internal class ProcessorConsumerWithBatchTests : StringSpec(
           with(getScope()) {
             consumer
                 .startAsync(
+                    null,
                     3,
                     ::deserializeWithException,
                     ::process,
@@ -215,6 +220,7 @@ internal class ProcessorConsumerWithBatchTests : StringSpec(
           with(getScope()) {
             consumer
                 .startAsync(
+                    null,
                     3,
                     ::deserialize,
                     ::processWithException,
@@ -242,6 +248,7 @@ internal class ProcessorConsumerWithBatchTests : StringSpec(
           with(getScope()) {
             consumer
                 .startAsync(
+                    null,
                     3,
                     ::deserialize,
                     ::process,
@@ -273,6 +280,7 @@ internal class ProcessorConsumerWithBatchTests : StringSpec(
           with(getScope()) {
             consumer
                 .startAsync(
+                    null,
                     3,
                     ::deserialize,
                     ::process,

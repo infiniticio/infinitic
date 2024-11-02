@@ -196,7 +196,7 @@ private val batchMethodMutex = Mutex()
 
 fun Method.getBatchMethod(): BatchMethod? = batchMethodCache[this]
 
-suspend fun Class<*>.initBatchMethods() {
+suspend fun Class<*>.initBatchProcessorMethods() {
   // Retrieve the list of BatchMethod for the class
   val batchMethodList = getBatchMethods()
   // Update the cache with all methods of the class

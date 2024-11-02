@@ -74,6 +74,7 @@ class InMemoryInfiniticConsumerTests : StringSpec(
             consumer.startAsync(
                 MainSubscription(ServiceExecutorTopic),
                 serviceName.toString(),
+                null,
                 10,
                 ::process,
             )

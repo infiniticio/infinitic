@@ -74,6 +74,8 @@ internal open class IntConsumer : TransportConsumer<IntMessage> {
   override suspend fun receive() = IntMessage(counter.incrementAndGet())
       .also { receivedList.add(it.value) }
 
+  override suspend fun batchReceive(): List<IntMessage> = listOf(receive(), receive())
+
   override val maxRedeliveryCount = 1
   override val name: String = this.toString()
 }

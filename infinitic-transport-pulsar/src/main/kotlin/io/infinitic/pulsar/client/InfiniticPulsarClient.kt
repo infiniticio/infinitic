@@ -25,12 +25,14 @@ package io.infinitic.pulsar.client
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.messages.Message
+import io.infinitic.common.transport.config.BatchConfig
 import io.infinitic.pulsar.config.PulsarConsumerConfig
 import io.infinitic.pulsar.config.PulsarProducerConfig
 import io.infinitic.pulsar.schemas.schemaDefinition
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import org.apache.pulsar.client.api.BatchReceivePolicy
 import org.apache.pulsar.client.api.BatcherBuilder
 import org.apache.pulsar.client.api.Consumer
 import org.apache.pulsar.client.api.DeadLetterPolicy
@@ -230,6 +232,7 @@ class InfiniticPulsarClient(private val pulsarClient: PulsarClient) {
         subscriptionName,
         subscriptionType,
         consumerName,
+        batchConfig,
         consumerConfig
     ) = consumerDef
 
@@ -241,6 +244,15 @@ class InfiniticPulsarClient(private val pulsarClient: PulsarClient) {
         .consumerName(consumerName)
         .subscriptionInitialPosition(SubscriptionInitialPosition.Earliest)
 
+    // Batch Receive Policy
+    batchConfig?.let {
+      builder.batchReceivePolicy(
+          BatchReceivePolicy.builder()
+              .maxNumMessages(it.maxMessages)
+              .timeout((it.maxSeconds * 1000).toInt(), TimeUnit.MILLISECONDS)
+              .build(),
+      )
+    }
     // Dead Letter Queue
     consumerDefDlq?.let {
       builder
@@ -384,6 +396,7 @@ class InfiniticPulsarClient(private val pulsarClient: PulsarClient) {
     val subscriptionName: String,
     val subscriptionType: SubscriptionType,
     val consumerName: String,
+    val batchReceivingConfig: BatchConfig?,
     val pulsarConsumerConfig: PulsarConsumerConfig,
   )
 

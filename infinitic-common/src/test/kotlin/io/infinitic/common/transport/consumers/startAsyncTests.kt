@@ -58,7 +58,7 @@ internal class ProcessorConsumerTests : StringSpec(
 
           with(scope) {
             consumer
-                .startAsync(3, ::deserialize, ::process)
+                .startAsync(null, 3, ::deserialize, ::process)
                 .join()
           }
           receivedList.size shouldBeGreaterThan 0
@@ -75,7 +75,7 @@ internal class ProcessorConsumerTests : StringSpec(
 
           with(getScope()) {
             consumer
-                .startAsync(3, ::deserializeWitError, ::process)
+                .startAsync(null, 3, ::deserializeWitError, ::process)
                 .join()
           }
 
@@ -98,7 +98,7 @@ internal class ProcessorConsumerTests : StringSpec(
 
           with(getScope()) {
             consumer
-                .startAsync(3, ::deserialize, ::processWithError)
+                .startAsync(null, 3, ::deserialize, ::processWithError)
                 .join()
           }
 
@@ -119,7 +119,7 @@ internal class ProcessorConsumerTests : StringSpec(
 
           with(getScope()) {
             consumer
-                .startAsync(3, ::deserializeWitError, ::process)
+                .startAsync(null, 3, ::deserializeWitError, ::process)
                 .join()
           }
 
@@ -142,7 +142,7 @@ internal class ProcessorConsumerTests : StringSpec(
 
           with(getScope()) {
             consumer
-                .startAsync(3, ::deserialize, ::processWithException)
+                .startAsync(null, 3, ::deserialize, ::processWithException)
                 .join()
           }
 

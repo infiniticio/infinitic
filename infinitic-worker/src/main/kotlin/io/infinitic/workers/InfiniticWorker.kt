@@ -25,6 +25,7 @@ package io.infinitic.workers
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.clients.InfiniticClient
+import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.events.messages.ServiceExecutorEventMessage
@@ -71,7 +72,7 @@ import io.infinitic.workers.config.WorkflowConfig
 import io.infinitic.workers.config.WorkflowExecutorConfig
 import io.infinitic.workers.config.WorkflowStateEngineConfig
 import io.infinitic.workers.config.WorkflowTagEngineConfig
-import io.infinitic.workers.config.initBatchMethods
+import io.infinitic.workers.config.initBatchProcessorMethods
 import io.infinitic.workers.registry.ExecutorRegistry
 import io.infinitic.workflows.Workflow
 import io.infinitic.workflows.engine.WorkflowStateCmdHandler
@@ -406,7 +407,7 @@ class InfiniticWorker(
     logServiceExecutorStart(config)
 
     // init batch methods for current factory
-    config.initBatchMethods()
+    config.initBatchProcessorMethods()
 
     // TASK-EXECUTOR
     val jobExecutor = with(TaskExecutor.logger) {
@@ -447,6 +448,7 @@ class InfiniticWorker(
       consumer.startAsync(
           subscription = MainSubscription(ServiceExecutorTopic),
           entity = config.serviceName,
+          batchConsumerConfig = config.batch,
           concurrency = config.concurrency,
           processor = processor,
           beforeDlq = beforeDlq,
@@ -463,6 +465,7 @@ class InfiniticWorker(
       consumer.startAsync(
           subscription = MainSubscription(ServiceExecutorRetryTopic),
           entity = config.serviceName,
+          batchConsumerConfig = config.batch,
           concurrency = config.concurrency,
           processor = taskRetryHandler::handle,
       )
@@ -489,6 +492,7 @@ class InfiniticWorker(
       consumer.startAsync(
           subscription = MainSubscription(ServiceExecutorEventTopic),
           entity = config.serviceName,
+          batchConsumerConfig = config.batch,
           concurrency = config.concurrency,
           processor = processor,
       )
@@ -564,12 +568,17 @@ class InfiniticWorker(
           }
 
       val batchProcessorConfig = config.batch?.let {
-        BatchProcessorConfig("workflowCmd:" + config.workflowName, it.maxMessages, it.maxMillis)
+        BatchProcessorConfig(
+            "workflowCmd:" + config.workflowName,
+            it.maxMessages,
+            MillisDuration(it.maxMillis),
+        )
       }
 
       consumer.startAsync(
           subscription = MainSubscription(WorkflowStateCmdTopic),
           entity = config.workflowName,
+          batchConsumerConfig = config.batch,
           concurrency = config.concurrency,
           processor = processor,
           batchProcessorConfig = { _ -> batchProcessorConfig },
@@ -607,12 +616,17 @@ class InfiniticWorker(
           }
 
       val batchProcessorConfig = config.batch?.let {
-        BatchProcessorConfig("workflowState:" + config.workflowName, it.maxMessages, it.maxMillis)
+        BatchProcessorConfig(
+            "workflowState:" + config.workflowName,
+            it.maxMessages,
+            MillisDuration(it.maxMillis),
+        )
       }
 
       consumer.startAsync(
           subscription = MainSubscription(WorkflowStateEngineTopic),
           entity = config.workflowName,
+          batchConsumerConfig = config.batch,
           concurrency = config.concurrency,
           processor = processor,
           batchProcessorConfig = { _ -> batchProcessorConfig },
@@ -628,6 +642,7 @@ class InfiniticWorker(
       consumer.startAsync(
           subscription = MainSubscription(WorkflowStateTimerTopic),
           entity = config.workflowName,
+          batchConsumerConfig = config.batch,
           concurrency = config.concurrency,
           processor = workflowStateTimerHandler::process,
       )
@@ -662,12 +677,17 @@ class InfiniticWorker(
           }
 
       val batchProcessorConfig = config.batch?.let {
-        BatchProcessorConfig("workflowEvent:" + config.workflowName, it.maxMessages, it.maxMillis)
+        BatchProcessorConfig(
+            "workflowEvent:" + config.workflowName,
+            it.maxMessages,
+            MillisDuration(it.maxMillis),
+        )
       }
 
       consumer.startAsync(
           subscription = MainSubscription(WorkflowStateEventTopic),
           entity = config.workflowName,
+          batchConsumerConfig = config.batch,
           concurrency = config.concurrency,
           processor = processor,
           batchProcessorConfig = { _ -> batchProcessorConfig },
@@ -714,7 +734,7 @@ class InfiniticWorker(
         BatchProcessorConfig(
             "workflowExecutor:" + config.workflowName,
             it.maxMessages,
-            it.maxMillis,
+            MillisDuration(it.maxMillis),
         )
       }
 
@@ -731,6 +751,7 @@ class InfiniticWorker(
       consumer.startAsync(
           subscription = MainSubscription(WorkflowExecutorTopic),
           entity = config.workflowName,
+          batchConsumerConfig = config.batchConfig,
           concurrency = config.concurrency,
           processor = processor,
           beforeDlq = beforeDlq,
@@ -746,6 +767,7 @@ class InfiniticWorker(
 
       consumer.startAsync(
           subscription = MainSubscription(WorkflowExecutorRetryTopic),
+          batchConsumerConfig = config.batchConfig,
           entity = config.workflowName,
           concurrency = config.concurrency,
           processor = taskRetryHandler::handle,
@@ -773,6 +795,7 @@ class InfiniticWorker(
       consumer.startAsync(
           subscription = MainSubscription(WorkflowExecutorEventTopic),
           entity = config.workflowName,
+          batchConsumerConfig = config.batchConfig,
           concurrency = config.concurrency,
           processor = processor,
       )

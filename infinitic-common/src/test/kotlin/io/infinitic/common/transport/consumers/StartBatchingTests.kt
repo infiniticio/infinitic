@@ -47,7 +47,7 @@ internal class StartBatchingTests : StringSpec(
       "should be able to batch by max message, up to scope cancellation" {
         with(logger) {
           val scope = getScope()
-          val channel = with(scope) { IntConsumer().startConsuming() }
+          val channel = with(scope) { IntConsumer().startConsuming(false) }
           val outputChannel = Channel<OneOrMany<Result<IntMessage, IntMessage>>>()
 
           channel.startBatching(5, 100, outputChannel)
@@ -84,7 +84,7 @@ internal class StartBatchingTests : StringSpec(
 
         with(logger) {
           val scope = getScope()
-          val channel = with(scope) { SlowConsumer().startConsuming() }
+          val channel = with(scope) { SlowConsumer().startConsuming(false) }
           val outputChannel = Channel<OneOrMany<Result<IntMessage, IntMessage>>>()
 
           channel.startBatching(5, 100, outputChannel)

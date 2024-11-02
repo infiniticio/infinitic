@@ -75,15 +75,15 @@ fun <S> Channel<S>.startBatching(
  * or the specified timeout duration elapses.
  *
  * @param maxMessages The maximum number of messages to include in the batch.
- * @param timeout The maximum duration (in milliseconds) to wait for messages before returning the batch.
+ * @param timeoutMillis The maximum duration (in milliseconds) to wait for messages before returning the batch.
  * @return A BatchResult containing the collected messages and a flag indicating if the channel is still open.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
-private suspend fun <S> Channel<S>.batchWithTimeout(
+suspend fun <S> Channel<S>.batchWithTimeout(
   maxMessages: Int,
-  timeout: Long
+  timeoutMillis: Long
 ): BatchResult<S> {
-  val endTime = System.currentTimeMillis() + timeout
+  val endTime = System.currentTimeMillis() + timeoutMillis
   // isActive becomes false after timeout
   var isActive = true
   // isOpen becomes false if the channel is closed
@@ -117,7 +117,7 @@ private suspend fun <S> Channel<S>.batchWithTimeout(
  * @param messages The list of messages collected in the batch.
  * @param isOpen A flag indicating if the source channel is still open after collecting the batch.
  */
-private data class BatchResult<S>(
+data class BatchResult<S>(
   val messages: List<S>,
   val isOpen: Boolean,
 )

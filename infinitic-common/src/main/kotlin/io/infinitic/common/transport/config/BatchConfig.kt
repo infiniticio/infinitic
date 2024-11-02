@@ -22,8 +22,6 @@
  */
 package io.infinitic.common.transport.config
 
-import io.infinitic.common.data.MillisDuration
-
 data class BatchConfig(
   val maxMessages: Int = 1000,
   val maxSeconds: Double = 1.0
@@ -33,5 +31,5 @@ data class BatchConfig(
     require(maxSeconds > 0) { error("'${::maxSeconds.name}' must be > 0, but was $maxSeconds") }
   }
 
-  val maxMillis = MillisDuration((maxSeconds * 1000).toLong())
+  val maxMillis = (maxSeconds * 1000).toLong()
 }
