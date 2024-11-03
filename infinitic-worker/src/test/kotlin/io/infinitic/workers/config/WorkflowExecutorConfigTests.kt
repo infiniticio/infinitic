@@ -152,7 +152,7 @@ retry:
         config.withTimeout?.getTimeoutSeconds() shouldBe 3.0
         config.withRetry shouldBe withRetry
         config.checkMode shouldBe WorkflowCheckMode.strict
-        config.batchConfig shouldBe BatchConfig(100, 0.5)
+        config.batch shouldBe BatchConfig(100, 0.5)
       }
 
       "class is mandatory when building WorkflowExecutorConfig from YAML" {

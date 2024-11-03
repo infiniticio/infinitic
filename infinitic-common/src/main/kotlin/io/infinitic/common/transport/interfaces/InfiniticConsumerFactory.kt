@@ -28,6 +28,7 @@ import io.infinitic.common.messages.Message
 import io.infinitic.common.transport.BatchProcessorConfig
 import io.infinitic.common.transport.Subscription
 import io.infinitic.common.transport.config.BatchConfig
+import io.infinitic.common.transport.config.normalized
 import io.infinitic.common.transport.consumers.startAsync
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -97,7 +98,7 @@ interface InfiniticConsumerFactory {
       launch {
         repeat(concurrency) { index ->
           consumers[index].startAsync(
-              batchReceivingConfig = batchReceivingConfig,
+              batchReceivingConfig = batchReceivingConfig.normalized(concurrency),
               concurrency = 1,
               processor = processor,
               beforeDlq = beforeDlq,

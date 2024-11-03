@@ -48,7 +48,7 @@ sealed class WorkflowExecutorConfig {
   abstract val withRetry: WithRetry?
   abstract val withTimeout: WithTimeout?
   abstract val checkMode: WorkflowCheckMode?
-  abstract val batchConfig: BatchConfig?
+  abstract val batch: BatchConfig?
 
   companion object {
     @JvmStatic
@@ -86,7 +86,7 @@ sealed class WorkflowExecutorConfig {
     private var timeoutSeconds: Double? = UNSET_TIMEOUT
     private var withRetry: WithRetry? = WithRetry.UNSET
     private var checkMode: WorkflowCheckMode? = null
-    private var batchConfig: BatchConfig? = null
+    private var batch: BatchConfig? = null
 
     fun setWorkflowName(workflowName: String) =
         apply { this.workflowName = workflowName }
@@ -107,7 +107,7 @@ sealed class WorkflowExecutorConfig {
         apply { this.checkMode = checkMode }
 
     fun setBatch(maxMessages: Int, maxSeconds: Double) =
-        apply { this.batchConfig = BatchConfig(maxMessages, maxSeconds) }
+        apply { this.batch = BatchConfig(maxMessages, maxSeconds) }
 
     fun build(): WorkflowExecutorConfig {
       workflowName.checkWorkflowName()
@@ -129,7 +129,7 @@ sealed class WorkflowExecutorConfig {
           timeoutSeconds.withTimeout,
           withRetry,
           checkMode,
-          batchConfig,
+          batch,
       )
     }
   }
@@ -145,7 +145,7 @@ data class BuiltWorkflowExecutorConfig(
   override var withTimeout: WithTimeout?,
   override var withRetry: WithRetry?,
   override var checkMode: WorkflowCheckMode?,
-  override val batchConfig: BatchConfig?
+  override val batch: BatchConfig?
 ) : WorkflowExecutorConfig()
 
 /**
@@ -159,7 +159,7 @@ data class LoadedWorkflowExecutorConfig(
   val timeoutSeconds: Double? = UNSET_TIMEOUT,
   var retry: RetryPolicy? = UNSET_RETRY_POLICY,
   override var checkMode: WorkflowCheckMode? = null,
-  val batch: BatchConfig? = null,
+  override val batch: BatchConfig? = null,
 ) : WorkflowExecutorConfig(), WithMutableWorkflowName {
   private val allInstances = mutableListOf<Workflow>()
 
@@ -170,8 +170,6 @@ data class LoadedWorkflowExecutorConfig(
   override val factories: WorkflowFactories by lazy {
     allInstances.map { { it::class.java.getInstance().getOrThrow() } }
   }
-
-  override val batchConfig: BatchConfig? = batch
 
   init {
     // Needed if the workflow context is referenced within the properties of the workflow

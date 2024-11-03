@@ -56,7 +56,7 @@ executor:
 
           config.name shouldBe workflowName
           config.executor.shouldBeInstanceOf<WorkflowExecutorConfig>()
-          config.executor!!.batchConfig shouldBe BatchConfig(100, 0.5)
+          config.executor!!.batch shouldBe BatchConfig(100, 0.5)
           config.tagEngine shouldBe null
           config.stateEngine shouldBe null
         }
