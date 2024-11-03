@@ -57,9 +57,11 @@ internal class ProcessorConsumerTests : StringSpec(
           later { scope.cancel() }
 
           with(scope) {
-            consumer
-                .startAsync(null, 3, ::deserialize, ::process)
-                .join()
+            consumer.startAsync(
+                concurrency = 3,
+                deserialize = ::deserialize,
+                processor = ::process,
+            ).join()
           }
           receivedList.size shouldBeGreaterThan 0
           processedList.sorted() shouldBe deserializedList.sorted()
@@ -74,9 +76,11 @@ internal class ProcessorConsumerTests : StringSpec(
               if (value.value == 10) throw Error("Expected Error") else deserialize(value)
 
           with(getScope()) {
-            consumer
-                .startAsync(null, 3, ::deserializeWitError, ::process)
-                .join()
+            consumer.startAsync(
+                concurrency = 3,
+                deserialize = ::deserializeWitError,
+                processor = ::process,
+            ).join()
           }
 
           acknowledgedList shouldContainAll (1..9).toList()
@@ -97,9 +101,11 @@ internal class ProcessorConsumerTests : StringSpec(
 
 
           with(getScope()) {
-            consumer
-                .startAsync(null, 3, ::deserialize, ::processWithError)
-                .join()
+            consumer.startAsync(
+                concurrency = 3,
+                deserialize = ::deserialize,
+                processor = ::processWithError,
+            ).join()
           }
 
           acknowledgedList shouldContainAll (1..9).toList()
@@ -118,9 +124,11 @@ internal class ProcessorConsumerTests : StringSpec(
           }
 
           with(getScope()) {
-            consumer
-                .startAsync(null, 3, ::deserializeWitError, ::process)
-                .join()
+            consumer.startAsync(
+                concurrency = 3,
+                deserialize = ::deserializeWitError,
+                processor = ::process,
+            ).join()
           }
 
           acknowledgedList.size shouldBeGreaterThanOrEqual 18
@@ -141,9 +149,11 @@ internal class ProcessorConsumerTests : StringSpec(
           }
 
           with(getScope()) {
-            consumer
-                .startAsync(null, 3, ::deserialize, ::processWithException)
-                .join()
+            consumer.startAsync(
+                concurrency = 3,
+                deserialize = ::deserialize,
+                processor = ::processWithException,
+            ).join()
           }
 
           processedList.sorted() shouldBe acknowledgedList.sorted()

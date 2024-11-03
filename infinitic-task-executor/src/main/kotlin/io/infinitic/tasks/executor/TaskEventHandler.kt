@@ -33,9 +33,9 @@ import io.infinitic.common.tasks.events.messages.TaskRetriedEvent
 import io.infinitic.common.tasks.events.messages.TaskStartedEvent
 import io.infinitic.common.tasks.tags.messages.SetDelegatedTaskData
 import io.infinitic.common.transport.ClientTopic
-import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.transport.ServiceTagEngineTopic
 import io.infinitic.common.transport.WorkflowStateEngineTopic
+import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.workflows.data.commands.DispatchNewMethodPastCommand
 import io.infinitic.common.workflows.data.commands.DispatchNewWorkflowPastCommand
 import io.infinitic.common.workflows.data.commands.DispatchTaskPastCommand
@@ -56,7 +56,7 @@ import kotlinx.coroutines.launch
 
 class TaskEventHandler(val producer: InfiniticProducer) {
 
-  private suspend fun getEmitterName() = EmitterName(producer.getProducerName())
+  private suspend fun getEmitterName() = EmitterName(producer.getName())
 
   suspend fun handle(msg: ServiceExecutorEventMessage, publishTime: MillisInstant) {
     when (msg) {

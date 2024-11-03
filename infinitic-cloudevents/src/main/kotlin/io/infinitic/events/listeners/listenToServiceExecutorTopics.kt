@@ -33,7 +33,7 @@ import io.infinitic.common.transport.config.BatchConfig
 import io.infinitic.common.transport.consumers.Result
 import io.infinitic.common.transport.consumers.startConsuming
 import io.infinitic.common.transport.create
-import io.infinitic.common.transport.interfaces.InfiniticConsumer
+import io.infinitic.common.transport.interfaces.InfiniticConsumerFactory
 import io.infinitic.common.transport.interfaces.TransportMessage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -41,7 +41,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 
 context(CoroutineScope, KLogger)
-internal fun InfiniticConsumer.listenToServiceExecutorTopics(
+internal fun InfiniticConsumerFactory.listenToServiceExecutorTopics(
   serviceName: ServiceName,
   batchConfig: BatchConfig?,
   subscriptionName: String?,

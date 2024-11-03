@@ -30,8 +30,8 @@ import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.requester.workflowId
 import io.infinitic.common.transport.ClientTopic
-import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.transport.WorkflowStateCmdTopic
+import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.engine.commands.dispatchRemoteMethod
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
@@ -62,7 +62,7 @@ class WorkflowTagEngine(
   val producer: InfiniticProducer
 ) {
 
-  private suspend fun getEmitterName() = EmitterName(producer.getProducerName())
+  private suspend fun getEmitterName() = EmitterName(producer.getName())
 
   suspend fun handle(message: WorkflowTagEngineMessage, publishTime: MillisInstant) {
     when (message) {

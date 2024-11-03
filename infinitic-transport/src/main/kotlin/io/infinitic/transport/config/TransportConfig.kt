@@ -22,7 +22,7 @@
  */
 package io.infinitic.transport.config
 
-import io.infinitic.common.transport.interfaces.InfiniticConsumer
+import io.infinitic.common.transport.interfaces.InfiniticConsumerFactory
 import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.transport.interfaces.InfiniticResources
 
@@ -46,7 +46,7 @@ sealed class TransportConfig : AutoCloseable {
   /**
    * This consumer is responsible for subscribing to and handling messages
    */
-  abstract val consumer: InfiniticConsumer
+  abstract val consumerFactory: InfiniticConsumerFactory
 
   /**
    * This producer is responsible for sending messages asynchronously to specified topics

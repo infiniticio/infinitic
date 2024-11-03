@@ -26,11 +26,11 @@ import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.requester.Requester
 import io.infinitic.common.requester.WorkflowRequester
 import io.infinitic.common.requester.workflowId
-import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.transport.WorkflowStateCmdTopic
 import io.infinitic.common.transport.WorkflowStateEventTopic
 import io.infinitic.common.transport.WorkflowStateTimerTopic
 import io.infinitic.common.transport.WorkflowTagEngineTopic
+import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.workflows.engine.messages.DispatchMethod
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import io.infinitic.common.workflows.engine.messages.MethodCommandedEvent
@@ -50,7 +50,7 @@ suspend fun InfiniticProducer.dispatchRemoteMethod(
   requester: Requester,
 ) = coroutineScope {
 
-  suspend fun getEmitterName() = EmitterName(getProducerName())
+  suspend fun getEmitterName() = EmitterName(getName())
 
   when (remote) {
     // New Workflow

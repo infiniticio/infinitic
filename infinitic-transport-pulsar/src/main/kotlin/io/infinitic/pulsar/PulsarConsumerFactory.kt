@@ -23,16 +23,13 @@
 package io.infinitic.pulsar
 
 import io.github.oshai.kotlinlogging.KLogger
-import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.messages.Message
-import io.infinitic.common.transport.BatchProcessorConfig
 import io.infinitic.common.transport.EventListenerSubscription
 import io.infinitic.common.transport.MainSubscription
 import io.infinitic.common.transport.Subscription
 import io.infinitic.common.transport.config.BatchConfig
-import io.infinitic.common.transport.consumers.startAsync
-import io.infinitic.common.transport.interfaces.InfiniticConsumer
+import io.infinitic.common.transport.interfaces.InfiniticConsumerFactory
 import io.infinitic.pulsar.client.InfiniticPulsarClient
 import io.infinitic.pulsar.config.PulsarConsumerConfig
 import io.infinitic.pulsar.consumers.PulsarTransportConsumer
@@ -41,20 +38,17 @@ import io.infinitic.pulsar.resources.defaultName
 import io.infinitic.pulsar.resources.defaultNameDLQ
 import io.infinitic.pulsar.resources.schema
 import io.infinitic.pulsar.resources.type
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
 import org.apache.pulsar.client.api.Consumer
 import org.apache.pulsar.client.api.Schema
 import org.apache.pulsar.client.api.SubscriptionType
 
-class PulsarInfiniticConsumer(
+class PulsarConsumerFactory(
   private val client: InfiniticPulsarClient,
   private val pulsarConsumerConfig: PulsarConsumerConfig,
   private val pulsarResources: PulsarResources,
-) : InfiniticConsumer {
+) : InfiniticConsumerFactory {
 
   context(KLogger)
   override suspend fun <M : Message> buildConsumers(
@@ -99,61 +93,9 @@ class PulsarInfiniticConsumer(
     }
   }
 
-  context(CoroutineScope, KLogger)
-  override suspend fun <S : Message> startAsync(
-    subscription: Subscription<S>,
-    entity: String,
-    batchConfig: BatchConfig?,
-    concurrency: Int,
-    processor: suspend (S, MillisInstant) -> Unit,
-    beforeDlq: (suspend (S, Exception) -> Unit)?,
-    batchProcessorConfig: (suspend (S) -> BatchProcessorConfig?)?,
-    batchProcessor: (suspend (List<S>, List<MillisInstant>) -> Unit)?
-  ): Job {
-
-    return when (subscription.withKey) {
-      true -> {
-        // multiple consumers with unique processing
-        val consumers = buildConsumers(subscription, entity, batchConfig, concurrency)
-        launch {
-          repeat(concurrency) { index ->
-            consumers[index].startAsync(
-                batchConfig,
-                concurrency = 1,
-                { it.deserialize() },
-                processor,
-                beforeDlq,
-                batchProcessorConfig,
-                batchProcessor,
-            )
-          }
-        }
-      }
-
-      false -> {
-        // unique consumer with parallel processing
-        val consumer = buildConsumer(subscription, entity, batchConfig)
-        consumer.startAsync(
-            batchConfig,
-            concurrency,
-            { it.deserialize() },
-            processor,
-            beforeDlq,
-            batchProcessorConfig,
-            batchProcessor,
-        )
-      }
-    }
-  }
-
   /**
    * Retrieves the name of the topic and the DLQ topic for a given entity.
    * The topics are created if they do not exist.
-   *
-   * @param M The type of the message.
-   * @param subscription The subscription containing topic information.
-   * @param entity The entity for which the topic names are to be retrieved.
-   * @return A pair containing the topic name and the DLQ topic name.
    */
   private suspend fun <M : Message> getOrCreateTopics(
     subscription: Subscription<M>,

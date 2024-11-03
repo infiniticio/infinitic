@@ -23,29 +23,22 @@
 package io.infinitic.inMemory
 
 import io.github.oshai.kotlinlogging.KLogger
-import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.messages.Message
-import io.infinitic.common.transport.BatchProcessorConfig
 import io.infinitic.common.transport.EventListenerSubscription
 import io.infinitic.common.transport.MainSubscription
 import io.infinitic.common.transport.Subscription
 import io.infinitic.common.transport.config.BatchConfig
-import io.infinitic.common.transport.consumers.startAsync
-import io.infinitic.common.transport.interfaces.InfiniticConsumer
+import io.infinitic.common.transport.interfaces.InfiniticConsumerFactory
 import io.infinitic.common.transport.interfaces.TransportConsumer
-import io.infinitic.common.transport.interfaces.TransportMessage
 import io.infinitic.inMemory.channels.InMemoryChannels
 import io.infinitic.inMemory.consumers.InMemoryConsumer
 import io.infinitic.inMemory.consumers.InMemoryTransportMessage
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.launch
 
-class InMemoryInfiniticConsumer(
+class InMemoryConsumerFactory(
   private val mainChannels: InMemoryChannels,
   private val eventListenerChannels: InMemoryChannels,
-) : InfiniticConsumer {
+) : InfiniticConsumerFactory {
 
   context(KLogger)
   override suspend fun <S : Message> buildConsumers(
@@ -64,55 +57,6 @@ class InMemoryInfiniticConsumer(
     batchConfig: BatchConfig?,
   ): TransportConsumer<InMemoryTransportMessage<S>> =
       buildConsumers(subscription, entity, batchConfig, 1).first()
-
-  context(CoroutineScope, KLogger)
-  override suspend fun <S : Message> startAsync(
-    subscription: Subscription<S>,
-    entity: String,
-    batchConfig: BatchConfig?,
-    concurrency: Int,
-    processor: suspend (S, MillisInstant) -> Unit,
-    beforeDlq: (suspend (S, Exception) -> Unit)?,
-    batchProcessorConfig: (suspend (S) -> BatchProcessorConfig?)?,
-    batchProcessor: (suspend (List<S>, List<MillisInstant>) -> Unit)?
-  ): Job {
-
-    val deserialize = { message: TransportMessage<S> -> message.deserialize() }
-
-    return when (subscription.withKey) {
-      true -> {
-        // build the consumers synchronously
-        val consumers = buildConsumers(subscription, entity, batchConfig, concurrency)
-        launch {
-          repeat(concurrency) { index ->
-            consumers[index].startAsync(
-                batchConfig,
-                1,
-                deserialize,
-                processor,
-                beforeDlq,
-                batchProcessorConfig,
-                batchProcessor,
-            )
-          }
-        }
-      }
-
-      false -> {
-        // build the consumer synchronously
-        val consumer = buildConsumer(subscription, entity, batchConfig)
-        consumer.startAsync(
-            batchConfig,
-            concurrency,
-            deserialize,
-            processor,
-            beforeDlq,
-            batchProcessorConfig,
-            batchProcessor,
-        )
-      }
-    }
-  }
 
   private fun <S : Message> Subscription<S>.getChannel(entity: String): Channel<S> =
       when (this) {

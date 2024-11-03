@@ -44,9 +44,9 @@ import kotlinx.coroutines.launch
  */
 context(CoroutineScope, KLogger)
 fun <T : TransportMessage<M>, M : Any> TransportConsumer<T>.startAsync(
-  batchReceivingConfig: BatchConfig?,
+  batchReceivingConfig: BatchConfig? = null,
   concurrency: Int,
-  deserialize: suspend (T) -> M,
+  deserialize: suspend (T) -> M = { it.deserialize() },
   processor: suspend (M, MillisInstant) -> Unit,
   beforeDlq: (suspend (M, Exception) -> Unit)? = null,
   batchProcessorConfig: (suspend (M) -> BatchProcessorConfig?)? = null,

@@ -49,11 +49,11 @@ class PulsarInfiniticProducer(
 
   private var suggestedName: String? = null
 
-  override fun setSuggestedName(name: String) {
+  override fun setName(name: String) {
     suggestedName = name
   }
 
-  override suspend fun getProducerName(): String {
+  override suspend fun getName(): String {
     val namingTopic = with(pulsarResources) {
       NamingTopic.forEntity(null, init = true, checkConsumer = false)
     }
@@ -79,7 +79,7 @@ class PulsarInfiniticProducer(
           topic.envelope(message),
           after,
           topicFullName,
-          getProducerName(),
+          getName(),
           key = message.key(),
       )
     } catch (e: Exception) {

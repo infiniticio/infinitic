@@ -25,8 +25,8 @@ package io.infinitic.tasks.executor.events
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.requester.WorkflowRequester
-import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.transport.WorkflowStateEventTopic
+import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.workflows.data.commands.StartDurationTimerPastCommand
 import io.infinitic.common.workflows.data.timers.TimerId
 import io.infinitic.common.workflows.engine.commands.dispatchTimer
@@ -41,7 +41,7 @@ internal fun CoroutineScope.dispatchDurationTimerCmd(
   workflowTaskInstant: MillisInstant,
   producer: InfiniticProducer
 ) = launch {
-  val emitterName = EmitterName(producer.getProducerName())
+  val emitterName = EmitterName(producer.getName())
   val startDurationTimer = pastCommand.command
 
   // Description of the dispatched timer

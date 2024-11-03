@@ -87,7 +87,7 @@ class TaskExecutor(
   private val producer: InfiniticProducer,
   private val client: InfiniticClientInterface
 ) {
-  private suspend fun getEmitterName() = EmitterName(producer.getProducerName())
+  private suspend fun getEmitterName() = EmitterName(producer.getName())
 
   suspend fun process(msg: ServiceExecutorMessage) {
     when (msg) {
@@ -574,7 +574,7 @@ class TaskExecutor(
     withRetry: WithRetry?,
     withTimeout: WithTimeout?
   ): TaskContext = TaskContextImpl(
-      workerName = producer.getProducerName(),
+      workerName = producer.getName(),
       serviceName = serviceName,
       taskId = taskId,
       taskName = methodName,

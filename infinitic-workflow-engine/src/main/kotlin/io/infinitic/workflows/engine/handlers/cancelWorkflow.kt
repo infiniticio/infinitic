@@ -26,10 +26,10 @@ import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.requester.WorkflowRequester
-import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.transport.WorkflowStateEngineTopic
 import io.infinitic.common.transport.WorkflowStateEventTopic
 import io.infinitic.common.transport.WorkflowTagEngineTopic
+import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.workflows.data.commands.DispatchNewMethodCommand
 import io.infinitic.common.workflows.data.commands.DispatchNewWorkflowCommand
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethod
@@ -80,7 +80,7 @@ internal fun CoroutineScope.cancelWorkflow(
       workflowName = message.workflowName,
       workflowVersion = state.workflowVersion,
       workflowId = message.workflowId,
-      emitterName = EmitterName(producer.getProducerName()),
+      emitterName = EmitterName(producer.getName()),
   )
   with(producer) { workflowCanceledEvent.sendTo(WorkflowStateEventTopic) }
 }
@@ -103,7 +103,7 @@ private fun CoroutineScope.cancelWorkflowMethod(
                 workflowMethodId = WorkflowMethodId.from(it.commandId),
                 workflowName = command.workflowName,
                 workflowId = command.workflowId!!,
-                emitterName = EmitterName(producer.getProducerName()),
+                emitterName = EmitterName(producer.getName()),
                 emittedAt = emittedAt,
                 requester = WorkflowRequester(
                     workflowId = state.workflowId,
@@ -121,7 +121,7 @@ private fun CoroutineScope.cancelWorkflowMethod(
                 workflowTag = command.workflowTag!!,
                 workflowName = command.workflowName,
                 reason = WorkflowCancellationReason.CANCELED_BY_PARENT,
-                emitterName = EmitterName(producer.getProducerName()),
+                emitterName = EmitterName(producer.getName()),
                 emittedAt = emittedAt,
                 requester = WorkflowRequester(
                     workflowId = state.workflowId,
@@ -144,7 +144,7 @@ private fun CoroutineScope.cancelWorkflowMethod(
             workflowName = command.workflowName,
             workflowMethodId = null,
             cancellationReason = WorkflowCancellationReason.CANCELED_BY_PARENT,
-            emitterName = EmitterName(producer.getProducerName()),
+            emitterName = EmitterName(producer.getName()),
             emittedAt = emittedAt,
             requester = WorkflowRequester(
                 workflowId = state.workflowId,
@@ -169,7 +169,7 @@ private fun CoroutineScope.cancelWorkflowMethod(
         workflowMethodName = workflowMethod.methodName,
         workflowMethodId = workflowMethod.workflowMethodId,
         awaitingRequesters = workflowMethod.awaitingRequesters,
-        emitterName = EmitterName(producer.getProducerName()),
+        emitterName = EmitterName(producer.getName()),
     )
     with(producer) { methodCanceledEvent.sendTo(WorkflowStateEventTopic) }
   }

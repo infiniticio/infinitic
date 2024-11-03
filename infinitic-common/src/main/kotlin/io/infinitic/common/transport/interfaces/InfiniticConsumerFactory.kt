@@ -28,11 +28,12 @@ import io.infinitic.common.messages.Message
 import io.infinitic.common.transport.BatchProcessorConfig
 import io.infinitic.common.transport.Subscription
 import io.infinitic.common.transport.config.BatchConfig
+import io.infinitic.common.transport.consumers.startAsync
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 
-interface InfiniticConsumer {
-
+interface InfiniticConsumerFactory {
   /**
    * Builds a list of transport consumers for processing messages from a given subscription.
    *
@@ -89,7 +90,37 @@ interface InfiniticConsumer {
     beforeDlq: (suspend (S, Exception) -> Unit)? = null,
     batchProcessorConfig: (suspend (S) -> BatchProcessorConfig?)? = null,
     batchProcessor: (suspend (List<S>, List<MillisInstant>) -> Unit)? = null
-  ): Job
+  ): Job = when (subscription.withKey) {
+    // multiple consumers with unique processing
+    true -> {
+      val consumers = buildConsumers(subscription, entity, batchConfig, concurrency)
+      launch {
+        repeat(concurrency) { index ->
+          consumers[index].startAsync(
+              batchReceivingConfig = batchConfig,
+              concurrency = 1,
+              processor = processor,
+              beforeDlq = beforeDlq,
+              batchProcessorConfig = batchProcessorConfig,
+              batchProcessor = batchProcessor,
+          )
+        }
+      }
+    }
+
+    // unique consumer with parallel processing
+    false -> {
+      val consumer = buildConsumer(subscription, entity, batchConfig)
+      consumer.startAsync(
+          batchReceivingConfig = batchConfig,
+          concurrency = concurrency,
+          processor = processor,
+          beforeDlq = beforeDlq,
+          batchProcessorConfig = batchProcessorConfig,
+          batchProcessor = batchProcessor,
+      )
+    }
+  }
 
   /**
    * Starts processing of messages from the given subscription.

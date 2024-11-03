@@ -49,7 +49,7 @@ class InMemoryInfiniticConsumerTests : StringSpec(
       val mainChannels = InMemoryChannels()
       val eventListenerChannels = InMemoryChannels()
 
-      val consumer = InMemoryInfiniticConsumer(mainChannels, eventListenerChannels)
+      val consumerFactory = InMemoryConsumerFactory(mainChannels, eventListenerChannels)
       val producer = InMemoryInfiniticProducer(mainChannels, eventListenerChannels)
 
       val counter = AtomicInteger(0)
@@ -71,7 +71,7 @@ class InMemoryInfiniticConsumerTests : StringSpec(
           }
 
           val job = with(scope) {
-            consumer.startAsync(
+            consumerFactory.startAsync(
                 MainSubscription(ServiceExecutorTopic),
                 serviceName.toString(),
                 null,

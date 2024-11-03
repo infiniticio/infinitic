@@ -25,5 +25,5 @@ package io.infinitic.common.transport.interfaces
 import io.infinitic.common.transport.config.BatchConfig
 
 interface InfiniticProducerFactory {
-  suspend fun getProducer(batchConfig: BatchConfig?): InfiniticProducer
+  suspend fun getProducer(batchProducingConfig: BatchConfig?): InfiniticProducer
 }

@@ -86,9 +86,9 @@ import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
 import io.infinitic.exceptions.WorkflowTimedOutException
 import io.infinitic.exceptions.clients.InvalidChannelUsageException
 import io.infinitic.exceptions.clients.InvalidStubException
-import io.infinitic.inMemory.InMemoryInfiniticConsumer
+import io.infinitic.inMemory.InMemoryConsumerFactory
 import io.infinitic.inMemory.InMemoryInfiniticProducer
-import io.infinitic.transport.config.InMemoryTransportConfig
+import io.infinitic.transport.config.TransportConfig
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -146,33 +146,46 @@ private suspend fun engineResponse() {
 
 internal val mockedProducer = mockk<InMemoryInfiniticProducer> {
   coEvery {
-    getProducerName()
+    getName()
   } returns "$clientNameTest"
+
   coEvery {
     with(capture(taskTagSlots)) { sendTo(ServiceTagEngineTopic) }
   } answers { }
+
   coEvery {
     with(capture(workflowTagSlots)) { sendTo(WorkflowTagEngineTopic) }
   } coAnswers { tagResponse() }
+
   coEvery {
     with(capture(workflowCmdSlots)) { sendTo(WorkflowStateCmdTopic) }
   } coAnswers { engineResponse() }
 }
 
-internal val mockedConsumer = mockk<InMemoryInfiniticConsumer> {
+val mockedConsumerFactory = mockk<InMemoryConsumerFactory> {
   coEvery {
     with(capture(scopeSlot)) {
       with(capture(loggerSlot)) {
-        startAsync(any<Subscription<*>>(), "$clientNameTest", null, 1, any(), any())
+        startAsync(
+            subscription = any<Subscription<*>>(),
+            entity = "$clientNameTest",
+            batchConfig = null,
+            concurrency = 1,
+            processor = any(),
+            beforeDlq = any(),
+            batchProcessorConfig = null,
+            batchProcessor = null,
+        )
       }
     }
   } answers {
+    // launch a job with the captured scope
     scopeSlot.captured.launch { delay(Long.MAX_VALUE) }
   }
 }
 
-internal val mockedTransport = mockk<InMemoryTransportConfig> {
-  every { consumer } returns mockedConsumer
+internal val mockedTransport = mockk<TransportConfig>(relaxed = true) {
+  every { consumerFactory } returns mockedConsumerFactory
   every { producer } returns mockedProducer
   every { shutdownGracePeriodSeconds } returns 5.0
 }
@@ -233,7 +246,7 @@ internal class InfiniticClientTests : StringSpec(
         coVerify(exactly = 0) {
           with(client.clientScope) {
             with(InfiniticClient.logger) {
-              mockedConsumer.startAsync(
+              mockedConsumerFactory.startAsync(
                   MainSubscription(ClientTopic),
                   "$clientNameTest",
                   null,
@@ -523,7 +536,7 @@ internal class InfiniticClientTests : StringSpec(
         coVerify {
           with(client.clientScope) {
             with(InfiniticClient.logger) {
-              mockedConsumer.startAsync(
+              mockedConsumerFactory.startAsync(
                   MainSubscription(ClientTopic),
                   "$clientNameTest",
                   null,
@@ -542,7 +555,7 @@ internal class InfiniticClientTests : StringSpec(
         coVerify(exactly = 1) {
           with(client.clientScope) {
             with(InfiniticClient.logger) {
-              mockedConsumer.startAsync(
+              mockedConsumerFactory.startAsync(
                   MainSubscription(ClientTopic),
                   "$clientNameTest",
                   null,

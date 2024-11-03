@@ -39,8 +39,8 @@ import io.infinitic.common.tasks.tags.messages.ServiceTagMessage
 import io.infinitic.common.tasks.tags.messages.SetDelegatedTaskData
 import io.infinitic.common.tasks.tags.storage.TaskTagStorage
 import io.infinitic.common.transport.ClientTopic
-import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.transport.WorkflowStateEngineTopic
+import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.workflows.engine.messages.RemoteTaskCompleted
 import kotlinx.coroutines.coroutineScope
 
@@ -48,7 +48,7 @@ class TaskTagEngine(
   private val storage: TaskTagStorage,
   private val producer: InfiniticProducer
 ) {
-  private suspend fun getEmitterName() = EmitterName(producer.getProducerName())
+  private suspend fun getEmitterName() = EmitterName(producer.getName())
 
   suspend fun handle(message: ServiceTagMessage, publishTime: MillisInstant) = coroutineScope {
     when (message) {

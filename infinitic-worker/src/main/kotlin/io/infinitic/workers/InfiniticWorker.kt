@@ -181,11 +181,12 @@ class InfiniticWorker(
     config.transport.resources
   }
 
-  private val consumer by lazy {
-    config.transport.consumer
+  private val consumerFactory by lazy {
+    config.transport.consumerFactory
   }
+
   private val producer by lazy {
-    config.transport.producer.apply { config.name?.let { setSuggestedName(it) } }
+    config.transport.producer.apply { config.name?.let { setName(it) } }
   }
 
   private val shutdownGracePeriodSeconds = config.transport.shutdownGracePeriodSeconds
@@ -277,12 +278,12 @@ class InfiniticWorker(
 
           with(logger) {
             jobs.add(
-                consumer.startCloudEventListener(resources, it, cloudEventSourcePrefix),
+                consumerFactory.startCloudEventListener(resources, it, cloudEventSourcePrefix),
             )
           }
         }
 
-        val workerName = producer.getProducerName()
+        val workerName = producer.getName()
 
         logger.info {
           "Worker '$workerName' ready (shutdownGracePeriodSeconds=${shutdownGracePeriodSeconds}s)"
@@ -392,7 +393,7 @@ class InfiniticWorker(
             taskTagEngine.handle(message, publishedAt)
           }
 
-      consumer.startAsync(
+      consumerFactory.startAsync(
           subscription = MainSubscription(ServiceTagEngineTopic),
           entity = config.serviceName,
           concurrency = config.concurrency,
@@ -445,7 +446,7 @@ class InfiniticWorker(
         }
       }
 
-      consumer.startAsync(
+      consumerFactory.startAsync(
           subscription = MainSubscription(ServiceExecutorTopic),
           entity = config.serviceName,
           batchConfig = config.batch,
@@ -462,7 +463,7 @@ class InfiniticWorker(
       val loggedProducer = LoggedInfiniticProducer(this, producer)
       val taskRetryHandler = TaskRetryHandler(loggedProducer)
 
-      consumer.startAsync(
+      consumerFactory.startAsync(
           subscription = MainSubscription(ServiceExecutorRetryTopic),
           entity = config.serviceName,
           batchConfig = config.batch,
@@ -489,7 +490,7 @@ class InfiniticWorker(
             taskEventHandler.handle(message, publishedAt)
           }
 
-      consumer.startAsync(
+      consumerFactory.startAsync(
           subscription = MainSubscription(ServiceExecutorEventTopic),
           entity = config.serviceName,
           batchConfig = config.batch,
@@ -525,7 +526,7 @@ class InfiniticWorker(
             workflowTagEngine.handle(message, publishedAt)
           }
 
-      consumer.startAsync(
+      consumerFactory.startAsync(
           subscription = MainSubscription(WorkflowTagEngineTopic),
           entity = config.workflowName,
           concurrency = config.concurrency,
@@ -575,7 +576,7 @@ class InfiniticWorker(
         )
       }
 
-      consumer.startAsync(
+      consumerFactory.startAsync(
           subscription = MainSubscription(WorkflowStateCmdTopic),
           entity = config.workflowName,
           batchConfig = config.batch,
@@ -623,7 +624,7 @@ class InfiniticWorker(
         )
       }
 
-      consumer.startAsync(
+      consumerFactory.startAsync(
           subscription = MainSubscription(WorkflowStateEngineTopic),
           entity = config.workflowName,
           batchConfig = config.batch,
@@ -639,7 +640,7 @@ class InfiniticWorker(
       val loggedProducer = LoggedInfiniticProducer(this, producer)
       val workflowStateTimerHandler = WorkflowStateTimerHandler(loggedProducer)
 
-      consumer.startAsync(
+      consumerFactory.startAsync(
           subscription = MainSubscription(WorkflowStateTimerTopic),
           entity = config.workflowName,
           batchConfig = config.batch,
@@ -684,7 +685,7 @@ class InfiniticWorker(
         )
       }
 
-      consumer.startAsync(
+      consumerFactory.startAsync(
           subscription = MainSubscription(WorkflowStateEventTopic),
           entity = config.workflowName,
           batchConfig = config.batch,
@@ -748,7 +749,7 @@ class InfiniticWorker(
             }
           }
 
-      consumer.startAsync(
+      consumerFactory.startAsync(
           subscription = MainSubscription(WorkflowExecutorTopic),
           entity = config.workflowName,
           batchConfig = config.batchConfig,
@@ -765,7 +766,7 @@ class InfiniticWorker(
       val loggedProducer = LoggedInfiniticProducer(this, producer)
       val taskRetryHandler = TaskRetryHandler(loggedProducer)
 
-      consumer.startAsync(
+      consumerFactory.startAsync(
           subscription = MainSubscription(WorkflowExecutorRetryTopic),
           batchConfig = config.batchConfig,
           entity = config.workflowName,
@@ -792,7 +793,7 @@ class InfiniticWorker(
             workflowTaskEventHandler.handle(message, publishedAt)
           }
 
-      consumer.startAsync(
+      consumerFactory.startAsync(
           subscription = MainSubscription(WorkflowExecutorEventTopic),
           entity = config.workflowName,
           batchConfig = config.batchConfig,

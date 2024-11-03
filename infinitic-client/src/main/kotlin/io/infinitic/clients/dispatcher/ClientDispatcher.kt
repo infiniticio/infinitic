@@ -66,7 +66,7 @@ import io.infinitic.common.transport.ServiceTagEngineTopic
 import io.infinitic.common.transport.Topic
 import io.infinitic.common.transport.WorkflowStateCmdTopic
 import io.infinitic.common.transport.WorkflowTagEngineTopic
-import io.infinitic.common.transport.interfaces.InfiniticConsumer
+import io.infinitic.common.transport.interfaces.InfiniticConsumerFactory
 import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.workflows.data.channels.SignalId
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
@@ -113,12 +113,12 @@ import kotlinx.coroutines.Deferred as CoroutineDeferred
 
 internal class ClientDispatcher(
   private val clientScope: CoroutineScope,
-  private val consumer: InfiniticConsumer,
+  private val consumerFactory: InfiniticConsumerFactory,
   private val producer: InfiniticProducer,
 ) : ProxyDispatcher {
 
   // Name of the client
-  private val emitterName by lazy { runBlocking { EmitterName(producer.getProducerName()) } }
+  private val emitterName by lazy { runBlocking { EmitterName(producer.getName()) } }
 
   // This as requester
   private val clientRequester by lazy { ClientRequester(clientName = ClientName.from(emitterName)) }
@@ -802,7 +802,7 @@ internal class ClientDispatcher(
       info { "Starting consumer client for client $emitterName" }
       // synchronously make sure that the consumer is created and started
       val listenerJob =
-          consumer.startAsync(
+          consumerFactory.startAsync(
               subscription = MainSubscription(ClientTopic),
               entity = emitterName.toString(),
               concurrency = 1,

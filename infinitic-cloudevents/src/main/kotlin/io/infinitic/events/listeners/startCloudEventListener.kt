@@ -32,7 +32,7 @@ import io.infinitic.common.transport.consumers.acknowledge
 import io.infinitic.common.transport.consumers.batchBy
 import io.infinitic.common.transport.consumers.batchProcess
 import io.infinitic.common.transport.consumers.process
-import io.infinitic.common.transport.interfaces.InfiniticConsumer
+import io.infinitic.common.transport.interfaces.InfiniticConsumerFactory
 import io.infinitic.common.transport.interfaces.InfiniticResources
 import io.infinitic.common.transport.interfaces.TransportMessage
 import io.infinitic.events.config.EventListenerConfig
@@ -43,7 +43,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 
 context(CoroutineScope, KLogger)
-fun InfiniticConsumer.startCloudEventListener(
+fun InfiniticConsumerFactory.startCloudEventListener(
   resources: InfiniticResources,
   config: EventListenerConfig,
   cloudEventSourcePrefix: String,

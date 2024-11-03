@@ -25,8 +25,8 @@ package io.infinitic.workflows.engine.helpers
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.transport.WorkflowStateEventTopic
+import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.workflows.data.workflowMethods.PositionInWorkflowMethod
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethod
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
@@ -49,7 +49,7 @@ internal fun CoroutineScope.dispatchWorkflowTask(
   state.workflowTaskIndex += 1
 
   launch {
-    val emitterName = EmitterName(producer.getProducerName())
+    val emitterName = EmitterName(producer.getName())
 
     // defines workflow task input
     val workflowTaskParameters = WorkflowTaskParameters(
