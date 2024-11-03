@@ -168,7 +168,7 @@ class PulsarInfiniticClientTests :
           every { newConsumer(any<Schema<WorkflowEngineEnvelope>>()) } returns getConsumerBuilder()
         }
 
-        val client = InfiniticPulsarClient(pulsarClient)
+        val client = InfiniticPulsarClient(pulsarClient).apply { name = "test" }
 
         "Configuration given should be applied to consumer (no DLQ)" {
           val randomConfig = TestFactory.random<PulsarConsumerConfig>()
