@@ -176,7 +176,7 @@ val mockedConsumerFactory = mockk<InMemoryConsumerFactory> {
         startAsync(
             subscription = any<Subscription<*>>(),
             entity = "$clientNameTest",
-            batchConfig = null,
+            batchReceivingConfig = null,
             concurrency = 1,
             processor = any(),
             beforeDlq = any(),

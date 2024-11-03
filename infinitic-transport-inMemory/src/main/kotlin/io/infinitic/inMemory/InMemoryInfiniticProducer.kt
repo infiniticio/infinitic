@@ -73,8 +73,6 @@ class InMemoryInfiniticProducer(
   }
 
   companion object {
-    private const val DEFAULT_NAME = "inMemory"
-
     private val logger = KotlinLogging.logger {}
   }
 }

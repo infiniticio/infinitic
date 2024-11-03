@@ -86,8 +86,6 @@ class TaskExecutor(
   private val producer: InfiniticProducer,
   private val client: InfiniticClientInterface
 ) {
-  private val emitterName = producer.emitterName
-
   suspend fun process(msg: ServiceExecutorMessage) {
     when (msg) {
       is ExecuteTask -> msg.process()
@@ -569,7 +567,7 @@ class TaskExecutor(
     )
   }
 
-  private suspend fun ExecuteTask.getContext(
+  private fun ExecuteTask.getContext(
     withRetry: WithRetry?,
     withTimeout: WithTimeout?
   ): TaskContext = TaskContextImpl(
@@ -590,7 +588,7 @@ class TaskExecutor(
       client = client,
   )
 
-  private suspend fun ExecuteTask.parseBatch(): TaskData {
+  private fun ExecuteTask.parseBatch(): TaskData {
     val (serviceInstance, serviceMethod) = getInstanceAndMethod()
 
     val batchMethod = serviceMethod.getBatchMethod() ?: thisShouldNotHappen()
@@ -649,7 +647,7 @@ class TaskExecutor(
     )
   }
 
-  private suspend fun ExecuteTask.parseTask(): TaskData {
+  private fun ExecuteTask.parseTask(): TaskData {
     val serviceInstance = registry.getServiceExecutorInstance(serviceName)
 
     val serviceMethod = serviceInstance::class.java.getMethodPerNameAndParameters(
@@ -679,7 +677,7 @@ class TaskExecutor(
     )
   }
 
-  private suspend fun ExecuteTask.parseWorkflowTask(): TaskData {
+  private fun ExecuteTask.parseWorkflowTask(): TaskData {
     val serviceInstance = WorkflowTaskImpl()
     val serviceMethod = WorkflowTaskImpl::handle.javaMethod!!
     val serviceArgs = serviceMethod.deserializeArgs(methodArgs)

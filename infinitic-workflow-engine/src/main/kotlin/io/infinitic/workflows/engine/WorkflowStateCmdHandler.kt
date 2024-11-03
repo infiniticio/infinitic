@@ -31,10 +31,12 @@ import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.utils.IdGenerator
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
+import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.engine.commands.dispatchTask
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
 import io.infinitic.common.workflows.engine.messages.requester
+import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
@@ -45,8 +47,28 @@ class WorkflowStateCmdHandler(val producer: InfiniticProducer) {
   suspend fun batchProcess(
     messages: List<WorkflowStateEngineMessage>,
     publishTimes: List<MillisInstant>
-  ) = coroutineScope {
-    messages.zip(publishTimes) { msg, publishTime -> launch { process(msg, publishTime) } }
+  ) {
+    // get message by workflowId
+    val messagesMap: Map<WorkflowId, List<Pair<WorkflowStateEngineMessage, MillisInstant>>> =
+        messages.zip(publishTimes).groupBy { it.first.workflowId }
+
+    // process all messages by workflowId, in parallel
+    coroutineScope {
+      messagesMap
+          .mapValues { (workflowId, messageAndPublishTimes) ->
+            async { batchProcessById(messageAndPublishTimes) }
+          }
+          .mapValues { it.value.await() }
+    }
+  }
+
+  private suspend fun batchProcessById(
+    messages: List<Pair<WorkflowStateEngineMessage, MillisInstant>>
+  ) {
+    // process all received messages for a same workflow sequentially, starting by the oldest
+    messages
+        .sortedBy { it.second.long }
+        .forEach { (message, publishTime) -> process(message, publishTime) }
   }
 
   suspend fun process(msg: WorkflowStateEngineMessage, publishTime: MillisInstant) {

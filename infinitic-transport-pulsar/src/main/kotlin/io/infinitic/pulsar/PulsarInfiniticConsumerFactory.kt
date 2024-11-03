@@ -54,7 +54,7 @@ class PulsarInfiniticConsumerFactory(
   override suspend fun <M : Message> buildConsumers(
     subscription: Subscription<M>,
     entity: String,
-    batchConfig: BatchConfig?,
+    batchReceivingConfig: BatchConfig?,
     occurrence: Int?
   ): List<PulsarTransportConsumer<M>> {
     // Retrieve the name of the topic and of the DLQ topic
@@ -74,7 +74,7 @@ class PulsarInfiniticConsumerFactory(
               subscriptionNameDlq = subscription.nameDLQ,
               subscriptionType = subscription.type,
               consumerName = consumerName,
-              batchConfig = batchConfig,
+              batchConfig = batchReceivingConfig,
           ).onSuccess {
             trace { "Consumer '${consumerName}' created for $topicName" }
           }

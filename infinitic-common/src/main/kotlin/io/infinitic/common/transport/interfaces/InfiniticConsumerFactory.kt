@@ -39,7 +39,7 @@ interface InfiniticConsumerFactory {
    *
    * @param subscription The subscription from which to consume messages.
    * @param entity The entity associated with the consumer.
-   * @param batchConfig An optional configuration for batching messages when receiving and sending.
+   * @param batchReceivingConfig An optional configuration for batching messages when receiving and sending.
    * @param occurrence An optional parameter indicating the number of occurrences.
    * @return A list of transport consumers for the specified subscription.
    */
@@ -47,7 +47,7 @@ interface InfiniticConsumerFactory {
   suspend fun <M : Message> buildConsumers(
     subscription: Subscription<M>,
     entity: String,
-    batchConfig: BatchConfig?,
+    batchReceivingConfig: BatchConfig?,
     occurrence: Int?
   ): List<TransportConsumer<out TransportMessage<M>>>
 
@@ -57,16 +57,16 @@ interface InfiniticConsumerFactory {
    * @param M The type of the messages to be consumed.
    * @param subscription The subscription from which to consume messages.
    * @param entity The entity associated with the consumer.
-   * @param batchConfig An optional configuration for batching messages when receiving and sending.
+   * @param batchReceivingConfig An optional configuration for batching messages when receiving and sending.
    * @return A transport consumer for the specified subscription.
    */
   context(KLogger)
   suspend fun <M : Message> buildConsumer(
     subscription: Subscription<M>,
     entity: String,
-    batchConfig: BatchConfig?
+    batchReceivingConfig: BatchConfig?
   ): TransportConsumer<out TransportMessage<M>> =
-      buildConsumers(subscription, entity, batchConfig, null).first()
+      buildConsumers(subscription, entity, batchReceivingConfig, null).first()
 
   /**
    * Starts asynchronous processing of messages for a given subscription.
@@ -84,7 +84,7 @@ interface InfiniticConsumerFactory {
   suspend fun <S : Message> startAsync(
     subscription: Subscription<S>,
     entity: String,
-    batchConfig: BatchConfig? = null,
+    batchReceivingConfig: BatchConfig? = null,
     concurrency: Int,
     processor: suspend (S, MillisInstant) -> Unit,
     beforeDlq: (suspend (S, Exception) -> Unit)? = null,
@@ -93,11 +93,11 @@ interface InfiniticConsumerFactory {
   ): Job = when (subscription.withKey) {
     // multiple consumers with unique processing
     true -> {
-      val consumers = buildConsumers(subscription, entity, batchConfig, concurrency)
+      val consumers = buildConsumers(subscription, entity, batchReceivingConfig, concurrency)
       launch {
         repeat(concurrency) { index ->
           consumers[index].startAsync(
-              batchReceivingConfig = batchConfig,
+              batchReceivingConfig = batchReceivingConfig,
               concurrency = 1,
               processor = processor,
               beforeDlq = beforeDlq,
@@ -110,9 +110,9 @@ interface InfiniticConsumerFactory {
 
     // unique consumer with parallel processing
     false -> {
-      val consumer = buildConsumer(subscription, entity, batchConfig)
+      val consumer = buildConsumer(subscription, entity, batchReceivingConfig)
       consumer.startAsync(
-          batchReceivingConfig = batchConfig,
+          batchReceivingConfig = batchReceivingConfig,
           concurrency = concurrency,
           processor = processor,
           beforeDlq = beforeDlq,
@@ -127,7 +127,7 @@ interface InfiniticConsumerFactory {
    *
    * @param subscription The subscription from which to consume messages.
    * @param entity The entity associated with the consumer.
-   * @param batchConfig An optional configuration for batching messages when receiving and sending.
+   * @param batchReceivingConfig An optional configuration for batching messages when receiving and sending.
    * @param concurrency The number of concurrent coroutines for processing messages.
    * @param process A function to process the deserialized message along with its publishing time.
    * @param beforeDlq An optional function to execute before sending a message to DLQ.
@@ -138,7 +138,7 @@ interface InfiniticConsumerFactory {
   suspend fun <M : Message> start(
     subscription: Subscription<M>,
     entity: String,
-    batchConfig: BatchConfig? = null,
+    batchReceivingConfig: BatchConfig? = null,
     concurrency: Int,
     process: suspend (M, MillisInstant) -> Unit,
     beforeDlq: (suspend (M, Exception) -> Unit)? = null,
@@ -147,7 +147,7 @@ interface InfiniticConsumerFactory {
   ) = startAsync(
       subscription,
       entity,
-      batchConfig,
+      batchReceivingConfig,
       concurrency,
       process,
       beforeDlq,

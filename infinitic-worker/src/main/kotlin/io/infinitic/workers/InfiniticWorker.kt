@@ -46,6 +46,7 @@ import io.infinitic.common.transport.WorkflowStateEngineTopic
 import io.infinitic.common.transport.WorkflowStateEventTopic
 import io.infinitic.common.transport.WorkflowStateTimerTopic
 import io.infinitic.common.transport.WorkflowTagEngineTopic
+import io.infinitic.common.transport.config.BatchConfig
 import io.infinitic.common.transport.logged.LoggedInfiniticProducer
 import io.infinitic.common.workflows.emptyWorkflowContext
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
@@ -305,7 +306,8 @@ class InfiniticWorker(
           "concurrency: ${config.concurrency}, " +
           "class: ${config.listener::class.java.name}" +
           (config.subscriptionName?.let { ", subscription: $it" } ?: "") +
-          ")"
+          "batch: ${config.batchConfig.notNullPropertiesToString()})"
+      ")"
     }
   }
 
@@ -315,7 +317,9 @@ class InfiniticWorker(
           "concurrency: ${config.concurrency}, " +
           "class: ${config.factory()::class.java.name}, " +
           "timeout: ${config.withTimeout?.toLog()}, " +
-          "withRetry: ${config.withRetry ?: NONE})"
+          "withRetry: ${config.withRetry ?: NONE}, " +
+          "batch: ${config.batch?.notNullPropertiesToString() ?: NONE})"
+
     }
   }
 
@@ -452,7 +456,7 @@ class InfiniticWorker(
       consumerFactory.startAsync(
           subscription = MainSubscription(ServiceExecutorTopic),
           entity = config.serviceName,
-          batchConfig = config.batch,
+          batchReceivingConfig = config.batch, // Not normalized as we create 1 consumer
           concurrency = config.concurrency,
           processor = processor,
           beforeDlq = beforeDlq,
@@ -466,12 +470,32 @@ class InfiniticWorker(
       val loggedProducer = LoggedInfiniticProducer(this, producer)
       val taskRetryHandler = TaskRetryHandler(loggedProducer)
 
+      // we divide it.maxMessages by config.concurrency to complete the batch asap
+      val batchProcessorConfig = config.batch?.let {
+        BatchProcessorConfig(
+            "taskExecutorRetry:" + config.serviceName,
+            (it.maxMessages / config.concurrency).coerceAtLeast(1),
+            MillisDuration(it.maxMillis),
+        )
+      }
+
+      val batchProcessor: suspend (List<ServiceExecutorMessage>, List<MillisInstant>) -> Unit =
+          { messages, publishedAtList ->
+            coroutineScope {
+              messages.zip(publishedAtList).forEach { (message, publishedAt) ->
+                launch { taskRetryHandler.process(message, publishedAt) }
+              }
+            }
+          }
+
       consumerFactory.startAsync(
           subscription = MainSubscription(ServiceExecutorRetryTopic),
           entity = config.serviceName,
-          batchConfig = config.batch,
+          batchReceivingConfig = config.batch, // Not normalized as we create 1 consumer
           concurrency = config.concurrency,
-          processor = taskRetryHandler::handle,
+          processor = taskRetryHandler::process,
+          batchProcessorConfig = { _ -> batchProcessorConfig },
+          batchProcessor = batchProcessor,
       )
     }
 
@@ -490,15 +514,36 @@ class InfiniticWorker(
       val processor: suspend (ServiceExecutorEventMessage, MillisInstant) -> Unit =
           { message, publishedAt ->
             cloudEventLogger.log(message, publishedAt)
-            taskEventHandler.handle(message, publishedAt)
+            taskEventHandler.process(message, publishedAt)
+          }
+
+      // we divide it.maxMessages by config.concurrency to complete the batch asap
+      val batchProcessorConfig = config.batch?.let {
+        BatchProcessorConfig(
+            "taskEvent:" + config.serviceName,
+            (it.maxMessages / config.concurrency).coerceAtLeast(1),
+            MillisDuration(it.maxMillis),
+        )
+      }
+
+      val batchProcessor: suspend (List<ServiceExecutorEventMessage>, List<MillisInstant>) -> Unit =
+          { messages, publishedAtList ->
+            coroutineScope {
+              messages.zip(publishedAtList).forEach { (message, publishedAt) ->
+                launch { cloudEventLogger.log(message, publishedAt) }
+                launch { taskEventHandler.process(message, publishedAt) }
+              }
+            }
           }
 
       consumerFactory.startAsync(
           subscription = MainSubscription(ServiceExecutorEventTopic),
           entity = config.serviceName,
-          batchConfig = config.batch,
+          batchReceivingConfig = config.batch,  // Not normalized as we create 1 consumer
           concurrency = config.concurrency,
           processor = processor,
+          batchProcessorConfig = { _ -> batchProcessorConfig },
+          batchProcessor = batchProcessor,
       )
     }
 
@@ -543,8 +588,13 @@ class InfiniticWorker(
     // Log Workflow State Engine configuration
     logWorkflowStateEngineStart(config)
 
+    // as we create `concurrency` consumers, we normalize the batch
+    val normalizedBatch = config.batch?.let {
+      BatchConfig((it.maxMessages / config.concurrency).coerceAtLeast(1), it.maxSeconds)
+    }
+
     // producer batching messages when sending
-    val producer = producerFactory.getProducer(config.batch)
+    val producer = producerFactory.getProducer(normalizedBatch)
 
     // WORKFLOW-STATE-CMD
     val jobCmd = with(WorkflowStateCmdHandler.logger) {
@@ -564,6 +614,14 @@ class InfiniticWorker(
             workflowStateCmdHandler.process(message, publishedAt)
           }
 
+      val batchProcessorConfig = normalizedBatch?.let {
+        BatchProcessorConfig(
+            "workflowCmd:" + config.workflowName,
+            it.maxMessages,
+            MillisDuration(it.maxMillis),
+        )
+      }
+
       val batchProcessor: suspend (List<WorkflowStateEngineMessage>, List<MillisInstant>) -> Unit =
           { messages, publishedAtList ->
             coroutineScope {
@@ -574,18 +632,10 @@ class InfiniticWorker(
             }
           }
 
-      val batchProcessorConfig = config.batch?.let {
-        BatchProcessorConfig(
-            "workflowCmd:" + config.workflowName,
-            it.maxMessages,
-            MillisDuration(it.maxMillis),
-        )
-      }
-
       consumerFactory.startAsync(
           subscription = MainSubscription(WorkflowStateCmdTopic),
           entity = config.workflowName,
-          batchConfig = config.batch,
+          batchReceivingConfig = normalizedBatch, // normalized because `concurrency` consumers are created
           concurrency = config.concurrency,
           processor = processor,
           batchProcessorConfig = { _ -> batchProcessorConfig },
@@ -612,6 +662,14 @@ class InfiniticWorker(
             workflowStateEngine.process(message, publishedAt)
           }
 
+      val batchProcessorConfig = normalizedBatch?.let {
+        BatchProcessorConfig(
+            "workflowState:" + config.workflowName,
+            it.maxMessages,
+            MillisDuration(it.maxMillis),
+        )
+      }
+
       val batchProcessor: suspend (List<WorkflowStateEngineMessage>, List<MillisInstant>) -> Unit =
           { messages, publishedAtList ->
             coroutineScope {
@@ -622,18 +680,10 @@ class InfiniticWorker(
             }
           }
 
-      val batchProcessorConfig = config.batch?.let {
-        BatchProcessorConfig(
-            "workflowState:" + config.workflowName,
-            it.maxMessages,
-            MillisDuration(it.maxMillis),
-        )
-      }
-
       consumerFactory.startAsync(
           subscription = MainSubscription(WorkflowStateEngineTopic),
           entity = config.workflowName,
-          batchConfig = config.batch,
+          batchReceivingConfig = normalizedBatch, // normalized because `concurrency` consumers are created
           concurrency = config.concurrency,
           processor = processor,
           batchProcessorConfig = { _ -> batchProcessorConfig },
@@ -646,12 +696,22 @@ class InfiniticWorker(
       val loggedProducer = LoggedInfiniticProducer(this, producer)
       val workflowStateTimerHandler = WorkflowStateTimerHandler(loggedProducer)
 
+      val batchProcessorConfig = normalizedBatch?.let {
+        BatchProcessorConfig(
+            "workflowTimer:" + config.workflowName,
+            it.maxMessages,
+            MillisDuration(it.maxMillis),
+        )
+      }
+
       consumerFactory.startAsync(
           subscription = MainSubscription(WorkflowStateTimerTopic),
           entity = config.workflowName,
-          batchConfig = config.batch,
+          batchReceivingConfig = config.batch, // NOT normalized because 1 consumer is created
           concurrency = config.concurrency,
           processor = workflowStateTimerHandler::process,
+          batchProcessorConfig = { _ -> batchProcessorConfig },
+          batchProcessor = workflowStateTimerHandler::batchProcess,
       )
     }
 
@@ -683,7 +743,7 @@ class InfiniticWorker(
             }
           }
 
-      val batchProcessorConfig = config.batch?.let {
+      val batchProcessorConfig = normalizedBatch?.let {
         BatchProcessorConfig(
             "workflowEvent:" + config.workflowName,
             it.maxMessages,
@@ -694,7 +754,7 @@ class InfiniticWorker(
       consumerFactory.startAsync(
           subscription = MainSubscription(WorkflowStateEventTopic),
           entity = config.workflowName,
-          batchConfig = config.batch,
+          batchReceivingConfig = config.batch, // NOT normalized because 1 consumer is created
           concurrency = config.concurrency,
           processor = processor,
           batchProcessorConfig = { _ -> batchProcessorConfig },
@@ -710,8 +770,13 @@ class InfiniticWorker(
     // Log Workflow Executor configuration
     logWorkflowExecutorStart(config)
 
+    // as we create `concurrency` consumers, we normalize the batch
+    val normalizedBatch = config.batchConfig?.let {
+      BatchConfig((it.maxMessages / config.concurrency).coerceAtLeast(1), it.maxSeconds)
+    }
+
     // producer batching messages when sending
-    val producer = producerFactory.getProducer(config.batchConfig)
+    val producer = producerFactory.getProducer(normalizedBatch)
 
     // WORKFLOW-EXECUTOR
     val jobExecutor = with(TaskExecutor.logger) {
@@ -740,7 +805,7 @@ class InfiniticWorker(
         }
       }
 
-      val batchProcessorConfig = config.batchConfig?.let {
+      val batchProcessorConfig = normalizedBatch?.let {
         BatchProcessorConfig(
             "workflowExecutor:" + config.workflowName,
             it.maxMessages,
@@ -761,7 +826,7 @@ class InfiniticWorker(
       consumerFactory.startAsync(
           subscription = MainSubscription(WorkflowExecutorTopic),
           entity = config.workflowName,
-          batchConfig = config.batchConfig,
+          batchReceivingConfig = normalizedBatch, // normalized because `concurrency` consumers are created
           concurrency = config.concurrency,
           processor = processor,
           beforeDlq = beforeDlq,
@@ -775,12 +840,22 @@ class InfiniticWorker(
       val loggedProducer = LoggedInfiniticProducer(this, producer)
       val taskRetryHandler = TaskRetryHandler(loggedProducer)
 
+      val batchProcessorConfig = normalizedBatch?.let {
+        BatchProcessorConfig(
+            "workflowExecutorRetry:" + config.workflowName,
+            it.maxMessages,
+            MillisDuration(it.maxMillis),
+        )
+      }
+
       consumerFactory.startAsync(
           subscription = MainSubscription(WorkflowExecutorRetryTopic),
-          batchConfig = config.batchConfig,
+          batchReceivingConfig = config.batchConfig, // NOT normalized because 1 consumer is created
           entity = config.workflowName,
           concurrency = config.concurrency,
-          processor = taskRetryHandler::handle,
+          processor = taskRetryHandler::process,
+          batchProcessorConfig = { _ -> batchProcessorConfig },
+          batchProcessor = taskRetryHandler::batchProcess,
       )
     }
 
@@ -799,15 +874,25 @@ class InfiniticWorker(
       val processor: suspend (ServiceExecutorEventMessage, MillisInstant) -> Unit =
           { message, publishedAt ->
             cloudEventLogger.log(message, publishedAt)
-            workflowTaskEventHandler.handle(message, publishedAt)
+            workflowTaskEventHandler.process(message, publishedAt)
           }
+
+      val batchProcessorConfig = normalizedBatch?.let {
+        BatchProcessorConfig(
+            "workflowExecutorEvent:" + config.workflowName,
+            it.maxMessages,
+            MillisDuration(it.maxMillis),
+        )
+      }
 
       consumerFactory.startAsync(
           subscription = MainSubscription(WorkflowExecutorEventTopic),
           entity = config.workflowName,
-          batchConfig = config.batchConfig,
+          batchReceivingConfig = config.batchConfig, // Not normalized as we create 1 consumer
           concurrency = config.concurrency,
           processor = processor,
+          batchProcessorConfig = { _ -> batchProcessorConfig },
+          batchProcessor = workflowTaskEventHandler::batchProcess,
       )
     }
 

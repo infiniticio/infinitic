@@ -55,7 +55,14 @@ import kotlinx.coroutines.launch
 
 class TaskEventHandler(val producer: InfiniticProducer) {
 
-  suspend fun handle(msg: ServiceExecutorEventMessage, publishTime: MillisInstant) {
+  suspend fun batchProcess(
+    messages: List<ServiceExecutorEventMessage>,
+    publishTimes: List<MillisInstant>
+  ) = coroutineScope {
+    messages.zip(publishTimes) { msg, publishTime -> launch { process(msg, publishTime) } }
+  }
+
+  suspend fun process(msg: ServiceExecutorEventMessage, publishTime: MillisInstant) {
     when (msg) {
       is TaskCompletedEvent -> sendTaskCompleted(msg, publishTime)
       is TaskFailedEvent -> sendTaskFailed(msg, publishTime)
