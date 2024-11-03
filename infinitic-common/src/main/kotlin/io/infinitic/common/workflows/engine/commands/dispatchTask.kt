@@ -23,7 +23,6 @@
 package io.infinitic.common.workflows.engine.commands
 
 import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.requester.Requester
 import io.infinitic.common.requester.WorkflowRequester
 import io.infinitic.common.tasks.data.TaskRetryIndex
@@ -43,8 +42,6 @@ suspend fun InfiniticProducer.dispatchTask(
   taskDispatched: TaskDispatched,
   requester: Requester
 ) = coroutineScope {
-  val emitterName = EmitterName(getName())
-
   val executeTask = with(taskDispatched) {
     ExecuteTask(
         serviceName = serviceName,

@@ -42,8 +42,8 @@ import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
-import io.infinitic.pulsar.PulsarConsumerFactory
-import io.infinitic.pulsar.PulsarInfiniticProducer
+import io.infinitic.pulsar.PulsarInfiniticConsumerFactory
+import io.infinitic.pulsar.PulsarInfiniticProducerFactory
 import io.infinitic.pulsar.config.pulsarConfigTest
 import io.kotest.core.annotation.EnabledIf
 import io.kotest.core.spec.style.StringSpec
@@ -67,13 +67,13 @@ class ConsumerTests : StringSpec(
       val pulsarConfig = pulsarConfigTest!!
       val resources = pulsarConfig.pulsarResources
 
-      val producer = PulsarInfiniticProducer(
+      val producer = PulsarInfiniticProducerFactory(
           pulsarConfig.infiniticPulsarClient,
           pulsarConfig.producer,
           resources,
-      )
+      ).getProducer(null)
 
-      val consumer = PulsarConsumerFactory(
+      val consumer = PulsarInfiniticConsumerFactory(
           pulsarConfig.infiniticPulsarClient,
           pulsarConfig.consumer,
           resources,

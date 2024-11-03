@@ -27,7 +27,6 @@ import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.TaskCompleted
 import io.infinitic.common.clients.messages.TaskIdsByTag
 import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.tags.messages.AddTaskIdToTag
 import io.infinitic.common.tasks.tags.messages.CancelTaskByTag
@@ -48,7 +47,7 @@ class TaskTagEngine(
   private val storage: TaskTagStorage,
   private val producer: InfiniticProducer
 ) {
-  private suspend fun getEmitterName() = EmitterName(producer.getName())
+  private val emitterName = producer.emitterName
 
   suspend fun handle(message: ServiceTagMessage, publishTime: MillisInstant) = coroutineScope {
     when (message) {
@@ -79,8 +78,6 @@ class TaskTagEngine(
     message: CompleteDelegatedTask,
     publishTime: MillisInstant
   ) {
-    val emitterName = getEmitterName()
-
     storage.getDelegatedTaskData(message.taskId)?.let {
       // send to waiting client
       TaskCompleted.from(it, message.returnValue, emitterName)?.let {
@@ -104,7 +101,7 @@ class TaskTagEngine(
         serviceName = message.serviceName,
         taskTag = message.taskTag,
         taskIds = taskIds,
-        emitterName = getEmitterName(),
+        emitterName = emitterName,
     )
 
     with(producer) { taskIdsByTag.sendTo(ClientTopic) }

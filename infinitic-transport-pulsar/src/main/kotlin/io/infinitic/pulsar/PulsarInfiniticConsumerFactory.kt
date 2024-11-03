@@ -44,7 +44,7 @@ import org.apache.pulsar.client.api.Consumer
 import org.apache.pulsar.client.api.Schema
 import org.apache.pulsar.client.api.SubscriptionType
 
-class PulsarConsumerFactory(
+class PulsarInfiniticConsumerFactory(
   private val client: InfiniticPulsarClient,
   private val pulsarConsumerConfig: PulsarConsumerConfig,
   private val pulsarResources: PulsarResources,

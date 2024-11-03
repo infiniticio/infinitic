@@ -36,9 +36,7 @@ class BufferedInfiniticProducer(val producer: InfiniticProducer) : InfiniticProd
   private val buffer = mutableListOf<Letter<*>>()
   private val mutex = Mutex()
 
-  override suspend fun getName(): String = producer.getName()
-
-  override fun setName(name: String) = producer.setName(name)
+  override val emitterName by lazy { producer.emitterName }
 
   override suspend fun <T : Message> internalSendTo(
     message: T,

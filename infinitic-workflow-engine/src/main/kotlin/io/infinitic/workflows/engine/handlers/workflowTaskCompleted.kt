@@ -168,7 +168,7 @@ internal fun CoroutineScope.workflowTaskCompleted(
     )
     launch {
       with(producer) {
-        methodCompletedEvent.copy(emitterName = EmitterName(producer.getName()))
+        methodCompletedEvent.copy(emitterName = producer.emitterName)
             .sendTo(WorkflowStateEventTopic)
       }
     }

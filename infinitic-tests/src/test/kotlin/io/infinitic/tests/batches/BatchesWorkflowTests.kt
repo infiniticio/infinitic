@@ -43,18 +43,20 @@ internal class BatchesWorkflowTests : StringSpec(
       // the first test has a large timeout to deal with Pulsar initialization
       "One primitive parameter (with maxSize=10)".config(timeout = 1.minutes) {
         for (i in 1..9) {
-          client.dispatch(batchWorkflow::add, i)
+          client.dispatch(batchWorkflow::foo, i)
         }
 
-        batchWorkflow.add(10) shouldBe 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10
+        // 55 = 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10
+        batchWorkflow.foo(10) shouldBe 55
       }
 
       "One primitive parameter (with maxDelaySeconds=1)" {
         for (i in 1..8) {
-          client.dispatch(batchWorkflow::add, i)
+          client.dispatch(batchWorkflow::foo, i)
         }
 
-        batchWorkflow.add(9) shouldBe 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9
+        // 45 = 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9
+        batchWorkflow.foo(9) shouldBe 45
       }
 
       "Two primitive parameters (with maxSize=10)" {
@@ -62,7 +64,8 @@ internal class BatchesWorkflowTests : StringSpec(
           client.dispatch(batchWorkflow::foo2, i, i)
         }
 
-        batchWorkflow.foo2(10, 10) shouldBe (1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10) * 2
+        // 110 = (1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10) * 2
+        batchWorkflow.foo2(10, 10) shouldBe 110
       }
 
       "Two primitive parameters (with maxDelaySeconds=1)" {
@@ -70,7 +73,8 @@ internal class BatchesWorkflowTests : StringSpec(
           client.dispatch(batchWorkflow::foo2, i, i)
         }
 
-        batchWorkflow.foo2(9, 9) shouldBe (1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9) * 2
+        // 90 = (1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9) * 2
+        batchWorkflow.foo2(9, 9) shouldBe 90
       }
 
       "One Object parameter (with maxSize=10)" {
@@ -78,7 +82,8 @@ internal class BatchesWorkflowTests : StringSpec(
           client.dispatch(batchWorkflow::foo3, i, i)
         }
 
-        batchWorkflow.foo3(10, 10) shouldBe (1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10) * 2
+        // 110 = (1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10) * 2
+        batchWorkflow.foo3(10, 10) shouldBe 110
       }
 
       "One Object parameter (with maxDelaySeconds=1)" {
@@ -86,7 +91,8 @@ internal class BatchesWorkflowTests : StringSpec(
           client.dispatch(batchWorkflow::foo3, i, i)
         }
 
-        batchWorkflow.foo3(9, 9) shouldBe (1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9) * 2
+        // 90 = (1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9) * 2
+        batchWorkflow.foo3(9, 9) shouldBe 90
       }
 
       "Returns Object (with maxSize=10)" {

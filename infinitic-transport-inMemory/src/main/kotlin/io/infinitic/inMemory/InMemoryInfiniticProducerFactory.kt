@@ -20,40 +20,29 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.transport.config
+package io.infinitic.inMemory
 
-import io.infinitic.common.transport.interfaces.InfiniticConsumerFactory
+import io.infinitic.common.transport.config.BatchConfig
 import io.infinitic.common.transport.interfaces.InfiniticProducerFactory
-import io.infinitic.common.transport.interfaces.InfiniticResources
+import io.infinitic.inMemory.channels.InMemoryChannels
 
-sealed class TransportConfig : AutoCloseable {
-  /**
-   * Specifies the duration, in seconds, allowed for the system to gracefully shut down.
-   * During this period, the system will attempt to complete handle ongoing messages
-   */
-  abstract val shutdownGracePeriodSeconds: Double
+class InMemoryInfiniticProducerFactory(
+  private val mainChannels: InMemoryChannels,
+  private val eventListenerChannels: InMemoryChannels
+) : InfiniticProducerFactory {
 
-  /**
-   * This property denotes the origin of the CloudEvents being generated or consumed.
-   */
-  abstract val cloudEventSourcePrefix: String
+  private var name = "inMemory"
 
-  /**
-   * This property provides methods to fetch available services and workflows,
-   */
-  abstract val resources: InfiniticResources
+  override suspend fun getName() = name
 
-  /**
-   * Provides methods to create consumers for processing messages.
-   */
-  abstract val consumerFactory: InfiniticConsumerFactory
-
-  /**
-   * Provides methods to create producers for sending messages.
-   */
-  abstract val producerFactory: InfiniticProducerFactory
-
-  interface TransportConfigBuilder {
-    fun build(): TransportConfig
+  override fun setName(name: String) {
+    this.name = name
   }
+
+  override fun getProducer(batchProducingConfig: BatchConfig?) = InMemoryInfiniticProducer(
+      mainChannels,
+      eventListenerChannels,
+  )
 }
+
+

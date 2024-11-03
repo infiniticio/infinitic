@@ -23,6 +23,7 @@
 package io.infinitic.common.transport.interfaces
 
 import io.infinitic.common.data.MillisDuration
+import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.events.messages.ServiceExecutorEventMessage
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
@@ -31,12 +32,8 @@ import io.infinitic.common.transport.forWorkflow
 import io.infinitic.common.transport.withoutDelay
 
 interface InfiniticProducer {
-  /**
-   * Name of the sender
-   */
-  suspend fun getName(): String
 
-  fun setName(name: String)
+  val emitterName: EmitterName
 
   suspend fun <T : Message> internalSendTo(
     message: T,

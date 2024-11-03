@@ -24,7 +24,6 @@ package io.infinitic.tasks.executor
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.requester.WorkflowRequester
 import io.infinitic.common.tasks.events.messages.ServiceExecutorEventMessage
 import io.infinitic.common.tasks.events.messages.TaskCompletedEvent
@@ -56,8 +55,6 @@ import kotlinx.coroutines.launch
 
 class TaskEventHandler(val producer: InfiniticProducer) {
 
-  private suspend fun getEmitterName() = EmitterName(producer.getName())
-
   suspend fun handle(msg: ServiceExecutorEventMessage, publishTime: MillisInstant) {
     when (msg) {
       is TaskCompletedEvent -> sendTaskCompleted(msg, publishTime)
@@ -70,11 +67,11 @@ class TaskEventHandler(val producer: InfiniticProducer) {
   private suspend fun sendTaskFailed(msg: TaskFailedEvent, publishTime: MillisInstant): Unit =
       coroutineScope {
         // send to parent client
-        msg.getEventForClient(getEmitterName())?.let {
+        msg.getEventForClient(producer.emitterName)?.let {
           launch { with(producer) { it.sendTo(ClientTopic) } }
         }
         // send to parent workflow
-        msg.getEventForWorkflow(getEmitterName(), publishTime)?.let {
+        msg.getEventForWorkflow(producer.emitterName, publishTime)?.let {
           launch { with(producer) { it.sendTo(WorkflowStateEngineTopic) } }
         }
       }
@@ -91,22 +88,22 @@ class TaskEventHandler(val producer: InfiniticProducer) {
               serviceName = msg.serviceName,
               delegatedTaskData = msg.getDelegatedTaskData(),
               taskId = msg.taskId,
-              emitterName = getEmitterName(),
+              emitterName = producer.emitterName,
           )
           with(producer) { addTaskToTag.sendTo(ServiceTagEngineTopic) }
         }
 
         false -> {
           // send to parent client
-          msg.getEventForClient(getEmitterName())?.let {
+          msg.getEventForClient(producer.emitterName)?.let {
             launch { with(producer) { it.sendTo(ClientTopic) } }
           }
           // send to parent workflow
-          msg.getEventForWorkflow(getEmitterName(), publishTime)?.let {
+          msg.getEventForWorkflow(producer.emitterName, publishTime)?.let {
             launch { with(producer) { it.sendTo(WorkflowStateEngineTopic) } }
           }
           // remove tags
-          msg.getEventsForTag(getEmitterName()).forEach {
+          msg.getEventsForTag(producer.emitterName).forEach {
             launch { with(producer) { it.sendTo(ServiceTagEngineTopic) } }
           }
         }

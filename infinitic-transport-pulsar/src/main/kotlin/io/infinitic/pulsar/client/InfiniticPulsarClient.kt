@@ -51,14 +51,14 @@ class InfiniticPulsarClient(private val pulsarClient: PulsarClient) {
 
   private val logger = KotlinLogging.logger {}
 
-  private lateinit var name: String
+  lateinit var name: String
 
   private val nameMutex = Mutex()
 
   /**
-   * Useful to check the uniqueness of a connected producer's name or to provide a unique name
+   * Check the uniqueness of a connected producer's name or to provide a unique name
    */
-  suspend fun getUniqueName(namerTopic: String, proposedName: String?): Result<String> {
+  suspend fun initName(namerTopic: String, suggestedName: String?): Result<String> {
     if (::name.isInitialized) return Result.success(name)
 
     return nameMutex.withLock {
@@ -66,20 +66,28 @@ class InfiniticPulsarClient(private val pulsarClient: PulsarClient) {
 
       // this consumer must stay active until client is closed
       // to prevent other clients to use the same name
-      name = try {
+      val producer = try {
         pulsarClient
             .newProducer()
             .topic(namerTopic)
             .also {
-              proposedName?.let { name -> it.producerName(name) }
+              suggestedName?.let { name -> it.producerName(name) }
             }
             .createAsync()
             .await()
-            .producerName
-      } catch (e: PulsarClientException) {
-        // if the producer name is already taken
-        // the exception will be PulsarClientException.ProducerBusyException
+      } catch (e: PulsarClientException.ProducerBusyException) {
+        logger.error(e) { "Name $suggestedName already in use" }
         return Result.failure(e)
+      } catch (e: PulsarClientException) {
+        return Result.failure(e)
+      }
+      name = producer.producerName
+
+      // close producer
+      try {
+        producer.closeAsync().await()
+      } catch (e: PulsarClientException) {
+        logWarn(e) { "Unable to close producer on topic $namerTopic" }
       }
 
       Result.success(name)
@@ -96,7 +104,6 @@ class InfiniticPulsarClient(private val pulsarClient: PulsarClient) {
   fun <T : Message> getProducer(
     topic: String,
     schemaKClass: KClass<out Envelope<out T>>,
-    producerName: String,
     batchConfig: BatchConfig?,
     pulsarProducerConfig: PulsarProducerConfig,
     key: String? = null,
@@ -106,11 +113,11 @@ class InfiniticPulsarClient(private val pulsarClient: PulsarClient) {
       @Suppress("UNCHECKED_CAST")
       Result.success(
           producers.computeIfAbsent(topic) {
-            createProducer(topic, schemaKClass, producerName, batchConfig, pulsarProducerConfig, key)
+            createProducer(topic, schemaKClass, batchConfig, pulsarProducerConfig, key)
           } as Producer<Envelope<out T>>,
       )
     } catch (e: PulsarClientException) {
-      logger.warn(e) { "Unable to create producer $producerName on topic $topic" }
+      logWarn(e) { "Unable to create producer on topic $topic" }
       Result.failure(e)
     }
   }
@@ -118,103 +125,102 @@ class InfiniticPulsarClient(private val pulsarClient: PulsarClient) {
   private fun createProducer(
     topic: String,
     schemaKClass: KClass<out Envelope<out Message>>,
-    producerName: String,
     batchConfig: BatchConfig?,
     pulsarProducerConfig: PulsarProducerConfig,
     key: String? = null,
   ): Producer<Envelope<out Message>> {
     // otherwise create it
-    logger.info { "Creating Producer '$producerName' on topic '$topic' ${key?.let { "with key='$key'" } ?: "without key"}" }
+    logInfo { "Creating Producer on topic '$topic' ${key?.let { "with key='$key'" } ?: "without key"}" }
 
     val schema = Schema.AVRO(schemaDefinition(schemaKClass))
 
     val builder = pulsarClient
         .newProducer(schema)
         .topic(topic)
-        .producerName(producerName)
+        .producerName(name)
 
     with(builder) {
       key?.also { batcherBuilder(BatcherBuilder.KEY_BASED) }
 
       pulsarProducerConfig.autoUpdatePartitions?.also {
-        logger.info { "Producer $producerName: autoUpdatePartitions=$it" }
+        logInfo { "Producer autoUpdatePartitions=$it" }
         autoUpdatePartitions(it)
       }
       pulsarProducerConfig.autoUpdatePartitionsIntervalSeconds?.also {
-        logger.info { "Producer $producerName: autoUpdatePartitionsInterval=$it" }
+        logInfo { "Producer autoUpdatePartitionsInterval=$it" }
         autoUpdatePartitionsInterval((it * 1000).toInt(), TimeUnit.MILLISECONDS)
       }
       pulsarProducerConfig.batchingMaxBytes?.also {
-        logger.info { "Producer $producerName: batchingMaxBytes=$it" }
+        logInfo { "Producer batchingMaxBytes=$it" }
         batchingMaxBytes(it)
       }
       pulsarProducerConfig.batchingMaxMessages?.also {
-        logger.info { "Producer $producerName: batchingMaxMessages=$it" }
+        logInfo { "Producer batchingMaxMessages=$it" }
         batchingMaxMessages(it)
       }
       pulsarProducerConfig.batchingMaxPublishDelaySeconds?.also {
-        logger.info { "Producer $producerName: batchingMaxPublishDelay=$it" }
+        logInfo { "Producer batchingMaxPublishDelay=$it" }
         batchingMaxPublishDelay((it * 1000).toLong(), TimeUnit.MILLISECONDS)
       }
       pulsarProducerConfig.compressionType?.also {
-        logger.info { "Producer $producerName: compressionType=$it" }
+        logInfo { "Producer compressionType=$it" }
         compressionType(it)
       }
       pulsarProducerConfig.cryptoFailureAction?.also {
-        logger.info { "Producer $producerName: cryptoFailureAction=$it" }
+        logInfo { "Producer cryptoFailureAction=$it" }
         cryptoFailureAction(it)
       }
       pulsarProducerConfig.defaultCryptoKeyReader?.also {
-        logger.info { "Producer $producerName: defaultCryptoKeyReader=$it" }
+        logInfo { "Producer defaultCryptoKeyReader=$it" }
         defaultCryptoKeyReader(it)
       }
       pulsarProducerConfig.encryptionKey?.also {
-        logger.info { "Producer $producerName: addEncryptionKey=$it" }
+        logInfo { "Producer addEncryptionKey=$it" }
         addEncryptionKey(it)
       }
       pulsarProducerConfig.enableBatching?.also {
-        logger.info { "Producer $producerName: enableBatching=$it" }
+        logInfo { "Producer enableBatching=$it" }
         enableBatching(it)
       }
       pulsarProducerConfig.enableChunking?.also {
-        logger.info { "Producer $producerName: enableChunking=$it" }
+        logInfo { "Producer enableChunking=$it" }
         enableChunking(it)
       }
       pulsarProducerConfig.enableLazyStartPartitionedProducers?.also {
-        logger.info { "Producer $producerName: enableLazyStartPartitionedProducers=$it" }
+        logInfo { "Producer enableLazyStartPartitionedProducers=$it" }
         enableLazyStartPartitionedProducers(it)
       }
       pulsarProducerConfig.enableMultiSchema?.also {
-        logger.info { "Producer $producerName: enableMultiSchema=$it" }
+        logInfo { "Producer enableMultiSchema=$it" }
         enableMultiSchema(it)
       }
       pulsarProducerConfig.hashingScheme?.also {
-        logger.info { "Producer $producerName: hashingScheme=$it" }
+        logInfo { "Producer hashingScheme=$it" }
         hashingScheme(it)
       }
       pulsarProducerConfig.messageRoutingMode?.also {
-        logger.info { "Producer $producerName: messageRoutingMode=$it" }
+        logInfo { "Producer messageRoutingMode=$it" }
         messageRoutingMode(it)
       }
       pulsarProducerConfig.properties?.also {
-        logger.info { "Producer $producerName: properties=$it" }
+        logInfo { "Producer properties=$it" }
         properties(it)
       }
       pulsarProducerConfig.roundRobinRouterBatchingPartitionSwitchFrequency?.also {
-        logger.info { "Producer $producerName: roundRobinRouterBatchingPartitionSwitchFrequency=$it" }
+        logInfo { "Producer roundRobinRouterBatchingPartitionSwitchFrequency=$it" }
         roundRobinRouterBatchingPartitionSwitchFrequency(it)
       }
       pulsarProducerConfig.sendTimeoutSeconds?.also {
-        logger.info { "Producer $producerName: sendTimeout=$it" }
+        logInfo { "Producer sendTimeout=$it" }
         sendTimeout((it * 1000).toInt(), TimeUnit.MILLISECONDS)
       }
       blockIfQueueFull(pulsarProducerConfig.blockIfQueueFull).also {
-        logger.info { "Producer $producerName: blockIfQueueFull=${pulsarProducerConfig.blockIfQueueFull}" }
+        logInfo { "Producer blockIfQueueFull=${pulsarProducerConfig.blockIfQueueFull}" }
       }
 
       // if batchConfig is defined, it replaces above settings
       batchConfig?.also {
-        logger.info { "Producer $producerName: batchConfig=$it" }
+        logInfo { "Producer batchConfig=$it" }
         batchingMaxMessages(it.maxMessages)
         batchingMaxPublishDelay(it.maxMillis, TimeUnit.MILLISECONDS)
         enableBatching(true)
@@ -239,7 +245,7 @@ class InfiniticPulsarClient(private val pulsarClient: PulsarClient) {
     consumerDefDlq: ConsumerDef? = null,
   ): Result<Consumer<S>> {
 
-    logger.info { "Creating consumer with $consumerDef" }
+    logInfo { "Creating consumer with $consumerDef" }
 
     val (topic,
         subscriptionName,
@@ -273,14 +279,14 @@ class InfiniticPulsarClient(private val pulsarClient: PulsarClient) {
 
       // to avoid immediate deletion of messages in DLQ, we immediately create a subscription
       val consumerDlq = newConsumer(schema, it).getOrElse { throwable ->
-        logger.error { "Unable to create consumer on DLQ topic ${it.topic}" }
+        logError(throwable) { "Unable to create consumer on DLQ topic ${it.topic}" }
         return Result.failure(throwable)
       }
       try {
         // we close the consumer immediately as we do not need it
         consumerDlq.close()
       } catch (e: PulsarClientException) {
-        logger.warn { "Unable to close consumer on DLQ topic ${it.topic}" }
+        logWarn(e) { "Unable to close consumer on DLQ topic ${it.topic}" }
         return Result.failure(e)
       }
     }
@@ -289,104 +295,96 @@ class InfiniticPulsarClient(private val pulsarClient: PulsarClient) {
       // must be set AFTER deadLetterPolicy
       // see https://github.com/apache/pulsar/issues/8484
       consumerConfig.ackTimeoutSeconds?.also {
-        logger.info {
-          "subscription $subscriptionName: ackTimeout=${consumerConfig.ackTimeoutSeconds}"
-        }
+        logInfo { "Subscription $subscriptionName: ackTimeout=${consumerConfig.ackTimeoutSeconds}" }
         ackTimeout(
             (consumerConfig.ackTimeoutSeconds * 1000).toLong(),
             TimeUnit.MILLISECONDS,
         )
       }
       consumerConfig.loadConf?.also {
-        logger.info { "subscription $subscriptionName: loadConf=$it" }
+        logInfo { "Subscription $subscriptionName: loadConf=$it" }
         loadConf(it)
       }
       consumerConfig.subscriptionProperties?.also {
-        logger.info { "subscription $subscriptionName: subscriptionProperties=$it" }
+        logInfo { "Subscription $subscriptionName: subscriptionProperties=$it" }
         subscriptionProperties(it)
       }
       consumerConfig.isAckReceiptEnabled?.also {
-        logger.info { "subscription $subscriptionName: isAckReceiptEnabled=$it" }
+        logInfo { "Subscription $subscriptionName: isAckReceiptEnabled=$it" }
         isAckReceiptEnabled(it)
       }
       consumerConfig.ackTimeoutTickTimeSeconds?.also {
-        logger.info { "subscription $subscriptionName: ackTimeoutTickTime=$it" }
+        logInfo { "Subscription $subscriptionName: ackTimeoutTickTime=$it" }
         ackTimeoutTickTime((it * 1000).toLong(), TimeUnit.MILLISECONDS)
       }
       consumerConfig.negativeAckRedeliveryDelaySeconds?.also {
-        logger.info { "subscription $subscriptionName: negativeAckRedeliveryDelay=$it" }
+        logInfo { "Subscription $subscriptionName: negativeAckRedeliveryDelay=$it" }
         negativeAckRedeliveryDelay((it * 1000).toLong(), TimeUnit.MILLISECONDS)
       }
       consumerConfig.defaultCryptoKeyReader?.also {
-        logger.info { "subscription $subscriptionName: defaultCryptoKeyReader=$it" }
+        logInfo { "Subscription $subscriptionName: defaultCryptoKeyReader=$it" }
         defaultCryptoKeyReader(it)
       }
       consumerConfig.cryptoFailureAction?.also {
-        logger.info { "subscription $subscriptionName: cryptoFailureAction=$it" }
+        logInfo { "Subscription $subscriptionName: cryptoFailureAction=$it" }
         cryptoFailureAction(it)
       }
       consumerConfig.receiverQueueSize?.also {
-        logger.info { "subscription $subscriptionName: receiverQueueSize=$it" }
+        logInfo { "Subscription $subscriptionName: receiverQueueSize=$it" }
         receiverQueueSize(it)
       }
       consumerConfig.acknowledgmentGroupTimeSeconds?.also {
-        logger.info { "subscription $subscriptionName: acknowledgmentGroupTime=$it" }
+        logInfo { "Subscription $subscriptionName: acknowledgmentGroupTime=$it" }
         acknowledgmentGroupTime((it * 1000).toLong(), TimeUnit.MILLISECONDS)
       }
       consumerConfig.replicateSubscriptionState?.also {
-        logger.info { "subscription $subscriptionName: replicateSubscriptionState=$it" }
+        logInfo { "Subscription $subscriptionName: replicateSubscriptionState=$it" }
         replicateSubscriptionState(it)
       }
       consumerConfig.maxTotalReceiverQueueSizeAcrossPartitions?.also {
-        logger.info {
-          "subscription $subscriptionName: maxTotalReceiverQueueSizeAcrossPartitions=$it"
-        }
+        logInfo { "Subscription $subscriptionName: maxTotalReceiverQueueSizeAcrossPartitions=$it" }
         maxTotalReceiverQueueSizeAcrossPartitions(it)
       }
       consumerConfig.priorityLevel?.also {
-        logger.info { "subscription $subscriptionName: priorityLevel=$it" }
+        logInfo { "Subscription $subscriptionName: priorityLevel=$it" }
         priorityLevel(it)
       }
       consumerConfig.properties?.also {
-        logger.info { "subscription $subscriptionName: properties=$it" }
+        logInfo { "Subscription $subscriptionName: properties=$it" }
         properties(it)
       }
       consumerConfig.autoUpdatePartitions?.also {
-        logger.info { "subscription $subscriptionName: autoUpdatePartitions=$it" }
+        logInfo { "Subscription $subscriptionName: autoUpdatePartitions=$it" }
         autoUpdatePartitions(it)
       }
       consumerConfig.autoUpdatePartitionsIntervalSeconds?.also {
-        logger.info { "subscription $subscriptionName: autoUpdatePartitionsInterval=$it" }
+        logInfo { "Subscription $subscriptionName: autoUpdatePartitionsInterval=$it" }
         autoUpdatePartitionsInterval((it * 1000).toInt(), TimeUnit.MILLISECONDS)
       }
       consumerConfig.enableBatchIndexAcknowledgment?.also {
-        logger.info { "subscription $subscriptionName: enableBatchIndexAcknowledgment=$it" }
+        logInfo { "Subscription $subscriptionName: enableBatchIndexAcknowledgment=$it" }
         enableBatchIndexAcknowledgment(it)
       }
       consumerConfig.maxPendingChunkedMessage?.also {
-        logger.info { "subscription $subscriptionName: maxPendingChunkedMessage=$it" }
+        logInfo { "Subscription $subscriptionName: maxPendingChunkedMessage=$it" }
         maxPendingChunkedMessage(it)
       }
       consumerConfig.autoAckOldestChunkedMessageOnQueueFull?.also {
-        logger.info {
-          "subscription $subscriptionName: autoAckOldestChunkedMessageOnQueueFull=$it"
-        }
+        logInfo { "Subscription $subscriptionName: autoAckOldestChunkedMessageOnQueueFull=$it" }
         autoAckOldestChunkedMessageOnQueueFull(it)
       }
       consumerConfig.expireTimeOfIncompleteChunkedMessageSeconds?.also {
-        logger.info {
-          "subscription $subscriptionName: expireTimeOfIncompleteChunkedMessage=$it"
-        }
+        logInfo { "Subscription $subscriptionName: expireTimeOfIncompleteChunkedMessage=$it" }
         expireTimeOfIncompleteChunkedMessage((it * 1000).toLong(), TimeUnit.MILLISECONDS)
       }
       consumerConfig.startPaused?.also {
-        logger.info { "subscription $subscriptionName: startPaused=$it" }
+        logInfo { "Subscription $subscriptionName: startPaused=$it" }
         startPaused(it)
       }
 
       // Batch Receive Policy
       batchConfig?.also {
-        logger.info { "subscription $subscriptionName: batchConfig=$it" }
+        logInfo { "Subscription $subscriptionName: batchConfig=$it" }
         batchReceivePolicy(
             BatchReceivePolicy.builder()
                 .maxNumMessages(it.maxMessages)
@@ -399,7 +397,7 @@ class InfiniticPulsarClient(private val pulsarClient: PulsarClient) {
     return try {
       Result.success(builder.subscribe())
     } catch (e: PulsarClientException) {
-      logger.error(e) { "Unable to create consumer $consumerName on topic $topic" }
+      logError(e) { "Unable to create consumer $consumerName on topic $topic" }
       Result.failure(e)
     }
   }
@@ -413,6 +411,18 @@ class InfiniticPulsarClient(private val pulsarClient: PulsarClient) {
     val batchReceivingConfig: BatchConfig?,
     val pulsarConsumerConfig: PulsarConsumerConfig,
   )
+
+  private fun logWarn(e: Exception, txt: () -> String) {
+    logger.warn(e) { "Client $name: ${txt()}" }
+  }
+
+  private fun logError(e: Throwable, txt: () -> String) {
+    logger.error(e) { "Client $name: ${txt()}" }
+  }
+
+  private fun logInfo(txt: () -> String) {
+    logger.info { "Client $name: ${txt()}" }
+  }
 
   companion object {
     // producer per topic

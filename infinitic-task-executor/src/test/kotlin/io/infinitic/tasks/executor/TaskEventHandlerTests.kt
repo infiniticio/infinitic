@@ -69,6 +69,7 @@ import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
+import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import java.util.concurrent.CopyOnWriteArrayList
@@ -101,7 +102,7 @@ class TaskEventHandlerTests :
 
         // mocks
         val producerAsync = mockk<InfiniticProducer> {
-          coEvery { getName() } returns "$testEmitterName"
+          every { emitterName } returns EmitterName("$testEmitterName")
           coEvery { capture(taskTagSlots).sendTo(ServiceTagEngineTopic) } returns Unit
           coEvery { capture(clientSlot).sendTo(ClientTopic) } returns Unit
           coEvery {

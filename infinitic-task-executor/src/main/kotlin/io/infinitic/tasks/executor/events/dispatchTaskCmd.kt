@@ -23,7 +23,6 @@
 package io.infinitic.tasks.executor.events
 
 import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.requester.WorkflowRequester
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskRetrySequence
@@ -42,7 +41,7 @@ internal fun CoroutineScope.dispatchTaskCmd(
   workflowTaskInstant: MillisInstant,
   producer: InfiniticProducer
 ) = launch {
-  val emitterName = EmitterName(producer.getName())
+  val emitterName = producer.emitterName
   val dispatchTaskCommand = pastCommand.command
 
   // Description of the dispatched task

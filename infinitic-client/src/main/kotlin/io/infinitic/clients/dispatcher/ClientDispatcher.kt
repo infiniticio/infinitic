@@ -42,7 +42,6 @@ import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.data.methods.decodeReturnValue
-import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.messages.Message
 import io.infinitic.common.proxies.ChannelProxyHandler
@@ -118,7 +117,7 @@ internal class ClientDispatcher(
 ) : ProxyDispatcher {
 
   // Name of the client
-  private val emitterName by lazy { runBlocking { EmitterName(producer.getName()) } }
+  private val emitterName by lazy { producer.emitterName }
 
   // This as requester
   private val clientRequester by lazy { ClientRequester(clientName = ClientName.from(emitterName)) }

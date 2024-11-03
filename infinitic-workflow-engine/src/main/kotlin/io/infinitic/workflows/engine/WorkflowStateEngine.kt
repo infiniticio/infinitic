@@ -26,7 +26,6 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.MethodUnknown
 import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.requester.ClientRequester
 import io.infinitic.common.requester.WorkflowRequester
@@ -102,7 +101,7 @@ class WorkflowStateEngine(
     val logger = KotlinLogging.logger {}
   }
 
-  private suspend fun getEmitterName() = EmitterName(_producer.getName())
+  private val emitterName = _producer.emitterName
 
   suspend fun batchProcess(
     messages: List<WorkflowStateEngineMessage>,
@@ -218,7 +217,7 @@ class WorkflowStateEngine(
         workflowName = state.workflowName,
         workflowVersion = state.workflowVersion,
         workflowId = state.workflowId,
-        emitterName = getEmitterName(),
+        emitterName = emitterName,
     )
     with(producer) { workflowCompletedEvent.sendTo(WorkflowStateEventTopic) }
   }
@@ -230,7 +229,7 @@ class WorkflowStateEngine(
               workflowName = state.workflowName,
               workflowTag = it,
               workflowId = state.workflowId,
-              emitterName = getEmitterName(),
+              emitterName = emitterName,
               emittedAt = state.runningWorkflowTaskInstant,
           )
           launch { with(producer) { removeTagFromWorkflow.sendTo(WorkflowTagEngineTopic) } }
@@ -264,7 +263,7 @@ class WorkflowStateEngine(
                 recipientName = ClientName.from(message.emitterName),
                 message.workflowId,
                 message.workflowMethodId,
-                emitterName = getEmitterName(),
+                emitterName = emitterName,
             )
             with(producer) { methodUnknown.sendTo(ClientTopic) }
           }
@@ -286,7 +285,7 @@ class WorkflowStateEngine(
                 workflowVersion = requester.workflowVersion,
                 workflowMethodName = requester.workflowMethodName,
                 workflowMethodId = requester.workflowMethodId,
-                emitterName = getEmitterName(),
+                emitterName = emitterName,
                 emittedAt = message.emittedAt,
             )
             with(producer) { childMethodFailed.sendTo(WorkflowStateEngineTopic) }
@@ -301,7 +300,7 @@ class WorkflowStateEngine(
             recipientName = ClientName.from(message.emitterName),
             message.workflowId,
             message.workflowMethodId,
-            emitterName = getEmitterName(),
+            emitterName = emitterName,
         )
         with(producer) { methodUnknown.sendTo(ClientTopic) }
       }

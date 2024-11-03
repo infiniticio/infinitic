@@ -72,8 +72,12 @@ class InfiniticClient(
 
   private val producer: InfiniticProducer by lazy {
     // get producer from transport, apply name if present
-    config.transport.producer.apply { config.name?.let { setName(it) } }
+    config.transport.producerFactory
+        .apply { config.name?.let { setName(it) } }
+        .getProducer(null)
   }
+
+  override fun getName() = producer.emitterName.toString()
 
   private val shutdownGracePeriodSeconds = config.transport.shutdownGracePeriodSeconds
 
@@ -83,8 +87,6 @@ class InfiniticClient(
   internal val clientScope = CoroutineScope(Dispatchers.IO)
 
   private val dispatcher by lazy { ClientDispatcher(clientScope, consumerFactory, producer) }
-
-  override suspend fun getName() = producer.getName()
 
   /** Get last Deferred created by the call of a stub */
   override val lastDeferred get() = dispatcher.getLastDeferred()

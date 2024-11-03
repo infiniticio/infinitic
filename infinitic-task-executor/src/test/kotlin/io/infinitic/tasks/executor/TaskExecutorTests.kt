@@ -100,7 +100,7 @@ class TaskExecutorTests :
         val registry = mockk<ExecutorRegistryInterface>()
         val client = mockk<InfiniticClientInterface>()
         val producer = mockk<InfiniticProducer> {
-          coEvery { getName() } returns "$testWorkerName"
+          every { emitterName } returns EmitterName("$testWorkerName")
           coEvery {
             capture(taskExecutorSlot).sendTo(ServiceExecutorTopic)
           } returns Unit

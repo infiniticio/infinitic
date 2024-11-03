@@ -25,5 +25,19 @@ package io.infinitic.common.transport.interfaces
 import io.infinitic.common.transport.config.BatchConfig
 
 interface InfiniticProducerFactory {
-  suspend fun getProducer(batchProducingConfig: BatchConfig?): InfiniticProducer
+  /**
+   * Name of the sender
+   */
+  suspend fun getName(): String
+
+  /**
+   * Sets the name of the sender.
+   */
+  fun setName(name: String)
+
+  /**
+   * Retrieves an `InfiniticProducer` based on the provided batch producing configuration.
+   */
+  fun getProducer(batchProducingConfig: BatchConfig?): InfiniticProducer
+
 }

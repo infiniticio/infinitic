@@ -20,22 +20,45 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.pulsar.producers
+package io.infinitic.pulsar
 
+import io.infinitic.common.transport.NamingTopic
 import io.infinitic.common.transport.config.BatchConfig
 import io.infinitic.common.transport.interfaces.InfiniticProducerFactory
-import io.infinitic.pulsar.PulsarInfiniticProducer2
 import io.infinitic.pulsar.client.InfiniticPulsarClient
 import io.infinitic.pulsar.config.PulsarProducerConfig
 import io.infinitic.pulsar.resources.PulsarResources
+import kotlinx.coroutines.runBlocking
 
-class PulsarProducerFactory(
+class PulsarInfiniticProducerFactory(
   private val client: InfiniticPulsarClient,
   private val pulsarProducerConfig: PulsarProducerConfig,
   private val pulsarResources: PulsarResources
 ) : InfiniticProducerFactory {
 
-  override suspend fun getProducer(batchConfig: BatchConfig?) =
-      PulsarInfiniticProducer2(client, pulsarProducerConfig, pulsarResources, batchConfig)
+  private var suggestedName: String? = null
 
+  override suspend fun getName(): String {
+    val namingTopic = with(pulsarResources) {
+      NamingTopic.forEntity(null, init = true, checkConsumer = false)
+    }
+    // Get unique name
+    return client.initName(namingTopic, suggestedName).getOrThrow()
+  }
+
+  override fun setName(name: String) {
+    suggestedName = name
+  }
+
+  override fun getProducer(batchProducingConfig: BatchConfig?): PulsarInfiniticProducer {
+    // init client name
+    runBlocking { getName() }
+
+    return PulsarInfiniticProducer(
+        client,
+        pulsarProducerConfig,
+        pulsarResources,
+        batchProducingConfig,
+    )
+  }
 }

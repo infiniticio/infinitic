@@ -22,7 +22,6 @@
  */
 package io.infinitic.common.workflows.engine.commands
 
-import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.requester.Requester
 import io.infinitic.common.requester.workflowId
 import io.infinitic.common.transport.WorkflowStateCmdTopic
@@ -38,8 +37,6 @@ suspend fun InfiniticProducer.dispatchRemoteSignal(
   signal: RemoteSignalDispatched,
   requester: Requester
 ) {
-  suspend fun getEmitterName() = EmitterName(getName())
-
   when (signal) {
     is RemoteSignalDispatchedById -> when (signal.workflowId) {
       requester.workflowId -> {
@@ -56,7 +53,7 @@ suspend fun InfiniticProducer.dispatchRemoteSignal(
               signalId = signalId,
               signalData = signalData,
               channelTypes = channelTypes,
-              emitterName = getEmitterName(),
+              emitterName = emitterName,
               emittedAt = emittedAt,
               requester = requester,
           )
@@ -75,7 +72,7 @@ suspend fun InfiniticProducer.dispatchRemoteSignal(
             signalId = signalId,
             signalData = signalData,
             channelTypes = channelTypes,
-            emitterName = getEmitterName(),
+            emitterName = emitterName,
             emittedAt = emittedAt,
             requester = requester,
         )

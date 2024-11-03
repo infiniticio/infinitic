@@ -22,7 +22,6 @@
  */
 package io.infinitic.workflows.engine.handlers
 
-import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.transport.WorkflowStateEventTopic
 import io.infinitic.common.transport.interfaces.InfiniticProducer
@@ -72,10 +71,8 @@ internal fun CoroutineScope.dispatchWorkflow(
   )
 
   launch {
-    val emitterName = EmitterName(producer.getName())
-
     with(producer) {
-      message.methodCommandedEvent(emitterName).sendTo(WorkflowStateEventTopic)
+      message.methodCommandedEvent(producer.emitterName).sendTo(WorkflowStateEventTopic)
     }
   }
 

@@ -185,8 +185,8 @@ class InfiniticWorker(
     config.transport.consumerFactory
   }
 
-  private val producer by lazy {
-    config.transport.producer.apply { config.name?.let { setName(it) } }
+  private val producerFactory by lazy {
+    config.transport.producerFactory.apply { config.name?.let { setName(it) } }
   }
 
   private val shutdownGracePeriodSeconds = config.transport.shutdownGracePeriodSeconds
@@ -283,7 +283,7 @@ class InfiniticWorker(
           }
         }
 
-        val workerName = producer.getName()
+        val workerName = producerFactory.getName()
 
         logger.info {
           "Worker '$workerName' ready (shutdownGracePeriodSeconds=${shutdownGracePeriodSeconds}s)"
@@ -377,7 +377,7 @@ class InfiniticWorker(
     // TASK-TAG
     return with(TaskTagEngine.logger) {
       val loggedStorage = LoggedTaskTagStorage(this, config.serviceTagStorage)
-      val loggedProducer = LoggedInfiniticProducer(this, producer)
+      val loggedProducer = LoggedInfiniticProducer(this, producerFactory.getProducer(null))
       val taskTagEngine = TaskTagEngine(loggedStorage, loggedProducer)
 
       val cloudEventLogger = CloudEventLogger(
@@ -409,6 +409,9 @@ class InfiniticWorker(
 
     // init batch methods for current factory
     config.initBatchProcessorMethods()
+
+    // producer batching messages when sending
+    val producer = producerFactory.getProducer(config.batch)
 
     // TASK-EXECUTOR
     val jobExecutor = with(TaskExecutor.logger) {
@@ -510,7 +513,7 @@ class InfiniticWorker(
     // WORKFLOW-TAG
     return with(WorkflowTagEngine.logger) {
       val loggedStorage = LoggedWorkflowTagStorage(this, config.workflowTagStorage)
-      val loggedProducer = LoggedInfiniticProducer(this, producer)
+      val loggedProducer = LoggedInfiniticProducer(this, producerFactory.getProducer(null))
       val workflowTagEngine = WorkflowTagEngine(loggedStorage, loggedProducer)
 
       val cloudEventLogger = CloudEventLogger(
@@ -539,6 +542,9 @@ class InfiniticWorker(
   private suspend fun startWorkflowStateEngine(config: WorkflowStateEngineConfig): List<Job> {
     // Log Workflow State Engine configuration
     logWorkflowStateEngineStart(config)
+
+    // producer batching messages when sending
+    val producer = producerFactory.getProducer(config.batch)
 
     // WORKFLOW-STATE-CMD
     val jobCmd = with(WorkflowStateCmdHandler.logger) {
@@ -703,6 +709,9 @@ class InfiniticWorker(
   private suspend fun startWorkflowExecutor(config: WorkflowExecutorConfig): List<Job> {
     // Log Workflow Executor configuration
     logWorkflowExecutorStart(config)
+
+    // producer batching messages when sending
+    val producer = producerFactory.getProducer(config.batchConfig)
 
     // WORKFLOW-EXECUTOR
     val jobExecutor = with(TaskExecutor.logger) {

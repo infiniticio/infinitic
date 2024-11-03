@@ -24,7 +24,6 @@ package io.infinitic.workflows.engine
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.transport.ClientTopic
 import io.infinitic.common.transport.WorkflowStateEngineTopic
 import io.infinitic.common.transport.interfaces.InfiniticProducer
@@ -48,7 +47,7 @@ import kotlinx.coroutines.launch
 
 class WorkflowStateEventHandler(private val _producer: InfiniticProducer) {
 
-  private suspend fun getEmitterName() = EmitterName(_producer.getName())
+  private val emitterName = _producer.emitterName
 
   suspend fun batchProcess(
     messages: List<WorkflowStateEventMessage>,
@@ -104,12 +103,12 @@ class WorkflowStateEventHandler(private val _producer: InfiniticProducer) {
     publishTime: MillisInstant
   ) = coroutineScope {
     // tell awaiting clients
-    msg.getEventForAwaitingClients(getEmitterName()).forEach { event ->
+    msg.getEventForAwaitingClients(emitterName).forEach { event ->
       launch { with(producer) { event.sendTo(ClientTopic) } }
     }
 
     // tell awaiting workflow (except itself)
-    msg.getEventForAwaitingWorkflows(getEmitterName(), publishTime)
+    msg.getEventForAwaitingWorkflows(emitterName, publishTime)
         .filter { it.workflowId != msg.workflowId }
         .forEach { event ->
           launch { with(producer) { event.sendTo(WorkflowStateEngineTopic) } }
@@ -122,12 +121,12 @@ class WorkflowStateEventHandler(private val _producer: InfiniticProducer) {
     publishTime: MillisInstant
   ) = coroutineScope {
     // tell awaiting clients
-    msg.getEventForAwaitingClients(getEmitterName()).forEach { event ->
+    msg.getEventForAwaitingClients(emitterName).forEach { event ->
       launch { with(producer) { event.sendTo(ClientTopic) } }
     }
 
     // tell awaiting workflow (except itself)
-    msg.getEventForAwaitingWorkflows(getEmitterName(), publishTime)
+    msg.getEventForAwaitingWorkflows(emitterName, publishTime)
         .filter { it.workflowId != msg.workflowId }
         .forEach { event ->
           launch { with(producer) { event.sendTo(WorkflowStateEngineTopic) } }
@@ -140,12 +139,12 @@ class WorkflowStateEventHandler(private val _producer: InfiniticProducer) {
     publishTime: MillisInstant
   ) = coroutineScope {
     // tell awaiting clients
-    msg.getEventForAwaitingClients(getEmitterName()).forEach { event ->
+    msg.getEventForAwaitingClients(emitterName).forEach { event ->
       launch { with(producer) { event.sendTo(ClientTopic) } }
     }
 
     // tell awaiting workflow (except itself)
-    msg.getEventForAwaitingWorkflows(getEmitterName(), publishTime)
+    msg.getEventForAwaitingWorkflows(emitterName, publishTime)
         .filter { it.workflowId != msg.workflowId }
         .forEach { event ->
           launch { with(producer) { event.sendTo(WorkflowStateEngineTopic) } }
@@ -158,12 +157,12 @@ class WorkflowStateEventHandler(private val _producer: InfiniticProducer) {
     publishTime: MillisInstant
   ) = coroutineScope {
     // tell awaiting clients
-    msg.getEventForAwaitingClients(getEmitterName()).forEach { event ->
+    msg.getEventForAwaitingClients(emitterName).forEach { event ->
       launch { with(producer) { event.sendTo(ClientTopic) } }
     }
 
     // tell awaiting workflow (except itself)
-    msg.getEventForAwaitingWorkflows(getEmitterName(), publishTime)
+    msg.getEventForAwaitingWorkflows(emitterName, publishTime)
         .filter { it.workflowId != msg.workflowId }
         .forEach { event ->
           launch { with(producer) { event.sendTo(WorkflowStateEngineTopic) } }

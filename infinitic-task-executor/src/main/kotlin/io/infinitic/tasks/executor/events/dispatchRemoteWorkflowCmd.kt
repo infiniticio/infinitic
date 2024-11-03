@@ -23,7 +23,6 @@
 package io.infinitic.tasks.executor.events
 
 import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.requester.WorkflowRequester
 import io.infinitic.common.transport.WorkflowStateEventTopic
 import io.infinitic.common.transport.interfaces.InfiniticProducer
@@ -44,7 +43,7 @@ internal fun CoroutineScope.dispatchRemoteWorkflowCmd(
   workflowTaskInstant: MillisInstant,
   producer: InfiniticProducer
 ) = launch {
-  val emitterName = EmitterName(producer.getName())
+  val emitterName = producer.emitterName
   val dispatchNewWorkflow = pastCommand.command
   val customId = dispatchNewWorkflow.workflowTags.customId
 

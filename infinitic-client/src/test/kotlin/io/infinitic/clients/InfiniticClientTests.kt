@@ -88,6 +88,7 @@ import io.infinitic.exceptions.clients.InvalidChannelUsageException
 import io.infinitic.exceptions.clients.InvalidStubException
 import io.infinitic.inMemory.InMemoryConsumerFactory
 import io.infinitic.inMemory.InMemoryInfiniticProducer
+import io.infinitic.inMemory.InMemoryInfiniticProducerFactory
 import io.infinitic.transport.config.TransportConfig
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
@@ -115,7 +116,7 @@ private val loggerSlot = slot<KLogger>()
 private val clientNameTest = ClientName("clientTest")
 private val emitterNameTest = EmitterName("clientTest")
 
-private suspend fun tagResponse() {
+private fun tagResponse() {
   workflowTagSlots.forEach {
     if (it is GetWorkflowIdsByTag) {
       val workflowIdsByTag = WorkflowIdsByTag(
@@ -130,7 +131,7 @@ private suspend fun tagResponse() {
   }
 }
 
-private suspend fun engineResponse() {
+private fun engineResponse() {
   val msg = workflowCmdSlots.last()
   if (msg is DispatchWorkflow && msg.clientWaiting || msg is WaitWorkflow) {
     val methodCompleted = MethodCompleted(
@@ -145,9 +146,9 @@ private suspend fun engineResponse() {
 }
 
 internal val mockedProducer = mockk<InMemoryInfiniticProducer> {
-  coEvery {
-    getName()
-  } returns "$clientNameTest"
+  every {
+    emitterName
+  } returns EmitterName("$clientNameTest")
 
   coEvery {
     with(capture(taskTagSlots)) { sendTo(ServiceTagEngineTopic) }
@@ -160,6 +161,12 @@ internal val mockedProducer = mockk<InMemoryInfiniticProducer> {
   coEvery {
     with(capture(workflowCmdSlots)) { sendTo(WorkflowStateCmdTopic) }
   } coAnswers { engineResponse() }
+}
+
+internal val mockedProducerFactory = mockk<InMemoryInfiniticProducerFactory> {
+  every {
+    getProducer(any())
+  } returns mockedProducer
 }
 
 val mockedConsumerFactory = mockk<InMemoryConsumerFactory> {
@@ -186,7 +193,7 @@ val mockedConsumerFactory = mockk<InMemoryConsumerFactory> {
 
 internal val mockedTransport = mockk<TransportConfig>(relaxed = true) {
   every { consumerFactory } returns mockedConsumerFactory
-  every { producer } returns mockedProducer
+  every { producerFactory } returns mockedProducerFactory
   every { shutdownGracePeriodSeconds } returns 5.0
 }
 

@@ -24,7 +24,6 @@ package io.infinitic.workflows.engine
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.transport.WorkflowStateEngineTopic
 import io.infinitic.common.transport.WorkflowStateEventTopic
@@ -41,7 +40,7 @@ import kotlinx.coroutines.launch
 
 class WorkflowStateCmdHandler(val producer: InfiniticProducer) {
 
-  private suspend fun getEmitterName() = EmitterName(producer.getName())
+  private val emitterName = producer.emitterName
 
   suspend fun batchProcess(
     messages: List<WorkflowStateEngineMessage>,
@@ -98,7 +97,7 @@ class WorkflowStateCmdHandler(val producer: InfiniticProducer) {
           }
 
           val taskDispatchedEvent =
-              workflowTaskParameters.workflowTaskDispatchedEvent(getEmitterName())
+              workflowTaskParameters.workflowTaskDispatchedEvent(emitterName)
 
           with(producer) {
             // dispatch workflow task
@@ -110,7 +109,7 @@ class WorkflowStateCmdHandler(val producer: InfiniticProducer) {
 
           with(producer) {
             // event: starting new method
-            dispatchNewWorkflow.methodCommandedEvent(getEmitterName())
+            dispatchNewWorkflow.methodCommandedEvent(emitterName)
                 .sendTo(WorkflowStateEventTopic)
           }
         }

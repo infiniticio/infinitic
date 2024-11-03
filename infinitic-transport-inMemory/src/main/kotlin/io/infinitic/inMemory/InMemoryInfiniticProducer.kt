@@ -24,6 +24,7 @@ package io.infinitic.inMemory
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.MillisDuration
+import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.messages.Message
 import io.infinitic.common.transport.Topic
 import io.infinitic.common.transport.interfaces.InfiniticProducer
@@ -42,13 +43,7 @@ class InMemoryInfiniticProducer(
 
   private val scope = CoroutineScope(Dispatchers.IO)
 
-  private var suggestedName = DEFAULT_NAME
-
-  override suspend fun getName() = suggestedName
-
-  override fun setName(name: String) {
-    suggestedName = name
-  }
+  override val emitterName = EmitterName("InMemory")
 
   override suspend fun <T : Message> internalSendTo(
     message: T,

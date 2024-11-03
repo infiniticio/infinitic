@@ -57,9 +57,6 @@ workflows:
   - name: batchWorkflow
     tagEngine:
     stateEngine:
-      batch:
-        maxMessages: 10
-        maxSeconds: .2
     executor:
       class: io.infinitic.tests.batches.BatchWorkflowImpl
       concurrency: 2
