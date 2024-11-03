@@ -69,7 +69,7 @@ class InMemoryInfiniticConsumer(
   override suspend fun <S : Message> startAsync(
     subscription: Subscription<S>,
     entity: String,
-    batchConsumerConfig: BatchConfig?,
+    batchConfig: BatchConfig?,
     concurrency: Int,
     processor: suspend (S, MillisInstant) -> Unit,
     beforeDlq: (suspend (S, Exception) -> Unit)?,
@@ -82,11 +82,11 @@ class InMemoryInfiniticConsumer(
     return when (subscription.withKey) {
       true -> {
         // build the consumers synchronously
-        val consumers = buildConsumers(subscription, entity, batchConsumerConfig, concurrency)
+        val consumers = buildConsumers(subscription, entity, batchConfig, concurrency)
         launch {
           repeat(concurrency) { index ->
             consumers[index].startAsync(
-                batchConsumerConfig,
+                batchConfig,
                 1,
                 deserialize,
                 processor,
@@ -100,9 +100,9 @@ class InMemoryInfiniticConsumer(
 
       false -> {
         // build the consumer synchronously
-        val consumer = buildConsumer(subscription, entity, batchConsumerConfig)
+        val consumer = buildConsumer(subscription, entity, batchConfig)
         consumer.startAsync(
-            batchConsumerConfig,
+            batchConfig,
             concurrency,
             deserialize,
             processor,

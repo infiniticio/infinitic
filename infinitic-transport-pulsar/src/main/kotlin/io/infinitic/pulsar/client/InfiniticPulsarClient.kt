@@ -93,19 +93,21 @@ class InfiniticPulsarClient(private val pulsarClient: PulsarClient) {
    * - Result.success(Producer)
    * - Result.failure(e) in case of error
    */
-  fun getProducer(
+  fun <T : Message> getProducer(
     topic: String,
-    schemaClass: KClass<out Envelope<out Message>>,
+    schemaKClass: KClass<out Envelope<out T>>,
     producerName: String,
+    batchConfig: BatchConfig?,
     pulsarProducerConfig: PulsarProducerConfig,
     key: String? = null,
-  ): Result<Producer<Envelope<out Message>>> {
+  ): Result<Producer<Envelope<out T>>> {
     // get producer if it already exists
     return try {
+      @Suppress("UNCHECKED_CAST")
       Result.success(
           producers.computeIfAbsent(topic) {
-            createProducer(topic, schemaClass, producerName, pulsarProducerConfig, key)
-          },
+            createProducer(topic, schemaKClass, producerName, batchConfig, pulsarProducerConfig, key)
+          } as Producer<Envelope<out T>>,
       )
     } catch (e: PulsarClientException) {
       logger.warn(e) { "Unable to create producer $producerName on topic $topic" }
@@ -115,15 +117,16 @@ class InfiniticPulsarClient(private val pulsarClient: PulsarClient) {
 
   private fun createProducer(
     topic: String,
-    schemaClass: KClass<out Envelope<out Message>>,
+    schemaKClass: KClass<out Envelope<out Message>>,
     producerName: String,
+    batchConfig: BatchConfig?,
     pulsarProducerConfig: PulsarProducerConfig,
     key: String? = null,
   ): Producer<Envelope<out Message>> {
     // otherwise create it
     logger.info { "Creating Producer '$producerName' on topic '$topic' ${key?.let { "with key='$key'" } ?: "without key"}" }
 
-    val schema = Schema.AVRO(schemaDefinition(schemaClass))
+    val schema = Schema.AVRO(schemaDefinition(schemaKClass))
 
     val builder = pulsarClient
         .newProducer(schema)
@@ -208,7 +211,17 @@ class InfiniticPulsarClient(private val pulsarClient: PulsarClient) {
       blockIfQueueFull(pulsarProducerConfig.blockIfQueueFull).also {
         logger.info { "Producer $producerName: blockIfQueueFull=${pulsarProducerConfig.blockIfQueueFull}" }
       }
+
+      // if batchConfig is defined, it replaces above settings
+      batchConfig?.also {
+        logger.info { "Producer $producerName: batchConfig=$it" }
+        batchingMaxMessages(it.maxMessages)
+        batchingMaxPublishDelay(it.maxMillis, TimeUnit.MILLISECONDS)
+        enableBatching(true)
+      }
     }
+
+
 
     @Suppress("UNCHECKED_CAST")
     return builder.create() as Producer<Envelope<out Message>>
@@ -244,15 +257,6 @@ class InfiniticPulsarClient(private val pulsarClient: PulsarClient) {
         .consumerName(consumerName)
         .subscriptionInitialPosition(SubscriptionInitialPosition.Earliest)
 
-    // Batch Receive Policy
-    batchConfig?.let {
-      builder.batchReceivePolicy(
-          BatchReceivePolicy.builder()
-              .maxNumMessages(it.maxMessages)
-              .timeout((it.maxSeconds * 1000).toInt(), TimeUnit.MILLISECONDS)
-              .build(),
-      )
-    }
     // Dead Letter Queue
     consumerDefDlq?.let {
       builder
@@ -379,11 +383,21 @@ class InfiniticPulsarClient(private val pulsarClient: PulsarClient) {
         logger.info { "subscription $subscriptionName: startPaused=$it" }
         startPaused(it)
       }
+
+      // Batch Receive Policy
+      batchConfig?.also {
+        logger.info { "subscription $subscriptionName: batchConfig=$it" }
+        batchReceivePolicy(
+            BatchReceivePolicy.builder()
+                .maxNumMessages(it.maxMessages)
+                .timeout((it.maxSeconds * 1000).toInt(), TimeUnit.MILLISECONDS)
+                .build(),
+        )
+      }
     }
 
     return try {
-      val consumer = builder.subscribe()
-      Result.success(consumer)
+      Result.success(builder.subscribe())
     } catch (e: PulsarClientException) {
       logger.error(e) { "Unable to create consumer $consumerName on topic $topic" }
       Result.failure(e)

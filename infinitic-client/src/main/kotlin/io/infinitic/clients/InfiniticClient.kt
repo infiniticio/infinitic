@@ -81,7 +81,7 @@ class InfiniticClient(
 
   private val dispatcher by lazy { ClientDispatcher(clientScope, consumer, producer) }
 
-  override suspend fun getName() = producer.getName()
+  override suspend fun getName() = producer.getProducerName()
 
   /** Get last Deferred created by the call of a stub */
   override val lastDeferred get() = dispatcher.getLastDeferred()

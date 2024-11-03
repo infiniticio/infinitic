@@ -282,7 +282,7 @@ class InfiniticWorker(
           }
         }
 
-        val workerName = producer.getName()
+        val workerName = producer.getProducerName()
 
         logger.info {
           "Worker '$workerName' ready (shutdownGracePeriodSeconds=${shutdownGracePeriodSeconds}s)"
@@ -448,7 +448,7 @@ class InfiniticWorker(
       consumer.startAsync(
           subscription = MainSubscription(ServiceExecutorTopic),
           entity = config.serviceName,
-          batchConsumerConfig = config.batch,
+          batchConfig = config.batch,
           concurrency = config.concurrency,
           processor = processor,
           beforeDlq = beforeDlq,
@@ -465,7 +465,7 @@ class InfiniticWorker(
       consumer.startAsync(
           subscription = MainSubscription(ServiceExecutorRetryTopic),
           entity = config.serviceName,
-          batchConsumerConfig = config.batch,
+          batchConfig = config.batch,
           concurrency = config.concurrency,
           processor = taskRetryHandler::handle,
       )
@@ -492,7 +492,7 @@ class InfiniticWorker(
       consumer.startAsync(
           subscription = MainSubscription(ServiceExecutorEventTopic),
           entity = config.serviceName,
-          batchConsumerConfig = config.batch,
+          batchConfig = config.batch,
           concurrency = config.concurrency,
           processor = processor,
       )
@@ -578,7 +578,7 @@ class InfiniticWorker(
       consumer.startAsync(
           subscription = MainSubscription(WorkflowStateCmdTopic),
           entity = config.workflowName,
-          batchConsumerConfig = config.batch,
+          batchConfig = config.batch,
           concurrency = config.concurrency,
           processor = processor,
           batchProcessorConfig = { _ -> batchProcessorConfig },
@@ -626,7 +626,7 @@ class InfiniticWorker(
       consumer.startAsync(
           subscription = MainSubscription(WorkflowStateEngineTopic),
           entity = config.workflowName,
-          batchConsumerConfig = config.batch,
+          batchConfig = config.batch,
           concurrency = config.concurrency,
           processor = processor,
           batchProcessorConfig = { _ -> batchProcessorConfig },
@@ -642,7 +642,7 @@ class InfiniticWorker(
       consumer.startAsync(
           subscription = MainSubscription(WorkflowStateTimerTopic),
           entity = config.workflowName,
-          batchConsumerConfig = config.batch,
+          batchConfig = config.batch,
           concurrency = config.concurrency,
           processor = workflowStateTimerHandler::process,
       )
@@ -687,7 +687,7 @@ class InfiniticWorker(
       consumer.startAsync(
           subscription = MainSubscription(WorkflowStateEventTopic),
           entity = config.workflowName,
-          batchConsumerConfig = config.batch,
+          batchConfig = config.batch,
           concurrency = config.concurrency,
           processor = processor,
           batchProcessorConfig = { _ -> batchProcessorConfig },
@@ -751,7 +751,7 @@ class InfiniticWorker(
       consumer.startAsync(
           subscription = MainSubscription(WorkflowExecutorTopic),
           entity = config.workflowName,
-          batchConsumerConfig = config.batchConfig,
+          batchConfig = config.batchConfig,
           concurrency = config.concurrency,
           processor = processor,
           beforeDlq = beforeDlq,
@@ -767,7 +767,7 @@ class InfiniticWorker(
 
       consumer.startAsync(
           subscription = MainSubscription(WorkflowExecutorRetryTopic),
-          batchConsumerConfig = config.batchConfig,
+          batchConfig = config.batchConfig,
           entity = config.workflowName,
           concurrency = config.concurrency,
           processor = taskRetryHandler::handle,
@@ -795,7 +795,7 @@ class InfiniticWorker(
       consumer.startAsync(
           subscription = MainSubscription(WorkflowExecutorEventTopic),
           entity = config.workflowName,
-          batchConsumerConfig = config.batchConfig,
+          batchConfig = config.batchConfig,
           concurrency = config.concurrency,
           processor = processor,
       )

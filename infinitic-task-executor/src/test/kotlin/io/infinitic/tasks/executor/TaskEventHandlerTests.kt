@@ -101,7 +101,7 @@ class TaskEventHandlerTests :
 
         // mocks
         val producerAsync = mockk<InfiniticProducer> {
-          coEvery { getName() } returns "$testEmitterName"
+          coEvery { getProducerName() } returns "$testEmitterName"
           coEvery { capture(taskTagSlots).sendTo(ServiceTagEngineTopic) } returns Unit
           coEvery { capture(clientSlot).sendTo(ClientTopic) } returns Unit
           coEvery {

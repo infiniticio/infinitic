@@ -49,7 +49,7 @@ internal fun CoroutineScope.dispatchWorkflowTask(
   state.workflowTaskIndex += 1
 
   launch {
-    val emitterName = EmitterName(producer.getName())
+    val emitterName = EmitterName(producer.getProducerName())
 
     // defines workflow task input
     val workflowTaskParameters = WorkflowTaskParameters(

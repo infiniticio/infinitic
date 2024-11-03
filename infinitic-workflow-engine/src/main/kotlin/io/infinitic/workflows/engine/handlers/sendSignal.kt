@@ -82,7 +82,7 @@ internal fun CoroutineScope.sendSignal(
               workflowName = message.workflowName,
               workflowId = message.workflowId,
               workflowVersion = state.workflowVersion,
-              emitterName = EmitterName(producer.getName()),
+              emitterName = EmitterName(producer.getProducerName()),
           )
           with(producer) { signalReceivedEvent.sendTo(WorkflowStateEventTopic) }
         }
@@ -96,7 +96,7 @@ internal fun CoroutineScope.sendSignal(
         workflowName = message.workflowName,
         workflowId = message.workflowId,
         workflowVersion = state.workflowVersion,
-        emitterName = EmitterName(producer.getName()),
+        emitterName = EmitterName(producer.getProducerName()),
     )
 
     with(producer) { signalDiscardedEvent.sendTo(WorkflowStateEventTopic) }

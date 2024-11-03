@@ -62,7 +62,7 @@ class WorkflowTagEngine(
   val producer: InfiniticProducer
 ) {
 
-  private suspend fun getEmitterName() = EmitterName(producer.getName())
+  private suspend fun getEmitterName() = EmitterName(producer.getProducerName())
 
   suspend fun handle(message: WorkflowTagEngineMessage, publishTime: MillisInstant) {
     when (message) {

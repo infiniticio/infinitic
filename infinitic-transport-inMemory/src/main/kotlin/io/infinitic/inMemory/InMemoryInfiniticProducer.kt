@@ -44,7 +44,7 @@ class InMemoryInfiniticProducer(
 
   private var suggestedName = DEFAULT_NAME
 
-  override suspend fun getName() = suggestedName
+  override suspend fun getProducerName() = suggestedName
 
   override fun setSuggestedName(name: String) {
     suggestedName = name

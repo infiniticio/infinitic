@@ -48,7 +48,7 @@ class TaskTagEngine(
   private val storage: TaskTagStorage,
   private val producer: InfiniticProducer
 ) {
-  private suspend fun getEmitterName() = EmitterName(producer.getName())
+  private suspend fun getEmitterName() = EmitterName(producer.getProducerName())
 
   suspend fun handle(message: ServiceTagMessage, publishTime: MillisInstant) = coroutineScope {
     when (message) {

@@ -34,13 +34,13 @@ import kotlinx.coroutines.Job
 interface InfiniticConsumer {
 
   /**
-   * Builds a list of transport consumers for a given subscription and entity.
+   * Builds a list of transport consumers for processing messages from a given subscription.
    *
-   * @param M The type of the messages to be consumed.
    * @param subscription The subscription from which to consume messages.
-   * @param entity The entity associated with this consumer.
-   * @param occurrence Optional parameter to specify the number of consumers to build.
-   * @return A list of transport consumers for the specified subscription and entity.
+   * @param entity The entity associated with the consumer.
+   * @param batchConfig An optional configuration for batching messages when receiving and sending.
+   * @param occurrence An optional parameter indicating the number of occurrences.
+   * @return A list of transport consumers for the specified subscription.
    */
   context(KLogger)
   suspend fun <M : Message> buildConsumers(
@@ -50,12 +50,22 @@ interface InfiniticConsumer {
     occurrence: Int?
   ): List<TransportConsumer<out TransportMessage<M>>>
 
+  /**
+   * Builds a transport consumer for processing messages from a given subscription.
+   *
+   * @param M The type of the messages to be consumed.
+   * @param subscription The subscription from which to consume messages.
+   * @param entity The entity associated with the consumer.
+   * @param batchConfig An optional configuration for batching messages when receiving and sending.
+   * @return A transport consumer for the specified subscription.
+   */
   context(KLogger)
   suspend fun <M : Message> buildConsumer(
     subscription: Subscription<M>,
     entity: String,
     batchConfig: BatchConfig?
-  ): TransportConsumer<out TransportMessage<M>> = buildConsumers(subscription, entity, batchConfig, null).first()
+  ): TransportConsumer<out TransportMessage<M>> =
+      buildConsumers(subscription, entity, batchConfig, null).first()
 
   /**
    * Starts asynchronous processing of messages for a given subscription.
@@ -63,17 +73,17 @@ interface InfiniticConsumer {
    * @param subscription The subscription from which to consume messages.
    * @param entity The entity associated with the consumer.
    * @param concurrency The number of concurrent coroutines for processing messages.
-   * @param processor A suspending function to process the deserialized message along with its publishing time.
-   * @param beforeDlq An optional suspending function to execute before sending a message to DLQ.
-   * @param batchProcessorConfig An optional suspending function to configure message batching.
-   * @param batchProcessor An optional suspending function to process batches of messages.
+   * @param processor A function to process the deserialized message along with its publishing time.
+   * @param beforeDlq An optional function to execute before sending a message to DLQ.
+   * @param batchProcessorConfig An optional function to configure message batching when processing.
+   * @param batchProcessor An optional function to process batches of messages.
    * @return A Job representing the coroutine that runs the consuming process.
    */
   context(CoroutineScope, KLogger)
   suspend fun <S : Message> startAsync(
     subscription: Subscription<S>,
     entity: String,
-    batchConsumerConfig: BatchConfig? = null,
+    batchConfig: BatchConfig? = null,
     concurrency: Int,
     processor: suspend (S, MillisInstant) -> Unit,
     beforeDlq: (suspend (S, Exception) -> Unit)? = null,
@@ -82,22 +92,22 @@ interface InfiniticConsumer {
   ): Job
 
   /**
-   * Starts processing messages from a given subscription.
+   * Starts processing of messages from the given subscription.
    *
-   * @param M The type of the messages to be consumed.
    * @param subscription The subscription from which to consume messages.
    * @param entity The entity associated with the consumer.
+   * @param batchConfig An optional configuration for batching messages when receiving and sending.
    * @param concurrency The number of concurrent coroutines for processing messages.
-   * @param process A suspending function to process the deserialized message along with its publishing time.
-   * @param beforeDlq An optional suspending function to execute before sending a message to DLQ.
-   * @param batchProcessorConfig An optional suspending function to configure message batching.
-   * @param batchProcessor An optional suspending function to process batches of messages.
+   * @param process A function to process the deserialized message along with its publishing time.
+   * @param beforeDlq An optional function to execute before sending a message to DLQ.
+   * @param batchProcessorConfig An optional function to configure message batching when processing.
+   * @param batchProcessor An optional function to process batches of messages.
    */
   context(CoroutineScope, KLogger)
   suspend fun <M : Message> start(
     subscription: Subscription<M>,
     entity: String,
-    batchConsumerConfig: BatchConfig? = null,
+    batchConfig: BatchConfig? = null,
     concurrency: Int,
     process: suspend (M, MillisInstant) -> Unit,
     beforeDlq: (suspend (M, Exception) -> Unit)? = null,
@@ -106,7 +116,7 @@ interface InfiniticConsumer {
   ) = startAsync(
       subscription,
       entity,
-      batchConsumerConfig,
+      batchConfig,
       concurrency,
       process,
       beforeDlq,

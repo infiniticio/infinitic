@@ -56,10 +56,12 @@ fun <T : TransportMessage<M>, M> TransportConsumer<T>.startConsuming(
       try {
         when (batchReceiving) {
           true -> {
-            batchReceive().forEach {
-              trace { "consuming: received $it from ${this@startConsuming.name}" }
-              channel.send(Result.success(it, it))
-            }
+            batchReceive()
+                .also { debug { "consuming: batch received ${it.size} from ${this@startConsuming.name}" } }
+                .forEach {
+                  trace { "consuming: received $it from ${this@startConsuming.name}" }
+                  channel.send(Result.success(it, it))
+                }
           }
 
           false -> {

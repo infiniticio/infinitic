@@ -33,7 +33,6 @@ import io.infinitic.common.transport.Subscription
 import io.infinitic.common.transport.config.BatchConfig
 import io.infinitic.common.transport.consumers.startAsync
 import io.infinitic.common.transport.interfaces.InfiniticConsumer
-import io.infinitic.common.transport.interfaces.TransportMessage
 import io.infinitic.pulsar.client.InfiniticPulsarClient
 import io.infinitic.pulsar.config.PulsarConsumerConfig
 import io.infinitic.pulsar.consumers.PulsarTransportConsumer
@@ -100,19 +99,11 @@ class PulsarInfiniticConsumer(
     }
   }
 
-  context(KLogger)
-  override suspend fun <M : Message> buildConsumer(
-    subscription: Subscription<M>,
-    entity: String,
-    batchConfig: BatchConfig?
-  ): PulsarTransportConsumer<M> =
-      buildConsumers(subscription, entity, batchConfig, null).first()
-
   context(CoroutineScope, KLogger)
   override suspend fun <S : Message> startAsync(
     subscription: Subscription<S>,
     entity: String,
-    batchConsumerConfig: BatchConfig?,
+    batchConfig: BatchConfig?,
     concurrency: Int,
     processor: suspend (S, MillisInstant) -> Unit,
     beforeDlq: (suspend (S, Exception) -> Unit)?,
@@ -120,18 +111,16 @@ class PulsarInfiniticConsumer(
     batchProcessor: (suspend (List<S>, List<MillisInstant>) -> Unit)?
   ): Job {
 
-    val deserialize = { message: TransportMessage<S> -> message.deserialize() }
-
     return when (subscription.withKey) {
       true -> {
         // multiple consumers with unique processing
-        val consumers = buildConsumers(subscription, entity, batchConsumerConfig, concurrency)
+        val consumers = buildConsumers(subscription, entity, batchConfig, concurrency)
         launch {
           repeat(concurrency) { index ->
             consumers[index].startAsync(
-                batchConsumerConfig,
+                batchConfig,
                 concurrency = 1,
-                deserialize,
+                { it.deserialize() },
                 processor,
                 beforeDlq,
                 batchProcessorConfig,
@@ -143,11 +132,11 @@ class PulsarInfiniticConsumer(
 
       false -> {
         // unique consumer with parallel processing
-        val consumer = buildConsumer(subscription, entity, batchConsumerConfig)
+        val consumer = buildConsumer(subscription, entity, batchConfig)
         consumer.startAsync(
-            batchConsumerConfig,
+            batchConfig,
             concurrency,
-            deserialize,
+            { it.deserialize() },
             processor,
             beforeDlq,
             batchProcessorConfig,

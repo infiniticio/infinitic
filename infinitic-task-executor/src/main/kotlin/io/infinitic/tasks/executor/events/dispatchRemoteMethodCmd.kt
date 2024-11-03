@@ -44,7 +44,7 @@ internal fun CoroutineScope.dispatchRemoteMethodCmd(
   workflowTaskInstant: MillisInstant,
   producer: InfiniticProducer,
 ) = launch {
-  val emitterName = EmitterName(producer.getName())
+  val emitterName = EmitterName(producer.getProducerName())
   val dispatchNewMethod: DispatchNewMethodCommand = pastCommand.command
   val workflowMethodId = WorkflowMethodId.from(pastCommand.commandId)
 

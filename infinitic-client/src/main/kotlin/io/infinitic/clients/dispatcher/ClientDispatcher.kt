@@ -118,7 +118,7 @@ internal class ClientDispatcher(
 ) : ProxyDispatcher {
 
   // Name of the client
-  private val emitterName by lazy { runBlocking { EmitterName(producer.getName()) } }
+  private val emitterName by lazy { runBlocking { EmitterName(producer.getProducerName()) } }
 
   // This as requester
   private val clientRequester by lazy { ClientRequester(clientName = ClientName.from(emitterName)) }

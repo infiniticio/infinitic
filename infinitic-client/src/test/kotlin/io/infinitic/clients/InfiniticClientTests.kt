@@ -146,7 +146,7 @@ private suspend fun engineResponse() {
 
 internal val mockedProducer = mockk<InMemoryInfiniticProducer> {
   coEvery {
-    getName()
+    getProducerName()
   } returns "$clientNameTest"
   coEvery {
     with(capture(taskTagSlots)) { sendTo(ServiceTagEngineTopic) }

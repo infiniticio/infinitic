@@ -41,7 +41,7 @@ import kotlinx.coroutines.launch
 
 class WorkflowStateCmdHandler(val producer: InfiniticProducer) {
 
-  private suspend fun getEmitterName() = EmitterName(producer.getName())
+  private suspend fun getEmitterName() = EmitterName(producer.getProducerName())
 
   suspend fun batchProcess(
     messages: List<WorkflowStateEngineMessage>,

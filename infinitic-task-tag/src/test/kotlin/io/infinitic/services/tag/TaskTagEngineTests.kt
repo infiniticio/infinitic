@@ -80,7 +80,7 @@ private var delegatedTaskData = slot<DelegatedTaskData>()
 private lateinit var tagStateStorage: TaskTagStorage
 
 private val producerMock = mockk<InfiniticProducer> {
-  coEvery { getName() } returns "$workerName"
+  coEvery { getProducerName() } returns "$workerName"
   coEvery { capture(clientMessage).sendTo(ClientTopic) } returns Unit
   coEvery { capture(workflowStateEngineMessage).sendTo(WorkflowStateEngineTopic) } returns Unit
 }
@@ -168,7 +168,7 @@ internal class TaskTagEngineTests :
           // then
           coVerifySequence {
             tagStateStorage.getTaskIdsForTag(msgIn.taskTag, msgIn.serviceName)
-            producerMock.getName()
+            producerMock.getProducerName()
             with(producerMock) { capture(clientMessage).sendTo(ClientTopic) }
           }
           captured(taskTag) shouldBe msgIn.taskTag
@@ -234,7 +234,7 @@ internal class TaskTagEngineTests :
           getTaskEngine(delegatedTaskData).handle(msgIn, emittedAt)
           // then
           coVerifySequence {
-            producerMock.getName()
+            producerMock.getProducerName()
             tagStateStorage.getDelegatedTaskData(msgIn.taskId)
             with(producerMock) {
               capture(workflowStateEngineMessage).sendTo(
@@ -274,7 +274,7 @@ internal class TaskTagEngineTests :
           getTaskEngine(delegatedTaskData).handle(msgIn, emittedAt)
           // then
           coVerifySequence {
-            producerMock.getName()
+            producerMock.getProducerName()
             tagStateStorage.getDelegatedTaskData(msgIn.taskId)
             with(producerMock) { capture(clientMessage).sendTo(ClientTopic) }
             tagStateStorage.delDelegatedTaskData(msgIn.taskId)

@@ -34,7 +34,7 @@ interface InfiniticProducer {
   /**
    * Name of the sender
    */
-  suspend fun getName(): String
+  suspend fun getProducerName(): String
 
   fun setSuggestedName(name: String)
 

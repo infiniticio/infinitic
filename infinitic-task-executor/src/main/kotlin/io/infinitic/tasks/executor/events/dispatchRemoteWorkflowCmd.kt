@@ -44,7 +44,7 @@ internal fun CoroutineScope.dispatchRemoteWorkflowCmd(
   workflowTaskInstant: MillisInstant,
   producer: InfiniticProducer
 ) = launch {
-  val emitterName = EmitterName(producer.getName())
+  val emitterName = EmitterName(producer.getProducerName())
   val dispatchNewWorkflow = pastCommand.command
   val customId = dispatchNewWorkflow.workflowTags.customId
 

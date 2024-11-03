@@ -38,7 +38,7 @@ suspend fun InfiniticProducer.dispatchRemoteSignal(
   signal: RemoteSignalDispatched,
   requester: Requester
 ) {
-  suspend fun getEmitterName() = EmitterName(getName())
+  suspend fun getEmitterName() = EmitterName(getProducerName())
 
   when (signal) {
     is RemoteSignalDispatchedById -> when (signal.workflowId) {

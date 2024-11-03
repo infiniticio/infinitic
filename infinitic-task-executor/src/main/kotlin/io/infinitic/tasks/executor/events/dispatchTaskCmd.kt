@@ -42,7 +42,7 @@ internal fun CoroutineScope.dispatchTaskCmd(
   workflowTaskInstant: MillisInstant,
   producer: InfiniticProducer
 ) = launch {
-  val emitterName = EmitterName(producer.getName())
+  val emitterName = EmitterName(producer.getProducerName())
   val dispatchTaskCommand = pastCommand.command
 
   // Description of the dispatched task

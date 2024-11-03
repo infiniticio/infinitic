@@ -102,7 +102,7 @@ class WorkflowStateEngine(
     val logger = KotlinLogging.logger {}
   }
 
-  private suspend fun getEmitterName() = EmitterName(_producer.getName())
+  private suspend fun getEmitterName() = EmitterName(_producer.getProducerName())
 
   suspend fun batchProcess(
     messages: List<WorkflowStateEngineMessage>,

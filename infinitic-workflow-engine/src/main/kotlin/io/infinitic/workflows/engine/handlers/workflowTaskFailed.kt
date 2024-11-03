@@ -78,7 +78,7 @@ internal fun CoroutineScope.workflowTaskFailed(
   )
   launch {
     with(producer) {
-      methodFailedEvent.copy(emitterName = EmitterName(producer.getName()))
+      methodFailedEvent.copy(emitterName = EmitterName(producer.getProducerName()))
           .sendTo(WorkflowStateEventTopic)
     }
   }

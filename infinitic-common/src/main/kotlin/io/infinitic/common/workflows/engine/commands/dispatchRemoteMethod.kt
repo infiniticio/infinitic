@@ -50,7 +50,7 @@ suspend fun InfiniticProducer.dispatchRemoteMethod(
   requester: Requester,
 ) = coroutineScope {
 
-  suspend fun getEmitterName() = EmitterName(getName())
+  suspend fun getEmitterName() = EmitterName(getProducerName())
 
   when (remote) {
     // New Workflow

@@ -41,7 +41,7 @@ internal fun CoroutineScope.dispatchInstantTimerCmd(
   workflowTaskInstant: MillisInstant,
   producer: InfiniticProducer
 ) = launch {
-  val emitterName = EmitterName(producer.getName())
+  val emitterName = EmitterName(producer.getProducerName())
   val startInstantTimer = pastCommand.command
 
   // Description of the dispatched timer

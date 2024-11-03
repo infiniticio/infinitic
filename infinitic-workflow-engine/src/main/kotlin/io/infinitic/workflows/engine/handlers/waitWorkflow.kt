@@ -46,7 +46,7 @@ internal fun CoroutineScope.waitWorkflow(
             recipientName = clientName,
             workflowId = message.workflowId,
             workflowMethodId = message.workflowMethodId,
-            emitterName = EmitterName(producer.getName()),
+            emitterName = EmitterName(producer.getProducerName()),
         )
         with(producer) { methodRunUnknown.sendTo(ClientTopic) }
       }
