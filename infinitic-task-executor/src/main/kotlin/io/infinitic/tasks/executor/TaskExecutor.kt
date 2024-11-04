@@ -108,9 +108,17 @@ class TaskExecutor(
       executeTasksMap.map { (serviceNameAndMethodName, executeTasks) ->
         when (serviceNameAndMethodName.first.isWorkflowTask()) {
           // for workflow tasks, we run them in parallel
-          true -> executeTasks.map { async { it.process() } }
+          true -> executeTasks.forEach { launch { it.process() } }
           // for services, we use the batched method
-          false -> async { executeTasks.process() }
+          false -> {
+            val (_, serviceMethod) = executeTasks.first().getInstanceAndMethod()
+            when (serviceMethod.getBatchMethod()) {
+              // there is no batch method, we just proceed with the task one by one
+              null -> executeTasks.forEach { launch { it.process() } }
+              // process using the batch method.
+              else -> launch { executeTasks.process() }
+            }
+          }
         }
       }
     }

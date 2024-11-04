@@ -451,6 +451,11 @@ class InfiniticWorker(
         }
       }
 
+      val batchProcessorConfig = config.batch?.normalized(
+          "taskExecutor:" + config.serviceName,
+          config.concurrency,
+      )
+
       consumerFactory.startAsync(
           subscription = MainSubscription(ServiceExecutorTopic),
           entity = config.serviceName,
@@ -458,7 +463,9 @@ class InfiniticWorker(
           concurrency = config.concurrency,
           processor = processor,
           beforeDlq = beforeDlq,
-          batchProcessorConfig = { msg -> taskExecutor.getBatchConfig(msg) },
+          batchProcessorConfig = { msg ->
+            taskExecutor.getBatchConfig(msg) ?: batchProcessorConfig
+          },
           batchProcessor = batchProcessor,
       )
     }
