@@ -43,6 +43,7 @@ import kotlin.coroutines.cancellation.CancellationException
  */
 context(CoroutineScope, KLogger)
 fun <T : TransportMessage<M>, M> TransportConsumer<T>.startConsuming(
+  batchReceiving: Boolean,
   channel: Channel<Result<TransportMessage<M>, TransportMessage<M>>> = Channel(),
 ): Channel<Result<T, T>> {
   debug { "startConsuming: starting producing on channel ${channel.hashCode()} from ${this@startConsuming.name}" }
@@ -53,10 +54,23 @@ fun <T : TransportMessage<M>, M> TransportConsumer<T>.startConsuming(
     trace { "startConsuming: producer added to consuming channel ${channel.hashCode()}" }
     while (isActive) {
       try {
-        val msg = receive().also {
-          trace { "consuming: received $it from ${this@startConsuming.name}" }
+        when (batchReceiving) {
+          true -> {
+            batchReceive()
+                .also { debug { "consuming: batch received ${it.size} from ${this@startConsuming.name}" } }
+                .forEach {
+                  trace { "consuming: received $it from ${this@startConsuming.name}" }
+                  channel.send(Result.success(it, it))
+                }
+          }
+
+          false -> {
+            receive().let {
+              trace { "consuming: received $it from ${this@startConsuming.name}" }
+              channel.send(Result.success(it, it))
+            }
+          }
         }
-        channel.send(Result.success(msg, msg))
       } catch (e: CancellationException) {
         // do nothing, will exit if calling scope is not active anymore
       } catch (e: Exception) {

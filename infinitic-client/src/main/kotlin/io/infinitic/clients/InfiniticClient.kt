@@ -35,7 +35,6 @@ import io.infinitic.common.proxies.RequestByWorkflowId
 import io.infinitic.common.proxies.RequestByWorkflowTag
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.transport.interfaces.InfiniticConsumer
 import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.transport.interfaces.InfiniticResources
 import io.infinitic.common.utils.annotatedName
@@ -66,11 +65,19 @@ class InfiniticClient(
 
   private val resources: InfiniticResources by lazy { config.transport.resources }
 
-  private val consumer: InfiniticConsumer by lazy { config.transport.consumer }
+  private val consumerFactory by lazy {
+    // get consumerFactory from transport
+    config.transport.consumerFactory
+  }
 
   private val producer: InfiniticProducer by lazy {
-    config.transport.producer.apply { config.name?.let { setSuggestedName(it) } }
+    // get producer from transport, apply name if present
+    config.transport.producerFactory
+        .apply { config.name?.let { setName(it) } }
+        .getProducer(null)
   }
+
+  override fun getName() = producer.emitterName.toString()
 
   private val shutdownGracePeriodSeconds = config.transport.shutdownGracePeriodSeconds
 
@@ -79,9 +86,7 @@ class InfiniticClient(
   // Scope used to asynchronously send message, and also to consumes messages
   internal val clientScope = CoroutineScope(Dispatchers.IO)
 
-  private val dispatcher by lazy { ClientDispatcher(clientScope, consumer, producer) }
-
-  override suspend fun getName() = producer.getName()
+  private val dispatcher by lazy { ClientDispatcher(clientScope, consumerFactory, producer) }
 
   /** Get last Deferred created by the call of a stub */
   override val lastDeferred get() = dispatcher.getLastDeferred()
@@ -114,7 +119,7 @@ class InfiniticClient(
    * (Do NOT delete the client DLQ topic to allow manual inspection of failed messages)
    */
   private suspend fun deleteClientTopic() {
-    if (::consumer.isLazyInitialized) {
+    if (::consumerFactory.isLazyInitialized) {
       val name = getName()
       resources.deleteTopicForClient(name).getOrElse {
         logger.warn(it) { "Unable to delete topic for client $name, please delete it manually." }

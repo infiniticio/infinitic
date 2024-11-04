@@ -23,17 +23,16 @@
 package io.infinitic.common.workflows.engine.commands
 
 import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.requester.Requester
 import io.infinitic.common.requester.WorkflowRequester
 import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.executors.errors.TaskTimedOutError
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.tags.messages.AddTaskIdToTag
-import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.transport.ServiceExecutorTopic
 import io.infinitic.common.transport.ServiceTagEngineTopic
 import io.infinitic.common.transport.WorkflowStateTimerTopic
+import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.workflows.engine.messages.RemoteTaskTimedOut
 import io.infinitic.common.workflows.engine.messages.data.TaskDispatched
 import kotlinx.coroutines.coroutineScope
@@ -43,8 +42,6 @@ suspend fun InfiniticProducer.dispatchTask(
   taskDispatched: TaskDispatched,
   requester: Requester
 ) = coroutineScope {
-  val emitterName = EmitterName(getName())
-
   val executeTask = with(taskDispatched) {
     ExecuteTask(
         serviceName = serviceName,

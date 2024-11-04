@@ -48,11 +48,11 @@ class CaffeineCachedKeyValueTests :
         }
 
         "delValue should do nothing on unknown key" {
-          shouldNotThrowAny { storage.delValue(unknown) }
+          shouldNotThrowAny { storage.putValue(unknown, null) }
         }
 
         "delValue should delete a value on known key" {
-          storage.delValue(known)
+          storage.putValue(known, null)
           storage.getValue(known) shouldBe null
         }
 

@@ -25,7 +25,7 @@ package io.infinitic.common.transport.consumers
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.fixtures.later
-import io.infinitic.common.transport.BatchConfig
+import io.infinitic.common.transport.BatchProcessorConfig
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.collections.shouldNotContain
@@ -61,7 +61,7 @@ internal class ProcessorConsumerWithBatchTests : StringSpec(
 
           with(scope) {
             consumer
-                .startAsync(3, ::deserialize, ::process, null, ::batchConfig, ::processBatch)
+                .startAsync(null, 3, ::deserialize, ::process, null, ::batchConfig, ::processBatch)
                 .join()
           }
           receivedList.size shouldBeGreaterThan 0
@@ -77,6 +77,7 @@ internal class ProcessorConsumerWithBatchTests : StringSpec(
           with(getScope()) {
             consumer
                 .startAsync(
+                    null,
                     3,
                     ::deserializeWitError,
                     ::process,
@@ -106,6 +107,7 @@ internal class ProcessorConsumerWithBatchTests : StringSpec(
           with(getScope()) {
             consumer
                 .startAsync(
+                    null,
                     3,
                     ::deserialize,
                     ::processWithError,
@@ -125,13 +127,14 @@ internal class ProcessorConsumerWithBatchTests : StringSpec(
 
       "An Error during getBatchingConfig triggers quitting, but does not prevent finishing current processing" {
         with(logger) {
-          fun batchConfigWithError(deserialized: DeserializedIntMessage): BatchConfig? =
+          fun batchConfigWithError(deserialized: DeserializedIntMessage): BatchProcessorConfig? =
               if (deserialized.value.value == 10) throw Error("Expected Error")
               else batchConfig(deserialized)
 
           with(getScope()) {
             consumer
                 .startAsync(
+                    null,
                     3,
                     ::deserialize,
                     ::process,
@@ -158,6 +161,7 @@ internal class ProcessorConsumerWithBatchTests : StringSpec(
           with(getScope()) {
             consumer
                 .startAsync(
+                    null,
                     3,
                     ::deserialize,
                     ::process,
@@ -185,6 +189,7 @@ internal class ProcessorConsumerWithBatchTests : StringSpec(
           with(getScope()) {
             consumer
                 .startAsync(
+                    null,
                     3,
                     ::deserializeWithException,
                     ::process,
@@ -215,6 +220,7 @@ internal class ProcessorConsumerWithBatchTests : StringSpec(
           with(getScope()) {
             consumer
                 .startAsync(
+                    null,
                     3,
                     ::deserialize,
                     ::processWithException,
@@ -232,7 +238,7 @@ internal class ProcessorConsumerWithBatchTests : StringSpec(
 
       "An Exception during getBatchingConfig triggers quitting, but does not prevent finishing current processing" {
         with(logger) {
-          fun batchConfigWithException(deserialized: DeserializedIntMessage): BatchConfig? =
+          fun batchConfigWithException(deserialized: DeserializedIntMessage): BatchProcessorConfig? =
               when (deserialized.value.value) {
                 10 -> throw Exception("Expected Exception")
                 20 -> throw Error("Expected Error")
@@ -242,6 +248,7 @@ internal class ProcessorConsumerWithBatchTests : StringSpec(
           with(getScope()) {
             consumer
                 .startAsync(
+                    null,
                     3,
                     ::deserialize,
                     ::process,
@@ -273,6 +280,7 @@ internal class ProcessorConsumerWithBatchTests : StringSpec(
           with(getScope()) {
             consumer
                 .startAsync(
+                    null,
                     3,
                     ::deserialize,
                     ::process,

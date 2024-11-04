@@ -22,15 +22,14 @@
  */
 package io.infinitic.common.workflows.engine.commands
 
-import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.requester.Requester
 import io.infinitic.common.requester.WorkflowRequester
 import io.infinitic.common.requester.workflowId
-import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.transport.WorkflowStateCmdTopic
 import io.infinitic.common.transport.WorkflowStateEventTopic
 import io.infinitic.common.transport.WorkflowStateTimerTopic
 import io.infinitic.common.transport.WorkflowTagEngineTopic
+import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.workflows.engine.messages.DispatchMethod
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import io.infinitic.common.workflows.engine.messages.MethodCommandedEvent
@@ -50,8 +49,6 @@ suspend fun InfiniticProducer.dispatchRemoteMethod(
   requester: Requester,
 ) = coroutineScope {
 
-  suspend fun getEmitterName() = EmitterName(getName())
-
   when (remote) {
     // New Workflow
     is RemoteWorkflowDispatched -> {
@@ -65,7 +62,7 @@ suspend fun InfiniticProducer.dispatchRemoteMethod(
                   workflowName = workflowName,
                   workflowTag = it,
                   workflowId = workflowId,
-                  emitterName = getEmitterName(),
+                  emitterName = emitterName,
                   emittedAt = emittedAt,
               )
             }
@@ -86,7 +83,7 @@ suspend fun InfiniticProducer.dispatchRemoteMethod(
             workflowMeta = workflowMeta,
             requester = requester,
             clientWaiting = false,
-            emitterName = getEmitterName(),
+            emitterName = emitterName,
             emittedAt = emittedAt,
         )
       }
@@ -95,7 +92,7 @@ suspend fun InfiniticProducer.dispatchRemoteMethod(
       // send a timeout if needed
       remote.timeout?.let {
         launch {
-          val remoteMethodTimedOut = dispatchWorkflow.remoteMethodTimedOut(getEmitterName(), it)
+          val remoteMethodTimedOut = dispatchWorkflow.remoteMethodTimedOut(emitterName, it)
           remoteMethodTimedOut.sendTo(WorkflowStateTimerTopic, it)
         }
       }
@@ -117,7 +114,7 @@ suspend fun InfiniticProducer.dispatchRemoteMethod(
             workflowMeta = workflowMeta,
             requester = requester,
             clientWaiting = false,
-            emitterName = getEmitterName(),
+            emitterName = emitterName,
             emittedAt = emittedAt,
         )
       }
@@ -136,7 +133,7 @@ suspend fun InfiniticProducer.dispatchRemoteMethod(
             methodParameterTypes = methodParameterTypes,
             requester = requester,
             clientWaiting = false,
-            emitterName = getEmitterName(),
+            emitterName = emitterName,
             emittedAt = emittedAt,
         )
       }
@@ -158,7 +155,7 @@ suspend fun InfiniticProducer.dispatchRemoteMethod(
                   methodParameters = dispatchMethod.methodParameters,
                   methodParameterTypes = dispatchMethod.methodParameterTypes,
                   requester = requester,
-                  emitterName = getEmitterName(),
+                  emitterName = emitterName,
               )
             }
             methodCommandedEvent.sendTo(WorkflowStateEventTopic)
@@ -174,7 +171,7 @@ suspend fun InfiniticProducer.dispatchRemoteMethod(
       // as the timeout is relative to the current workflow
       remote.timeout?.let {
         launch {
-          val remoteMethodTimedOut = dispatchMethod.remoteMethodTimedOut(getEmitterName(), it)
+          val remoteMethodTimedOut = dispatchMethod.remoteMethodTimedOut(emitterName, it)
           remoteMethodTimedOut.sendTo(WorkflowStateTimerTopic, it)
         }
       }
@@ -193,7 +190,7 @@ suspend fun InfiniticProducer.dispatchRemoteMethod(
             methodTimeout = timeout,
             requester = requester,
             clientWaiting = false,
-            emitterName = getEmitterName(),
+            emitterName = emitterName,
             emittedAt = emittedAt,
         )
       }

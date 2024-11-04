@@ -22,8 +22,8 @@
  */
 package io.infinitic.transport.config
 
-import io.infinitic.inMemory.InMemoryInfiniticConsumer
-import io.infinitic.inMemory.InMemoryInfiniticProducer
+import io.infinitic.inMemory.InMemoryConsumerFactory
+import io.infinitic.inMemory.InMemoryInfiniticProducerFactory
 import io.infinitic.inMemory.InMemoryInfiniticResources
 import io.infinitic.inMemory.channels.InMemoryChannels
 
@@ -41,8 +41,11 @@ data class InMemoryTransportConfig(
   private val eventListenerChannels = InMemoryChannels()
 
   override val resources = InMemoryInfiniticResources(mainChannels)
-  override val consumer = InMemoryInfiniticConsumer(mainChannels, eventListenerChannels)
-  override val producer = InMemoryInfiniticProducer(mainChannels, eventListenerChannels)
+
+  override val consumerFactory = InMemoryConsumerFactory(mainChannels, eventListenerChannels)
+
+  override val producerFactory =
+      InMemoryInfiniticProducerFactory(mainChannels, eventListenerChannels)
 
   override fun close() {
     // Do nothing

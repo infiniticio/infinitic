@@ -68,11 +68,11 @@ class PulsarInfiniticProducerTests : StringSpec(
       val namespace = pulsarConfig.namespace
       val pulsarResources = pulsarConfig.pulsarResources
 
-      val pulsarProducer = PulsarInfiniticProducer(
+      val pulsarInfiniticProducer = PulsarInfiniticProducerFactory(
           pulsarConfig.infiniticPulsarClient,
           pulsarConfig.producer,
           pulsarResources,
-      )
+      ).getProducer(null)
 
       beforeEach {
         InfiniticPulsarClient.clearCaches()
@@ -89,7 +89,7 @@ class PulsarInfiniticProducerTests : StringSpec(
         val message = TestFactory.random<ClientMessage>()
 
         // publishing to an absent ClientTopic should not throw
-        shouldNotThrowAny { pulsarProducer.internalSendTo(message, ClientTopic) }
+        shouldNotThrowAny { pulsarInfiniticProducer.internalSendTo(message, ClientTopic) }
 
         // publishing to an absent ClientTopic should NOT create it
         val topic = with(pulsarResources) { ClientTopic.fullName(message.entity()) }
@@ -107,13 +107,13 @@ class PulsarInfiniticProducerTests : StringSpec(
         admin.createTopic(topic, false, 3600).isSuccess shouldBe true
 
         // publishing to an existing ClientTopic should not throw
-        shouldNotThrowAny { pulsarProducer.internalSendTo(message, ClientTopic) }
+        shouldNotThrowAny { pulsarInfiniticProducer.internalSendTo(message, ClientTopic) }
 
         // topic deletion
         admin.deleteTopic(topic).isSuccess shouldBe true
 
         // publishing to a used but deleted ClientTopic should not throw
-        shouldNotThrowAny { pulsarProducer.internalSendTo(message, ClientTopic) }
+        shouldNotThrowAny { pulsarInfiniticProducer.internalSendTo(message, ClientTopic) }
 
         // publishing to a used but deleted ClientTopic should NOT create it
         admin.getTopicInfo(topic).getOrThrow() shouldBe null
@@ -124,7 +124,7 @@ class PulsarInfiniticProducerTests : StringSpec(
 
         // publishing to an absent ClientTopic should not throw
         shouldNotThrowAny {
-          pulsarProducer.internalSendTo(message, WorkflowTagEngineTopic)
+          pulsarInfiniticProducer.internalSendTo(message, WorkflowTagEngineTopic)
         }
 
         // publishing to an absent WorkflowTagTopic should create it
@@ -137,7 +137,7 @@ class PulsarInfiniticProducerTests : StringSpec(
 
         // publishing to an absent WorkflowCmdTopic should not throw
         shouldNotThrowAny {
-          pulsarProducer.internalSendTo(message, WorkflowStateCmdTopic)
+          pulsarInfiniticProducer.internalSendTo(message, WorkflowStateCmdTopic)
         }
 
         // publishing to an absent WorkflowCmdTopic should create it
@@ -150,7 +150,7 @@ class PulsarInfiniticProducerTests : StringSpec(
 
         // publishing to an absent WorkflowEngineTopic should not throw
         shouldNotThrowAny {
-          pulsarProducer.internalSendTo(message, WorkflowStateEngineTopic)
+          pulsarInfiniticProducer.internalSendTo(message, WorkflowStateEngineTopic)
         }
 
         // publishing to an absent WorkflowEngineTopic should create it
@@ -163,7 +163,11 @@ class PulsarInfiniticProducerTests : StringSpec(
 
         // publishing to an absent DelayedWorkflowEngineTopic should not throw
         shouldNotThrowAny {
-          pulsarProducer.internalSendTo(message, WorkflowStateTimerTopic, MillisDuration(1))
+          pulsarInfiniticProducer.internalSendTo(
+              message,
+              WorkflowStateTimerTopic,
+              MillisDuration(1),
+          )
         }
 
         // publishing to an absent DelayedWorkflowEngineTopic should create it
@@ -178,7 +182,7 @@ class PulsarInfiniticProducerTests : StringSpec(
 
         // publishing to an absent WorkflowEventsTopic should not throw
         shouldNotThrowAny {
-          pulsarProducer.internalSendTo(message, WorkflowStateEventTopic)
+          pulsarInfiniticProducer.internalSendTo(message, WorkflowStateEventTopic)
         }
 
         // publishing to an absent WorkflowEventsTopic should create it
@@ -194,7 +198,7 @@ class PulsarInfiniticProducerTests : StringSpec(
 
         // publishing to an absent WorkflowTaskExecutorTopic should not throw
         shouldNotThrowAny {
-          pulsarProducer.internalSendTo(message, WorkflowExecutorTopic)
+          pulsarInfiniticProducer.internalSendTo(message, WorkflowExecutorTopic)
         }
 
         // publishing to an absent WorkflowTaskExecutorTopic should create it
@@ -210,7 +214,11 @@ class PulsarInfiniticProducerTests : StringSpec(
 
         // publishing to an absent DelayedWorkflowTaskExecutorTopic should not throw
         shouldNotThrowAny {
-          pulsarProducer.internalSendTo(message, WorkflowExecutorRetryTopic, MillisDuration(1))
+          pulsarInfiniticProducer.internalSendTo(
+              message,
+              WorkflowExecutorRetryTopic,
+              MillisDuration(1),
+          )
         }
 
         // publishing to an absent DelayedWorkflowTaskExecutorTopic should create it
@@ -227,7 +235,7 @@ class PulsarInfiniticProducerTests : StringSpec(
 
         // publishing to an absent WorkflowTaskEventsTopic should not throw
         shouldNotThrowAny {
-          pulsarProducer.internalSendTo(message, WorkflowExecutorEventTopic)
+          pulsarInfiniticProducer.internalSendTo(message, WorkflowExecutorEventTopic)
         }
 
         // publishing to an absent WorkflowTaskEventsTopic should create it
@@ -240,7 +248,7 @@ class PulsarInfiniticProducerTests : StringSpec(
 
         // publishing to an absent ServiceExecutorTopic should not throw
         shouldNotThrowAny {
-          pulsarProducer.internalSendTo(message, ServiceExecutorTopic)
+          pulsarInfiniticProducer.internalSendTo(message, ServiceExecutorTopic)
         }
 
         // publishing to an absent ServiceExecutorTopic should create it
@@ -253,7 +261,7 @@ class PulsarInfiniticProducerTests : StringSpec(
 
         // publishing to an absent DelayedServiceExecutorTopic should not throw
         shouldNotThrowAny {
-          pulsarProducer.internalSendTo(
+          pulsarInfiniticProducer.internalSendTo(
               message,
               ServiceExecutorRetryTopic,
               MillisDuration(1),
@@ -270,7 +278,7 @@ class PulsarInfiniticProducerTests : StringSpec(
 
         // publishing to an absent ServiceEventsTopic should not throw
         shouldNotThrowAny {
-          pulsarProducer.internalSendTo(message, ServiceExecutorEventTopic)
+          pulsarInfiniticProducer.internalSendTo(message, ServiceExecutorEventTopic)
         }
 
         // publishing to an absent ServiceEventsTopic should create it

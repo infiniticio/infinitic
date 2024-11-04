@@ -22,12 +22,15 @@
  */
 package io.infinitic.common.transport.consumers
 
+import io.github.oshai.kotlinlogging.KLogger
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
 
+context(KLogger)
 internal suspend fun <M> Channel<M>.receiveIfNotClose(): M? =
     try {
-      receive()
+      receive().also { trace { "receiveIfNotClose: received $it" } }
     } catch (e: ClosedReceiveChannelException) {
+      debug { "receiveIfNotClose: channel closed" }
       null
     }

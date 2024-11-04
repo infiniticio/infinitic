@@ -25,9 +25,26 @@ package io.infinitic.storage.keyValue
 import io.infinitic.storage.Flushable
 
 interface KeyValueStorage : Flushable, AutoCloseable {
+  /**
+   * Retrieves the value associated with the specified key from the storage.
+   */
   suspend fun get(key: String): ByteArray?
 
-  suspend fun put(key: String, value: ByteArray)
+  /**
+   * Stores the given byte array value associated with the specified key.
+   * If the value is null, it should delete the corresponding key.
+   */
+  suspend fun put(key: String, bytes: ByteArray?)
 
-  suspend fun del(key: String)
+  /**
+   * Retrieves the values associated with the specified keys from the storage.
+   */
+  suspend fun getSet(keys: Set<String>): Map<String, ByteArray?>
+
+  /**
+   * Stores multiple key-value pairs in the storage system.
+   * - If the value is null, it should delete the corresponding key.
+   * - This operation MUST be atomic
+   */
+  suspend fun putSet(bytes: Map<String, ByteArray?>)
 }

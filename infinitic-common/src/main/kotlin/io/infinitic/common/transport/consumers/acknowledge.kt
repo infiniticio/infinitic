@@ -73,14 +73,18 @@ fun <T : TransportMessage<M>, M : Any, I> Channel<Result<T, I>>.acknowledge(
 
 context(KLogger)
 private suspend fun <S> TransportMessage<S>.tryAcknowledge() = try {
+  trace { "Acknowledging message ${this.messageId}" }
   acknowledge()
+  debug { "Acknowledged message ${this.messageId}" }
 } catch (e: Exception) {
   warn(e) { "Error when acknowledging ${deserializeOrNull()?.string ?: messageId}" }
 }
 
 context(KLogger)
 private suspend fun <S> TransportMessage<S>.tryNegativeAcknowledge() = try {
+  trace { "Negatively acknowledging message ${this.messageId}" }
   negativeAcknowledge()
+  debug { "Negatively acknowledged message ${this.messageId}" }
 } catch (e: Exception) {
   warn(e) { "Error when negatively acknowledging ${deserializeOrNull()?.string ?: messageId}" }
   null

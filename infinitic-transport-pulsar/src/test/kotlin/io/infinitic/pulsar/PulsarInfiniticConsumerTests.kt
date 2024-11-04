@@ -103,9 +103,8 @@ class PulsarInfiniticConsumerTests : StringSpec(
             Result.success(pulsarConsumer)
       }
 
-      val pulsarInfiniticConsumer = PulsarInfiniticConsumer(
-          client, pulsarConfig.consumer, pulsarResources,
-      )
+      val pulsarInfiniticConsumer =
+          PulsarInfiniticConsumerFactory(client, pulsarConfig.consumer, pulsarResources)
 
       fun getScope(): CoroutineScope {
         val scope = CoroutineScope(Dispatchers.IO)

@@ -24,9 +24,11 @@ package io.infinitic.common.transport.consumers
 
 import io.github.oshai.kotlinlogging.KLogger
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.selects.onTimeout
+import kotlinx.coroutines.selects.select
 
 /**
  * Starts batching messages received from the input channel and sends them to an output channel.
@@ -46,29 +48,18 @@ fun <S> Channel<S>.startBatching(
   outputChannel: Channel<in Many<S>>,
 ) = launch {
   var isOpen = true
-  debug { "batching: adding producer on output channel ${this.hashCode()} " }
+  debug { "batching: adding producer on output channel ${this@startBatching.hashCode()} " }
   outputChannel.addProducer()
-  trace { "batching: added producer on output channel ${this.hashCode()} " }
+  trace { "batching: added producer on output channel ${this@startBatching.hashCode()} " }
   while (isOpen) {
     // the only way to quit this loop is to close the input channel
-    val firstResult = receiveIfNotClose()
-        .also { trace { "batching: first receiving $it " } } ?: break
+    val first = receiveIfNotClose() ?: break
+    trace { "batching: receiving first $first " }
     val nextBatch = buildList {
-      add(firstResult)
-      withTimeoutOrNull(maxDuration) {
-        while (size < maxMessages) {
-          val result = receiveIfNotClose()
-              .also { trace { "batching: next receiving $it" } }
-          when (result) {
-            null -> {
-              isOpen = false
-              break
-            }
-
-            else -> add(result)
-          }
-        }
-      }
+      add(first)
+      val result = batchWithTimeout(maxMessages - 1, maxDuration)
+      result.messages.forEach { add(it) }
+      isOpen = result.isOpen
     }
     debug { "batching: sending ${Many(nextBatch)}" }
     outputChannel.send(Many(nextBatch))
@@ -78,3 +69,55 @@ fun <S> Channel<S>.startBatching(
   outputChannel.removeProducer()
   trace { "batching: closed" }
 }
+
+/**
+ * Collects messages from this channel into a batch until either the given maximum number of messages is collected
+ * or the specified timeout duration elapses.
+ *
+ * @param maxMessages The maximum number of messages to include in the batch.
+ * @param timeoutMillis The maximum duration (in milliseconds) to wait for messages before returning the batch.
+ * @return A BatchResult containing the collected messages and a flag indicating if the channel is still open.
+ */
+@OptIn(ExperimentalCoroutinesApi::class)
+suspend fun <S> Channel<S>.batchWithTimeout(
+  maxMessages: Int,
+  timeoutMillis: Long
+): BatchResult<S> {
+  val endTime = System.currentTimeMillis() + timeoutMillis
+  // isActive becomes false after timeout
+  var isActive = true
+  // isOpen becomes false if the channel is closed
+  var isOpen = true
+
+  val messages = mutableListOf<S>()
+
+  while (isActive && isOpen && messages.size < maxMessages) {
+    // Use select to handle both timeout and receive without message loss
+    select {
+      onTimeout(endTime - System.currentTimeMillis()) {
+        isActive = false
+      }
+
+      onReceiveCatching { result ->
+        when {
+          result.isClosed -> isOpen = false
+          else -> messages.add(result.getOrThrow())
+        }
+      }
+    }
+  }
+
+  return BatchResult(messages, isOpen)
+}
+
+/**
+ * Represents the result of collecting messages into a batch.
+ *
+ * @param S The type of the messages being collected.
+ * @param messages The list of messages collected in the batch.
+ * @param isOpen A flag indicating if the source channel is still open after collecting the batch.
+ */
+data class BatchResult<S>(
+  val messages: List<S>,
+  val isOpen: Boolean,
+)

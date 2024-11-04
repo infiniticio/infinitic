@@ -25,23 +25,19 @@ package io.infinitic.common.transport.logged
 import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.messages.Message
-import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.transport.Topic
+import io.infinitic.common.transport.interfaces.InfiniticProducer
 
 class LoggedInfiniticProducer(
   private val logger: KLogger,
   private val producer: InfiniticProducer,
 ) : InfiniticProducer {
 
-  override suspend fun getName() = producer.getName()
-
-  override fun setSuggestedName(name: String) {
-    producer.setSuggestedName(name)
-  }
+  override val emitterName by lazy { producer.emitterName }
 
   override suspend fun <T : Message> internalSendTo(
     message: T,
-    topic: Topic<T>,
+    topic: Topic<out T>,
     after: MillisDuration
   ) {
     logSending(message, after, topic)

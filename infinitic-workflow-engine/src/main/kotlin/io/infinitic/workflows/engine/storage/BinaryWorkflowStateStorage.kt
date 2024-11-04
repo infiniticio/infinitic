@@ -27,6 +27,8 @@ import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.common.workflows.engine.storage.WorkflowStateStorage
 import io.infinitic.storage.keyValue.KeyValueStorage
 import io.infinitic.storage.keyValue.WrappedKeyValueStorage
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import org.jetbrains.annotations.TestOnly
 
 /**
@@ -46,17 +48,34 @@ class BinaryWorkflowStateStorage(storage: KeyValueStorage) : WorkflowStateStorag
     return storage.get(key)?.let { WorkflowState.fromByteArray(it) }
   }
 
-  override suspend fun putState(workflowId: WorkflowId, workflowState: WorkflowState) {
+  override suspend fun putState(workflowId: WorkflowId, workflowState: WorkflowState?) {
     val key = getWorkflowStateKey(workflowId)
-    storage.put(key, workflowState.toByteArray())
+    storage.put(key, workflowState?.toByteArray())
   }
 
-  override suspend fun delState(workflowId: WorkflowId) {
-    val key = getWorkflowStateKey(workflowId)
-    storage.del(key)
+  override suspend fun getStates(workflowIds: List<WorkflowId>): Map<WorkflowId, WorkflowState?> {
+    val keys = workflowIds.associateWith { getWorkflowStateKey(it) }
+    val values = coroutineScope {
+      storage.getSet(keys.values.toSet())
+          .mapValues { async { it.value?.let { bytes -> WorkflowState.fromByteArray(bytes) } } }
+          .mapValues { it.value.await() }
+    }
+
+    return keys.mapValues { values[it.value] }
   }
 
-  @TestOnly override fun flush() = storage.flush()
+  override suspend fun putStates(workflowStates: Map<WorkflowId, WorkflowState?>) {
+    val map = coroutineScope {
+      workflowStates
+          .mapKeys { getWorkflowStateKey(it.key) }
+          .mapValues { async { it.value?.toByteArray() } }
+          .mapValues { it.value.await() }
+    }
+    storage.putSet(map)
+  }
+
+  @TestOnly
+  override fun flush() = storage.flush()
 
   private fun getWorkflowStateKey(workflowId: WorkflowId) = "workflow.state.$workflowId"
 }

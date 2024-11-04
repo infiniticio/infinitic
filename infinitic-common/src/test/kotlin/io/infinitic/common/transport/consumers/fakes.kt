@@ -24,7 +24,7 @@ package io.infinitic.common.transport.consumers
 
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.transport.BatchConfig
+import io.infinitic.common.transport.BatchProcessorConfig
 import io.infinitic.common.transport.Topic
 import io.infinitic.common.transport.interfaces.TransportConsumer
 import io.infinitic.common.transport.interfaces.TransportMessage
@@ -74,6 +74,8 @@ internal open class IntConsumer : TransportConsumer<IntMessage> {
   override suspend fun receive() = IntMessage(counter.incrementAndGet())
       .also { receivedList.add(it.value) }
 
+  override suspend fun batchReceive(): List<IntMessage> = listOf(receive(), receive())
+
   override val maxRedeliveryCount = 1
   override val name: String = this.toString()
 }
@@ -95,12 +97,12 @@ internal fun processBatch(batch: List<DeserializedIntMessage>, publishTimes: Lis
   processedList.addAll(batch.map { it.value.value })
 }
 
-internal fun batchConfig(deserialized: DeserializedIntMessage): BatchConfig? {
+internal fun batchConfig(deserialized: DeserializedIntMessage): BatchProcessorConfig? {
   val i = deserialized.value.value
   return when {
     (i % 3) == 0 -> null
-    (i % 3) == 1 -> BatchConfig("1", 20, MillisDuration(1000 * 3600 * 50))
-    (i % 3) == 2 -> BatchConfig("2", 20, MillisDuration(1000 * 3600 * 50))
+    (i % 3) == 1 -> BatchProcessorConfig("1", 20, MillisDuration(1000 * 3600 * 50))
+    (i % 3) == 2 -> BatchProcessorConfig("2", 20, MillisDuration(1000 * 3600 * 50))
     else -> throw IllegalStateException()
   }
 }

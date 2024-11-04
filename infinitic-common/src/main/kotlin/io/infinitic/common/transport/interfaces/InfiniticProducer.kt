@@ -23,26 +23,21 @@
 package io.infinitic.common.transport.interfaces
 
 import io.infinitic.common.data.MillisDuration
-import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.events.messages.ServiceExecutorEventMessage
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.transport.Topic
-import io.infinitic.common.transport.acceptDelayed
 import io.infinitic.common.transport.forWorkflow
 import io.infinitic.common.transport.withoutDelay
 
 interface InfiniticProducer {
-  /**
-   * Name of the sender
-   */
-  suspend fun getName(): String
 
-  fun setSuggestedName(name: String)
+  val emitterName: EmitterName
 
   suspend fun <T : Message> internalSendTo(
     message: T,
-    topic: Topic<T>,
+    topic: Topic<out T>,
     after: MillisDuration = MillisDuration(0),
   )
 
@@ -54,11 +49,9 @@ interface InfiniticProducer {
    * @return a CompletableFuture that completes when the message has been sent
    */
   suspend fun <T : Message> T.sendTo(
-    topic: Topic<T>,
+    topic: Topic<out Message>,
     after: MillisDuration = MillisDuration(0)
   ) {
-    require(after <= 0 || topic.acceptDelayed) { thisShouldNotHappen("Trying to send to $topic with a delay $after") }
-
     // Switch to workflow-related topics for workflowTasks
     val t = when (this) {
       is ServiceExecutorMessage -> if (isWorkflowTask()) topic.forWorkflow else topic

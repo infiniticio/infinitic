@@ -24,7 +24,8 @@ package io.infinitic.common.transport.consumers
 
 import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.transport.BatchConfig
+import io.infinitic.common.transport.BatchProcessorConfig
+import io.infinitic.common.transport.config.BatchConfig
 import io.infinitic.common.transport.interfaces.TransportConsumer
 import io.infinitic.common.transport.interfaces.TransportMessage
 import kotlinx.coroutines.CoroutineScope
@@ -36,27 +37,28 @@ import kotlinx.coroutines.launch
  *
  * @param concurrency The number of concurrent coroutines for processing messages.
  * @param deserialize A suspending function to deserialize the transport message into its payload.
- * @param process A suspending function to process the deserialized message along with its publishing time.
- * @param batchConfig An optional suspending function to configure batching of messages.
- * @param batchProcess An optional suspending function to process a batch of messages.
+ * @param processor A suspending function to process the deserialized message along with its publishing time.
+ * @param batchProcessorConfig An optional suspending function to configure batching of messages.
+ * @param batchProcessor An optional suspending function to process a batch of messages.
  * @return A Job representing the coroutine that runs the consuming process.
  */
 context(CoroutineScope, KLogger)
 fun <T : TransportMessage<M>, M : Any> TransportConsumer<T>.startAsync(
+  batchReceivingConfig: BatchConfig? = null,
   concurrency: Int,
-  deserialize: suspend (T) -> M,
-  process: suspend (M, MillisInstant) -> Unit,
+  deserialize: suspend (T) -> M = { it.deserialize() },
+  processor: suspend (M, MillisInstant) -> Unit,
   beforeDlq: (suspend (M, Exception) -> Unit)? = null,
-  batchConfig: (suspend (M) -> BatchConfig?)? = null,
-  batchProcess: (suspend (List<M>, List<MillisInstant>) -> Unit)? = null,
+  batchProcessorConfig: (suspend (M) -> BatchProcessorConfig?)? = null,
+  batchProcessor: (suspend (List<M>, List<MillisInstant>) -> Unit)? = null,
 ): Job = launch {
-  startConsuming()
+  startConsuming(batchReceivingConfig != null)
       .completeProcess(
           concurrency,
           deserialize,
-          process,
+          processor,
           beforeDlq,
-          batchConfig,
-          batchProcess,
+          batchProcessorConfig,
+          batchProcessor,
       )
 }

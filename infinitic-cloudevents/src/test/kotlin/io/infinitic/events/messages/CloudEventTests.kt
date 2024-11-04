@@ -127,8 +127,10 @@ private val worker = InfiniticWorker.builder()
     )
     .build()
 
+private val producer = transport.producerFactory.getProducer(null)
+
 private suspend fun <T : Message> T.sendToTopic(topic: Topic<T>) {
-  with(transport.producer) { sendTo(topic) }
+  with(producer) { sendTo(topic) }
 }
 
 internal class CloudEventTests : StringSpec(

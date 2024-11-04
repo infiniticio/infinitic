@@ -34,12 +34,14 @@ import java.lang.reflect.WildcardType
 import kotlin.reflect.javaType
 import kotlin.reflect.typeOf
 
+
 /**
- * Represents a pair of methods: a single method and its corresponding batch method.
+ * Data class representing a method that supports both single and batch operations.
  *
- * @property single The single method that processes a single item.
- * @property batch The batch method that processes multiple items.
- * @property constructor The constructor used to create instances for the batch method's parameter, if applicable.
+ * @property single The method for plain single operations.
+ * @property batch The method for batch operations.
+ * @property constructor The constructor to create new instances for batch processing.
+ * @property componentReturnType The return type of the batch method components.
  */
 data class BatchMethod(
   val single: Method,

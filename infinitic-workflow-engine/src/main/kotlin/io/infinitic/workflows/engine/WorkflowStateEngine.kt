@@ -26,17 +26,17 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.MethodUnknown
 import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.requester.ClientRequester
 import io.infinitic.common.requester.WorkflowRequester
 import io.infinitic.common.tasks.executors.errors.MethodUnknownError
 import io.infinitic.common.transport.ClientTopic
-import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.transport.WorkflowStateEngineTopic
 import io.infinitic.common.transport.WorkflowStateEventTopic
 import io.infinitic.common.transport.WorkflowTagEngineTopic
+import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.transport.logged.formatLog
+import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.CompleteTimers
 import io.infinitic.common.workflows.engine.messages.CompleteWorkflow
@@ -84,13 +84,15 @@ import io.infinitic.workflows.engine.handlers.timerCompleted
 import io.infinitic.workflows.engine.handlers.waitWorkflow
 import io.infinitic.workflows.engine.handlers.workflowTaskCompleted
 import io.infinitic.workflows.engine.handlers.workflowTaskFailed
+import io.infinitic.workflows.engine.producers.BufferedInfiniticProducer
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
 class WorkflowStateEngine(
   val storage: WorkflowStateStorage,
-  val producer: InfiniticProducer
+  private val _producer: InfiniticProducer
 ) {
 
   companion object {
@@ -99,11 +101,76 @@ class WorkflowStateEngine(
     val logger = KotlinLogging.logger {}
   }
 
-  private suspend fun getEmitterName() = EmitterName(producer.getName())
+  private val emitterName = _producer.emitterName
 
-  suspend fun handle(message: WorkflowStateEngineMessage, publishTime: MillisInstant) {
+  suspend fun batchProcess(
+    messages: List<WorkflowStateEngineMessage>,
+    publishTimes: List<MillisInstant>
+  ) {
+    val messagesMap: Map<WorkflowId, List<Pair<WorkflowStateEngineMessage, MillisInstant>>> =
+        messages.zip(publishTimes).groupBy { it.first.workflowId }
+
+    // process all messages by workflowId, in parallel
+    val producersAndStates = coroutineScope {
+      messagesMap
+          .mapValues { (workflowId, messageAndPublishTime) ->
+            async { batchProcessById(workflowId, messageAndPublishTime) }
+          }
+          .mapValues { it.value.await() }
+    }
+    // Send all messages
+    coroutineScope {
+      producersAndStates.values.forEach { (producer, _) -> launch { producer.flush() } }
+    }
+
+    // atomically stores the states
+    val states = producersAndStates.mapValues { it.value.second }
+    storage.putStates(states)
+  }
+
+  private suspend fun batchProcessById(
+    workflowId: WorkflowId,
+    messages: List<Pair<WorkflowStateEngineMessage, MillisInstant>>
+  ): Pair<BufferedInfiniticProducer, WorkflowState?> {
+    // do not send messages but buffer them
+    val bufferedProducer = BufferedInfiniticProducer(_producer)
+
     // get current state
-    var state = storage.getState(message.workflowId)
+    var state: WorkflowState? = storage.getState(workflowId)
+
+    // process all received messages, starting by the oldest
+    messages
+        .sortedBy { it.second.long }
+        .forEach { (message, publishTime) ->
+          state = processSingle(bufferedProducer, state, message, publishTime)
+        }
+
+    return Pair(bufferedProducer, state)
+  }
+
+  suspend fun process(message: WorkflowStateEngineMessage, publishTime: MillisInstant) {
+    // create a producer that buffers messages
+    val bufferedProducer = BufferedInfiniticProducer(_producer)
+
+    // get current state
+    val state = storage.getState(message.workflowId)
+
+    // process this message
+    val updatedState = processSingle(bufferedProducer, state, message, publishTime)
+
+    // send new messages
+    bufferedProducer.flush()
+
+    // store updated state
+    storage.putState(message.workflowId, updatedState)
+  }
+
+  private suspend fun processSingle(
+    producer: InfiniticProducer,
+    state: WorkflowState?,
+    message: WorkflowStateEngineMessage,
+    publishTime: MillisInstant
+  ): WorkflowState? {
 
     // if a crash happened between the state update and the message acknowledgement,
     // it's possible to receive a message that has already been processed
@@ -111,41 +178,46 @@ class WorkflowStateEngine(
     if (state?.lastMessageId == message.messageId) {
       logDiscarding(message) { "as state already contains messageId ${message.messageId}" }
 
-      return
+      return state
     }
 
     // This is needed for compatibility with messages before v0.13.0
     if (message.emittedAt == null) message.emittedAt = publishTime
 
-    state = when (state) {
-      null -> processMessageWithoutState(message)
-      else -> processMessageWithState(message, state)
-    } ?: return
+    val updatedState = when (state) {
+      null -> processMessageWithoutState(producer, message)
+      else -> processMessageWithState(producer, message, state)
+    }
 
-    when (state.workflowMethods.size) {
+    return when (updatedState?.workflowMethods?.size) {
+      // no state
+      null -> null
       // workflow is completed
       0 -> {
         // remove reference to this workflow in tags
-        removeTags(producer, state)
+        removeTags(producer, updatedState)
         // delete state
-        storage.delState(message.workflowId)
+        null
       }
       // workflow is ongoing
       else -> {
         // record this message as the last processed
-        state.lastMessageId = message.messageId
+        updatedState.lastMessageId = message.messageId
         // update state
-        storage.putState(message.workflowId, state)
+        updatedState
       }
     }
   }
 
-  private suspend fun sendWorkflowCompletedEvent(state: WorkflowState) {
+  private suspend fun sendWorkflowCompletedEvent(
+    producer: InfiniticProducer,
+    state: WorkflowState
+  ) {
     val workflowCompletedEvent = WorkflowCompletedEvent(
         workflowName = state.workflowName,
         workflowVersion = state.workflowVersion,
         workflowId = state.workflowId,
-        emitterName = getEmitterName(),
+        emitterName = emitterName,
     )
     with(producer) { workflowCompletedEvent.sendTo(WorkflowStateEventTopic) }
   }
@@ -157,7 +229,7 @@ class WorkflowStateEngine(
               workflowName = state.workflowName,
               workflowTag = it,
               workflowId = state.workflowId,
-              emitterName = getEmitterName(),
+              emitterName = emitterName,
               emittedAt = state.runningWorkflowTaskInstant,
           )
           launch { with(producer) { removeTagFromWorkflow.sendTo(WorkflowTagEngineTopic) } }
@@ -165,6 +237,7 @@ class WorkflowStateEngine(
       }
 
   private suspend fun processMessageWithoutState(
+    producer: InfiniticProducer,
     message: WorkflowStateEngineMessage
   ): WorkflowState? = coroutineScope {
     // targeted workflow is not found, we tell the message emitter
@@ -177,7 +250,7 @@ class WorkflowStateEngine(
           return@coroutineScope dispatchWorkflow(producer, message)
         }
 
-        // all actions are now done in WorkflowCmdHandler::dispatchNewWorkflow
+        // all actions are done in WorkflowCmdHandler::dispatchNewWorkflow
         return@coroutineScope message.newState()
       }
 
@@ -190,7 +263,7 @@ class WorkflowStateEngine(
                 recipientName = ClientName.from(message.emitterName),
                 message.workflowId,
                 message.workflowMethodId,
-                emitterName = getEmitterName(),
+                emitterName = emitterName,
             )
             with(producer) { methodUnknown.sendTo(ClientTopic) }
           }
@@ -212,7 +285,7 @@ class WorkflowStateEngine(
                 workflowVersion = requester.workflowVersion,
                 workflowMethodName = requester.workflowMethodName,
                 workflowMethodId = requester.workflowMethodId,
-                emitterName = getEmitterName(),
+                emitterName = emitterName,
                 emittedAt = message.emittedAt,
             )
             with(producer) { childMethodFailed.sendTo(WorkflowStateEngineTopic) }
@@ -227,7 +300,7 @@ class WorkflowStateEngine(
             recipientName = ClientName.from(message.emitterName),
             message.workflowId,
             message.workflowMethodId,
-            emitterName = getEmitterName(),
+            emitterName = emitterName,
         )
         with(producer) { methodUnknown.sendTo(ClientTopic) }
       }
@@ -242,6 +315,7 @@ class WorkflowStateEngine(
   }
 
   private suspend fun processMessageWithState(
+    producer: InfiniticProducer,
     message: WorkflowStateEngineMessage,
     state: WorkflowState
   ): WorkflowState? {
@@ -281,20 +355,20 @@ class WorkflowStateEngine(
 
     coroutineScope {
       // process this message
-      processMessage(state, message)
+      processMessage(producer, state, message)
 
       // process all buffered messages, while there is no workflowTask ongoing
       while (state.runningWorkflowTaskId == null && state.messagesBuffer.size > 0) {
         val msg = state.messagesBuffer.removeAt(0)
         logDebug("Processing buffered message:", msg)
-        processMessage(state, msg)
+        processMessage(producer, state, msg)
       }
     }
 
     // if we just handled a workflow task, and that there is no other workflow task ongoing,
     if (message.isWorkflowTaskEvent() && state.runningWorkflowTaskId == null) {
       // if no method left, then the workflow is completed
-      if (state.workflowMethods.isEmpty()) sendWorkflowCompletedEvent(state)
+      if (state.workflowMethods.isEmpty()) sendWorkflowCompletedEvent(producer, state)
     }
 
     return state
@@ -316,6 +390,7 @@ class WorkflowStateEngine(
   }
 
   private fun CoroutineScope.processMessage(
+    producer: InfiniticProducer,
     state: WorkflowState,
     message: WorkflowStateEngineMessage
   ) {

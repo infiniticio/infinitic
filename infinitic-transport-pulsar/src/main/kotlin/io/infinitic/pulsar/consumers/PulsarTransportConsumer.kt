@@ -41,5 +41,11 @@ class PulsarTransportConsumer<M : Message>(
     return PulsarTransportMessage(pulsarMessage, pulsarConsumer, topic, maxRedeliveryCount)
   }
 
+  override suspend fun batchReceive(): List<PulsarTransportMessage<M>> {
+    val pulsarMessages = pulsarConsumer.batchReceiveAsync().await()
+
+    return pulsarMessages.map { PulsarTransportMessage(it, pulsarConsumer, topic, maxRedeliveryCount) }
+  }
+
   override val name: String = pulsarConsumer.consumerName
 }

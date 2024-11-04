@@ -23,11 +23,10 @@
 package io.infinitic.tasks.executor.events
 
 import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.requester.WorkflowRequester
-import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.transport.WorkflowStateEventTopic
+import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.workflows.data.channels.SignalId
 import io.infinitic.common.workflows.data.commands.SendSignalCommand
 import io.infinitic.common.workflows.data.commands.SendSignalPastCommand
@@ -44,7 +43,7 @@ internal fun CoroutineScope.dispatchRemoteSignalCmd(
   workflowTaskInstant: MillisInstant,
   producer: InfiniticProducer,
 ) = launch {
-  val emitterName = EmitterName(producer.getName())
+  val emitterName = producer.emitterName
   val command: SendSignalCommand = pastCommand.command
   val signalId = SignalId.from(pastCommand.commandId)
   val signalData = command.signalData

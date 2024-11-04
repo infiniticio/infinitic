@@ -24,7 +24,6 @@ package io.infinitic.workflows.engine.handlers
 
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.MethodUnknown
-import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.transport.ClientTopic
 import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.workflows.engine.messages.WaitWorkflow
@@ -46,7 +45,7 @@ internal fun CoroutineScope.waitWorkflow(
             recipientName = clientName,
             workflowId = message.workflowId,
             workflowMethodId = message.workflowMethodId,
-            emitterName = EmitterName(producer.getName()),
+            emitterName = producer.emitterName,
         )
         with(producer) { methodRunUnknown.sendTo(ClientTopic) }
       }

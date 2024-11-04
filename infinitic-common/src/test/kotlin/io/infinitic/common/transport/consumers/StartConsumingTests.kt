@@ -42,7 +42,7 @@ internal class StartConsumingTests : StringSpec(
       "Consumer should consume up to scope cancellation" {
         with(logger) {
           val scope = getScope()
-          val channel = with(scope) { IntConsumer().startConsuming() }
+          val channel = with(scope) { IntConsumer().startConsuming(false) }
 
           // while no error
           shouldNotThrowAny { repeat(100) { channel.receive() } }
@@ -64,7 +64,7 @@ internal class StartConsumingTests : StringSpec(
 
         with(logger) {
           val scope = getScope()
-          val channel = with(scope) { ErrorConsumer().startConsuming() }
+          val channel = with(scope) { ErrorConsumer().startConsuming(false) }
 
           // while no error
           shouldNotThrowAny { repeat(98) { channel.receive() } }
@@ -90,7 +90,7 @@ internal class StartConsumingTests : StringSpec(
 
         with(logger) {
           val scope = getScope()
-          val channel = with(scope) { ExceptionConsumer().startConsuming() }
+          val channel = with(scope) { ExceptionConsumer().startConsuming(false) }
 
           shouldNotThrowAny { repeat(100) { channel.receive() } }
           scope.isActive shouldBe true

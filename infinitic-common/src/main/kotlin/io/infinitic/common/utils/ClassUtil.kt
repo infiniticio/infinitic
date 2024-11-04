@@ -31,7 +31,7 @@ import io.infinitic.annotations.Retry
 import io.infinitic.annotations.Timeout
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.common.transport.BatchConfig
+import io.infinitic.common.transport.BatchProcessorConfig
 import io.infinitic.exceptions.tasks.NoMethodFoundWithParameterCountException
 import io.infinitic.exceptions.tasks.NoMethodFoundWithParameterTypesException
 import io.infinitic.exceptions.tasks.TooManyMethodsFoundWithParameterCountException
@@ -196,7 +196,7 @@ private val batchMethodMutex = Mutex()
 
 fun Method.getBatchMethod(): BatchMethod? = batchMethodCache[this]
 
-suspend fun Class<*>.initBatchMethods() {
+suspend fun Class<*>.initBatchProcessorMethods() {
   // Retrieve the list of BatchMethod for the class
   val batchMethodList = getBatchMethods()
   // Update the cache with all methods of the class
@@ -207,7 +207,7 @@ suspend fun Class<*>.initBatchMethods() {
   }
 }
 
-fun Method.getBatchConfig(): BatchConfig? {
+fun Method.getBatchConfig(): BatchProcessorConfig? {
   // Retrieve the method annotated as batch, if it exists
   val batchMethod = getBatchMethod() ?: return null
 
@@ -215,7 +215,7 @@ fun Method.getBatchConfig(): BatchConfig? {
   val batchAnnotation = batchMethod.batch.findAnnotation(Batch::class.java) ?: thisShouldNotHappen()
 
   // Create and return an instance of MessageBatchConfig from the annotation
-  return BatchConfig(
+  return BatchProcessorConfig(
       batchKey = toUniqueString(),
       maxMessages = batchAnnotation.maxMessages,
       maxDuration = MillisDuration((batchAnnotation.maxSeconds * 1000).toLong()),

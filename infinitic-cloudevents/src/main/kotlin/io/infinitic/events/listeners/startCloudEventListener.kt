@@ -26,15 +26,16 @@ import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.messages.Message
-import io.infinitic.common.transport.BatchConfig
-import io.infinitic.common.transport.interfaces.InfiniticConsumer
-import io.infinitic.common.transport.interfaces.InfiniticResources
-import io.infinitic.common.transport.interfaces.TransportMessage
+import io.infinitic.common.transport.BatchProcessorConfig
+import io.infinitic.common.transport.config.maxMillis
 import io.infinitic.common.transport.consumers.Result
 import io.infinitic.common.transport.consumers.acknowledge
 import io.infinitic.common.transport.consumers.batchBy
 import io.infinitic.common.transport.consumers.batchProcess
 import io.infinitic.common.transport.consumers.process
+import io.infinitic.common.transport.interfaces.InfiniticConsumerFactory
+import io.infinitic.common.transport.interfaces.InfiniticResources
+import io.infinitic.common.transport.interfaces.TransportMessage
 import io.infinitic.events.config.EventListenerConfig
 import io.infinitic.events.toCloudEvent
 import kotlinx.coroutines.CoroutineScope
@@ -43,7 +44,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 
 context(CoroutineScope, KLogger)
-fun InfiniticConsumer.startCloudEventListener(
+fun InfiniticConsumerFactory.startCloudEventListener(
   resources: InfiniticResources,
   config: EventListenerConfig,
   cloudEventSourcePrefix: String,
@@ -53,9 +54,9 @@ fun InfiniticConsumer.startCloudEventListener(
   val outChannel = Channel<Result<TransportMessage<Message>, TransportMessage<Message>>>()
 
   // all messages will have this batch config
-  val batchConfig = BatchConfig(
+  val batchProcessorConfig = BatchProcessorConfig(
       batchKey = "cloudEvent", // same for all
-      maxMessages = config.batchConfig.maxEvents,
+      maxMessages = config.batchConfig.maxMessages,
       maxDuration = MillisDuration(config.batchConfig.maxMillis),
   )
 
@@ -63,7 +64,7 @@ fun InfiniticConsumer.startCloudEventListener(
   launch {
     outChannel
         .process(config.concurrency) { _, message -> message.deserialize() }
-        .batchBy { batchConfig }
+        .batchBy { batchProcessorConfig }
         .batchProcess(
             config.concurrency,
             { _, _ -> thisShouldNotHappen() },
@@ -87,15 +88,30 @@ fun InfiniticConsumer.startCloudEventListener(
   resources.refreshServiceListAsync(config) { serviceName ->
     info { "EventListener starts listening Service $serviceName" }
 
-    listenToServiceExecutorTopics(serviceName, config.subscriptionName, outChannel)
+    listenToServiceExecutorTopics(
+        serviceName,
+        config.batchConfig,
+        config.subscriptionName,
+        outChannel,
+    )
   }
 
   // Listen workflow topics, for each workflow found
   resources.refreshWorkflowListAsync(config) { workflowName ->
     info { "EventListener starts listening Workflow $workflowName" }
 
-    listenToWorkflowExecutorTopics(workflowName, config.subscriptionName, outChannel)
+    listenToWorkflowExecutorTopics(
+        workflowName,
+        config.batchConfig,
+        config.subscriptionName,
+        outChannel,
+    )
 
-    listenToWorkflowStateTopics(workflowName, config.subscriptionName, outChannel)
+    listenToWorkflowStateTopics(
+        workflowName,
+        config.batchConfig,
+        config.subscriptionName,
+        outChannel,
+    )
   }
 }

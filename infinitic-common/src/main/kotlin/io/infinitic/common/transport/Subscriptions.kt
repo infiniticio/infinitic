@@ -30,10 +30,6 @@ sealed class Subscription<S : Message> {
 }
 
 data class MainSubscription<S : Message>(override val topic: Topic<S>) : Subscription<S>() {
-  init {
-    if (topic.acceptDelayed) require(!withKey) { "Keyed subscription are forbidden for topics accepting delayed messages" }
-  }
-
   override val withKey
     get() = when (topic) {
       WorkflowTagEngineTopic,

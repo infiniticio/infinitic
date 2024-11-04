@@ -24,14 +24,24 @@ package io.infinitic.workflows.engine
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.transport.WorkflowStateEngineTopic
+import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 
 @Suppress("UNUSED_PARAMETER")
 class WorkflowStateTimerHandler(val producer: InfiniticProducer) {
-  suspend fun handle(msg: WorkflowStateEngineMessage, publishTime: MillisInstant) {
-    with(producer) { msg.sendTo(WorkflowStateEngineTopic) }
+
+  suspend fun batchProcess(
+    messages: List<WorkflowStateEngineMessage>,
+    publishTimes: List<MillisInstant>
+  ) = coroutineScope {
+    messages.zip(publishTimes) { msg, publishTime -> launch { process(msg, publishTime) } }
+  }
+
+  suspend fun process(message: WorkflowStateEngineMessage, publishTime: MillisInstant) {
+    with(producer) { message.sendTo(WorkflowStateEngineTopic) }
   }
 
   companion object {

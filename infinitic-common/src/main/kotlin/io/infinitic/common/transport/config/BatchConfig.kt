@@ -20,21 +20,31 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.transport
+package io.infinitic.common.transport.config
 
 import io.infinitic.common.data.MillisDuration
+import io.infinitic.common.transport.BatchProcessorConfig
 
-/**
- * Data class representing how a specific message should be batched
- * Messages with the same [batchKey] will be batched together, it typically represents a task type.
- * [maxMessages] and [maxDuration] are expected to be always the same for a given [batchKey]
- */
 data class BatchConfig(
-  val batchKey: String,
-  val maxMessages: Int,
-  val maxDuration: MillisDuration,
+  val maxMessages: Int = 1000,
+  val maxSeconds: Double = 1.0
 ) {
-  companion object {
-    val NONE = BatchConfig("", 1, MillisDuration(0))
+  init {
+    require(maxMessages > 0) { error("'${::maxMessages.name}' must be > 0, but was $maxMessages") }
+    require(maxSeconds > 0) { error("'${::maxSeconds.name}' must be > 0, but was $maxSeconds") }
   }
 }
+
+fun BatchConfig?.normalized(concurrency: Int) =
+    this?.copy(maxMessages = (maxMessages / concurrency).coerceAtLeast(1))
+
+fun BatchConfig?.normalized(key: String, concurrency: Int = 1) = this?.let {
+  BatchProcessorConfig(
+      key,
+      (maxMessages / concurrency).coerceAtLeast(1),
+      MillisDuration(maxMillis),
+  )
+}
+
+val BatchConfig.maxMillis: Long
+  get() = (maxSeconds * 1000).toLong()

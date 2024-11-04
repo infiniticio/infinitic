@@ -32,12 +32,8 @@ internal class CaffeineCachedKeyValue<S : Any>(config: CaffeineCacheConfig) : Ca
   Flushable {
   private var caffeine: Cache<String, S> = Caffeine.newBuilder().setup(config).build()
 
-  override fun delValue(key: String) {
-    caffeine.invalidate(key)
-  }
-
-  override fun putValue(key: String, value: S) {
-    caffeine.put(key, value)
+  override fun putValue(key: String, value: S?) {
+    value?.let { caffeine.put(key, it) } ?: caffeine.invalidate(key)
   }
 
   override fun getValue(key: String): S? =

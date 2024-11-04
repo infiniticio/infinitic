@@ -24,7 +24,7 @@
 package io.infinitic.common.transport.consumers
 
 import io.github.oshai.kotlinlogging.KLogger
-import io.infinitic.common.transport.BatchConfig
+import io.infinitic.common.transport.BatchProcessorConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.cancel
@@ -40,14 +40,14 @@ import kotlinx.coroutines.withContext
  * and the messages with the same batch key are grouped together.
  *
  * @param I The type of message.
- * @param getBatchConfig A suspending function that returns the batch configuration for a given message.
+ * @param getBatchProcessorConfig A suspending function that returns the batch configuration for a given message.
  *                       If null, messages are not batched.
  * @return A channel that emits batched results wrapped in a [Result] containing
  *         either a [SingleMessage] or a [MultipleMessages] instance.
  */
 context(CoroutineScope, KLogger)
 fun <M : Any, I> Channel<Result<M, I>>.batchBy(
-  getBatchConfig: suspend (I) -> BatchConfig?,
+  getBatchProcessorConfig: suspend (I) -> BatchProcessorConfig?,
 ): Channel<OneOrMany<Result<M, I>>> {
   val callingScope: CoroutineScope = this@CoroutineScope
 
@@ -69,20 +69,30 @@ fun <M : Any, I> Channel<Result<M, I>>.batchBy(
       suspend fun createAndStartBatchingChannel(
         maxMessages: Int,
         maxDuration: Long
-      ): Channel<Result<M, I>> = Channel<Result<M, I>>().also {
-        debug { "batchBy: adding producer to batching channel ${it.hashCode()}" }
-        it.addProducer()
-        trace { "batchBy: producer added to batching channel ${it.hashCode()}" }
-        it.startBatching(maxMessages, maxDuration, outputChannel)
+      ): Channel<Result<M, I>> {
+
+        val channel = Channel<Result<M, I>> { message ->
+          warn { "onUndeliveredElement $message" }
+        }
+        debug { "batchBy: adding producer to batching channel ${channel.hashCode()}" }
+        channel.addProducer()
+        trace { "batchBy: producer added to batching channel ${channel.hashCode()}" }
+        channel.startBatching(maxMessages, maxDuration, outputChannel)
+
+        return channel
       }
 
       // Get or create a batch channel based on configuration
-      suspend fun getBatchingChannel(config: BatchConfig): Channel<Result<M, I>> =
-          batchingMutex.withLock {
-            batchingChannels.getOrPut(config.batchKey) {
-              createAndStartBatchingChannel(config.maxMessages, config.maxDuration.millis)
-            }
+      suspend fun getBatchingChannel(config: BatchProcessorConfig): Channel<Result<M, I>> {
+        // check if the channel already exists before using a lock
+        batchingChannels[config.batchKey]?.let { return it }
+
+        return batchingMutex.withLock {
+          batchingChannels.getOrPut(config.batchKey) {
+            createAndStartBatchingChannel(config.maxMessages, config.maxDuration.millis)
           }
+        }
+      }
 
       debug { "batchBy: adding producer to output channel ${outputChannel.hashCode()}" }
       outputChannel.addProducer()
@@ -98,16 +108,23 @@ fun <M : Any, I> Channel<Result<M, I>>.batchBy(
           }
           if (result.isSuccess) {
             val batchConfig = try {
-              getBatchConfig(result.value())
+              getBatchProcessorConfig(result.value())
             } catch (e: Exception) {
               outputChannel.send(One(result.failure(e)))
               continue
             }
             when (batchConfig) {
               null -> outputChannel.send(One(result))
-              else -> getBatchingChannel(batchConfig).send(result)
+              else -> {
+                trace { "batchBy: sending $result" }
+                getBatchingChannel(batchConfig).send(result)
+                trace { "batchBy: sent $result" }
+              }
             }
           }
+        } catch (e: Exception) {
+          warn(e) { "Exception during batching" }
+          throw e
         } catch (e: Error) {
           warn(e) { "Error during batching, cancelling calling scope" }
           callingScope.cancel()

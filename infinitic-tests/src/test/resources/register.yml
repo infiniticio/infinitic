@@ -53,14 +53,16 @@ services:
     executor:
       class: io.infinitic.tests.jsonView.JsonViewServiceImpl
       concurrency: 5
-
 workflows:
   - name: batchWorkflow
     tagEngine:
     stateEngine:
     executor:
       class: io.infinitic.tests.batches.BatchWorkflowImpl
-      concurrency: 2
+      concurrency: 1
+      batch:
+        maxMessages: 10
+        maxSeconds: .1
   - name: annotatedWorkflow
     tagEngine:
     stateEngine:

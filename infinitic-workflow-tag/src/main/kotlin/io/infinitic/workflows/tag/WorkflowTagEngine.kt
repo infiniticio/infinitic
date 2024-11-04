@@ -26,12 +26,11 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.WorkflowIdsByTag
 import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.requester.workflowId
 import io.infinitic.common.transport.ClientTopic
-import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.transport.WorkflowStateCmdTopic
+import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.engine.commands.dispatchRemoteMethod
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
@@ -62,7 +61,7 @@ class WorkflowTagEngine(
   val producer: InfiniticProducer
 ) {
 
-  private suspend fun getEmitterName() = EmitterName(producer.getName())
+  private val emitterName = producer.emitterName
 
   suspend fun handle(message: WorkflowTagEngineMessage, publishTime: MillisInstant) {
     when (message) {
@@ -195,7 +194,7 @@ class WorkflowTagEngine(
           val retryWorkflowTask = RetryWorkflowTask(
               workflowName = message.workflowName,
               workflowId = workflowId,
-              emitterName = getEmitterName(),
+              emitterName = emitterName,
               emittedAt = message.emittedAt ?: publishTime,
               requester = message.requester,
           )
@@ -220,7 +219,7 @@ class WorkflowTagEngine(
                   serviceName = message.serviceName,
                   workflowName = message.workflowName,
                   workflowId = workflowId,
-                  emitterName = getEmitterName(),
+                  emitterName = emitterName,
                   emittedAt = message.emittedAt ?: publishTime,
                   requester = message.requester,
               )
@@ -243,7 +242,7 @@ class WorkflowTagEngine(
                   workflowMethodId = message.workflowMethodId,
                   workflowName = message.workflowName,
                   workflowId = workflowId,
-                  emitterName = getEmitterName(),
+                  emitterName = emitterName,
                   emittedAt = message.emittedAt ?: publishTime,
                   requester = message.requester,
               )
@@ -271,7 +270,7 @@ class WorkflowTagEngine(
                 workflowMethodId = null,
                 workflowName = message.workflowName,
                 workflowId = workflowId,
-                emitterName = getEmitterName(),
+                emitterName = emitterName,
                 emittedAt = message.emittedAt ?: publishTime,
                 requester = message.requester,
             )
@@ -329,7 +328,7 @@ class WorkflowTagEngine(
         workflowName = message.workflowName,
         workflowTag = message.workflowTag,
         workflowIds = workflowIds,
-        emitterName = getEmitterName(),
+        emitterName = emitterName,
     )
     with(producer) { workflowIdsByTag.sendTo(ClientTopic) }
   }

@@ -42,7 +42,6 @@ import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.data.methods.decodeReturnValue
-import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.messages.Message
 import io.infinitic.common.proxies.ChannelProxyHandler
@@ -61,13 +60,13 @@ import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.executors.errors.MethodFailedError
 import io.infinitic.common.tasks.tags.messages.CompleteDelegatedTask
 import io.infinitic.common.transport.ClientTopic
-import io.infinitic.common.transport.interfaces.InfiniticConsumer
-import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.transport.MainSubscription
 import io.infinitic.common.transport.ServiceTagEngineTopic
 import io.infinitic.common.transport.Topic
 import io.infinitic.common.transport.WorkflowStateCmdTopic
 import io.infinitic.common.transport.WorkflowTagEngineTopic
+import io.infinitic.common.transport.interfaces.InfiniticConsumerFactory
+import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.workflows.data.channels.SignalId
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflows.WorkflowCancellationReason
@@ -113,12 +112,12 @@ import kotlinx.coroutines.Deferred as CoroutineDeferred
 
 internal class ClientDispatcher(
   private val clientScope: CoroutineScope,
-  private val consumer: InfiniticConsumer,
+  private val consumerFactory: InfiniticConsumerFactory,
   private val producer: InfiniticProducer,
 ) : ProxyDispatcher {
 
   // Name of the client
-  private val emitterName by lazy { runBlocking { EmitterName(producer.getName()) } }
+  private val emitterName by lazy { producer.emitterName }
 
   // This as requester
   private val clientRequester by lazy { ClientRequester(clientName = ClientName.from(emitterName)) }
@@ -802,11 +801,11 @@ internal class ClientDispatcher(
       info { "Starting consumer client for client $emitterName" }
       // synchronously make sure that the consumer is created and started
       val listenerJob =
-          consumer.startAsync(
+          consumerFactory.startAsync(
               subscription = MainSubscription(ClientTopic),
               entity = emitterName.toString(),
               concurrency = 1,
-              process = { message, _ -> responseFlow.emit(message) },
+              processor = { message, _ -> responseFlow.emit(message) },
           )
       // asynchronously listen
       launch {

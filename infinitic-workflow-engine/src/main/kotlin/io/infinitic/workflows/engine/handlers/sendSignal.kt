@@ -24,10 +24,9 @@ package io.infinitic.workflows.engine.handlers
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.methods.MethodReturnValue
-import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.transport.WorkflowStateEventTopic
+import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.workflows.data.commands.CommandStatus.Completed
 import io.infinitic.common.workflows.engine.messages.SendSignal
 import io.infinitic.common.workflows.engine.messages.SignalDiscardedEvent
@@ -82,7 +81,7 @@ internal fun CoroutineScope.sendSignal(
               workflowName = message.workflowName,
               workflowId = message.workflowId,
               workflowVersion = state.workflowVersion,
-              emitterName = EmitterName(producer.getName()),
+              emitterName = producer.emitterName,
           )
           with(producer) { signalReceivedEvent.sendTo(WorkflowStateEventTopic) }
         }
@@ -96,7 +95,7 @@ internal fun CoroutineScope.sendSignal(
         workflowName = message.workflowName,
         workflowId = message.workflowId,
         workflowVersion = state.workflowVersion,
-        emitterName = EmitterName(producer.getName()),
+        emitterName = producer.emitterName,
     )
 
     with(producer) { signalDiscardedEvent.sendTo(WorkflowStateEventTopic) }

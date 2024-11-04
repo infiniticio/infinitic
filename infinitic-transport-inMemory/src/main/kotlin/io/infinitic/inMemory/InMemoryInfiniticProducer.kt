@@ -24,53 +24,46 @@ package io.infinitic.inMemory
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.MillisDuration
+import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.messages.Message
-import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.transport.Topic
-import io.infinitic.common.transport.acceptDelayed
-import io.infinitic.inMemory.channels.DelayedMessage
+import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.inMemory.channels.InMemoryChannels
 import io.infinitic.inMemory.channels.id
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class InMemoryInfiniticProducer(
   private val mainChannels: InMemoryChannels,
   private val eventListenerChannels: InMemoryChannels
 ) : InfiniticProducer {
 
-  private var suggestedName = DEFAULT_NAME
+  private val scope = CoroutineScope(Dispatchers.IO)
 
-  override suspend fun getName() = suggestedName
-
-  override fun setSuggestedName(name: String) {
-    suggestedName = name
-  }
+  override val emitterName = EmitterName("InMemory")
 
   override suspend fun <T : Message> internalSendTo(
     message: T,
-    topic: Topic<T>,
+    topic: Topic<out T>,
     after: MillisDuration
   ) {
-    when (topic.acceptDelayed) {
-      true -> {
-        topic.channelsForDelayedMessage(message).forEach {
-          logger.trace { "Topic $topic(${it.id}): sending $message" }
-          it.send(DelayedMessage(message, after))
-          logger.debug { "Topic $topic(${it.id}): sent $message" }
-        }
-      }
-
-      false -> {
-        topic.channelsForMessage(message).forEach {
-          logger.trace { "Topic $topic(${it.id}): sending $message" }
+    topic.channelsForMessage(message).forEach {
+      logger.trace { "Topic $topic(${it.id}): sending $message after $after" }
+      when {
+        after <= 0 -> it.send(message)
+        else -> scope.launch {
+          delay(after.millis)
           it.send(message)
-          logger.debug { "Topic $topic(${it.id}): sent $message" }
         }
       }
+      logger.debug { "Topic $topic(${it.id}): sent $message" }
     }
   }
 
-  private fun <S : Message> Topic<S>.channelsForMessage(message: S): List<Channel<S>> {
+  private fun <S : Message> Topic<out S>.channelsForMessage(message: S): List<Channel<S>> {
     val entity = message.entity()
 
     return listOf(
@@ -79,18 +72,7 @@ class InMemoryInfiniticProducer(
     )
   }
 
-  private fun <S : Message> Topic<S>.channelsForDelayedMessage(message: S): List<Channel<DelayedMessage<S>>> {
-    val entity = message.entity()
-
-    return listOf(
-        with(mainChannels) { channelForDelayed(entity) },
-        with(eventListenerChannels) { channelForDelayed(entity) },
-    )
-  }
-
   companion object {
-    private const val DEFAULT_NAME = "inMemory"
-
     private val logger = KotlinLogging.logger {}
   }
 }

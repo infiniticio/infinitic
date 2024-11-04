@@ -69,7 +69,7 @@ class BinaryTaskTagStorage(keyValueStorage: KeyValueStorage, keySetStorage: KeyS
 
   override suspend fun delDelegatedTaskData(taskId: TaskId) {
     val key = getDelegatedTaskDataKey(taskId)
-    keyValueStorage.del(key)
+    keyValueStorage.put(key, null)
   }
 
   override suspend fun getDelegatedTaskData(taskId: TaskId): DelegatedTaskData? {

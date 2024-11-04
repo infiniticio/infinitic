@@ -64,27 +64,80 @@ class PostgresKeyValueStorage(
             }
       }
 
-  override suspend fun put(key: String, value: ByteArray) {
+  override suspend fun put(key: String, bytes: ByteArray?) {
     pool.connection.use { connection ->
-      connection
-          .prepareStatement(
-              "INSERT INTO $schema.$tableName (key, value, value_size_in_KiB) VALUES (?, ?, ?) " +
-                  "ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value",
-          )
-          .use {
-            it.setString(1, key)
-            it.setBytes(2, value)
-            it.setInt(3, ceil(value.size / 1024.0).toInt())
-            it.executeUpdate()
-          }
+      when (bytes) {
+        null -> connection.prepareStatement(
+            "DELETE FROM $schema.$tableName WHERE key=?",
+        ).use {
+          it.setString(1, key)
+          it.executeUpdate()
+        }
+
+        else -> connection.prepareStatement(
+            "INSERT INTO $schema.$tableName (key, value, value_size_in_KiB) VALUES (?, ?, ?) " +
+                "ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value",
+        ).use {
+          it.setString(1, key)
+          it.setBytes(2, bytes)
+          it.setInt(3, ceil(bytes.size / 1024.0).toInt())
+          it.executeUpdate()
+        }
+      }
     }
   }
 
-  override suspend fun del(key: String) {
+  override suspend fun getSet(keys: Set<String>): Map<String, ByteArray?> {
+    return pool.connection.use { connection ->
+      connection.prepareStatement(
+          "SELECT key, value FROM $schema.$tableName WHERE key = ANY(?)",
+      ).use { statement ->
+        val array = connection.createArrayOf("VARCHAR", keys.toTypedArray())
+        statement.setArray(1, array)
+        statement.executeQuery().use { resultSet ->
+          val results = mutableMapOf<String, ByteArray?>()
+          while (resultSet.next()) {
+            results[resultSet.getString("key")] = resultSet.getBytes("value")
+          }
+          // add missing keys
+          keys.forEach { key ->
+            results.putIfAbsent(key, null)
+          }
+          results
+        }
+      }
+    }
+  }
+
+  override suspend fun putSet(bytes: Map<String, ByteArray?>) {
     pool.connection.use { connection ->
-      connection.prepareStatement("DELETE FROM $schema.$tableName WHERE key=?").use {
-        it.setString(1, key)
-        it.executeUpdate()
+      connection.autoCommit = false
+      try {
+        bytes.forEach { (key, value) ->
+          if (value == null) {
+            connection.prepareStatement("DELETE FROM $schema.$tableName WHERE key = ?")
+                .use { statement ->
+                  statement.setString(1, key)
+                  statement.executeUpdate()
+                }
+          } else {
+            connection.prepareStatement(
+                "INSERT INTO $schema.$tableName (key, value, value_size_in_KiB) VALUES (?, ?, ?) " +
+                    "ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, value_size_in_KiB = EXCLUDED.value_size_in_KiB",
+            ).use { statement ->
+              statement.setString(1, key)
+              statement.setBytes(2, value)
+              statement.setInt(3, ceil(value.size / 1024.0).toInt())
+              statement.executeUpdate()
+            }
+          }
+        }
+        connection.commit()
+      } catch (e: Exception) {
+        connection.rollback()
+        throw e
+      } finally {
+        connection.autoCommit = true
       }
     }
   }

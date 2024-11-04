@@ -562,8 +562,7 @@ class InfiniticPulsarAdmin(
   private fun PoliciesConfig.getPulsarPolicies() = PulsarPolicies().also {
     it.retention_policies = RetentionPolicies(retentionTimeMinutes, retentionSizeMB)
     it.message_ttl_in_seconds = messageTTLSeconds
-    it.delayed_delivery_policies =
-        DelayedDeliveryPoliciesImpl(delayedDeliveryTickTimeMillis, true)
+    it.delayed_delivery_policies = DelayedDeliveryPoliciesImpl(delayedDeliveryTickTimeMillis, true)
     it.schema_compatibility_strategy = schemaCompatibilityStrategy
     it.autoTopicCreationOverride =
         AutoTopicCreationOverrideImpl(

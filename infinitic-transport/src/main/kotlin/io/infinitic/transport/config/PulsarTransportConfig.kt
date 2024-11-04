@@ -23,8 +23,8 @@
 package io.infinitic.transport.config
 
 import io.infinitic.properties.isLazyInitialized
-import io.infinitic.pulsar.PulsarInfiniticConsumer
-import io.infinitic.pulsar.PulsarInfiniticProducer
+import io.infinitic.pulsar.PulsarInfiniticConsumerFactory
+import io.infinitic.pulsar.PulsarInfiniticProducerFactory
 import io.infinitic.pulsar.PulsarInfiniticResources
 import io.infinitic.pulsar.config.PulsarClientConfig
 import io.infinitic.pulsar.config.PulsarConfig
@@ -58,8 +58,8 @@ data class PulsarTransportConfig(
   override val resources by lazy { PulsarInfiniticResources(pulsar.pulsarResources) }
 
   /** Infinitic Consumer */
-  override val consumer by lazy {
-    PulsarInfiniticConsumer(
+  override val consumerFactory by lazy {
+    PulsarInfiniticConsumerFactory(
         pulsar.infiniticPulsarClient,
         pulsar.consumer,
         pulsar.pulsarResources,
@@ -67,8 +67,8 @@ data class PulsarTransportConfig(
   }
 
   /** Infinitic Producer */
-  override val producer by lazy {
-    PulsarInfiniticProducer(
+  override val producerFactory by lazy {
+    PulsarInfiniticProducerFactory(
         pulsar.infiniticPulsarClient,
         pulsar.producer,
         pulsar.pulsarResources,

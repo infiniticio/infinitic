@@ -22,12 +22,11 @@
  */
 package io.infinitic.common.workflows.engine.commands
 
-import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.requester.Requester
 import io.infinitic.common.requester.workflowId
-import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.transport.WorkflowStateCmdTopic
 import io.infinitic.common.transport.WorkflowTagEngineTopic
+import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.workflows.engine.messages.SendSignal
 import io.infinitic.common.workflows.engine.messages.data.RemoteSignalDispatched
 import io.infinitic.common.workflows.engine.messages.data.RemoteSignalDispatchedById
@@ -38,8 +37,6 @@ suspend fun InfiniticProducer.dispatchRemoteSignal(
   signal: RemoteSignalDispatched,
   requester: Requester
 ) {
-  suspend fun getEmitterName() = EmitterName(getName())
-
   when (signal) {
     is RemoteSignalDispatchedById -> when (signal.workflowId) {
       requester.workflowId -> {
@@ -56,7 +53,7 @@ suspend fun InfiniticProducer.dispatchRemoteSignal(
               signalId = signalId,
               signalData = signalData,
               channelTypes = channelTypes,
-              emitterName = getEmitterName(),
+              emitterName = emitterName,
               emittedAt = emittedAt,
               requester = requester,
           )
@@ -75,7 +72,7 @@ suspend fun InfiniticProducer.dispatchRemoteSignal(
             signalId = signalId,
             signalData = signalData,
             channelTypes = channelTypes,
-            emitterName = getEmitterName(),
+            emitterName = emitterName,
             emittedAt = emittedAt,
             requester = requester,
         )
