@@ -48,7 +48,7 @@ class PulsarInfiniticProducer(
   private val client: InfiniticPulsarClient,
   private val pulsarProducerConfig: PulsarProducerConfig,
   private val pulsarResources: PulsarResources,
-  private val batchConfig: BatchConfig?
+  private val batchSendingConfig: BatchConfig?
 ) : InfiniticProducer {
 
   override val emitterName by lazy { EmitterName(client.name) }
@@ -81,7 +81,7 @@ class PulsarInfiniticProducer(
     val envelope = topic.envelope(message)
 
     // get cached producer or create it
-    val producer = getProducer(topic, message.entity(), envelope::class, key, batchConfig)
+    val producer = getProducer(topic, message.entity(), envelope::class, key, batchSendingConfig)
         .getOrElse { return CompletableFuture.failedFuture(it) }
 
     logger.trace { "Sending${if (after > 0) " after $after ms" else ""} to topic '${producer.topic}' with key '$key': '$envelope'" }
@@ -115,7 +115,7 @@ class PulsarInfiniticProducer(
     entity: String,
     envelopeKClass: KClass<out Envelope<out T>>,
     key: String?,
-    batchConfig: BatchConfig?
+    batchSendingConfig: BatchConfig?
   ): Result<Producer<Envelope<out T>>> {
     val topicFullName = with(pulsarResources) {
       topic.forEntity(
@@ -128,7 +128,7 @@ class PulsarInfiniticProducer(
     return client.getProducer(
         topicFullName,
         envelopeKClass,
-        batchConfig,
+        batchSendingConfig,
         pulsarProducerConfig,
         key,
     )

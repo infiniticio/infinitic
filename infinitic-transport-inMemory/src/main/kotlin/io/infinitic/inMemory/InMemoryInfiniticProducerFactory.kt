@@ -39,7 +39,7 @@ class InMemoryInfiniticProducerFactory(
     this.name = name
   }
 
-  override fun getProducer(batchProducingConfig: BatchConfig?) = InMemoryInfiniticProducer(
+  override fun getProducer(batchSendingConfig: BatchConfig?) = InMemoryInfiniticProducer(
       mainChannels,
       eventListenerChannels,
   )

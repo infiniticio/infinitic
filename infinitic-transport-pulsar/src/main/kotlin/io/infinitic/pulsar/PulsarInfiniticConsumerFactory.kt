@@ -74,7 +74,7 @@ class PulsarInfiniticConsumerFactory(
               subscriptionNameDlq = subscription.nameDLQ,
               subscriptionType = subscription.type,
               consumerName = consumerName,
-              batchConfig = batchReceivingConfig,
+              batchReceivingConfig = batchReceivingConfig,
           ).onSuccess {
             trace { "Consumer '${consumerName}' created for $topicName" }
           }
@@ -134,14 +134,14 @@ class PulsarInfiniticConsumerFactory(
     subscriptionNameDlq: String,
     subscriptionType: SubscriptionType,
     consumerName: String,
-    batchConfig: BatchConfig?,
+    batchReceivingConfig: BatchConfig?,
   ): Result<Consumer<S>> {
     val consumerDef = InfiniticPulsarClient.ConsumerDef(
         topic = topic,
         subscriptionName = subscriptionName, //  MUST be the same for all instances!
         subscriptionType = subscriptionType,
         consumerName = consumerName,
-        batchReceivingConfig = batchConfig,
+        batchReceivingConfig = batchReceivingConfig,
         pulsarConsumerConfig = pulsarConsumerConfig,
     )
     val consumerDefDlq = topicDlq?.let {
@@ -150,7 +150,7 @@ class PulsarInfiniticConsumerFactory(
           subscriptionName = subscriptionNameDlq, //  MUST be the same for all instances!
           subscriptionType = SubscriptionType.Shared,
           consumerName = "$consumerName-dlq",
-          batchReceivingConfig = batchConfig,
+          batchReceivingConfig = batchReceivingConfig,
           pulsarConsumerConfig = pulsarConsumerConfig,
       )
     }

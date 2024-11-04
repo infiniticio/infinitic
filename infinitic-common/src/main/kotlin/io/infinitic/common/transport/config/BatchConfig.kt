@@ -33,8 +33,6 @@ data class BatchConfig(
     require(maxMessages > 0) { error("'${::maxMessages.name}' must be > 0, but was $maxMessages") }
     require(maxSeconds > 0) { error("'${::maxSeconds.name}' must be > 0, but was $maxSeconds") }
   }
-
-  val maxMillis = (maxSeconds * 1000).toLong()
 }
 
 fun BatchConfig?.normalized(concurrency: Int) =
@@ -47,3 +45,6 @@ fun BatchConfig?.normalized(key: String, concurrency: Int = 1) = this?.let {
       MillisDuration(maxMillis),
   )
 }
+
+val BatchConfig.maxMillis: Long
+  get() = (maxSeconds * 1000).toLong()

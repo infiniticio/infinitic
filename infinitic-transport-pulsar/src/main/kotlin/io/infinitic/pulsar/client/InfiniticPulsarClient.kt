@@ -26,6 +26,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.messages.Message
 import io.infinitic.common.transport.config.BatchConfig
+import io.infinitic.common.transport.config.maxMillis
 import io.infinitic.pulsar.config.PulsarConsumerConfig
 import io.infinitic.pulsar.config.PulsarProducerConfig
 import io.infinitic.pulsar.schemas.schemaDefinition
@@ -104,7 +105,7 @@ class InfiniticPulsarClient(private val pulsarClient: PulsarClient) {
   fun <T : Message> getProducer(
     topic: String,
     schemaKClass: KClass<out Envelope<out T>>,
-    batchConfig: BatchConfig?,
+    batchSendingConfig: BatchConfig?,
     pulsarProducerConfig: PulsarProducerConfig,
     key: String? = null,
   ): Result<Producer<Envelope<out T>>> {
@@ -113,7 +114,7 @@ class InfiniticPulsarClient(private val pulsarClient: PulsarClient) {
       @Suppress("UNCHECKED_CAST")
       Result.success(
           producers.computeIfAbsent(topic) {
-            createProducer(topic, schemaKClass, batchConfig, pulsarProducerConfig, key)
+            createProducer(topic, schemaKClass, pulsarProducerConfig, batchSendingConfig, key)
           } as Producer<Envelope<out T>>,
       )
     } catch (e: PulsarClientException) {
@@ -125,8 +126,8 @@ class InfiniticPulsarClient(private val pulsarClient: PulsarClient) {
   private fun createProducer(
     topic: String,
     schemaKClass: KClass<out Envelope<out Message>>,
-    batchConfig: BatchConfig?,
     pulsarProducerConfig: PulsarProducerConfig,
+    batchSendingConfig: BatchConfig?,
     key: String? = null,
   ): Producer<Envelope<out Message>> {
     // otherwise create it
@@ -219,15 +220,13 @@ class InfiniticPulsarClient(private val pulsarClient: PulsarClient) {
       }
 
       // if batchConfig is defined, it replaces above settings
-      batchConfig?.also {
+      batchSendingConfig?.also {
         logInfo { "Producer batchConfig=$it" }
         batchingMaxMessages(it.maxMessages)
         batchingMaxPublishDelay(it.maxMillis, TimeUnit.MILLISECONDS)
         enableBatching(true)
       }
     }
-
-
 
     @Suppress("UNCHECKED_CAST")
     return builder.create() as Producer<Envelope<out Message>>
@@ -251,7 +250,7 @@ class InfiniticPulsarClient(private val pulsarClient: PulsarClient) {
         subscriptionName,
         subscriptionType,
         consumerName,
-        batchConfig,
+        batchReceivingConfig,
         consumerConfig
     ) = consumerDef
 
@@ -383,7 +382,7 @@ class InfiniticPulsarClient(private val pulsarClient: PulsarClient) {
       }
 
       // Batch Receive Policy
-      batchConfig?.also {
+      batchReceivingConfig?.also {
         logInfo { "Subscription $subscriptionName: batchConfig=$it" }
         batchReceivePolicy(
             BatchReceivePolicy.builder()

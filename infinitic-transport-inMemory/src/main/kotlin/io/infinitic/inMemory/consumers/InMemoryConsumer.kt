@@ -25,6 +25,7 @@ package io.infinitic.inMemory.consumers
 import io.infinitic.common.messages.Message
 import io.infinitic.common.transport.Topic
 import io.infinitic.common.transport.config.BatchConfig
+import io.infinitic.common.transport.config.maxMillis
 import io.infinitic.common.transport.consumers.batchWithTimeout
 import io.infinitic.common.transport.interfaces.TransportConsumer
 import kotlinx.coroutines.channels.Channel

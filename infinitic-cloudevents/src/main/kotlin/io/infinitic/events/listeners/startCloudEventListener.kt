@@ -27,6 +27,7 @@ import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.messages.Message
 import io.infinitic.common.transport.BatchProcessorConfig
+import io.infinitic.common.transport.config.maxMillis
 import io.infinitic.common.transport.consumers.Result
 import io.infinitic.common.transport.consumers.acknowledge
 import io.infinitic.common.transport.consumers.batchBy
