@@ -20,19 +20,26 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.transport.consumers
+package io.infinitic.common.transport.logged
 
-/**
- * Represents a structure that can hold either a single item or a collection of items.
- *
- * @param D The type of item(s) contained within this structure.
- */
-sealed interface OneOrMany<D>
+import io.github.oshai.kotlinlogging.KLogger
+import io.infinitic.common.messages.Message
+import io.infinitic.common.transport.interfaces.InfiniticConsumer
+import io.infinitic.common.transport.interfaces.TransportMessage
 
-class One<D>(val datum: D) : OneOrMany<D> {
-  override fun toString() = "One(${datum.toString()})"
-}
+class LoggedInfiniticConsumer<M : Message>(
+  private val logger: KLogger,
+  private val consumer: InfiniticConsumer<M>,
+) : InfiniticConsumer<M> {
+  override suspend fun receive(): TransportMessage<M> = consumer.receive().also {
+    logger.trace { "Received $it from ${consumer.name}" }
+  }
 
-class Many<D>(val data: List<D>) : OneOrMany<D> {
-  override fun toString() = "Many($data})"
+  override suspend fun batchReceive() = consumer.batchReceive().also {
+    logger.trace { "Batch (${it.size}) received from ${consumer.name}" }
+  }
+
+  override val maxRedeliveryCount: Int = consumer.maxRedeliveryCount
+
+  override val name: String = consumer.name
 }

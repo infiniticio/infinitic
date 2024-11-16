@@ -31,7 +31,6 @@ import kotlin.random.Random
 internal interface BatchWorkflow {
   fun foo(value: Int): Int
   fun foo2(foo: Int, bar: Int): Int
-  fun foo3(foo: Int, bar: Int): Int
   fun foo4(foo: Int, bar: Int): Input
   fun foo5(foo: Int, bar: Int): Input
   fun foo6(foo: Int, bar: Int)
@@ -50,7 +49,6 @@ internal class BatchWorkflowImpl : Workflow(), BatchWorkflow {
 
   override fun foo(value: Int) = batchService.foo(value)
   override fun foo2(foo: Int, bar: Int) = batchService.foo2(foo, bar)
-  override fun foo3(foo: Int, bar: Int) = batchService.foo3(Input(foo, bar))
   override fun foo4(foo: Int, bar: Int) = batchService.foo4(foo)
   override fun foo5(foo: Int, bar: Int) = batchService.foo5(Input(foo, bar))
   override fun foo6(foo: Int, bar: Int) = batchService.foo6(Input(foo, bar))

@@ -22,49 +22,99 @@
  */
 package io.infinitic.common.transport.consumers
 
-import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.transport.BatchProcessorConfig
 import io.infinitic.common.transport.Topic
 import io.infinitic.common.transport.interfaces.TransportConsumer
 import io.infinitic.common.transport.interfaces.TransportMessage
 import kotlinx.coroutines.delay
-import java.util.*
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.random.Random
 
-internal data class IntMessage(val value: Int) : TransportMessage<DeserializedIntMessage> {
+internal var deserializeHook: (IntMessage) -> Unit = { }
+internal var acknowledgeHook: (IntMessage) -> Unit = { }
+internal var negativeAcknowledgeHook: (IntMessage) -> Unit = { }
+
+private val receivedMutex = Mutex()
+internal val receivedList = mutableListOf<Int>()
+
+private val deserializedMutex = Mutex()
+internal val deserializedList = mutableListOf<Int>()
+
+private val processedMutex = Mutex()
+internal val processedList = mutableListOf<Int>()
+
+internal val acknowledgedMutex = Mutex()
+internal val acknowledgedList = mutableListOf<Int>()
+
+private val negativeAcknowledgedMutex = Mutex()
+internal val negativeAcknowledgedList = mutableListOf<Int>()
+
+/**
+ * Represents an integer message to be transported and processed.
+ *
+ * This class implements the `TransportMessage` interface with `Int` as the payload type.
+ * It encapsulates an integer value and provides mechanisms to serialize, deserialize,
+ * acknowledge, and negatively acknowledge the message.
+ *
+ * @property value The integer value contained in the message.
+ * @property messageId The unique identifier for the message, derived from the integer value.
+ * @property publishTime The timestamp when the message was published.
+ * @property topic The topic to which the message belongs.
+ * @property key A key associated with the message, derived from the integer value.
+ * @property sentToDeadLetterQueue Indicates whether the message has been sent to the dead-letter queue.
+ */
+internal data class IntMessage(val value: Int) : TransportMessage<Int> {
   override val messageId: String = value.toString()
+
   override val publishTime: MillisInstant = MillisInstant.now()
 
   override lateinit var topic: Topic<*>
 
-  override fun deserialize(): DeserializedIntMessage = DeserializedIntMessage(this)
+  override val key: String = (value % 10).toString()
+
+  override suspend fun deserialize(): Int {
+    println("start deserializing...$this")
+    deserializeHook(this)
+    println("end   deserializing...$this")
+    deserializedMutex.withLock { deserializedList.add(value) }
+    return value
+  }
 
   override suspend fun negativeAcknowledge() {
-    negativeAcknowledgedList.add(value)
+    negativeAcknowledgeHook(this)
+    negativeAcknowledgedMutex.withLock { negativeAcknowledgedList.add(value) }
   }
 
   override suspend fun acknowledge() {
-    acknowledgedList.add(value)
+    acknowledgeHook(this)
+    acknowledgedMutex.withLock { acknowledgedList.add(value) }
   }
 
-  override val hasBeenSentToDeadLetterQueue = negativeAcknowledgedList.contains(value)
+  override val sentToDeadLetterQueue = negativeAcknowledgedList.contains(value)
 
   override fun toString(): String = value.toString()
 }
 
-internal data class DeserializedIntMessage(val value: IntMessage) {
-  override fun toString(): String = value.toString()
-}
-
-internal val receivedList = Collections.synchronizedList(mutableListOf<Int>())
-internal val deserializedList = Collections.synchronizedList(mutableListOf<Int>())
-internal val processedList = Collections.synchronizedList(mutableListOf<Int>())
-internal val acknowledgedList = Collections.synchronizedList(mutableListOf<Int>())
-internal val negativeAcknowledgedList = Collections.synchronizedList(mutableListOf<Int>())
-
-internal open class IntConsumer : TransportConsumer<IntMessage> {
+/**
+ * A consumer class that processes integer messages by incrementing a counter.
+ *
+ * This class extends the `TransportConsumer` interface with `IntMessage` as the message type
+ * and provides implementations for receiving individual and batch messages. It maintains
+ * a counter that increments with each received message.
+ *
+ * Properties:
+ * - counter: An `AtomicInteger` used to keep track of the count of messages.
+ * - maxRedeliveryCount: The maximum number of times a message can be redelivered, set to 1.
+ * - name: The name of the consumer, defaults to the consumer's `toString()` representation.
+ *
+ * Methods:
+ * - reset: Resets the counter to zero.
+ * - receive: Receives an incremented `IntMessage` and adds its value to a received list.
+ * - batchReceive: Receives a batch of incremented `IntMessage` objects based on the `batchConfig`.
+ */
+internal open class IntConsumer(private val maxMessages: Int = 1) : TransportConsumer<IntMessage> {
   private val counter = AtomicInteger(0)
 
   fun reset() {
@@ -72,38 +122,28 @@ internal open class IntConsumer : TransportConsumer<IntMessage> {
   }
 
   override suspend fun receive() = IntMessage(counter.incrementAndGet())
-      .also { receivedList.add(it.value) }
+      .also { receivedMutex.withLock { receivedList.add(it.value) } }
 
-  override suspend fun batchReceive(): List<IntMessage> = listOf(receive(), receive())
+  override suspend fun batchReceive(): List<IntMessage> =
+      List(maxMessages) { receive() }
 
   override val maxRedeliveryCount = 1
+
   override val name: String = this.toString()
 }
 
-internal fun deserialize(message: IntMessage) = DeserializedIntMessage(message).also {
-  println("start deserializing...$message")
-  deserializedList.add(it.value.value)
-  println("end   deserializing...$message")
+internal suspend fun process(deserialized: Int, publishedAt: MillisInstant) {
+  println("start processing......$deserialized")
+  delay(Random.nextLong(10))
+  println("end   processing......$deserialized")
+  processedMutex.withLock { processedList.add(deserialized) }
 }
 
-internal suspend fun process(deserialized: DeserializedIntMessage, publishTime: MillisInstant) {
-  println("start processing......${deserialized.value.value}")
-  delay(Random.nextLong(100))
-  println("end   processing......${deserialized.value.value}")
-  processedList.add(deserialized.value.value)
+internal suspend fun batchProcess(messages: List<Pair<Int, MillisInstant>>) {
+  println("start processing......${messages.map { it.first }}")
+  delay(Random.nextLong(10))
+  println("end   processing......${messages.map { it.first }}")
+  processedMutex.withLock { processedList.addAll(messages.map { it.first }) }
 }
 
-internal fun processBatch(batch: List<DeserializedIntMessage>, publishTimes: List<MillisInstant>) {
-  processedList.addAll(batch.map { it.value.value })
-}
-
-internal fun batchConfig(deserialized: DeserializedIntMessage): BatchProcessorConfig? {
-  val i = deserialized.value.value
-  return when {
-    (i % 3) == 0 -> null
-    (i % 3) == 1 -> BatchProcessorConfig("1", 20, MillisDuration(1000 * 3600 * 50))
-    (i % 3) == 2 -> BatchProcessorConfig("2", 20, MillisDuration(1000 * 3600 * 50))
-    else -> throw IllegalStateException()
-  }
-}
 

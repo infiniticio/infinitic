@@ -28,7 +28,6 @@ import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -41,22 +40,59 @@ import kotlin.random.Random
 
 internal class StartBatchingTests : StringSpec(
     {
-      val logger = KotlinLogging.logger {}
+      val logger = KotlinLogging.logger("io.infinitic.tests")
       fun getScope() = CoroutineScope(Dispatchers.IO)
+
+      "test startBatching function" {
+        with(KotlinLogging.logger {}) {
+          val scope = CoroutineScope(Dispatchers.IO)
+
+          val inputChannel = Channel<Result<String, Int>>()
+          val outputChannel = Channel<Result<List<String>, List<Int>>>()
+
+          // Start batching function in background
+          scope.launch {
+            inputChannel.startBatching(2, 1000L, outputChannel)
+          }
+
+          val job = scope.launch {
+            // Expect batched output
+            val output1 = outputChannel.receive()
+            output1.message shouldBe listOf("Hello", "World")
+            output1.data shouldBe listOf(1, 2)
+
+            // Expect batched output
+            val output2 = outputChannel.receive()
+            output2.message shouldBe listOf("Foo", "Bar")
+            output2.data shouldBe listOf(3, 4)
+          }
+
+          // Send data to input channel
+          inputChannel.send(Result.success("Hello", 1))
+          inputChannel.send(Result.success("World", 2))
+          inputChannel.send(Result.success("Foo", 3))
+          inputChannel.send(Result.success("Bar", 4))
+
+          job.join()
+
+          // Close input channel
+          inputChannel.close()
+
+          // Expect output channel to be closed as well
+          shouldThrow<ClosedReceiveChannelException> { outputChannel.receive() }
+        }
+      }
 
       "should be able to batch by max message, up to scope cancellation" {
         with(logger) {
           val scope = getScope()
-          val channel = with(scope) { IntConsumer().startConsuming(false) }
-          val outputChannel = Channel<OneOrMany<Result<IntMessage, IntMessage>>>()
-
-          channel.startBatching(5, 100, outputChannel)
+          val inputChannel = scope.startReceiving(IntConsumer())
+          val outputChannel = inputChannel.startBatching(5, 100)
 
           // batching
           shouldNotThrowAny {
             repeat(Random.nextInt(10, 50)) {
-              val result = outputChannel.receive()
-              result.shouldBeInstanceOf<Many<Result<IntMessage, IntMessage>>>()
+              val result: Result<List<IntMessage>, List<IntMessage>> = outputChannel.receive()
               result.data.size shouldBe 5
             }
           }
@@ -65,13 +101,9 @@ internal class StartBatchingTests : StringSpec(
           // after scope cancelling
           scope.cancel()
           // consumer channel should be closed
-          shouldThrow<ClosedReceiveChannelException> { while (true) channel.receive() }
+          shouldThrow<ClosedReceiveChannelException> { while (true) inputChannel.receive() }
           // outputChannel should be closed
-          shouldThrow<ClosedReceiveChannelException> {
-            while (true) {
-              outputChannel.receive()
-            }
-          }
+          shouldThrow<ClosedReceiveChannelException> { while (true) outputChannel.receive() }
         }
       }
 
@@ -84,16 +116,13 @@ internal class StartBatchingTests : StringSpec(
 
         with(logger) {
           val scope = getScope()
-          val channel = with(scope) { SlowConsumer().startConsuming(false) }
-          val outputChannel = Channel<OneOrMany<Result<IntMessage, IntMessage>>>()
-
-          channel.startBatching(5, 100, outputChannel)
+          val inputChannel = scope.startReceiving(SlowConsumer())
+          val outputChannel = inputChannel.startBatching(5, 100)
 
           // batching
           shouldNotThrowAny {
             repeat(Random.nextInt(2, 5)) {
-              val result = outputChannel.receive()
-              result.shouldBeInstanceOf<Many<Result<IntMessage, IntMessage>>>()
+              val result: Result<List<IntMessage>, List<IntMessage>> = outputChannel.receive()
               result.data.size shouldBe 2
             }
           }
@@ -102,13 +131,13 @@ internal class StartBatchingTests : StringSpec(
           // after scope cancelling
           scope.cancel()
           // consumer channel should be closed
-          shouldThrow<ClosedReceiveChannelException> { while (true) channel.receive() }
+          shouldThrow<ClosedReceiveChannelException> { while (true) inputChannel.receive() }
           // outputChannel should be closed
           shouldThrow<ClosedReceiveChannelException> { while (true) outputChannel.receive() }
         }
       }
 
-      "should be able" {
+      "receiveIfNotClose should returns null when channel is closed" {
         with(logger) {
           val channel = Channel<Int>()
           val job = launch {

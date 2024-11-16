@@ -47,7 +47,6 @@ fun main() {
 internal interface BatchService {
   fun foo(foo: Int): Int
   fun foo2(foo: Int, bar: Int): Int
-  fun foo3(input: Input): Int
   fun foo4(foo: Int): Input
   fun foo5(input: Input): Input
   fun foo6(input: Input)
@@ -58,35 +57,38 @@ internal class BatchServiceImpl : BatchService {
 
   override fun foo(foo: Int) = thisShouldNotHappen()
   override fun foo2(foo: Int, bar: Int) = thisShouldNotHappen()
-  override fun foo3(input: Input) = thisShouldNotHappen()
   override fun foo4(foo: Int) = thisShouldNotHappen()
   override fun foo5(input: Input) = thisShouldNotHappen()
   override fun foo6(input: Input) = thisShouldNotHappen()
   override fun haveSameKey(i: Int) = thisShouldNotHappen()
 
   @Batch(maxMessages = 10, maxSeconds = 1.0)
-  fun foo(list: Map<String, Int>): Map<String, Int> =
-      list.mapValues { list.values.sum() }
+  fun foo(list: Map<String, Int>): Map<String, Int> {
+    val count = list.values.count()
+    return list.mapValues { count }
+  }
 
   @Batch(maxMessages = 10, maxSeconds = 1.0)
-  fun foo2(list: Map<String, Input>): Map<String, Int> =
-      list.mapValues { list.values.sumOf { it.sum() } }
+  fun foo2(list: Map<String, Input>): Map<String, Int> {
+    val count = list.values.count()
+    return list.mapValues { it.value.bar + count }
+  }
 
   @Batch(maxMessages = 10, maxSeconds = 1.0)
-  fun foo3(list: Map<String, Input>): Map<String, Int> =
-      list.mapValues { list.values.sumOf { it.sum() } }
+  fun foo4(list: Map<String, Int>): Map<String, Input> {
+    val count = list.values.count()
+    return list.mapValues { Input(it.value, count) }
+  }
 
   @Batch(maxMessages = 10, maxSeconds = 1.0)
-  fun foo4(list: Map<String, Int>): Map<String, Input> =
-      list.mapValues { Input(list.values.sumOf { it }, it.value) }
-
-  @Batch(maxMessages = 10, maxSeconds = 1.0)
-  fun foo5(list: Map<String, Input>): Map<String, Input> =
-      list.mapValues { Input(list.values.sumOf { it.sum() }, it.value.bar) }
+  fun foo5(list: Map<String, Input>): Map<String, Input> {
+    val count = list.values.count()
+    return list.mapValues { Input(it.value.bar, count) }
+  }
 
   @Batch(maxMessages = 10, maxSeconds = 1.0)
   fun foo6(list: Map<String, Input>) {
-    list.mapValues { Input(list.values.sumOf { it.sum() }, it.value.bar) }
+    // Nothing
   }
 
   @Batch(maxMessages = 10, maxSeconds = 2.0)

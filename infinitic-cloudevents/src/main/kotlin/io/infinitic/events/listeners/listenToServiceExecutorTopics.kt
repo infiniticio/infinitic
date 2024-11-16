@@ -31,7 +31,7 @@ import io.infinitic.common.transport.ServiceExecutorTopic
 import io.infinitic.common.transport.SubscriptionType
 import io.infinitic.common.transport.config.BatchConfig
 import io.infinitic.common.transport.consumers.Result
-import io.infinitic.common.transport.consumers.startConsuming
+import io.infinitic.common.transport.consumers.startBatchReceiving
 import io.infinitic.common.transport.create
 import io.infinitic.common.transport.interfaces.InfiniticConsumerFactory
 import io.infinitic.common.transport.interfaces.TransportMessage
@@ -43,32 +43,38 @@ import kotlinx.coroutines.launch
 context(CoroutineScope, KLogger)
 internal fun InfiniticConsumerFactory.listenToServiceExecutorTopics(
   serviceName: ServiceName,
-  batchConfig: BatchConfig?,
+  batchConfig: BatchConfig,
   subscriptionName: String?,
-  outChannel: Channel<Result<TransportMessage<Message>, TransportMessage<Message>>>,
+  outChannel: Channel<Result<List<TransportMessage<Message>>, List<TransportMessage<Message>>>>,
 ): Job = launch {
 
-  // Send messages from ServiceExecutorTopic to inChannel
+  // Send messages from ServiceExecutorTopic to outChannel
   val serviceExecutorSubscription = SubscriptionType.EVENT_LISTENER.create(
       ServiceExecutorTopic,
       subscriptionName,
   )
-  buildConsumer(serviceExecutorSubscription, serviceName.toString(), batchConfig)
-      .startConsuming(batchConfig != null, outChannel)
+  val serviceExecutorConsumer =
+      newConsumer(serviceExecutorSubscription, serviceName.toString(), batchConfig)
 
-  // Send messages from ServiceExecutorEventTopic to inChannel
+  startBatchReceiving(serviceExecutorConsumer, outChannel)
+
+  // Send messages from ServiceExecutorEventTopic to outChannel
   val serviceExecutorEventSubscription = SubscriptionType.EVENT_LISTENER.create(
       ServiceExecutorEventTopic,
       subscriptionName,
   )
-  buildConsumer(serviceExecutorEventSubscription, serviceName.toString(), batchConfig)
-      .startConsuming(batchConfig != null, outChannel)
+  val serviceExecutorEventConsumer =
+      newConsumer(serviceExecutorEventSubscription, serviceName.toString(), batchConfig)
 
-  // Send messages from ServiceExecutorRetryTopic to inChannel
+  startBatchReceiving(serviceExecutorEventConsumer, outChannel)
+
+  // Send messages from ServiceExecutorRetryTopic to outChannel
   val serviceExecutorRetrySubscription = SubscriptionType.EVENT_LISTENER.create(
       ServiceExecutorRetryTopic,
       subscriptionName,
   )
-  buildConsumer(serviceExecutorRetrySubscription, serviceName.toString(), batchConfig)
-      .startConsuming(batchConfig != null, outChannel)
+  val serviceExecutorRetryConsumer =
+      newConsumer(serviceExecutorRetrySubscription, serviceName.toString(), batchConfig)
+
+  startBatchReceiving(serviceExecutorRetryConsumer, outChannel)
 }

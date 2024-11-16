@@ -40,22 +40,23 @@ import kotlinx.coroutines.withContext
 context(CoroutineScope, KLogger)
 fun <S> Channel<S>.collect(
   process: (suspend (S) -> Unit)? = null
-) {
-  val callingScope: CoroutineScope = this@CoroutineScope
-
+) = launch {
   debug { "collect: starting listening channel ${this@collect.hashCode()}" }
 
-  launch {
-    withContext(NonCancellable) {
+  // start a non cancellable scope
+  withContext(NonCancellable) {
+    launch {
       while (true) {
         try {
           // the only way to quit this loop is to close the input channel
           // which is triggered by canceling the calling scope
           val o = receiveIfNotClose().also { trace { "collect: receiving $it" } } ?: break
           process?.invoke(o)
-        } catch (e: Error) {
+        } catch (e: Exception) {
+          warn(e) { "Exception while collecting" }
+        } catch (e: Throwable) {
           warn(e) { "Error while collecting, cancelling calling scope" }
-          callingScope.cancel()
+          this@CoroutineScope.cancel()
         }
       }
       trace { "collect: exiting" }

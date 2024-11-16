@@ -20,32 +20,8 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.inMemory.consumers
+package io.infinitic.common.transport.interfaces
 
-import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.messages.Message
-import io.infinitic.common.transport.Topic
-import io.infinitic.common.transport.interfaces.TransportMessage
 
-class InMemoryTransportMessage<S : Message>(private val message: S, override val topic: Topic<S>) :
-  TransportMessage<S> {
-  private var hasBeenNegativelyAcknowledged = false
-
-  override val messageId: String = message.messageId.toString()
-
-  override val key: String = message.key().toString()
-
-  override val publishTime: MillisInstant = MillisInstant.now()
-
-  override suspend fun deserialize() = message
-
-  override suspend fun negativeAcknowledge() {
-    hasBeenNegativelyAcknowledged = true
-  }
-
-  override suspend fun acknowledge() {
-    //  nothing to do
-  }
-
-  override val sentToDeadLetterQueue: Boolean = hasBeenNegativelyAcknowledged
-}
+interface InfiniticConsumer<M : Message> : TransportConsumer<TransportMessage<M>>

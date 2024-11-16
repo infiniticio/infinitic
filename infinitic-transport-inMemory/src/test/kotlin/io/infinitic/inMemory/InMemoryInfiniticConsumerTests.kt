@@ -31,6 +31,7 @@ import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.transport.MainSubscription
 import io.infinitic.common.transport.ServiceExecutorTopic
+import io.infinitic.common.transport.consumers.startProcessingWithoutKey
 import io.infinitic.inMemory.channels.InMemoryChannels
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.longs.shouldBeLessThan
@@ -38,7 +39,9 @@ import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.system.measureTimeMillis
 
@@ -62,32 +65,36 @@ class InMemoryInfiniticConsumerTests : StringSpec(
       val executeTask = TestFactory.random<ExecuteTask>().copy(serviceName = serviceName)
 
       "Tasks should be processed in parallel" {
-        with(logger) {
-          val scope = CoroutineScope(Dispatchers.IO)
+        val scope = CoroutineScope(Dispatchers.IO)
 
-          repeat(10) {
-            val m = executeTask.copy(taskId = TaskId())
-            with(producer) { m.sendTo(ServiceExecutorTopic) }
-          }
-
-          val job = with(scope) {
-            consumerFactory.startAsync(
-                MainSubscription(ServiceExecutorTopic),
-                serviceName.toString(),
-                null,
-                10,
-                ::process,
-            )
-          }
-
-          delay(200)
-          val duration = measureTimeMillis {
-            scope.cancel()
-            job.join()
-          }
-          duration shouldBeLessThan 1200L
-          counter.get() shouldBe 10
+        repeat(10) {
+          val m = executeTask.copy(taskId = TaskId())
+          with(producer) { m.sendTo(ServiceExecutorTopic) }
         }
+
+        val consumer = consumerFactory.newConsumer(
+            MainSubscription(ServiceExecutorTopic),
+            serviceName.toString(),
+            null,
+        )
+
+        val duration = measureTimeMillis {
+          scope.launch {
+            coroutineScope {
+              startProcessingWithoutKey(
+                  logger = logger,
+                  consumer = consumer,
+                  concurrency = 10,
+                  processor = ::process,
+              )
+              // we wait a bit to make sure that tasks have started
+              delay(200)
+              cancel()
+            }
+          }.join()
+        }
+        duration shouldBeLessThan 1200L
+        counter.get() shouldBe 10
       }
     },
 )

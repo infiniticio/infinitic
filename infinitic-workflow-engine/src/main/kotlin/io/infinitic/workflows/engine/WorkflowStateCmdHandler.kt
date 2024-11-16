@@ -45,17 +45,16 @@ class WorkflowStateCmdHandler(val producer: InfiniticProducer) {
   private val emitterName = producer.emitterName
 
   suspend fun batchProcess(
-    messages: List<WorkflowStateEngineMessage>,
-    publishTimes: List<MillisInstant>
+    messages: List<Pair<WorkflowStateEngineMessage, MillisInstant>>,
   ) {
     // get message by workflowId
     val messagesMap: Map<WorkflowId, List<Pair<WorkflowStateEngineMessage, MillisInstant>>> =
-        messages.zip(publishTimes).groupBy { it.first.workflowId }
+        messages.groupBy { it.first.workflowId }
 
     // process all messages by workflowId, in parallel
     coroutineScope {
       messagesMap
-          .mapValues { (workflowId, messageAndPublishTimes) ->
+          .mapValues { (_, messageAndPublishTimes) ->
             async { batchProcessById(messageAndPublishTimes) }
           }
           .mapValues { it.value.await() }

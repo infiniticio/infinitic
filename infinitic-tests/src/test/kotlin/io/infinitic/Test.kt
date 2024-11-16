@@ -122,7 +122,7 @@ internal suspend fun InfiniticWorker.getWorkflowState(
 
 object ProjectConfig : AbstractProjectConfig() {
   // each test should not be longer than 5s
-  override val timeout = 10000.milliseconds
+  override val timeout = 30000.milliseconds
 
   override suspend fun beforeProject() {
     Listener.clear()

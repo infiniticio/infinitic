@@ -22,7 +22,6 @@
  */
 package io.infinitic.clients.dispatcher
 
-import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.clients.Deferred
 import io.infinitic.clients.InfiniticClient
 import io.infinitic.clients.deferred.DeferredChannel
@@ -65,6 +64,7 @@ import io.infinitic.common.transport.ServiceTagEngineTopic
 import io.infinitic.common.transport.Topic
 import io.infinitic.common.transport.WorkflowStateCmdTopic
 import io.infinitic.common.transport.WorkflowTagEngineTopic
+import io.infinitic.common.transport.consumers.startProcessingWithoutKey
 import io.infinitic.common.transport.interfaces.InfiniticConsumerFactory
 import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.workflows.data.channels.SignalId
@@ -777,45 +777,48 @@ internal class ClientDispatcher(
 
 
   /**
-   * Starts listening asynchronously for incoming messages for a specific client.
+   * Starts listening for messages using a consumer client for a specified emitter.
    *
-   * This method ensures that a consumer client, identified by `emitterName`, is created and started
-   * only once. It launches a coroutine to handle the listening process and ensures that messages
-   * are emitted to the response flow or any errors are propagated appropriately.
+   * This function creates a consumer using the provided consumer factory and then launches a coroutine
+   * to process all incoming messages. The messages are received one by one and emitted to the `responseFlow`.
    *
-   * This function must be called with an active CoroutineScope and KLogger context.
+   * If any exception occurs during message processing, it will be emitted to the `responseFlow` and then rethrown.
    *
-   * The function performs the following tasks:
-   * - It checks if the consumer client has already started using `hasClientConsumerStarted`.
-   * - Logs the starting message for the client using `KLogger`.
-   * - Invokes `consumer.startAsync` to start listening to the specified subscription synchronously.
-   * - Launches a coroutine to handle the asynchronous listening process, which waits for messages
-   *   and emits them to `responseFlow`.
-   * - Catches any exceptions during message processing and emits them to the `responseFlow` before rethrowing.
+   * The consumer configuration includes:
+   * - Subscription based on `ClientTopic`
+   * - Entity name derived from the `emitterName` field
+   * The concurrent processing is limited to one message at a time.
    *
-   * This function suspends until the consumer client is successfully started and the listening coroutine is launched.
+   * The method is designed to be called only once, controlled by an external flag `hasClientConsumerStarted`.
+   *
+   * The function utilizes logger to provide information about the process.
+   *
+   * @throws Exception If there is an issue during message processing, it will be propagated and emitted to the `responseFlow`.
    */
-  context(CoroutineScope, KLogger)
   private suspend fun startListeningAsync() {
-    if (hasClientConsumerStarted.compareAndSet(false, true)) {
-      info { "Starting consumer client for client $emitterName" }
-      // synchronously make sure that the consumer is created and started
-      val listenerJob =
-          consumerFactory.startAsync(
-              subscription = MainSubscription(ClientTopic),
-              entity = emitterName.toString(),
+    logger.info { "Starting consumer client for client $emitterName" }
+    val consumer = consumerFactory.newConsumer(
+        subscription = MainSubscription(ClientTopic),
+        entity = emitterName.toString(),
+        batchReceivingConfig = null,
+    )
+
+    clientScope.launch {
+      try {
+        // waits for any children coroutine to complete by an exception
+        coroutineScope {
+          // process all messages by sending them to responseFlow
+          startProcessingWithoutKey(
+              logger,
+              consumer,
               concurrency = 1,
               processor = { message, _ -> responseFlow.emit(message) },
           )
-      // asynchronously listen
-      launch {
-        try {
-          listenerJob.join()
-        } catch (e: Exception) {
-          // all subsequent calls to await will fail and trigger this exception
-          responseFlow.emitThrowable(e)
-          throw e
         }
+      } catch (e: Exception) {
+        // all subsequent calls to await will fail and trigger this exception
+        responseFlow.emitThrowable(e)
+        throw e
       }
     }
   }
@@ -833,8 +836,11 @@ internal class ClientDispatcher(
     timeout: Long = Long.MAX_VALUE,
     predicate: suspend (ClientMessage) -> Boolean
   ): CoroutineDeferred<ClientMessage?> = with(clientScope) {
+
     // make sure the client is listening
-    with(logger) { startListeningAsync() }
+    if (hasClientConsumerStarted.compareAndSet(false, true)) {
+      startListeningAsync()
+    }
 
     return async { responseFlow.first(timeout) { predicate(it) } }
   }

@@ -27,7 +27,7 @@ import io.infinitic.common.transport.Topic
 import io.infinitic.common.transport.config.BatchConfig
 import io.infinitic.common.transport.config.maxMillis
 import io.infinitic.common.transport.consumers.batchWithTimeout
-import io.infinitic.common.transport.interfaces.TransportConsumer
+import io.infinitic.common.transport.interfaces.InfiniticConsumer
 import kotlinx.coroutines.channels.Channel
 
 /**
@@ -40,7 +40,7 @@ class InMemoryConsumer<S : Message>(
   private val topic: Topic<S>,
   private val batchReceivingConfig: BatchConfig?,
   private val channel: Channel<S>
-) : TransportConsumer<InMemoryTransportMessage<S>> {
+) : InfiniticConsumer<S> {
 
   override suspend fun receive() = InMemoryTransportMessage(channel.receive(), topic)
 

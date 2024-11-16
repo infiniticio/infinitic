@@ -26,44 +26,72 @@ import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.common.transport.interfaces.TransportMessage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 
 /**
  * Collect messages from the channel and acknowledge or handle failures accordingly.
  *
  * @param T The type of the transport message extending `TransportMessage`.
  * @param M The type of the message contained within the transport message.
- * @param I The type of additional information carried by the result.
  * @param beforeDlq A suspending function that will be executed before a message is sent to the dead-letter queue.
  */
 context(CoroutineScope, KLogger)
-fun <T : TransportMessage<M>, M : Any, I> Channel<Result<T, I>>.acknowledge(
+fun <T : TransportMessage<M>, M> Channel<Result<T, Unit>>.acknowledge(
   beforeDlq: (suspend (M, Exception) -> Unit)? = null,
 ) = collect { result ->
-  val message = result.message()
+  val message = result.message
 
   result.onSuccess {
+    // acknowledge this successful message
     message.tryAcknowledge()
   }
 
   result.onFailure { exception ->
     // negative acknowledge this failed message
     message.tryNegativeAcknowledge()
+    // dead letter queue hook
+    message.dlq(exception, beforeDlq)
+  }
+}
 
-    // if the message reached a pre-defined number of negative acknowledgment,
-    // il will be automatically be sent to Dead-Letter-Queue
-    // In that case, we try to run the `beforeDlq` function
-    if (message.hasBeenSentToDeadLetterQueue) {
-      val deserialized = message.deserializeOrNull()
-      // log as error, as this failed message will now be skipped
-      error(exception) {
-        "Sending message to DLQ: ${deserialized?.string ?: message.messageId}"
+/**
+ * Collects results from the channel and acknowledge successful messages
+ * or negative acknowledge failing ones
+ *
+ * @param T The type of the transport message.
+ * @param M The type of the payload contained within the message.
+ * @param beforeDlq A suspending function called before sending the message to the DLQ.
+ *                  This function takes a message and an exception as parameters. It is optional and
+ *                  defaults to null.
+ */
+context(CoroutineScope, KLogger)
+fun <T : TransportMessage<M>, M> Channel<Result<List<T>, Unit>>.acknowledge(
+  beforeDlq: (suspend (M, Exception) -> Unit)? = null,
+) {
+  collect { result ->
+    val messages = result.message
+
+    result.onSuccess {
+      // acknowledge these successful messages
+      coroutineScope {
+        messages.forEach {
+          launch {
+            it.tryAcknowledge()
+          }
+        }
       }
-      if (deserialized != null && beforeDlq != null) {
-        try {
-          beforeDlq(deserialized, exception)
-        } catch (e: Exception) {
-          warn(e) {
-            "Error when calling dead letter hook for message ${deserialized.string}"
+    }
+
+    result.onFailure { exception ->
+      // negative acknowledge these failed messages
+      coroutineScope {
+        messages.forEach {
+          launch {
+            // negative acknowledge this failed message
+            it.tryNegativeAcknowledge()
+            // dead letter queue hook
+            it.dlq(exception, beforeDlq)
           }
         }
       }
@@ -71,27 +99,55 @@ fun <T : TransportMessage<M>, M : Any, I> Channel<Result<T, I>>.acknowledge(
   }
 }
 
+/**
+ * if the message reached a pre-defined number of negative acknowledgment,
+ * il will be automatically be sent to Dead-Letter-Queue
+ * In that case, we try to run the `beforeDlq` function
+ */
 context(KLogger)
-private suspend fun <S> TransportMessage<S>.tryAcknowledge() = try {
-  trace { "Acknowledging message ${this.messageId}" }
-  acknowledge()
-  debug { "Acknowledged message ${this.messageId}" }
-} catch (e: Exception) {
-  warn(e) { "Error when acknowledging ${deserializeOrNull()?.string ?: messageId}" }
+private suspend fun <T : TransportMessage<M>, M> T.dlq(
+  e: Exception,
+  beforeDlq: (suspend (M, Exception) -> Unit)?
+) {
+  if (sentToDeadLetterQueue) {
+    val deserialized = deserializeOrNull()
+    // log as error, as this failed message will now be skipped
+    error(e) {
+      "Sending message to DLQ: ${deserialized?.string ?: messageId}"
+    }
+    if (deserialized != null && beforeDlq != null) {
+      try {
+        beforeDlq(deserialized, e)
+      } catch (e: Exception) {
+        warn(e) {
+          "Error when calling dead letter hook for message ${deserialized.string}"
+        }
+      }
+    }
+  }
 }
 
 context(KLogger)
-private suspend fun <S> TransportMessage<S>.tryNegativeAcknowledge() = try {
-  trace { "Negatively acknowledging message ${this.messageId}" }
-  negativeAcknowledge()
-  debug { "Negatively acknowledged message ${this.messageId}" }
+private suspend fun <T : TransportMessage<M>, M> T.tryAcknowledge() = try {
+  trace { "Acknowledging message $messageId" }
+  acknowledge()
+  debug { "Acknowledged message $messageId" }
 } catch (e: Exception) {
-  warn(e) { "Error when negatively acknowledging ${deserializeOrNull()?.string ?: messageId}" }
+  warn(e) { "Error when acknowledging $messageId" }
+}
+
+context(KLogger)
+internal suspend fun <T : TransportMessage<M>, M> T.tryNegativeAcknowledge() = try {
+  trace { "Negatively acknowledging message $messageId" }
+  negativeAcknowledge()
+  debug { "Negatively acknowledged message $messageId" }
+} catch (e: Exception) {
+  warn(e) { "Error when negatively acknowledging $messageId" }
   null
 }
 
-private fun <S> TransportMessage<S>.deserializeOrNull(): S? = try {
+private suspend fun <T : TransportMessage<M>, M> T.deserializeOrNull(): M? = try {
   deserialize()
-} catch (e: Exception) {
+} catch (_: Exception) {
   null
 }

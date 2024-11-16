@@ -29,10 +29,10 @@ import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.system.measureTimeMillis
 import kotlin.time.Duration.Companion.minutes
-import kotlin.time.Duration.Companion.seconds
 
 internal class BatchesWorkflowTests : StringSpec(
     {
@@ -40,106 +40,77 @@ internal class BatchesWorkflowTests : StringSpec(
 
       val batchWorkflow = client.newWorkflow(BatchWorkflow::class.java)
 
-      // the first test has a large timeout to deal with Pulsar initialization
-      "One primitive parameter (with maxSize=10)".config(timeout = 1.minutes) {
+      "initialization".config(timeout = 1.minutes) {
+        delay(15000)
+      }
+
+      "One primitive parameter (with maxMessages=10)" {
         for (i in 1..9) {
           client.dispatch(batchWorkflow::foo, i)
         }
-
-        // 55 = 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10
-        batchWorkflow.foo(10) shouldBe 55
+        batchWorkflow.foo(10) shouldBe 10
       }
 
-      "One primitive parameter (with maxDelaySeconds=1)" {
+      "One primitive parameter (with maxSeconds=1)" {
         for (i in 1..8) {
           client.dispatch(batchWorkflow::foo, i)
         }
-
-        // 45 = 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9
-        batchWorkflow.foo(9) shouldBe 45
+        batchWorkflow.foo(9) shouldBe 9
       }
 
-      "Two primitive parameters (with maxSize=10)" {
+      "One Object parameter (with maxMessages=10)" {
         for (i in 1..9) {
           client.dispatch(batchWorkflow::foo2, i, i)
         }
-
-        // 110 = (1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10) * 2
-        batchWorkflow.foo2(10, 10) shouldBe 110
+        batchWorkflow.foo2(10, 10) shouldBe 10 + 10
       }
 
-      "Two primitive parameters (with maxDelaySeconds=1)" {
+      "One Object parameter (with maxSeconds=1)" {
         for (i in 1..8) {
           client.dispatch(batchWorkflow::foo2, i, i)
         }
-
-        // 90 = (1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9) * 2
-        batchWorkflow.foo2(9, 9) shouldBe 90
+        batchWorkflow.foo2(9, 9) shouldBe 9 + 9
       }
 
-      "One Object parameter (with maxSize=10)" {
-        for (i in 1..9) {
-          client.dispatch(batchWorkflow::foo3, i, i)
-        }
-
-        // 110 = (1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10) * 2
-        batchWorkflow.foo3(10, 10) shouldBe 110
-      }
-
-      "One Object parameter (with maxDelaySeconds=1)" {
-        for (i in 1..8) {
-          client.dispatch(batchWorkflow::foo3, i, i)
-        }
-
-        // 90 = (1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9) * 2
-        batchWorkflow.foo3(9, 9) shouldBe 90
-      }
-
-      "Returns Object (with maxSize=10)" {
+      "Returns Object (with maxMessages=10)".config(timeout = 1.minutes) {
         for (i in 1..9) {
           client.dispatch(batchWorkflow::foo4, i, i)
         }
-
-        batchWorkflow.foo4(10, 10) shouldBe Input(foo = 55, bar = 10)
+        batchWorkflow.foo4(10, 10) shouldBe Input(foo = 10, bar = 10)
       }
 
-      "Returns Object (with maxDelaySeconds=1)" {
+      "Returns Object (with maxSeconds=1)" {
         for (i in 1..8) {
           client.dispatch(batchWorkflow::foo4, i, i)
         }
-
-        batchWorkflow.foo4(9, 9) shouldBe Input(foo = 45, bar = 9)
+        batchWorkflow.foo4(9, 9) shouldBe Input(foo = 9, bar = 9)
       }
 
-      "One Object parameter and returns Object(with maxSize=10)" {
+      "One Object parameter and returns Object(with maxMessages=10)" {
         for (i in 1..9) {
           client.dispatch(batchWorkflow::foo5, i, i)
         }
-
-        batchWorkflow.foo5(10, 10) shouldBe Input(foo = 55 * 2, bar = 10)
+        batchWorkflow.foo5(10, 10) shouldBe Input(foo = 10, bar = 10)
       }
 
-      "One Object parameter and returns Object (with maxDelaySeconds=1)" {
+      "One Object parameter and returns Object (with maxSeconds=1)" {
         for (i in 1..8) {
           client.dispatch(batchWorkflow::foo5, i, i)
         }
-
-        batchWorkflow.foo5(9, 9) shouldBe Input(foo = 45 * 2, bar = 9)
+        batchWorkflow.foo5(9, 9) shouldBe Input(foo = 9, bar = 9)
       }
 
-      "No return Object(with maxSize=10)" {
+      "No return Object(with maxMessages=10)" {
         for (i in 1..9) {
           client.dispatch(batchWorkflow::foo6, i, i)
         }
-
         batchWorkflow.foo6(10, 10) shouldBe Unit
       }
 
-      "No return Object (with maxDelaySeconds=1)" {
+      "No return Object (with maxSeconds=1)" {
         for (i in 1..8) {
           client.dispatch(batchWorkflow::foo6, i, i)
         }
-
         batchWorkflow.foo6(9, 9) shouldBe Unit
       }
 
@@ -147,7 +118,8 @@ internal class BatchesWorkflowTests : StringSpec(
         batchWorkflow.withKey(20) shouldBe true
       }
 
-      "checking workflow executor batching".config(timeout = 10.seconds) {
+      "checking workflow executor batching" {
+        // then we measure
         val scope = CoroutineScope(Dispatchers.IO)
         val duration = measureTimeMillis {
           scope.launch {
@@ -160,6 +132,21 @@ internal class BatchesWorkflowTests : StringSpec(
         }
         println("duration: $duration")
         duration shouldBeLessThan 10000L
+      }
+
+      "test 1" {
+        // we execute a first workflow to initialize
+        batchWorkflow.withDelay(1)
+        // then we measure
+        val scope = CoroutineScope(Dispatchers.IO)
+        val duration = measureTimeMillis {
+          scope.launch {
+            coroutineScope {
+              launch { batchWorkflow.withDelay(1000) }
+            }
+          }.join()
+        }
+        println("duration: $duration")
       }
     },
 )

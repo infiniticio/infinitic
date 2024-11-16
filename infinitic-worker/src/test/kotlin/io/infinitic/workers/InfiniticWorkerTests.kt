@@ -46,6 +46,22 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 
+fun main() {
+  class TestEventListener : CloudEventListener {
+    override fun onEvents(cloudEvents: List<CloudEvent>) {}
+  }
+
+  InfiniticWorker.fromYamlString(
+      """
+transport:
+  inMemory:
+
+eventListener:
+  class: ${TestEventListener::class.java.name}
+          """,
+  ).use { it.start() }
+}
+
 internal class InfiniticWorkerTests : StringSpec(
     {
       val transport = InMemoryTransportConfig()

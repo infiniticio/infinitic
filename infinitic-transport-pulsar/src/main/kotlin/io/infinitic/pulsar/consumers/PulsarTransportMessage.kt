@@ -41,11 +41,16 @@ class PulsarTransportMessage<M : Message>(
   override val messageId = pulsarMessage.messageId.toString()
 
   /**
+   * The key associated with the Pulsar message. This key can be used for message routing, partitioning
+   */
+  override val key: String? = pulsarMessage.key
+
+  /**
    * Deserializes the message from the pulsarMessage into its original form.
    *
    * @return The deserialized message of type M.
    */
-  override fun deserialize(): M = pulsarMessage.value.message()
+  override suspend fun deserialize(): M = pulsarMessage.value.message()
 
   /**
    * Synchronously acknowledges that the message has been successfully processed.
@@ -73,5 +78,5 @@ class PulsarTransportMessage<M : Message>(
    * This property is `true` if the number of redelivery attempts for the Pulsar message has reached
    * the maximum redelivery count allowed, as defined by `maxRedeliveryCount`.
    */
-  override val hasBeenSentToDeadLetterQueue = (maxRedeliveryCount == pulsarMessage.redeliveryCount)
+  override val sentToDeadLetterQueue = (maxRedeliveryCount == pulsarMessage.redeliveryCount)
 }

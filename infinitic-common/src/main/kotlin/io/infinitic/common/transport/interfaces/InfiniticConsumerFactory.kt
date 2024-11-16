@@ -22,137 +22,24 @@
  */
 package io.infinitic.common.transport.interfaces
 
-import io.github.oshai.kotlinlogging.KLogger
-import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.messages.Message
-import io.infinitic.common.transport.BatchProcessorConfig
 import io.infinitic.common.transport.Subscription
 import io.infinitic.common.transport.config.BatchConfig
-import io.infinitic.common.transport.config.normalized
-import io.infinitic.common.transport.consumers.startAsync
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
 
 interface InfiniticConsumerFactory {
   /**
-   * Builds a list of transport consumers for processing messages from a given subscription.
+   * Builds a consumer for a given subscription and entity with an optional batch receiving configuration.
    *
-   * @param subscription The subscription from which to consume messages.
+   * @param M The type of message to be consumed.
+   * @param subscription The subscription details for the messages.
    * @param entity The entity associated with the consumer.
-   * @param batchReceivingConfig An optional configuration for batching messages when receiving and sending.
-   * @param occurrence An optional parameter indicating the number of occurrences.
-   * @return A list of transport consumers for the specified subscription.
+   * @param batchReceivingConfig Optional configuration for batch receiving.
+   * @return A transport consumer for the specified message type.
    */
-  context(KLogger)
-  suspend fun <M : Message> buildConsumers(
-    subscription: Subscription<M>,
-    entity: String,
-    batchReceivingConfig: BatchConfig?,
-    occurrence: Int?
-  ): List<TransportConsumer<out TransportMessage<M>>>
-
-  /**
-   * Builds a transport consumer for processing messages from a given subscription.
-   *
-   * @param M The type of the messages to be consumed.
-   * @param subscription The subscription from which to consume messages.
-   * @param entity The entity associated with the consumer.
-   * @param batchReceivingConfig An optional configuration for batching messages when receiving and sending.
-   * @return A transport consumer for the specified subscription.
-   */
-  context(KLogger)
-  suspend fun <M : Message> buildConsumer(
+  suspend fun <M : Message> newConsumer(
     subscription: Subscription<M>,
     entity: String,
     batchReceivingConfig: BatchConfig?
-  ): TransportConsumer<out TransportMessage<M>> =
-      buildConsumers(subscription, entity, batchReceivingConfig, null).first()
-
-  /**
-   * Starts asynchronous processing of messages for a given subscription.
-   *
-   * @param subscription The subscription from which to consume messages.
-   * @param entity The entity associated with the consumer.
-   * @param concurrency The number of concurrent coroutines for processing messages.
-   * @param processor A function to process the deserialized message along with its publishing time.
-   * @param beforeDlq An optional function to execute before sending a message to DLQ.
-   * @param batchProcessorConfig An optional function to configure message batching when processing.
-   * @param batchProcessor An optional function to process batches of messages.
-   * @return A Job representing the coroutine that runs the consuming process.
-   */
-  context(CoroutineScope, KLogger)
-  suspend fun <S : Message> startAsync(
-    subscription: Subscription<S>,
-    entity: String,
-    batchReceivingConfig: BatchConfig? = null,
-    concurrency: Int,
-    processor: suspend (S, MillisInstant) -> Unit,
-    beforeDlq: (suspend (S, Exception) -> Unit)? = null,
-    batchProcessorConfig: (suspend (S) -> BatchProcessorConfig?)? = null,
-    batchProcessor: (suspend (List<S>, List<MillisInstant>) -> Unit)? = null
-  ): Job = when (subscription.withKey) {
-    // multiple consumers with unique processing
-    true -> {
-      val consumers = buildConsumers(subscription, entity, batchReceivingConfig, concurrency)
-      launch {
-        repeat(concurrency) { index ->
-          consumers[index].startAsync(
-              batchReceivingConfig = batchReceivingConfig.normalized(concurrency),
-              concurrency = 1,
-              processor = processor,
-              beforeDlq = beforeDlq,
-              batchProcessorConfig = batchProcessorConfig,
-              batchProcessor = batchProcessor,
-          )
-        }
-      }
-    }
-
-    // unique consumer with parallel processing
-    false -> {
-      val consumer = buildConsumer(subscription, entity, batchReceivingConfig)
-      consumer.startAsync(
-          batchReceivingConfig = batchReceivingConfig,
-          concurrency = concurrency,
-          processor = processor,
-          beforeDlq = beforeDlq,
-          batchProcessorConfig = batchProcessorConfig,
-          batchProcessor = batchProcessor,
-      )
-    }
-  }
-
-  /**
-   * Starts processing of messages from the given subscription.
-   *
-   * @param subscription The subscription from which to consume messages.
-   * @param entity The entity associated with the consumer.
-   * @param batchReceivingConfig An optional configuration for batching messages when receiving and sending.
-   * @param concurrency The number of concurrent coroutines for processing messages.
-   * @param process A function to process the deserialized message along with its publishing time.
-   * @param beforeDlq An optional function to execute before sending a message to DLQ.
-   * @param batchProcessorConfig An optional function to configure message batching when processing.
-   * @param batchProcessor An optional function to process batches of messages.
-   */
-  context(CoroutineScope, KLogger)
-  suspend fun <M : Message> start(
-    subscription: Subscription<M>,
-    entity: String,
-    batchReceivingConfig: BatchConfig? = null,
-    concurrency: Int,
-    process: suspend (M, MillisInstant) -> Unit,
-    beforeDlq: (suspend (M, Exception) -> Unit)? = null,
-    batchProcessorConfig: (suspend (M) -> BatchProcessorConfig?)? = null,
-    batchProcessor: (suspend (List<M>, List<MillisInstant>) -> Unit)? = null
-  ) = startAsync(
-      subscription,
-      entity,
-      batchReceivingConfig,
-      concurrency,
-      process,
-      beforeDlq,
-      batchProcessorConfig,
-      batchProcessor,
-  ).join()
+  ): InfiniticConsumer<M>
 }
+

@@ -32,43 +32,47 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.zip.CRC32
 import kotlin.coroutines.cancellation.CancellationException
 
 /**
- * Starts consuming messages from the consumer in the given coroutine scope.
- * Consumed messages are sent through the returned channel as a Result containing
- * both the original message and the resulting message.
+ * Starts receiving messages and distributes (shards) them across multiple channels.
  *
- * @return A channel that emits Result objects containing the original and resulting messages.
+ * @param batchReceiving Indicates whether to receive messages in batches or individually.
+ * @param concurrency The number of concurrent shards to use for distributing the messages.
+ * @return A list of channels, where each channel corresponds to a shard and contains the received messages.
  */
-context(CoroutineScope, KLogger)
-fun <T : TransportMessage<M>, M> TransportConsumer<T>.startConsuming(
+context(KLogger)
+internal fun <T : TransportMessage<M>, M> CoroutineScope.startReceivingAndShard(
+  consumer: TransportConsumer<T>,
   batchReceiving: Boolean,
-  channel: Channel<Result<TransportMessage<M>, TransportMessage<M>>> = Channel(),
-): Channel<Result<T, T>> {
-  debug { "startConsuming: starting producing on channel ${channel.hashCode()} from ${this@startConsuming.name}" }
+  concurrency: Int = 1,
+): List<Channel<Result<T, T>>> {
+  val shardChannels: List<Channel<Result<T, T>>> = List(concurrency) { createChannel() }
 
   launch {
-    debug { "startConsuming: adding producer to consuming channel ${channel.hashCode()}" }
-    channel.addProducer()
-    trace { "startConsuming: producer added to consuming channel ${channel.hashCode()}" }
+    shardChannels.forEach { it.addProducer("startReceivingWithShard") }
+    val size = shardChannels.size
     while (isActive) {
       try {
         when (batchReceiving) {
           true -> {
-            batchReceive()
-                .also { debug { "consuming: batch received ${it.size} from ${this@startConsuming.name}" } }
-                .forEach {
-                  trace { "consuming: received $it from ${this@startConsuming.name}" }
-                  channel.send(Result.success(it, it))
-                }
+            val batch = consumer.batchReceive()
+            withContext(NonCancellable) {
+              trace { "Batch (${batch.size}) received from ${consumer.name}: $batch" }
+              batch.forEach {
+                val shard = getShard(it.key!!, size)
+                trace { "sending $it (key = ${it.key}) to shard $shard}" }
+                shardChannels[shard].send(Result.success(it, it))
+              }
+            }
           }
 
           false -> {
-            receive().let {
-              trace { "consuming: received $it from ${this@startConsuming.name}" }
-              channel.send(Result.success(it, it))
-            }
+            val msg = consumer.receive()
+            trace { "Received from ${consumer.name}: $msg" }
+            val shard = getShard(msg.key!!, size)
+            shardChannels[shard].send(Result.success(msg, msg))
           }
         }
       } catch (e: CancellationException) {
@@ -83,12 +87,20 @@ fun <T : TransportMessage<M>, M> TransportConsumer<T>.startConsuming(
       }
     }
     withContext(NonCancellable) {
-      debug { "startConsuming: exiting, removing producer from consuming channel ${channel.hashCode()}" }
-      channel.removeProducer()
-      trace { "startConsuming: exited, producer removed from consuming channel ${channel.hashCode()}" }
+      shardChannels.forEach { it.removeProducer("startReceivingWithShard") }
     }
   }
 
-  @Suppress("UNCHECKED_CAST")
-  return channel as Channel<Result<T, T>>
+  return shardChannels
+}
+
+private val threadLocalCrc32 = ThreadLocal.withInitial { CRC32() }
+
+internal fun getShard(input: String, totalShards: Int): Int {
+  val crc32 = threadLocalCrc32.get().apply {
+    reset() // Ensure CRC32 is reset before new computation
+    update(input.toByteArray())
+  }
+  val hash = crc32.value
+  return (hash and 0x7FFFFFFF).toInt() % totalShards // Ensure non-negative and get modulo
 }

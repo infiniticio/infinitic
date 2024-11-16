@@ -22,7 +22,6 @@
  */
 package io.infinitic.pulsar
 
-import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.messages.Message
 import io.infinitic.common.transport.EventListenerSubscription
@@ -50,47 +49,31 @@ class PulsarInfiniticConsumerFactory(
   private val pulsarResources: PulsarResources,
 ) : InfiniticConsumerFactory {
 
-  context(KLogger)
-  override suspend fun <M : Message> buildConsumers(
+  override suspend fun <M : Message> newConsumer(
     subscription: Subscription<M>,
     entity: String,
     batchReceivingConfig: BatchConfig?,
-    occurrence: Int?
-  ): List<PulsarTransportConsumer<M>> {
+  ): PulsarTransportConsumer<M> {
     // Retrieve the name of the topic and of the DLQ topic
     // Create them if they do not exist.
     val (topicName, topicDLQName) = getOrCreateTopics(subscription, entity)
 
-    return coroutineScope {
-      List(occurrence ?: 1) { index ->
-        async {
-          val consumerName = entity + (occurrence?.let { "-${index + 1}" } ?: "")
-          debug { "Creating consumer '${consumerName}' for $topicName" }
-          getConsumer(
-              schema = subscription.topic.schema,
-              topic = topicName,
-              topicDlq = topicDLQName,
-              subscriptionName = subscription.name,
-              subscriptionNameDlq = subscription.nameDLQ,
-              subscriptionType = subscription.type,
-              consumerName = consumerName,
-              batchReceivingConfig = batchReceivingConfig,
-          ).onSuccess {
-            trace { "Consumer '${consumerName}' created for $topicName" }
-          }
-        }
-      }.map { deferred ->
-        deferred.await()
-            .getOrThrow() // failed synchronously
-            .let {
-              PulsarTransportConsumer(
-                  subscription.topic,
-                  it,
-                  pulsarConsumerConfig.getMaxRedeliverCount(),
-              )
-            }
-      }
-    }
+    val pulsarConsumer = getConsumer(
+        schema = subscription.topic.schema,
+        topic = topicName,
+        topicDlq = topicDLQName,
+        subscriptionName = subscription.name,
+        subscriptionNameDlq = subscription.nameDLQ,
+        subscriptionType = subscription.type,
+        consumerName = entity,
+        batchReceivingConfig = batchReceivingConfig,
+    ).getOrThrow()
+
+    return PulsarTransportConsumer(
+        subscription.topic,
+        pulsarConsumer,
+        pulsarConsumerConfig.getMaxRedeliverCount(),
+    )
   }
 
   /**

@@ -104,11 +104,10 @@ class WorkflowStateEngine(
   private val emitterName = _producer.emitterName
 
   suspend fun batchProcess(
-    messages: List<WorkflowStateEngineMessage>,
-    publishTimes: List<MillisInstant>
+    messages: List<Pair<WorkflowStateEngineMessage, MillisInstant>>,
   ) {
     val messagesMap: Map<WorkflowId, List<Pair<WorkflowStateEngineMessage, MillisInstant>>> =
-        messages.zip(publishTimes).groupBy { it.first.workflowId }
+        messages.groupBy { it.first.workflowId }
 
     // process all messages by workflowId, in parallel
     val producersAndStates = coroutineScope {

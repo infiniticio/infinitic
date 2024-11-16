@@ -23,7 +23,7 @@
 package io.infinitic.common.transport.consumers
 
 class Result<out M, out T> internal constructor(
-  private val message: M,
+  val message: M,
   private val value: Any?
 ) {
 
@@ -31,18 +31,18 @@ class Result<out M, out T> internal constructor(
 
   val isFailure: Boolean get() = value is Failure
 
-  fun message(): M = message
+  val data: T
+    get() {
+      require(isSuccess) { "This result is a failure" }
+      @Suppress("UNCHECKED_CAST")
+      return value as T
+    }
 
-  fun value(): T {
-    require(isSuccess) { "This result is a failure" }
-    @Suppress("UNCHECKED_CAST")
-    return value as T
-  }
-
-  fun exception(): Exception {
-    require(isFailure) { "This result is a success" }
-    return (value as Failure).exception
-  }
+  val exception: Exception
+    get() {
+      require(isFailure) { "This result is a success" }
+      return (value as Failure).exception
+    }
 
   suspend fun onFailure(action: suspend (exception: Exception) -> Unit): Result<M, T> {
     if (isFailure) action((value as Failure).exception)
@@ -65,7 +65,7 @@ class Result<out M, out T> internal constructor(
 
   fun <S> failure(exception: Exception): Result<M, S> = Result(message, Failure(exception))
 
-  fun <S> failure(): Result<M, S> = Result(message, Failure(exception()))
+  fun <S> failure(): Result<M, S> = Result(message, Failure(exception))
 
   companion object {
     /**

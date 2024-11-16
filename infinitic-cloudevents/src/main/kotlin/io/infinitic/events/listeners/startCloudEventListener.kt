@@ -23,15 +23,10 @@
 package io.infinitic.events.listeners
 
 import io.github.oshai.kotlinlogging.KLogger
-import io.infinitic.common.data.MillisDuration
-import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.messages.Message
-import io.infinitic.common.transport.BatchProcessorConfig
-import io.infinitic.common.transport.config.maxMillis
 import io.infinitic.common.transport.consumers.Result
 import io.infinitic.common.transport.consumers.acknowledge
-import io.infinitic.common.transport.consumers.batchBy
-import io.infinitic.common.transport.consumers.batchProcess
+import io.infinitic.common.transport.consumers.createBatchChannel
 import io.infinitic.common.transport.consumers.process
 import io.infinitic.common.transport.interfaces.InfiniticConsumerFactory
 import io.infinitic.common.transport.interfaces.InfiniticResources
@@ -40,6 +35,8 @@ import io.infinitic.events.config.EventListenerConfig
 import io.infinitic.events.toCloudEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 
@@ -51,37 +48,40 @@ fun InfiniticConsumerFactory.startCloudEventListener(
 ): Job = launch {
 
   // Channels where all messages consumed from topics are sent
-  val outChannel = Channel<Result<TransportMessage<Message>, TransportMessage<Message>>>()
-
-  // all messages will have this batch config
-  val batchProcessorConfig = BatchProcessorConfig(
-      batchKey = "cloudEvent", // same for all
-      maxMessages = config.batchConfig.maxMessages,
-      maxDuration = MillisDuration(config.batchConfig.maxMillis),
-  )
+  val outChannel: Channel<Result<List<TransportMessage<Message>>, List<TransportMessage<Message>>>> =
+      createBatchChannel()
 
   // Launch the processing of outChannel
   launch {
-    outChannel
-        .process(config.concurrency) { _, message -> message.deserialize() }
-        .batchBy { batchProcessorConfig }
-        .batchProcess(
-            config.concurrency,
-            { _, _ -> thisShouldNotHappen() },
-            { transportMessages, messages ->
-              val cloudEvents = messages.zip(transportMessages) { message, transportMessage ->
-                message.toCloudEvent(
-                    transportMessage.topic,
-                    transportMessage.publishTime,
-                    cloudEventSourcePrefix,
-                )
-              }.filterNotNull()
-              if (cloudEvents.isNotEmpty()) {
-                config.listener.onEvents(cloudEvents)
-              }
-            },
-        )
-        .acknowledge()
+    // deserialize batches, in parallel
+    val deserialized = Channel<Result<List<TransportMessage<Message>>, List<Message>>>()
+    repeat(config.concurrency) {
+      outChannel.process(deserialized) { _, transportMessages: List<TransportMessage<Message>> ->
+        transportMessages.map { async { it.deserialize() } }.awaitAll()
+      }
+    }
+
+    // process batches, in parallel
+    val processed = Channel<Result<List<TransportMessage<Message>>, Unit>>()
+    repeat(config.concurrency) {
+      deserialized.process(processed) { transportMessages, deserialized ->
+        val cloudEvents = deserialized.zip(transportMessages) { message, transportMessage ->
+          message.toCloudEvent(
+              transportMessage.topic,
+              transportMessage.publishTime,
+              cloudEventSourcePrefix,
+          )
+        }.filterNotNull()
+        if (cloudEvents.isNotEmpty()) {
+          config.listener.onEvents(cloudEvents)
+        }
+      }
+    }
+
+    // acknowledge messages
+    repeat(config.concurrency) {
+      processed.acknowledge()
+    }
   }
 
   // Listen service topics, for each service found

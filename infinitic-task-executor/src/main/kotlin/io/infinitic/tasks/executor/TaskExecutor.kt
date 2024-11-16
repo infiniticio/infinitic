@@ -124,9 +124,13 @@ class TaskExecutor(
     }
   }
 
-  context(KLogger)
-  fun getBatchConfig(msg: ServiceExecutorMessage): BatchProcessorConfig? = when (msg) {
-    is ExecuteTask -> msg.getBatchConfig()
+  fun getBatchKey(msg: ServiceExecutorMessage): String? = when (msg) {
+    is ExecuteTask -> msg.getBatchKey()
+  }
+
+  private fun ExecuteTask.getBatchKey(): String? = when (isWorkflowTask()) {
+    true -> thisShouldNotHappen()
+    false -> taskMeta[TaskMeta.BATCH_KEY]?.let { String(it) }
   }
 
   context(KLogger)

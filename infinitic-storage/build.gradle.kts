@@ -36,7 +36,7 @@ dependencies {
   implementation("redis.clients:jedis:5.0.2")
 
   // MySql
-  implementation("com.mysql:mysql-connector-j:8.2.0")
+  implementation("com.mysql:mysql-connector-j:9.1.0")
 
   //Postgres
   implementation("org.postgresql:postgresql:42.7.3")

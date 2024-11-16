@@ -28,18 +28,9 @@ import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.transport.ServiceExecutorTopic
 import io.infinitic.common.transport.WorkflowExecutorTopic
 import io.infinitic.common.transport.interfaces.InfiniticProducer
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
 
 @Suppress("UNUSED_PARAMETER")
 class TaskRetryHandler(val producer: InfiniticProducer) {
-
-  suspend fun batchProcess(
-    messages: List<ServiceExecutorMessage>,
-    publishTimes: List<MillisInstant>
-  ) = coroutineScope {
-    messages.zip(publishTimes) { msg, publishTime -> launch { process(msg, publishTime) } }
-  }
 
   suspend fun process(msg: ServiceExecutorMessage, publishTime: MillisInstant) {
     with(producer) {
