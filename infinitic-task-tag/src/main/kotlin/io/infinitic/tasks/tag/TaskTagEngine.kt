@@ -49,7 +49,7 @@ class TaskTagEngine(
 ) {
   private val emitterName = producer.emitterName
 
-  suspend fun handle(message: ServiceTagMessage, publishTime: MillisInstant) = coroutineScope {
+  suspend fun process(message: ServiceTagMessage, publishTime: MillisInstant) = coroutineScope {
     when (message) {
       is AddTaskIdToTag -> addTaskIdToTag(message)
       is RemoveTaskIdFromTag -> removeTaskIdFromTag(message)

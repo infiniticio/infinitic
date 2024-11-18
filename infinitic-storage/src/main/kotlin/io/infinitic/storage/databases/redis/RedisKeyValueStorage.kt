@@ -45,14 +45,14 @@ class RedisKeyValueStorage(internal val pool: JedisPool) : KeyValueStorage {
     }
   }
 
-  override suspend fun getSet(keys: Set<String>): Map<String, ByteArray?> =
+  override suspend fun get(keys: Set<String>): Map<String, ByteArray?> =
       pool.resource.use { jedis ->
         val byteArrayKeys = keys.map { it.toByteArray() }.toTypedArray()
         val values = jedis.mget(*byteArrayKeys)
         keys.zip(values).toMap()
       }
 
-  override suspend fun putSet(bytes: Map<String, ByteArray?>) {
+  override suspend fun put(bytes: Map<String, ByteArray?>) {
     pool.resource.use { jedis ->
       jedis.multi().use { transaction ->
         bytes.forEach { (key, value) ->

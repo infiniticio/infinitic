@@ -674,7 +674,7 @@ class InfiniticWorker(
     val processor: suspend (ServiceTagMessage, MillisInstant) -> Unit =
         { message, publishedAt ->
           cloudEventLogger.log(message, publishedAt)
-          taskTagEngine.handle(message, publishedAt)
+          taskTagEngine.process(message, publishedAt)
         }
 
     startProcessingWithKey(
@@ -734,7 +734,7 @@ class InfiniticWorker(
               messageAndPublishingTimes.forEach { (message, publishedAt) ->
                 launch { cloudEventLogger.log(message, publishedAt) }
               }
-              taskExecutor.batchProcess(messageAndPublishingTimes.map { it.first })
+              launch { taskExecutor.batchProcess(messageAndPublishingTimes.map { it.first }) }
             }
           },
           beforeDlq = beforeDlq,
@@ -801,8 +801,10 @@ class InfiniticWorker(
           consumer = consumer,
           concurrency = config.concurrency,
           processor = { message, publishedAt ->
-            cloudEventLogger.log(message, publishedAt)
-            taskEventHandler.process(message, publishedAt)
+            coroutineScope {
+              launch { cloudEventLogger.log(message, publishedAt) }
+              launch { taskEventHandler.process(message, publishedAt) }
+            }
           },
       )
 
@@ -847,7 +849,7 @@ class InfiniticWorker(
         concurrency = concurrency,
         processor = { message, publishedAt ->
           cloudEventLogger.log(message, publishedAt)
-          workflowTagEngine.handle(message, publishedAt)
+          workflowTagEngine.process(message, publishedAt)
         },
     )
   }
@@ -876,8 +878,10 @@ class InfiniticWorker(
           consumer = consumer,
           concurrency = concurrency,
           processor = { message, publishedAt ->
-            cloudEventLogger.log(message, publishedAt)
-            workflowStateCmdHandler.process(message, publishedAt)
+            coroutineScope {
+              launch { cloudEventLogger.log(message, publishedAt) }
+              launch { workflowStateCmdHandler.process(message, publishedAt) }
+            }
           },
       )
 
@@ -891,7 +895,7 @@ class InfiniticWorker(
               messages.forEach { (message, publishedAt) ->
                 launch { cloudEventLogger.log(message, publishedAt) }
               }
-              workflowStateCmdHandler.batchProcess(messages)
+              launch { workflowStateCmdHandler.batchProcess(messages) }
             }
           },
       )
@@ -923,8 +927,10 @@ class InfiniticWorker(
           consumer = consumer,
           concurrency = concurrency,
           processor = { message, publishedAt ->
-            cloudEventLogger.log(message, publishedAt)
-            workflowStateEngine.process(message, publishedAt)
+            coroutineScope {
+              launch { cloudEventLogger.log(message, publishedAt) }
+              launch { workflowStateEngine.process(message, publishedAt) }
+            }
           },
       )
 
@@ -938,7 +944,7 @@ class InfiniticWorker(
               messages.forEach { (message, publishedAt) ->
                 launch { cloudEventLogger.log(message, publishedAt) }
               }
-              workflowStateEngine.batchProcess(messages)
+              launch { workflowStateEngine.batchProcess(messages) }
             }
           },
       )
@@ -1144,8 +1150,10 @@ class InfiniticWorker(
           consumer = consumer,
           concurrency = concurrency,
           processor = { message, publishedAt ->
-            cloudEventLogger.log(message, publishedAt)
-            workflowTaskEventHandler.process(message, publishedAt)
+            coroutineScope {
+              launch { cloudEventLogger.log(message, publishedAt) }
+              launch { workflowTaskEventHandler.process(message, publishedAt) }
+            }
           },
       )
 

@@ -49,7 +49,7 @@ sealed class ServiceExecutorConfig {
   abstract val concurrency: Int
 
   /**
-   * Configuration settings for batch message when consuming
+   * Configuration settings for batch message
    */
   abstract val batch: BatchConfig?
 
@@ -135,7 +135,7 @@ sealed class ServiceExecutorConfig {
           concurrency,
           withRetry,
           timeoutSeconds.withTimeout,
-          batchConfig
+          batchConfig,
       )
     }
   }

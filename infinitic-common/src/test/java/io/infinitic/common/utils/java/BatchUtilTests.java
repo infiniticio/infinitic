@@ -29,6 +29,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@SuppressWarnings("unused")
+interface FooBatch {
+    PairInt bar(int p);
+}
+
 // 1 parameter - Batched method with Collection parameter
 @SuppressWarnings("unused")
 class FooBatch1 {
@@ -36,7 +41,7 @@ class FooBatch1 {
         return Integer.toString(p);
     }
 
-    @Batch(maxMessages = 10, maxSeconds = 1.0)
+    @Batch
     public Map<String, String> bar(Map<String, Integer> p) {
         return p.entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, entry -> bar(entry.getValue())));
@@ -50,7 +55,7 @@ class FooBatch2 {
         return Integer.toString(p) + q;
     }
 
-    @Batch(maxMessages = 10, maxSeconds = 1.0)
+    @Batch
     public Map<String, String> bar(Map<String, PairInt> l) {
         return l.entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, entry -> bar(entry.getValue().p(), entry.getValue().q())));
@@ -64,7 +69,7 @@ class FooBatch3 {
         return p.toString();
     }
 
-    @Batch(maxMessages = 10, maxSeconds = 1.0)
+    @Batch
     public Map<String, String> bar(Map<String, Set<Integer>> p) {
         return p.entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, entry -> bar(entry.getValue())));
@@ -78,7 +83,7 @@ class FooBatch5 {
         // do nothing
     }
 
-    @Batch(maxMessages = 10, maxSeconds = 1.0)
+    @Batch
     public void bar(Map<String, PairInt> p) {
         // do nothing
     }
@@ -91,7 +96,7 @@ class FooBatch6 {
         // do nothing
     }
 
-    @Batch(maxMessages = 10, maxSeconds = 1.0)
+    @Batch
     public void bar(Map<String, MyPair<Integer>> pairs) {
         // do nothing
     }
@@ -106,16 +111,11 @@ class FooBatch7 implements FooBatch {
         return new PairInt(p, p);
     }
 
-    @Batch(maxMessages = 10, maxSeconds = 1.0)
+    @Batch
     public Map<String, PairInt> bar(Map<String, Integer> list) {
         return list.entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, entry -> bar(entry.getValue())));
     }
-}
-
-@SuppressWarnings("unused")
-interface FooBatch {
-    PairInt bar(int p);
 }
 
 // vararg not accepted
@@ -125,7 +125,7 @@ class FooBatchError0 {
         return Integer.toString(p);
     }
 
-    @Batch(maxMessages = 10, maxSeconds = 1.0)
+    @Batch
     Map<String, String> bar(int... p) {
         return Arrays.stream(p).boxed().collect(Collectors.toMap(
                 Object::toString,
@@ -140,7 +140,7 @@ class FooBatchError1 {
         return Integer.toString(p);
     }
 
-    @Batch(maxMessages = 10, maxSeconds = 1.0)
+    @Batch
     public Map<String, String> bar(Map<String, Integer> p, int q) {
         return p.entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, entry -> bar(entry.getValue())));
@@ -154,7 +154,7 @@ class FooBatchError2 {
         return Integer.toString(p) + q;
     }
 
-    @Batch(maxMessages = 10, maxSeconds = 1.0)
+    @Batch
     public Map<String, String> bar(Map<String, Integer> p) {
         return p.entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, entry -> bar(entry.getValue(), entry.getValue())));
@@ -168,7 +168,7 @@ class FooBatchError4 {
         return "?";
     }
 
-    @Batch(maxMessages = 10, maxSeconds = 1.0)
+    @Batch
     public Map<String, Integer> bar(Map<String, PairInt> p) {
         return p.entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, entry -> Integer.parseInt(bar(entry.getValue().p(), entry.getValue().q()))));
@@ -182,7 +182,7 @@ class FooBatchError5 {
         return "?";
     }
 
-    @Batch(maxMessages = 10, maxSeconds = 1.0)
+    @Batch
     public String bar(Map<String, PairInt> p) {
         return "?";
     }

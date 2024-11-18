@@ -21,7 +21,7 @@
  * Licensor: infinitic.io
  */
 
-package io.infinitic.workflows.engine.producers
+package io.infinitic.common.transport.producers
 
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.messages.Message
@@ -60,10 +60,11 @@ class BufferedInfiniticProducer(val producer: InfiniticProducer) : InfiniticProd
     }
     buffer.clear()
   }
+
+  private data class Letter<T : Message>(
+    val message: T,
+    val topic: Topic<out T>,
+    val after: MillisDuration
+  )
 }
 
-private data class Letter<T : Message>(
-  val message: T,
-  val topic: Topic<out T>,
-  val after: MillisDuration
-)

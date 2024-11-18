@@ -77,7 +77,7 @@ class MySQLKeyValueStorage(
     }
   }
 
-  override suspend fun getSet(keys: Set<String>): Map<String, ByteArray?> {
+  override suspend fun get(keys: Set<String>): Map<String, ByteArray?> {
     return pool.connection.use { connection ->
       val questionMarks = keys.joinToString(",") { "?" }
       connection.prepareStatement("SELECT `key`, `value` FROM $tableName WHERE `key` IN ($questionMarks)")
@@ -98,7 +98,7 @@ class MySQLKeyValueStorage(
     }
   }
 
-  override suspend fun putSet(bytes: Map<String, ByteArray?>) {
+  override suspend fun put(bytes: Map<String, ByteArray?>) {
     pool.connection.use { connection ->
       connection.autoCommit = false
       try {

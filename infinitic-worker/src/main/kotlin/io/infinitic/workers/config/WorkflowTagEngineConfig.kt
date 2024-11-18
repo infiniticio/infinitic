@@ -40,9 +40,7 @@ data class WorkflowTagEngineConfig(
   }
 
   val workflowTagStorage by lazy {
-    (storage ?: thisShouldNotHappen()).let {
-      BinaryWorkflowTagStorage(it.keyValue, it.keySet)
-    }
+    BinaryWorkflowTagStorage((storage ?: thisShouldNotHappen()).keySet)
   }
 
   companion object {

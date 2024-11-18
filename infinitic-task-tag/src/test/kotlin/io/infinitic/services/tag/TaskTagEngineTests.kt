@@ -162,7 +162,7 @@ internal class TaskTagEngineTests :
           val taskId1 = TaskId()
           val taskId2 = TaskId()
           // when
-          getTagEngine(taskIds = setOf(taskId1, taskId2)).handle(
+          getTagEngine(taskIds = setOf(taskId1, taskId2)).process(
               msgIn,
               MillisInstant.now(),
           )
@@ -188,7 +188,7 @@ internal class TaskTagEngineTests :
           // given
           val msgIn = random<AddTaskIdToTag>()
           // when
-          getTagEngine().handle(msgIn, MillisInstant.now())
+          getTagEngine().process(msgIn, MillisInstant.now())
           // then
           coVerifySequence {
             tagStateStorage.addTaskIdToTag(msgIn.taskTag, msgIn.serviceName, msgIn.taskId)
@@ -201,7 +201,7 @@ internal class TaskTagEngineTests :
           // given
           val msgIn = random<RemoveTaskIdFromTag>()
           // when
-          getTagEngine(setOf(msgIn.taskId)).handle(msgIn, MillisInstant.now())
+          getTagEngine(setOf(msgIn.taskId)).process(msgIn, MillisInstant.now())
           // then
           coVerifySequence {
             tagStateStorage.removeTaskIdFromTag(msgIn.taskTag, msgIn.serviceName, msgIn.taskId)
@@ -215,7 +215,7 @@ internal class TaskTagEngineTests :
           // given
           val msgIn = random<SetDelegatedTaskData>()
           // when
-          getTaskEngine().handle(msgIn, MillisInstant.now())
+          getTaskEngine().process(msgIn, MillisInstant.now())
           // then
           coVerifySequence {
             tagStateStorage.setDelegatedTaskData(msgIn.taskId, msgIn.delegatedTaskData)
@@ -232,7 +232,7 @@ internal class TaskTagEngineTests :
 
           // when
           val emittedAt = MillisInstant.now()
-          getTaskEngine(delegatedTaskData).handle(msgIn, emittedAt)
+          getTaskEngine(delegatedTaskData).process(msgIn, emittedAt)
           // then
           coVerifySequence {
             producerMock.emitterName
@@ -272,7 +272,7 @@ internal class TaskTagEngineTests :
 
           // when
           val emittedAt = MillisInstant.now()
-          getTaskEngine(delegatedTaskData).handle(msgIn, emittedAt)
+          getTaskEngine(delegatedTaskData).process(msgIn, emittedAt)
           // then
           coVerifySequence {
             producerMock.emitterName

@@ -63,7 +63,7 @@ class WorkflowTagEngine(
 
   private val emitterName = producer.emitterName
 
-  suspend fun handle(message: WorkflowTagEngineMessage, publishTime: MillisInstant) {
+  suspend fun process(message: WorkflowTagEngineMessage, publishTime: MillisInstant) {
     when (message) {
       is AddTagToWorkflow -> addTagToWorkflow(message)
       is RemoveTagFromWorkflow -> removeTagFromWorkflow(message)

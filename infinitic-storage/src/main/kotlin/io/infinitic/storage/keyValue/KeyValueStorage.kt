@@ -39,12 +39,12 @@ interface KeyValueStorage : Flushable, AutoCloseable {
   /**
    * Retrieves the values associated with the specified keys from the storage.
    */
-  suspend fun getSet(keys: Set<String>): Map<String, ByteArray?>
+  suspend fun get(keys: Set<String>): Map<String, ByteArray?>
 
   /**
    * Stores multiple key-value pairs in the storage system.
    * - If the value is null, it should delete the corresponding key.
    * - This operation MUST be atomic
    */
-  suspend fun putSet(bytes: Map<String, ByteArray?>)
+  suspend fun put(bytes: Map<String, ByteArray?>)
 }

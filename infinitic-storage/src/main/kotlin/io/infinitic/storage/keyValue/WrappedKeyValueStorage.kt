@@ -40,14 +40,14 @@ class WrappedKeyValueStorage(val storage: KeyValueStorage) : KeyValueStorage {
         throwWrappedException(e)
       }
 
-  override suspend fun getSet(keys: Set<String>): Map<String, ByteArray?> = try {
-    storage.getSet(keys)
+  override suspend fun get(keys: Set<String>): Map<String, ByteArray?> = try {
+    storage.get(keys)
   } catch (e: Exception) {
     throwWrappedException(e)
   }
 
-  override suspend fun putSet(bytes: Map<String, ByteArray?>) = try {
-    storage.putSet(bytes)
+  override suspend fun put(bytes: Map<String, ByteArray?>) = try {
+    storage.put(bytes)
   } catch (e: Exception) {
     throwWrappedException(e)
   }

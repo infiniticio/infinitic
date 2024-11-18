@@ -25,9 +25,18 @@ package io.infinitic.storage.keySet
 import io.infinitic.storage.Flushable
 
 interface KeySetStorage : Flushable, AutoCloseable {
+  /**
+   * Retrieves the set of ByteArray associated with the given key.
+   */
   suspend fun get(key: String): Set<ByteArray>
 
+  /**
+   * Adds a ByteArray value to the storage associated with the given key.
+   */
   suspend fun add(key: String, value: ByteArray)
 
+  /**
+   * Removes a ByteArray value from the storage associated with the given key.
+   */
   suspend fun remove(key: String, value: ByteArray)
 }

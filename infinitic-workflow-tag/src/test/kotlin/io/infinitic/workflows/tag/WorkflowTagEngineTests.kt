@@ -77,7 +77,7 @@ private class WorkflowTagEngineTests :
           val workflowIds = setOf(WorkflowId(), WorkflowId())
           val msgIn = random<CancelWorkflowByTag>()
           // when
-          getEngine(msgIn.workflowTag, msgIn.workflowName, workflowIds = workflowIds).handle(
+          getEngine(msgIn.workflowTag, msgIn.workflowName, workflowIds = workflowIds).process(
               msgIn,
               MillisInstant.now(),
           )
@@ -100,7 +100,7 @@ private class WorkflowTagEngineTests :
           val workflowIds = setOf(WorkflowId(), WorkflowId())
           val msgIn = random<RetryWorkflowTaskByTag>()
           // when
-          getEngine(msgIn.workflowTag, msgIn.workflowName, workflowIds = workflowIds).handle(
+          getEngine(msgIn.workflowTag, msgIn.workflowName, workflowIds = workflowIds).process(
               msgIn,
               MillisInstant.now(),
           )
@@ -130,7 +130,7 @@ private class WorkflowTagEngineTests :
           val workflowIds = setOf(WorkflowId(), WorkflowId())
           val msgIn = random<RetryTasksByTag>()
           // when
-          getEngine(msgIn.workflowTag, msgIn.workflowName, workflowIds = workflowIds).handle(
+          getEngine(msgIn.workflowTag, msgIn.workflowName, workflowIds = workflowIds).process(
               msgIn,
               MillisInstant.now(),
           )
@@ -157,7 +157,7 @@ private class WorkflowTagEngineTests :
           val workflowIds = setOf(WorkflowId(), WorkflowId())
           val msgIn = random<CompleteTimersByTag>()
           // when
-          getEngine(msgIn.workflowTag, msgIn.workflowName, workflowIds = workflowIds).handle(
+          getEngine(msgIn.workflowTag, msgIn.workflowName, workflowIds = workflowIds).process(
               msgIn,
               MillisInstant.now(),
           )
@@ -182,7 +182,7 @@ private class WorkflowTagEngineTests :
           val workflowIds = setOf(WorkflowId(), WorkflowId())
           val msgIn = random<SendSignalByTag>()
           // when
-          getEngine(msgIn.workflowTag, msgIn.workflowName, workflowIds = workflowIds).handle(
+          getEngine(msgIn.workflowTag, msgIn.workflowName, workflowIds = workflowIds).process(
               msgIn,
               MillisInstant.now(),
           )
@@ -219,7 +219,7 @@ private class WorkflowTagEngineTests :
               msgIn.workflowName,
               workflowIds = setOf(workflowId1, workflowId2),
           )
-              .handle(msgIn, MillisInstant.now())
+              .process(msgIn, MillisInstant.now())
           // then
           coVerifySequence {
             workflowTagStorage.getWorkflowIds(msgIn.workflowTag, msgIn.workflowName)

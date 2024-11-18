@@ -41,17 +41,17 @@ class CompressedKeyValueStorage(
       // apply the provided compression method, if any
       storage.put(key, bytes?.let { compress(it) })
 
-  override suspend fun getSet(keys: Set<String>): Map<String, ByteArray?> = coroutineScope {
-    storage.getSet(keys)
+  override suspend fun get(keys: Set<String>): Map<String, ByteArray?> = coroutineScope {
+    storage.get(keys)
         .mapValues { async { it.value?.let { v -> decompress(v) } } }
         .mapValues { it.value.await() }
   }
 
-  override suspend fun putSet(bytes: Map<String, ByteArray?>) = coroutineScope {
+  override suspend fun put(bytes: Map<String, ByteArray?>) = coroutineScope {
     bytes
         .mapValues { async { it.value?.let { v -> compress(v) } } }
         .mapValues { it.value.await() }
-        .let { storage.putSet(it) }
+        .let { storage.put(it) }
   }
 
   private fun compress(value: ByteArray) = compressionConfig?.compress(value) ?: value

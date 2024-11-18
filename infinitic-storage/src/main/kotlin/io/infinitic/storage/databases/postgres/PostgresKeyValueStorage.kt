@@ -87,7 +87,7 @@ class PostgresKeyValueStorage(
     }
   }
 
-  override suspend fun getSet(keys: Set<String>): Map<String, ByteArray?> {
+  override suspend fun get(keys: Set<String>): Map<String, ByteArray?> {
     return pool.connection.use { connection ->
       connection.prepareStatement(
           "SELECT key, value FROM $schema.$tableName WHERE key = ANY(?)",
@@ -109,7 +109,7 @@ class PostgresKeyValueStorage(
     }
   }
 
-  override suspend fun putSet(bytes: Map<String, ByteArray?>) {
+  override suspend fun put(bytes: Map<String, ByteArray?>) {
     pool.connection.use { connection ->
       connection.autoCommit = false
       try {

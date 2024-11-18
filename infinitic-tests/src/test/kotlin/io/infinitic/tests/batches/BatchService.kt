@@ -62,36 +62,36 @@ internal class BatchServiceImpl : BatchService {
   override fun foo6(input: Input) = thisShouldNotHappen()
   override fun haveSameKey(i: Int) = thisShouldNotHappen()
 
-  @Batch(maxMessages = 10, maxSeconds = 1.0)
+  @Batch
   fun foo(list: Map<String, Int>): Map<String, Int> {
     val count = list.values.count()
     return list.mapValues { count }
   }
 
-  @Batch(maxMessages = 10, maxSeconds = 1.0)
+  @Batch
   fun foo2(list: Map<String, Input>): Map<String, Int> {
     val count = list.values.count()
     return list.mapValues { it.value.bar + count }
   }
 
-  @Batch(maxMessages = 10, maxSeconds = 1.0)
+  @Batch
   fun foo4(list: Map<String, Int>): Map<String, Input> {
     val count = list.values.count()
     return list.mapValues { Input(it.value, count) }
   }
 
-  @Batch(maxMessages = 10, maxSeconds = 1.0)
+  @Batch
   fun foo5(list: Map<String, Input>): Map<String, Input> {
     val count = list.values.count()
     return list.mapValues { Input(it.value.bar, count) }
   }
 
-  @Batch(maxMessages = 10, maxSeconds = 1.0)
+  @Batch
   fun foo6(list: Map<String, Input>) {
     // Nothing
   }
 
-  @Batch(maxMessages = 10, maxSeconds = 2.0)
+  @Batch
   fun haveSameKey(all: Map<String, Int>): Map<String, Boolean> {
     // get batch key for the first element
     val batchKeys = all.keys.map { Task.getContext(it)!!.batchKey }
