@@ -22,37 +22,39 @@
  */
 package io.infinitic.workflows.tag.storage
 
-import io.github.oshai.kotlinlogging.KLogger
+import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.common.workflows.tags.storage.WorkflowTagStorage
 import org.jetbrains.annotations.TestOnly
 
-class LoggedWorkflowTagStorage(
-  private val logger: KLogger,
-  private val storage: WorkflowTagStorage
-) : WorkflowTagStorage {
+/**
+ * WorkflowTagStorage implementation
+ *
+ * LastMessageId is saved in a key value store in a binary format WorkflowIds are saved in a key set
+ * store in a binary format
+ *
+ * Any exception thrown by the storage is wrapped into KeyValueStorageException
+ */
+class BufferedWorkflowTagStorage(private val set: MutableSet<WorkflowId>?) : WorkflowTagStorage {
+
+  internal val adds = mutableSetOf<WorkflowId>()
+  internal val removes = mutableSetOf<WorkflowId>()
 
   override suspend fun getWorkflowIds(
     tag: WorkflowTag,
     workflowName: WorkflowName
-  ): Set<WorkflowId> {
-    val workflowIds = storage.getWorkflowIds(tag, workflowName)
-    logger.debug {
-      "TAG $tag - workflowName $workflowName - getWorkflowIds ${workflowIds.size} found"
-    }
-
-    return workflowIds
-  }
+  ): Set<WorkflowId> = set?.toSet() ?: thisShouldNotHappen()
 
   override suspend fun addWorkflowId(
     tag: WorkflowTag,
     workflowName: WorkflowName,
     workflowId: WorkflowId
   ) {
-    logger.debug { "TAG $tag - name $workflowName - addWorkflowId $workflowId" }
-    storage.addWorkflowId(tag, workflowName, workflowId)
+    set?.add(workflowId)
+    removes.remove(workflowId)
+    adds.add(workflowId)
   }
 
   override suspend fun removeWorkflowId(
@@ -60,42 +62,26 @@ class LoggedWorkflowTagStorage(
     workflowName: WorkflowName,
     workflowId: WorkflowId
   ) {
-    logger.debug { "TAG $tag - name $workflowName - removeWorkflowId $workflowId" }
-    storage.removeWorkflowId(tag, workflowName, workflowId)
+    set?.remove(workflowId)
+    adds.remove(workflowId)
+    removes.add(workflowId)
   }
 
   override suspend fun getWorkflowIds(
     tagAndNames: Set<Pair<WorkflowTag, WorkflowName>>
   ): Map<Pair<WorkflowTag, WorkflowName>, Set<WorkflowId>> {
-    val map = storage.getWorkflowIds(tagAndNames)
-    map.forEach { (tagAndNames, workflowIds) ->
-      logger.debug {
-        "TAG ${tagAndNames.first} - workflowName ${tagAndNames.second} - getWorkflowIds ${workflowIds.size} found"
-      }
-    }
-    return map
+    thisShouldNotHappen()
   }
 
   override suspend fun updateWorkflowIds(
     add: Map<Pair<WorkflowTag, WorkflowName>, Set<WorkflowId>>,
     remove: Map<Pair<WorkflowTag, WorkflowName>, Set<WorkflowId>>
   ) {
-    add.forEach { (tagAndNames, workflowIds) ->
-      workflowIds.forEach { workflowId ->
-        logger.debug { "TAG ${tagAndNames.first} - name ${tagAndNames.second} - addWorkflowId $workflowId" }
-      }
-    }
-    remove.forEach { (tagAndNames, workflowIds) ->
-      workflowIds.forEach { workflowId ->
-        logger.debug { "TAG ${tagAndNames.first} - name ${tagAndNames.second} - removeWorkflowId $workflowId" }
-      }
-    }
-    storage.updateWorkflowIds(add, remove)
+    thisShouldNotHappen()
   }
 
   @TestOnly
   override fun flush() {
-    logger.warn { "flushing workflowTagStorage" }
-    storage.flush()
+    thisShouldNotHappen()
   }
 }

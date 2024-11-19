@@ -34,14 +34,55 @@ class RedisKeySetStorage(internal val pool: JedisPool) : KeySetStorage {
   }
 
   override suspend fun get(key: String): Set<ByteArray> =
-      pool.resource.use { it.smembers(key.toByteArray()) }
+      pool.resource.use { jedis ->
+        jedis.smembers(key.toByteArray())
+      }
 
   override suspend fun add(key: String, value: ByteArray) {
-    pool.resource.use { it.sadd(key.toByteArray(), value) }
+    pool.resource.use { jedis ->
+      jedis.sadd(key.toByteArray(), value)
+    }
   }
 
   override suspend fun remove(key: String, value: ByteArray) {
-    pool.resource.use { it.srem(key.toByteArray(), value) }
+    pool.resource.use { jedis ->
+      jedis.srem(key.toByteArray(), value)
+    }
+  }
+
+  override suspend fun get(keys: Set<String>): Map<String, Set<ByteArray>> {
+    return pool.resource.use { jedis ->
+      val pipeline = jedis.pipelined()
+      val responses = keys.associateWith { pipeline.smembers(it.toByteArray()) }
+      pipeline.sync()
+      responses.mapValues { it.value.get() }
+    }
+  }
+
+  override suspend fun update(
+    add: Map<String, Set<ByteArray>>,
+    remove: Map<String, Set<ByteArray>>
+  ) {
+    pool.resource.use { jedis ->
+      jedis.multi().use { transaction ->
+
+        // Batch add operations for each key
+        add.forEach { (key, values) ->
+          if (values.isNotEmpty()) {
+            transaction.sadd(key.toByteArray(), *values.toTypedArray())
+          }
+        }
+
+        // Batch remove operations for each key
+        remove.forEach { (key, values) ->
+          if (values.isNotEmpty()) {
+            transaction.srem(key.toByteArray(), *values.toTypedArray())
+          }
+        }
+
+        transaction.exec()
+      }
+    }
   }
 
   override fun close() {

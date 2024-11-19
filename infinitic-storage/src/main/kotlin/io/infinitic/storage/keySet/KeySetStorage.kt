@@ -39,4 +39,17 @@ interface KeySetStorage : Flushable, AutoCloseable {
    * Removes a ByteArray value from the storage associated with the given key.
    */
   suspend fun remove(key: String, value: ByteArray)
+
+  /**
+   * Retrieves the set of ByteArray associated with the given keys.
+   */
+  suspend fun get(keys: Set<String>): Map<String, Set<ByteArray>>
+
+  /**
+   * Updates the storage by adding and/or removing sets of ByteArray associated with their respective keys.
+   */
+  suspend fun update(
+    add: Map<String, Set<ByteArray>> = mapOf(),
+    remove: Map<String, Set<ByteArray>> = mapOf()
+  )
 }

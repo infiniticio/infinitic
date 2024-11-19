@@ -59,6 +59,9 @@ services:
 workflows:
   - name: batchWorkflow
     tagEngine:
+      batch:
+        maxMessages: 10
+        maxSeconds: .25
     stateEngine:
       batch:
         maxMessages: 10

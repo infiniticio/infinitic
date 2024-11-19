@@ -493,18 +493,26 @@ class InfiniticWorker(
 
     val workflowName = config.workflowName
     val concurrency = config.concurrency
+    val batchConfig = config.batch
+    val producer = producerFactory.newProducer(batchConfig)
 
     // Tag-Engine
     with(WorkflowTagEngine.logger) {
       val storage = LoggedWorkflowTagStorage(this, config.workflowTagStorage)
-      val producer = LoggedInfiniticProducer(this, producerFactory.newProducer(null))
-
+      val loggedProducer = LoggedInfiniticProducer(this, producer)
       val consumer = consumerFactory.newConsumer(
           subscription = MainSubscription(WorkflowTagEngineTopic),
           entity = workflowName,
           batchReceivingConfig = null,
       )
-      scope.startWorkflowTagEngine(consumer, producer, storage, workflowName, concurrency)
+      scope.startWorkflowTagEngine(
+          consumer,
+          loggedProducer,
+          storage,
+          workflowName,
+          concurrency,
+          batchConfig,
+      )
     }
   }
 
@@ -517,8 +525,8 @@ class InfiniticWorker(
 
     val workflowName = config.workflowName
     val concurrency = config.concurrency
-    val configBatch = config.batch
-    val producer = producerFactory.newProducer(configBatch)
+    val batchConfig = config.batch
+    val producer = producerFactory.newProducer(batchConfig)
 
     // State-Cmd
     with(WorkflowStateCmdHandler.logger) {
@@ -526,14 +534,14 @@ class InfiniticWorker(
       val consumer = consumerFactory.newConsumer(
           subscription = MainSubscription(WorkflowStateCmdTopic),
           entity = workflowName,
-          batchReceivingConfig = configBatch,
+          batchReceivingConfig = batchConfig,
       )
       scope.startWorkflowStateCmd(
           consumer,
           loggedProducer,
           workflowName,
           concurrency,
-          configBatch,
+          batchConfig,
       )
     }
 
@@ -543,7 +551,7 @@ class InfiniticWorker(
       val consumer = consumerFactory.newConsumer(
           subscription = MainSubscription(WorkflowStateEngineTopic),
           entity = workflowName,
-          batchReceivingConfig = configBatch,
+          batchReceivingConfig = batchConfig,
       )
       val storage = LoggedWorkflowStateStorage(this, config.workflowStateStorage)
       scope.startWorkflowStateEngine(
@@ -552,7 +560,7 @@ class InfiniticWorker(
           storage,
           workflowName,
           concurrency,
-          configBatch,
+          batchConfig,
       )
     }
 
@@ -562,13 +570,13 @@ class InfiniticWorker(
       val consumer = consumerFactory.newConsumer(
           subscription = MainSubscription(WorkflowStateTimerTopic),
           entity = workflowName,
-          batchReceivingConfig = configBatch,
+          batchReceivingConfig = batchConfig,
       )
       scope.startWorkflowStateTimer(
           consumer,
           loggedProducer,
           concurrency,
-          configBatch,
+          batchConfig,
       )
     }
 
@@ -578,14 +586,14 @@ class InfiniticWorker(
       val consumer = consumerFactory.newConsumer(
           subscription = MainSubscription(WorkflowStateEventTopic),
           entity = workflowName,
-          batchReceivingConfig = configBatch,
+          batchReceivingConfig = batchConfig,
       )
       scope.startWorkflowStateEvent(
           consumer,
           loggedProducer,
           workflowName,
           concurrency,
-          configBatch,
+          batchConfig,
       )
     }
   }
@@ -832,7 +840,8 @@ class InfiniticWorker(
     producer: InfiniticProducer,
     storage: WorkflowTagStorage,
     workflowName: String,
-    concurrency: Int
+    concurrency: Int,
+    batchConfig: BatchConfig?
   ) {
     val workflowTagEngine = WorkflowTagEngine(storage, producer)
 
@@ -843,15 +852,32 @@ class InfiniticWorker(
         beautifyLogs,
     )
 
-    startProcessingWithKey(
-        logger = this@KLogger,
-        consumer = consumer,
-        concurrency = concurrency,
-        processor = { message, publishedAt ->
-          cloudEventLogger.log(message, publishedAt)
-          workflowTagEngine.process(message, publishedAt)
-        },
-    )
+    when (batchConfig) {
+      null -> startProcessingWithKey(
+          logger = this@KLogger,
+          consumer = consumer,
+          concurrency = concurrency,
+          processor = { message, publishedAt ->
+            cloudEventLogger.log(message, publishedAt)
+            workflowTagEngine.process(message, publishedAt)
+          },
+      )
+
+      else -> startBatchProcessingWithKey(
+          logger = this@KLogger,
+          consumer = consumer,
+          concurrency = concurrency,
+          batchConfig = batchConfig,
+          batchProcessor = { messages ->
+            coroutineScope {
+              messages.forEach { (message, publishedAt) ->
+                launch { cloudEventLogger.log(message, publishedAt) }
+              }
+              launch { workflowTagEngine.batchProcess(messages) }
+            }
+          },
+      )
+    }
   }
 
   // WORKFLOW-STATE-CMD

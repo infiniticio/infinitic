@@ -109,34 +109,35 @@ class WorkflowStateEngine(
     val messagesMap: Map<WorkflowId, List<Pair<WorkflowStateEngineMessage, MillisInstant>>> =
         messages.groupBy { it.first.workflowId }
 
+    // get current states
+    val currentStates = storage.getStates(messagesMap.keys.toList())
+
     // process all messages by workflowId, in parallel
     val producersAndStates = coroutineScope {
       messagesMap
-          .mapValues { (workflowId, messageAndPublishTime) ->
-            async { batchProcessById(workflowId, messageAndPublishTime) }
+          .mapValues { (workflowId, messages) ->
+            async { batchProcessByWorkflowId(currentStates[workflowId], messages) }
           }
           .mapValues { it.value.await() }
     }
     // Send all messages
     coroutineScope {
-      producersAndStates.values.forEach { (producer, _) -> launch { producer.flush() } }
+      producersAndStates.values.forEach { (producer, _) -> launch { producer.send() } }
     }
 
     // atomically stores the states
-    val states = producersAndStates.mapValues { it.value.second }
-    storage.putStates(states)
+    val newStates = producersAndStates.mapValues { it.value.second }
+    storage.putStates(newStates)
   }
 
-  private suspend fun batchProcessById(
-    workflowId: WorkflowId,
+  private suspend fun batchProcessByWorkflowId(
+    currentState: WorkflowState?,
     messages: List<Pair<WorkflowStateEngineMessage, MillisInstant>>
   ): Pair<BufferedInfiniticProducer, WorkflowState?> {
     // do not send messages but buffer them
     val bufferedProducer = BufferedInfiniticProducer(_producer)
 
-    // get current state
-    var state: WorkflowState? = storage.getState(workflowId)
-
+    var state: WorkflowState? = currentState
     // process all received messages, starting by the oldest
     messages
         .sortedBy { it.second.long }
@@ -158,7 +159,7 @@ class WorkflowStateEngine(
     val updatedState = processSingle(bufferedProducer, state, message, publishTime)
 
     // send new messages
-    bufferedProducer.flush()
+    bufferedProducer.send()
 
     // store updated state
     storage.putState(message.workflowId, updatedState)

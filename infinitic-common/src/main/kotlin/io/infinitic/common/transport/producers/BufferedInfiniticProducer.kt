@@ -33,7 +33,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 class BufferedInfiniticProducer(val producer: InfiniticProducer) : InfiniticProducer {
-  private val buffer = mutableListOf<Letter<*>>()
+  val buffer = mutableListOf<Letter<*>>()
   private val mutex = Mutex()
 
   override val emitterName by lazy { producer.emitterName }
@@ -48,7 +48,7 @@ class BufferedInfiniticProducer(val producer: InfiniticProducer) : InfiniticProd
     }
   }
 
-  suspend fun flush() = mutex.withLock {
+  suspend fun send() = mutex.withLock {
     coroutineScope {
       buffer.forEach {
         launch {
@@ -61,10 +61,20 @@ class BufferedInfiniticProducer(val producer: InfiniticProducer) : InfiniticProd
     buffer.clear()
   }
 
-  private data class Letter<T : Message>(
+  data class Letter<T : Message>(
     val message: T,
     val topic: Topic<out T>,
     val after: MillisDuration
   )
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is BufferedInfiniticProducer) return false
+    return buffer.sortedBy { it.message.hashCode() } == other.buffer.sortedBy { it.message.hashCode() }
+  }
+
+  override fun hashCode(): Int {
+    return buffer.hashCode()
+  }
 }
 
