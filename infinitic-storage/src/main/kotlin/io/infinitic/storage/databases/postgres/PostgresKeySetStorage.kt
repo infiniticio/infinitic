@@ -68,16 +68,6 @@ class PostgresKeySetStorage(
             }
       }
 
-  private fun buildResultMap(resultSet: ResultSet): Map<String, MutableSet<ByteArray>> {
-    val results = mutableMapOf<String, MutableSet<ByteArray>>()
-    while (resultSet.next()) {
-      val key = resultSet.getString("key")
-      val value = resultSet.getBytes("value")
-      results.computeIfAbsent(key) { mutableSetOf() }.add(value)
-    }
-    return results
-  }
-
   override suspend fun add(key: String, value: ByteArray) {
     pool.connection.use { connection ->
       connection.prepareStatement("INSERT INTO $schema.$tableName (key, value) VALUES (?, ?)").use {
@@ -111,9 +101,26 @@ class PostgresKeySetStorage(
         """,
       ).use { statement ->
         statement.setArray(1, connection.createArrayOf("VARCHAR", keys.toTypedArray()))
-        statement.executeQuery().use { resultSet -> buildResultMap(resultSet) }
+        statement.executeQuery().use { resultSet -> buildResultMap(keys, resultSet) }
       }
     }
+  }
+
+  private fun buildResultMap(
+    keys: Set<String>,
+    resultSet: ResultSet
+  ): Map<String, MutableSet<ByteArray>> {
+    val results = mutableMapOf<String, MutableSet<ByteArray>>()
+    while (resultSet.next()) {
+      val key = resultSet.getString("key")
+      val value = resultSet.getBytes("value")
+      results.computeIfAbsent(key) { mutableSetOf() }.add(value)
+    }
+    // add missing keys
+    keys.forEach { key ->
+      results.putIfAbsent(key, mutableSetOf())
+    }
+    return results
   }
 
   override suspend fun update(

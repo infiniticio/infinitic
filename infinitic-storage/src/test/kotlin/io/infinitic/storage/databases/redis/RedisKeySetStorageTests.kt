@@ -27,6 +27,7 @@ import io.infinitic.storage.config.RedisConfig
 import io.infinitic.storage.data.Bytes
 import io.kotest.core.annotation.EnabledIf
 import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
 import org.testcontainers.containers.GenericContainer
 import org.testcontainers.utility.DockerImageName
@@ -93,6 +94,32 @@ class RedisKeySetStorageTests :
           storage.remove("foo", "bar".toByteArray())
 
           equalsTo(storage.get("foo"), setOf()) shouldBe true
+        }
+
+        "get on multiple keys" {
+          storage.add("foo", "42".toByteArray())
+          val gets = storage.get(setOf("foo", "unknown"))
+          gets.keys shouldBe setOf("foo", "unknown")
+          gets["foo"]?.toList() shouldContainExactly setOf("bar".toByteArray(), "42".toByteArray())
+          gets["unknown"] shouldBe setOf<ByteArray>()
+        }
+
+        "update on multiple keys" {
+          storage.update(
+              add = mapOf(
+                  "foo" to setOf("42".toByteArray(), "43".toByteArray()),
+                  "bar" to setOf("43".toByteArray()),
+              ),
+              remove = mapOf(
+                  "foo" to setOf("bar".toByteArray(), "unknown".toByteArray()),
+                  "unknown" to setOf("42".toByteArray()),
+              ),
+          )
+          storage.get("foo").toList() shouldContainExactly setOf(
+              "42".toByteArray(),
+              "43".toByteArray(),
+          )
+          storage.get("bar").toList() shouldContainExactly setOf("43".toByteArray())
         }
       },
   )
