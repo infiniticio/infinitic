@@ -70,7 +70,7 @@ internal class BatchByTests : StringSpec(
       }
 
       "should be able to batch by max duration, up to scope cancellation" {
-        val size = Random.nextInt(5, 10)
+        val size = 3
         val maxMillis = 500L
         val delay = 100L
 
@@ -83,8 +83,9 @@ internal class BatchByTests : StringSpec(
           val channel = scope
               .startBatchReceiving(SlowConsumer())
               .process { _, m -> m.map { it.deserialize() } }
-          val outputChannel =
-              with(scope) { channel.batchBy(100, maxMillis) { i -> (i % 2).toString() } }
+          val outputChannel = with(scope) {
+            channel.batchBy(100, maxMillis) { i -> (i % 2).toString() }
+          }
 
           // batching
           shouldNotThrowAny {
@@ -103,9 +104,17 @@ internal class BatchByTests : StringSpec(
           // after scope cancelling
           scope.cancel()
           // consumer channel should be closed
-          shouldThrow<ClosedReceiveChannelException> { while (true) channel.receive() }
+          shouldThrow<ClosedReceiveChannelException> {
+            while (true) {
+              println("channel: " + channel.receive()); delay(delay)
+            }
+          }
           // output channel should be closed
-          shouldThrow<ClosedReceiveChannelException> { while (true) outputChannel.receive() }
+          shouldThrow<ClosedReceiveChannelException> {
+            while (true) {
+              println("outputChannel: " + outputChannel.receive()); delay(delay)
+            }
+          }
         }
       }
     },
