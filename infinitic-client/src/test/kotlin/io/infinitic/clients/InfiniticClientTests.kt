@@ -93,6 +93,7 @@ import io.infinitic.inMemory.InMemoryConsumerFactory
 import io.infinitic.inMemory.InMemoryInfiniticProducer
 import io.infinitic.inMemory.InMemoryInfiniticProducerFactory
 import io.infinitic.inMemory.consumers.InMemoryConsumer
+import io.infinitic.inMemory.consumers.InMemoryTransportMessage
 import io.infinitic.transport.config.InMemoryTransportConfig
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
@@ -107,6 +108,7 @@ import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.slot
 import io.mockk.unmockkStatic
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.future.await
 import java.util.concurrent.CopyOnWriteArrayList
@@ -175,7 +177,11 @@ internal val mockedProducerFactory = mockk<InMemoryInfiniticProducerFactory> {
   } returns mockedProducer
 }
 
-val mockedConsumer = mockk<InMemoryConsumer<ClientMessage>>()
+val mockedConsumer = mockk<InMemoryConsumer<ClientMessage>> {
+  coEvery {
+    receive()
+  } coAnswers { CompletableDeferred<InMemoryTransportMessage<ClientMessage>>().await() }
+}
 
 val mockedConsumerFactory = mockk<InMemoryConsumerFactory> {
   coEvery {
@@ -541,13 +547,11 @@ internal class InfiniticClientTests : StringSpec(
 
         // when waiting for a workflow, the consumer should be started
         coVerify {
-          with(InfiniticClient.logger) {
-            mockedConsumerFactory.newConsumer(
-                MainSubscription(ClientTopic),
-                "$clientNameTest",
-                null,
-            )
-          }
+          mockedConsumerFactory.newConsumer(
+              MainSubscription(ClientTopic),
+              "$clientNameTest",
+              null,
+          )
         }
 
         // restart a workflow
@@ -555,15 +559,11 @@ internal class InfiniticClientTests : StringSpec(
 
         // the consumer should be started only once
         coVerify(exactly = 1) {
-          with(client.clientScope) {
-            with(InfiniticClient.logger) {
-              mockedConsumerFactory.newConsumer(
-                  MainSubscription(ClientTopic),
-                  "$clientNameTest",
-                  null,
-              )
-            }
-          }
+          mockedConsumerFactory.newConsumer(
+              MainSubscription(ClientTopic),
+              "$clientNameTest",
+              null,
+          )
         }
       }
 
