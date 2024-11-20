@@ -39,7 +39,7 @@ import kotlin.random.Random
 
 internal class BatchByTests : StringSpec(
     {
-      val logger = KotlinLogging.logger {}
+      val logger = KotlinLogging.logger("io.infinitic.tests")
       fun getScope() = CoroutineScope(Dispatchers.IO)
 
       "should be able to batch by max message, up to scope cancellation" {
