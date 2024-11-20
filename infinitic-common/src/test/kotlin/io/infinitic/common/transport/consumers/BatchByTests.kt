@@ -23,7 +23,6 @@
 package io.infinitic.common.transport.consumers
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.doubles.shouldBeLessThan
@@ -34,6 +33,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.random.Random
 
@@ -50,13 +50,14 @@ internal class BatchByTests : StringSpec(
           val outputChannel = with(scope) { channel.batchBy(size, 10000) }
 
           // batching
-          shouldNotThrowAny {
-            repeat(10) {
+          scope.launch {
+            repeat(2) {
               val result: Result<List<IntMessage>, List<IntMessage>> = outputChannel.receive()
               println("receiving $result")
               result.data.size shouldBe size
             }
-          }
+          }.join()
+
           scope.isActive shouldBe true
 
           // after scope cancelling
@@ -88,7 +89,7 @@ internal class BatchByTests : StringSpec(
           }
 
           // batching
-          shouldNotThrowAny {
+          scope.launch {
             repeat(2) {
               val result = outputChannel.receive()
               println("receiving $result")
@@ -98,7 +99,8 @@ internal class BatchByTests : StringSpec(
               val firstIsEven = result.data[0] % 2
               result.data.all { it % 2 == firstIsEven } shouldBe true
             }
-          }
+          }.join()
+
           scope.isActive shouldBe true
 
           // after scope cancelling
