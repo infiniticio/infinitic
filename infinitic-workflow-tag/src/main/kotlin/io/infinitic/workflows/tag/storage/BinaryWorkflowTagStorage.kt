@@ -81,16 +81,15 @@ class BinaryWorkflowTagStorage(keySetStorage: KeySetStorage) :
     add: Map<Pair<WorkflowTag, WorkflowName>, Set<WorkflowId>>,
     remove: Map<Pair<WorkflowTag, WorkflowName>, Set<WorkflowId>>
   ) {
-    keySetStorage.update(
-        add = add.mapKeys { getTagSetIdsKey(it.key.first, it.key.second) }
-            .mapValues {
-              it.value.map { workflowId -> workflowId.toString().toByteArray() }.toSet()
-            },
-        remove = remove.mapKeys { getTagSetIdsKey(it.key.first, it.key.second) }
-            .mapValues {
-              it.value.map { workflowId -> workflowId.toString().toByteArray() }.toSet()
-            },
-    )
+    val addData = add
+        .mapKeys { getTagSetIdsKey(it.key.first, it.key.second) }
+        .mapValues { it.value.map { workflowId -> workflowId.toString().toByteArray() }.toSet() }
+
+    val removeData = remove
+        .mapKeys { getTagSetIdsKey(it.key.first, it.key.second) }
+        .mapValues { it.value.map { workflowId -> workflowId.toString().toByteArray() }.toSet() }
+
+    keySetStorage.update(add = addData, remove = removeData)
   }
 
   private fun getTagSetIdsKey(tag: WorkflowTag, workflowName: WorkflowName) =
