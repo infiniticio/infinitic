@@ -106,26 +106,6 @@ import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.system.exitProcess
 
-fun main() {
-  // Enregistre un hook d'arrêt pour capturer "Ctrl+C" et autres événements d'arrêt de la JVM
-  Runtime.getRuntime().addShutdownHook(
-      Thread {
-        println("closing worker...")
-        // Code de nettoyage ici
-      },
-  )
-
-  println("L'application s'exécute, appuyez sur Ctrl+C pour la fermer...")
-
-  try {
-    // Simule une application en cours d'exécution
-    Thread.sleep(Long.MAX_VALUE)
-  } catch (e: InterruptedException) {
-
-    Thread.currentThread().interrupt()
-  }
-}
-
 @Suppress("unused")
 class InfiniticWorker(
   val config: InfiniticWorkerConfigInterface,
