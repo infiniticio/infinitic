@@ -77,17 +77,20 @@ class MySQLKeySetStorage(
     }
   }
 
-  override suspend fun get(keys: Set<String>): Map<String, Set<ByteArray>> =
-      pool.connection.use { connection ->
-        // Create placeholder string for SQL IN clause
-        val placeholders = keys.joinToString(",") { "?" }
-        val query = "SELECT `key`, `value` FROM $tableName WHERE `key` IN ($placeholders)"
+  override suspend fun get(keys: Set<String>): Map<String, Set<ByteArray>> {
+    if (keys.isEmpty()) return emptyMap() // Handle empty set case
 
-        connection.prepareStatement(query).use { statement ->
-          keys.forEachIndexed { index, key -> statement.setString(index + 1, key) }
-          statement.executeQuery().use { resultSet -> buildResultMap(keys, resultSet) }
-        }
+    return pool.connection.use { connection ->
+      // Create placeholder string for SQL IN clause
+      val placeholders = keys.joinToString(",") { "?" }
+      val query = "SELECT `key`, `value` FROM $tableName WHERE `key` IN ($placeholders)"
+
+      connection.prepareStatement(query).use { statement ->
+        keys.forEachIndexed { index, key -> statement.setString(index + 1, key) }
+        statement.executeQuery().use { resultSet -> buildResultMap(keys, resultSet) }
       }
+    }
+  }
 
   private fun buildResultMap(
     keys: Set<String>,
@@ -115,7 +118,8 @@ class MySQLKeySetStorage(
 
       try {
         // Use batch processing for removing values
-        connection.prepareStatement("DELETE FROM $tableName WHERE `key` = ? AND `value` = ?")
+        if (remove.isNotEmpty()) connection
+            .prepareStatement("DELETE FROM $tableName WHERE `key` = ? AND `value` = ?")
             .use { deleteStmt ->
               remove.forEach { (key, values) ->
                 values.forEach { value ->
@@ -128,7 +132,8 @@ class MySQLKeySetStorage(
             }
 
         // Use batch processing for adding values
-        connection.prepareStatement("INSERT INTO $tableName (`key`, `value`) VALUES (?, ?)")
+        if (add.isNotEmpty()) connection
+            .prepareStatement("INSERT INTO $tableName (`key`, `value`) VALUES (?, ?)")
             .use { insertStmt ->
               add.forEach { (key, values) ->
                 values.forEach { value ->

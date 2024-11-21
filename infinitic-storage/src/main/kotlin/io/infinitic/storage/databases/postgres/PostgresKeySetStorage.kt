@@ -90,7 +90,7 @@ class PostgresKeySetStorage(
   }
 
   override suspend fun get(keys: Set<String>): Map<String, Set<ByteArray>> {
-    if (keys.isEmpty()) return emptyMap() // Handle empty set case
+    if (keys.isEmpty()) return emptyMap() // Handle empty case
 
     return pool.connection.use { connection ->
       connection.prepareStatement(
@@ -130,7 +130,8 @@ class PostgresKeySetStorage(
     pool.connection.use { connection ->
       connection.autoCommit = false
       try {
-        connection.prepareStatement("DELETE FROM $schema.$tableName WHERE key = ? AND value = ?")
+        if (remove.isNotEmpty()) connection
+            .prepareStatement("DELETE FROM $schema.$tableName WHERE key = ? AND value = ?")
             .use { deleteStmt ->
               remove.forEach { (key, values) ->
                 values.forEach { value ->
@@ -142,7 +143,8 @@ class PostgresKeySetStorage(
               deleteStmt.executeBatch()
             }
 
-        connection.prepareStatement("INSERT INTO $schema.$tableName (key, value) VALUES (?, ?)")
+        if (add.isNotEmpty()) connection
+            .prepareStatement("INSERT INTO $schema.$tableName (key, value) VALUES (?, ?)")
             .use { insertStmt ->
               add.forEach { (key, values) ->
                 values.forEach { value ->

@@ -26,6 +26,7 @@ import com.zaxxer.hikari.HikariDataSource
 import io.infinitic.storage.config.MySQLConfig
 import io.infinitic.storage.keyValue.KeyValueStorage
 import org.jetbrains.annotations.TestOnly
+import java.sql.Connection
 
 class MySQLKeyValueStorage(
   internal val pool: HikariDataSource,
@@ -78,6 +79,8 @@ class MySQLKeyValueStorage(
   }
 
   override suspend fun get(keys: Set<String>): Map<String, ByteArray?> {
+    if (keys.isEmpty()) return emptyMap() // Handle empty set case
+
     return pool.connection.use { connection ->
       val questionMarks = keys.joinToString(",") { "?" }
       connection.prepareStatement("SELECT `key`, `value` FROM $tableName WHERE `key` IN ($questionMarks)")
@@ -99,26 +102,38 @@ class MySQLKeyValueStorage(
   }
 
   override suspend fun put(bytes: Map<String, ByteArray?>) {
+    if (bytes.isEmpty()) return  // Handle empty case
+
     pool.connection.use { connection ->
+      // Sorting keys to ensure consistent order of access
+      val sortedBytes = bytes.toSortedMap()
       connection.autoCommit = false
+      // Change isolation level if necessary
+      connection.transactionIsolation = Connection.TRANSACTION_READ_COMMITTED
+
       try {
-        bytes.forEach { (key, value) ->
-          if (value == null) {
-            connection.prepareStatement("DELETE FROM $tableName WHERE `key` = ?").use { statement ->
-              statement.setString(1, key)
-              statement.executeUpdate()
+        // Batch DELETE
+        connection.prepareStatement("DELETE FROM $tableName WHERE `key` = ?")
+            .use { deleteStatement ->
+              sortedBytes.filter { it.value == null }.forEach { (key, _) ->
+                deleteStatement.setString(1, key)
+                deleteStatement.addBatch()
+              }
+              deleteStatement.executeBatch()
             }
-          } else {
-            connection.prepareStatement(
-                "INSERT INTO $tableName (`key`, `value`) VALUES (?, ?) " +
-                    "ON DUPLICATE KEY UPDATE `value`=?",
-            ).use { statement ->
-              statement.setString(1, key)
-              statement.setBytes(2, value)
-              statement.setBytes(3, value)
-              statement.executeUpdate()
-            }
+
+        // Batch INSERT/UPDATE
+        connection.prepareStatement(
+            "INSERT INTO $tableName (`key`, `value`) VALUES (?, ?) " +
+                "ON DUPLICATE KEY UPDATE `value`=?",
+        ).use { insertStatement ->
+          sortedBytes.filter { it.value != null }.forEach { (key, value) ->
+            insertStatement.setString(1, key)
+            insertStatement.setBytes(2, value)
+            insertStatement.setBytes(3, value)
+            insertStatement.addBatch()
           }
+          insertStatement.executeBatch()
         }
         connection.commit()
       } catch (e: Exception) {
