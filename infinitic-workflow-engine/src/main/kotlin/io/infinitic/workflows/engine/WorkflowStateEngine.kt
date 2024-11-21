@@ -186,7 +186,10 @@ class WorkflowStateEngine(
 
     val updatedState = when (state) {
       null -> processMessageWithoutState(producer, message)
-      else -> processMessageWithState(producer, message, state)
+      else -> {
+        processMessageWithState(producer, message, state)
+        state
+      }
     }
 
     return when (updatedState?.workflowMethods?.size) {
@@ -254,9 +257,8 @@ class WorkflowStateEngine(
         return@coroutineScope message.newState()
       }
 
-      // a client wants to dispatch a method on an unknown workflow
+      // someone wants to dispatch a method on a workflow unknown or already terminated
       is DispatchMethod -> when (val requester = message.requester ?: thisShouldNotHappen()) {
-        // a client wants to dispatch a method on an unknown workflow
         is ClientRequester -> {
           if (message.clientWaiting) launch {
             val methodUnknown = MethodUnknown(
@@ -271,7 +273,6 @@ class WorkflowStateEngine(
 
         is WorkflowRequester -> {
           if (requester.workflowId != message.workflowId) launch {
-            // a workflow wants to dispatch a method on an unknown workflow
             val childMethodFailed = RemoteMethodUnknown(
                 childMethodUnknownError =
                 MethodUnknownError(
@@ -305,7 +306,6 @@ class WorkflowStateEngine(
         with(producer) { methodUnknown.sendTo(ClientTopic) }
       }
 
-
       else -> Unit
     }
 
@@ -318,7 +318,7 @@ class WorkflowStateEngine(
     producer: InfiniticProducer,
     message: WorkflowStateEngineMessage,
     state: WorkflowState
-  ): WorkflowState? {
+  ) {
 
     // if a workflow task is ongoing, we buffer all messages except those associated to a workflowTask
     when (message.isWorkflowTaskEvent()) {
@@ -330,14 +330,14 @@ class WorkflowStateEngine(
           logDiscarding(message) { "workflowTask that has a null version - retrying it" }
           coroutineScope { retryWorkflowTask(producer, state) }
 
-          return state
+          return
         }
 
         // Idempotency: discard if this workflowTask is not the current one
         if (state.runningWorkflowTaskId != (message as RemoteTaskEvent).taskId()) {
           logDiscarding(message) { "as workflowTask ${message.taskId()} is different than ${state.runningWorkflowTaskId} in state" }
 
-          return null
+          return
         }
       }
 
@@ -348,7 +348,7 @@ class WorkflowStateEngine(
           logDebug("Buffering:", message)
           state.messagesBuffer.add(message)
 
-          return state
+          return
         }
       }
     }
@@ -370,8 +370,6 @@ class WorkflowStateEngine(
       // if no method left, then the workflow is completed
       if (state.workflowMethods.isEmpty()) sendWorkflowCompletedEvent(producer, state)
     }
-
-    return state
   }
 
   private fun logDiscarding(message: WorkflowStateEngineMessage, cause: () -> String) {
