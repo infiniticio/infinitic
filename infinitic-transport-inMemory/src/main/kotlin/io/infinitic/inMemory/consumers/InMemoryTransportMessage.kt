@@ -32,9 +32,12 @@ class InMemoryTransportMessage<S : Message>(private val message: S, override val
   private var hasBeenNegativelyAcknowledged = false
 
   override val messageId: String = message.messageId.toString()
+
+  override val key: String = message.key().toString()
+
   override val publishTime: MillisInstant = MillisInstant.now()
 
-  override fun deserialize() = message
+  override suspend fun deserialize() = message
 
   override suspend fun negativeAcknowledge() {
     hasBeenNegativelyAcknowledged = true
@@ -44,5 +47,5 @@ class InMemoryTransportMessage<S : Message>(private val message: S, override val
     //  nothing to do
   }
 
-  override val hasBeenSentToDeadLetterQueue: Boolean = hasBeenNegativelyAcknowledged
+  override val sentToDeadLetterQueue: Boolean = hasBeenNegativelyAcknowledged
 }

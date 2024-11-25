@@ -25,7 +25,7 @@ package io.infinitic.pulsar.consumers
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.messages.Message
 import io.infinitic.common.transport.Topic
-import io.infinitic.common.transport.interfaces.TransportConsumer
+import io.infinitic.common.transport.interfaces.InfiniticConsumer
 import kotlinx.coroutines.future.await
 import org.apache.pulsar.client.api.Consumer
 
@@ -33,7 +33,7 @@ class PulsarTransportConsumer<M : Message>(
   private val topic: Topic<M>,
   private val pulsarConsumer: Consumer<Envelope<M>>,
   override val maxRedeliveryCount: Int
-) : TransportConsumer<PulsarTransportMessage<M>> {
+) : InfiniticConsumer<M> {
 
   override suspend fun receive(): PulsarTransportMessage<M> {
     val pulsarMessage = pulsarConsumer.receiveAsync().await()
@@ -44,7 +44,9 @@ class PulsarTransportConsumer<M : Message>(
   override suspend fun batchReceive(): List<PulsarTransportMessage<M>> {
     val pulsarMessages = pulsarConsumer.batchReceiveAsync().await()
 
-    return pulsarMessages.map { PulsarTransportMessage(it, pulsarConsumer, topic, maxRedeliveryCount) }
+    return pulsarMessages.map {
+      PulsarTransportMessage(it, pulsarConsumer, topic, maxRedeliveryCount)
+    }
   }
 
   override val name: String = pulsarConsumer.consumerName

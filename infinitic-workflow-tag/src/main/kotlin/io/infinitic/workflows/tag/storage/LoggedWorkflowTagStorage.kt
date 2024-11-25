@@ -64,6 +64,35 @@ class LoggedWorkflowTagStorage(
     storage.removeWorkflowId(tag, workflowName, workflowId)
   }
 
+  override suspend fun getWorkflowIds(
+    tagAndNames: Set<Pair<WorkflowTag, WorkflowName>>
+  ): Map<Pair<WorkflowTag, WorkflowName>, Set<WorkflowId>> {
+    val map = storage.getWorkflowIds(tagAndNames)
+    map.forEach { (tagAndNames, workflowIds) ->
+      logger.debug {
+        "TAG ${tagAndNames.first} - workflowName ${tagAndNames.second} - getWorkflowIds ${workflowIds.size} found"
+      }
+    }
+    return map
+  }
+
+  override suspend fun updateWorkflowIds(
+    add: Map<Pair<WorkflowTag, WorkflowName>, Set<WorkflowId>>,
+    remove: Map<Pair<WorkflowTag, WorkflowName>, Set<WorkflowId>>
+  ) {
+    add.forEach { (tagAndNames, workflowIds) ->
+      workflowIds.forEach { workflowId ->
+        logger.debug { "TAG ${tagAndNames.first} - name ${tagAndNames.second} - addWorkflowId $workflowId" }
+      }
+    }
+    remove.forEach { (tagAndNames, workflowIds) ->
+      workflowIds.forEach { workflowId ->
+        logger.debug { "TAG ${tagAndNames.first} - name ${tagAndNames.second} - removeWorkflowId $workflowId" }
+      }
+    }
+    storage.updateWorkflowIds(add, remove)
+  }
+
   @TestOnly
   override fun flush() {
     logger.warn { "flushing workflowTagStorage" }

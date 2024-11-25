@@ -56,7 +56,7 @@ class BinaryWorkflowStateStorage(storage: KeyValueStorage) : WorkflowStateStorag
   override suspend fun getStates(workflowIds: List<WorkflowId>): Map<WorkflowId, WorkflowState?> {
     val keys = workflowIds.associateWith { getWorkflowStateKey(it) }
     val values = coroutineScope {
-      storage.getSet(keys.values.toSet())
+      storage.get(keys.values.toSet())
           .mapValues { async { it.value?.let { bytes -> WorkflowState.fromByteArray(bytes) } } }
           .mapValues { it.value.await() }
     }
@@ -71,7 +71,7 @@ class BinaryWorkflowStateStorage(storage: KeyValueStorage) : WorkflowStateStorag
           .mapValues { async { it.value?.toByteArray() } }
           .mapValues { it.value.await() }
     }
-    storage.putSet(map)
+    storage.put(map)
   }
 
   @TestOnly

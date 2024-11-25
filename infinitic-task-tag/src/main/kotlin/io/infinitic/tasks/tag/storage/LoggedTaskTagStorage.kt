@@ -35,35 +35,23 @@ class LoggedTaskTagStorage(
   private val storage: TaskTagStorage
 ) : TaskTagStorage {
 
-  override suspend fun getTaskIdsForTag(tag: TaskTag, serviceName: ServiceName): Set<TaskId> {
+  override suspend fun getTaskIds(tag: TaskTag, serviceName: ServiceName): Set<TaskId> {
     logger.trace { "TAG $tag - taskName $serviceName - getting TaskIds" }
-    val taskIds = storage.getTaskIdsForTag(tag, serviceName)
+    val taskIds = storage.getTaskIds(tag, serviceName)
     logger.debug { "TAG $tag - taskName $serviceName - got TaskIds $taskIds" }
     return taskIds
   }
 
-  override suspend fun addTaskIdToTag(tag: TaskTag, serviceName: ServiceName, taskId: TaskId) {
+  override suspend fun addTaskId(tag: TaskTag, serviceName: ServiceName, taskId: TaskId) {
     logger.trace { "TAG $tag - name $serviceName - adding TaskId $taskId" }
-    storage.addTaskIdToTag(tag, serviceName, taskId)
+    storage.addTaskId(tag, serviceName, taskId)
     logger.debug { "TAG $tag - name $serviceName - added TaskId $taskId" }
   }
 
-  override suspend fun removeTaskIdFromTag(tag: TaskTag, serviceName: ServiceName, taskId: TaskId) {
+  override suspend fun removeTaskId(tag: TaskTag, serviceName: ServiceName, taskId: TaskId) {
     logger.trace { "TAG $tag - name $serviceName - removing TaskId $taskId" }
-    storage.removeTaskIdFromTag(tag, serviceName, taskId)
+    storage.removeTaskId(tag, serviceName, taskId)
     logger.debug { "TAG $tag - name $serviceName - removed TaskId $taskId" }
-  }
-
-  override suspend fun setDelegatedTaskData(taskId: TaskId, data: DelegatedTaskData) {
-    logger.trace { "TID $taskId - setting DelegatedTaskData $data" }
-    storage.setDelegatedTaskData(taskId, data)
-    logger.debug { "TID $taskId - set DelegatedTaskData $data" }
-  }
-
-  override suspend fun delDelegatedTaskData(taskId: TaskId) {
-    logger.trace { "TID $taskId - deleting DelegatedTaskData" }
-    storage.delDelegatedTaskData(taskId)
-    logger.debug { "TID $taskId - deleted DelegatedTaskData" }
   }
 
   override suspend fun getDelegatedTaskData(taskId: TaskId): DelegatedTaskData? {
@@ -71,6 +59,22 @@ class LoggedTaskTagStorage(
     val asyncData = storage.getDelegatedTaskData(taskId)
     logger.debug { "TID $taskId - got DelegatedTaskData $asyncData" }
     return asyncData
+  }
+
+  override suspend fun updateDelegatedTaskData(taskId: TaskId, data: DelegatedTaskData?) {
+    when (data) {
+      null -> {
+        logger.trace { "TID $taskId - deleting DelegatedTaskData" }
+        storage.updateDelegatedTaskData(taskId, null)
+        logger.debug { "TID $taskId - deleted DelegatedTaskData" }
+      }
+
+      else -> {
+        logger.trace { "TID $taskId - setting DelegatedTaskData $data" }
+        storage.updateDelegatedTaskData(taskId, data)
+        logger.debug { "TID $taskId - set DelegatedTaskData $data" }
+      }
+    }
   }
 
   @TestOnly

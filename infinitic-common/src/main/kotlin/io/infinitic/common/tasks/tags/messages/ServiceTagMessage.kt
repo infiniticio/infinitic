@@ -41,12 +41,12 @@ sealed interface ServiceTagMessage : Message {
   override fun entity() = serviceName.toString()
 }
 
-interface WithTagAsKey : ServiceTagMessage {
+sealed interface WithTagAsKey : ServiceTagMessage {
   val taskTag: TaskTag
   override fun key() = taskTag.toString()
 }
 
-interface WithTaskIdAsKey : ServiceTagMessage {
+sealed interface WithTaskIdAsKey : ServiceTagMessage {
   val taskId: TaskId
   override fun key(): String? = taskId.toString()
 }
@@ -70,6 +70,15 @@ data class CompleteDelegatedTask(
   override val taskId: TaskId,
   override val emitterName: EmitterName,
 ) : WithTaskIdAsKey
+
+@Serializable
+@AvroNamespace("io.infinitic.tasks.tag")
+data class GetTaskIdsByTag(
+  override val messageId: MessageId = MessageId(),
+  @SerialName("taskName") override val serviceName: ServiceName,
+  override val taskTag: TaskTag,
+  override val emitterName: EmitterName
+) : WithTagAsKey
 
 @Serializable
 @AvroNamespace("io.infinitic.tasks.tag")
@@ -112,11 +121,3 @@ data class RemoveTaskIdFromTag(
   override val emitterName: EmitterName
 ) : WithTagAsKey
 
-@Serializable
-@AvroNamespace("io.infinitic.tasks.tag")
-data class GetTaskIdsByTag(
-  override val messageId: MessageId = MessageId(),
-  @SerialName("taskName") override val serviceName: ServiceName,
-  override val taskTag: TaskTag,
-  override val emitterName: EmitterName
-) : WithTagAsKey

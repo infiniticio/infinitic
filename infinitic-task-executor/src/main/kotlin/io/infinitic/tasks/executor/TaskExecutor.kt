@@ -22,7 +22,6 @@
  */
 package io.infinitic.tasks.executor
 
-import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.annotations.Delegated
 import io.infinitic.clients.InfiniticClientInterface
@@ -44,13 +43,12 @@ import io.infinitic.common.tasks.events.messages.TaskRetriedEvent
 import io.infinitic.common.tasks.events.messages.TaskStartedEvent
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
-import io.infinitic.common.transport.BatchProcessorConfig
 import io.infinitic.common.transport.ServiceExecutorEventTopic
 import io.infinitic.common.transport.ServiceExecutorRetryTopic
 import io.infinitic.common.transport.interfaces.InfiniticProducer
+import io.infinitic.common.transport.logged.LoggerWithCounter
 import io.infinitic.common.utils.BatchMethod
 import io.infinitic.common.utils.checkMode
-import io.infinitic.common.utils.getBatchConfig
 import io.infinitic.common.utils.getBatchMethod
 import io.infinitic.common.utils.getMethodPerNameAndParameters
 import io.infinitic.common.utils.isDelegated
@@ -124,31 +122,13 @@ class TaskExecutor(
     }
   }
 
-  context(KLogger)
-  fun getBatchConfig(msg: ServiceExecutorMessage): BatchProcessorConfig? = when (msg) {
-    is ExecuteTask -> msg.getBatchConfig()
+  fun getBatchKey(msg: ServiceExecutorMessage): String? = when (msg) {
+    is ExecuteTask -> msg.getBatchKey()
   }
 
-  context(KLogger)
-  private fun ExecuteTask.getBatchConfig(): BatchProcessorConfig? = when (isWorkflowTask()) {
+  private fun ExecuteTask.getBatchKey(): String? = when (isWorkflowTask()) {
     true -> thisShouldNotHappen()
-    false -> {
-      val (instance, method) = getInstanceAndMethod()
-      // get batch config for method
-      val methodBatchConfig = method.getBatchConfig()
-      // get batch key from message meta data
-      val messageBatchKey = taskMeta[TaskMeta.BATCH_KEY]?.let { String(it) }
-      // if messageBatchKey is defined, user should add a @batch method
-      if (methodBatchConfig == null && messageBatchKey != null) {
-        warn {
-          "Task $taskId has a batch key $messageBatchKey, but there is " +
-              "no @Batch method for method (${instance::class.java.name}.${method.name}))"
-        }
-      }
-      methodBatchConfig?.copy(
-          batchKey = methodBatchConfig.batchKey + (messageBatchKey?.let { "_$it" } ?: ""),
-      )
-    }
+    false -> taskMeta[TaskMeta.BATCH_KEY]?.let { String(it) }
   }
 
   private data class TaskData(
@@ -823,7 +803,7 @@ class TaskExecutor(
   }
 
   companion object {
-    val logger = KotlinLogging.logger {}
+    val logger = LoggerWithCounter(KotlinLogging.logger {})
 
     val TASK_WITH_TIMEOUT_DEFAULT: WithTimeout? = null
     val TASK_WITH_RETRY_DEFAULT: WithRetry? = null

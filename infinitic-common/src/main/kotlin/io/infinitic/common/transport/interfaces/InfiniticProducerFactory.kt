@@ -38,6 +38,6 @@ interface InfiniticProducerFactory {
   /**
    * Retrieves an `InfiniticProducer` based on the provided batch producing configuration.
    */
-  fun getProducer(batchSendingConfig: BatchConfig?): InfiniticProducer
+  fun newProducer(batchSendingConfig: BatchConfig?): InfiniticProducer
 
 }

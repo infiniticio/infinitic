@@ -49,6 +49,25 @@ class CachedKeySetStorage(
     storage.remove(key, value)
   }
 
+  override suspend fun get(keys: Set<String>): Map<String, Set<ByteArray>> {
+    val cached = keys.associateWith { cache.get(it) }.toMutableMap()
+    val missing = cached.filterValues { it == null }.keys
+    storage.get(missing).forEach { (k, v) ->
+      cache.set(k, v)
+      cached[k] = v
+    }
+    return cached.mapValues { it.value!! }
+  }
+
+  override suspend fun update(
+    add: Map<String, Set<ByteArray>>,
+    remove: Map<String, Set<ByteArray>>
+  ) {
+    storage.update(add, remove)
+    add.forEach { (key, values) -> values.forEach { cache.add(key, it) } }
+    remove.forEach { (key, values) -> values.forEach { cache.remove(key, it) } }
+  }
+
   override fun close() {
     storage.close()
   }

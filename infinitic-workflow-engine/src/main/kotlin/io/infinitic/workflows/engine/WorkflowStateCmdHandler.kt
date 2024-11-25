@@ -28,6 +28,7 @@ import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.transport.WorkflowStateEngineTopic
 import io.infinitic.common.transport.WorkflowStateEventTopic
 import io.infinitic.common.transport.interfaces.InfiniticProducer
+import io.infinitic.common.transport.logged.LoggerWithCounter
 import io.infinitic.common.utils.IdGenerator
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
@@ -45,17 +46,16 @@ class WorkflowStateCmdHandler(val producer: InfiniticProducer) {
   private val emitterName = producer.emitterName
 
   suspend fun batchProcess(
-    messages: List<WorkflowStateEngineMessage>,
-    publishTimes: List<MillisInstant>
+    messages: List<Pair<WorkflowStateEngineMessage, MillisInstant>>,
   ) {
     // get message by workflowId
     val messagesMap: Map<WorkflowId, List<Pair<WorkflowStateEngineMessage, MillisInstant>>> =
-        messages.zip(publishTimes).groupBy { it.first.workflowId }
+        messages.groupBy { it.first.workflowId }
 
     // process all messages by workflowId, in parallel
     coroutineScope {
       messagesMap
-          .mapValues { (workflowId, messageAndPublishTimes) ->
+          .mapValues { (_, messageAndPublishTimes) ->
             async { batchProcessById(messageAndPublishTimes) }
           }
           .mapValues { it.value.await() }
@@ -100,44 +100,43 @@ class WorkflowStateCmdHandler(val producer: InfiniticProducer) {
         // The workflowTask is sent only after the previous message,
         // to prevent a possible race condition where the outcome of the workflowTask
         // commands arrives before the engine is made aware of them by the previous message.
-        launch {
-          // defines workflow task input
-          val workflowTaskParameters = with(dispatchNewWorkflow) {
-            WorkflowTaskParameters(
-                taskId = workflowTaskId!!,
-                workflowId = workflowId,
-                workflowName = workflowName,
-                workflowVersion = null,
-                workflowTags = workflowTags,
-                workflowMeta = workflowMeta,
-                workflowPropertiesHashValue = mutableMapOf(),
-                workflowTaskIndex = WorkflowTaskIndex(1),
-                workflowMethod = workflowMethod(),
-                workflowTaskInstant = msg.emittedAt ?: publishTime,
-                emitterName = emitterName,
-            )
-          }
 
-          val taskDispatchedEvent =
-              workflowTaskParameters.workflowTaskDispatchedEvent(emitterName)
+        // defines workflow task input
+        val workflowTaskParameters = with(dispatchNewWorkflow) {
+          WorkflowTaskParameters(
+              taskId = workflowTaskId!!,
+              workflowId = workflowId,
+              workflowName = workflowName,
+              workflowVersion = null,
+              workflowTags = workflowTags,
+              workflowMeta = workflowMeta,
+              workflowPropertiesHashValue = mutableMapOf(),
+              workflowTaskIndex = WorkflowTaskIndex(1),
+              workflowMethod = workflowMethod(),
+              workflowTaskInstant = msg.emittedAt ?: publishTime,
+              emitterName = emitterName,
+          )
+        }
 
-          with(producer) {
+        val taskDispatchedEvent = workflowTaskParameters.workflowTaskDispatchedEvent(emitterName)
+
+        with(producer) {
+          launch {
             // dispatch workflow task
             dispatchTask(taskDispatchedEvent.taskDispatched, taskDispatchedEvent.requester)
+          }
+          launch {
             // dispatch workflow event
             taskDispatchedEvent.sendTo(WorkflowStateEventTopic)
           }
-
-
-          with(producer) {
+          launch {
             // event: starting new method
-            dispatchNewWorkflow.methodCommandedEvent(emitterName)
-                .sendTo(WorkflowStateEventTopic)
+            dispatchNewWorkflow.methodCommandedEvent(emitterName).sendTo(WorkflowStateEventTopic)
           }
         }
       }
 
   companion object {
-    val logger = KotlinLogging.logger { }
+    val logger = LoggerWithCounter(KotlinLogging.logger {})
   }
 }

@@ -23,7 +23,6 @@
 package io.infinitic.common.utils
 
 import com.fasterxml.jackson.annotation.JsonView
-import io.infinitic.annotations.Batch
 import io.infinitic.annotations.CheckMode
 import io.infinitic.annotations.Delegated
 import io.infinitic.annotations.Name
@@ -31,7 +30,6 @@ import io.infinitic.annotations.Retry
 import io.infinitic.annotations.Timeout
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.common.transport.BatchProcessorConfig
 import io.infinitic.exceptions.tasks.NoMethodFoundWithParameterCountException
 import io.infinitic.exceptions.tasks.NoMethodFoundWithParameterTypesException
 import io.infinitic.exceptions.tasks.TooManyMethodsFoundWithParameterCountException
@@ -205,28 +203,6 @@ suspend fun Class<*>.initBatchProcessorMethods() {
       batchMethodCache[method] = batchMethodList.firstOrNull { it.single == method }
     }
   }
-}
-
-fun Method.getBatchConfig(): BatchProcessorConfig? {
-  // Retrieve the method annotated as batch, if it exists
-  val batchMethod = getBatchMethod() ?: return null
-
-  // Find the @Batch annotation on this method
-  val batchAnnotation = batchMethod.batch.findAnnotation(Batch::class.java) ?: thisShouldNotHappen()
-
-  // Create and return an instance of MessageBatchConfig from the annotation
-  return BatchProcessorConfig(
-      batchKey = toUniqueString(),
-      maxMessages = batchAnnotation.maxMessages,
-      maxDuration = MillisDuration((batchAnnotation.maxSeconds * 1000).toLong()),
-  )
-}
-
-private fun Method.toUniqueString(): String {
-  val className = declaringClass.name
-  val methodName = name
-  val parameterTypes = parameters.joinToString(separator = ",") { it.type.name }
-  return "$className.$methodName($parameterTypes)"
 }
 
 /**

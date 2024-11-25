@@ -34,9 +34,11 @@ import io.infinitic.clients.samples.FakeWorkflow
 import io.infinitic.clients.samples.FakeWorkflowImpl
 import io.infinitic.clients.samples.FooWorkflow
 import io.infinitic.common.clients.data.ClientName
+import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.clients.messages.MethodCompleted
 import io.infinitic.common.clients.messages.WorkflowIdsByTag
 import io.infinitic.common.data.MillisDuration
+import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.data.methods.MethodArgs
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
@@ -58,6 +60,8 @@ import io.infinitic.common.transport.ServiceTagEngineTopic
 import io.infinitic.common.transport.Subscription
 import io.infinitic.common.transport.WorkflowStateCmdTopic
 import io.infinitic.common.transport.WorkflowTagEngineTopic
+import io.infinitic.common.transport.consumers.startProcessingWithoutKey
+import io.infinitic.common.transport.logged.LoggerWithCounter
 import io.infinitic.common.utils.IdGenerator
 import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.channels.ChannelType
@@ -89,20 +93,25 @@ import io.infinitic.exceptions.clients.InvalidStubException
 import io.infinitic.inMemory.InMemoryConsumerFactory
 import io.infinitic.inMemory.InMemoryInfiniticProducer
 import io.infinitic.inMemory.InMemoryInfiniticProducerFactory
-import io.infinitic.transport.config.TransportConfig
+import io.infinitic.inMemory.consumers.InMemoryConsumer
+import io.infinitic.inMemory.consumers.InMemoryTransportMessage
+import io.infinitic.transport.config.InMemoryTransportConfig
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
+import io.mockk.Runs
 import io.mockk.clearAllMocks
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.mockkStatic
 import io.mockk.slot
+import io.mockk.unmockkStatic
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.future.await
-import kotlinx.coroutines.launch
 import java.util.concurrent.CopyOnWriteArrayList
 
 private val taskTagSlots = CopyOnWriteArrayList<ServiceTagMessage>()
@@ -151,47 +160,41 @@ internal val mockedProducer = mockk<InMemoryInfiniticProducer> {
   } returns EmitterName("$clientNameTest")
 
   coEvery {
-    with(capture(taskTagSlots)) { sendTo(ServiceTagEngineTopic) }
+    internalSendTo(capture(taskTagSlots), ServiceTagEngineTopic, any())
   } answers { }
 
   coEvery {
-    with(capture(workflowTagSlots)) { sendTo(WorkflowTagEngineTopic) }
+    internalSendTo(capture(workflowTagSlots), WorkflowTagEngineTopic, any())
   } coAnswers { tagResponse() }
 
   coEvery {
-    with(capture(workflowCmdSlots)) { sendTo(WorkflowStateCmdTopic) }
+    internalSendTo(capture(workflowCmdSlots), WorkflowStateCmdTopic, any())
   } coAnswers { engineResponse() }
 }
 
 internal val mockedProducerFactory = mockk<InMemoryInfiniticProducerFactory> {
   every {
-    getProducer(any())
+    newProducer(any())
   } returns mockedProducer
+}
+
+val mockedConsumer = mockk<InMemoryConsumer<ClientMessage>> {
+  coEvery {
+    receive()
+  } coAnswers { CompletableDeferred<InMemoryTransportMessage<ClientMessage>>().await() }
 }
 
 val mockedConsumerFactory = mockk<InMemoryConsumerFactory> {
   coEvery {
-    with(capture(scopeSlot)) {
-      with(capture(loggerSlot)) {
-        startAsync(
-            subscription = any<Subscription<*>>(),
-            entity = "$clientNameTest",
-            batchReceivingConfig = null,
-            concurrency = 1,
-            processor = any(),
-            beforeDlq = any(),
-            batchProcessorConfig = null,
-            batchProcessor = null,
-        )
-      }
-    }
-  } answers {
-    // launch a job with the captured scope
-    scopeSlot.captured.launch { delay(Long.MAX_VALUE) }
-  }
+    newConsumer(
+        subscription = any<Subscription<*>>(),
+        entity = "$clientNameTest",
+        batchReceivingConfig = null,
+    )
+  } returns mockedConsumer
 }
 
-internal val mockedTransport = mockk<TransportConfig>(relaxed = true) {
+internal val mockedTransport = mockk<InMemoryTransportConfig> {
   every { consumerFactory } returns mockedConsumerFactory
   every { producerFactory } returns mockedProducerFactory
   every { shutdownGracePeriodSeconds } returns 5.0
@@ -223,10 +226,23 @@ internal class InfiniticClientTests : StringSpec(
         taskSlot.clear()
         workflowTagSlots.clear()
         workflowCmdSlots.clear()
+
+        mockkStatic("io.infinitic.common.transport.consumers.StartProcessingWithoutKeyKt")
+
+        coEvery {
+          client.clientScope.startProcessingWithoutKey(
+              logger = any<LoggerWithCounter>(),
+              consumer = mockedConsumer,
+              concurrency = 3,
+              processor = any<(suspend (ClientMessage, MillisInstant) -> Unit)>(),
+              beforeDlq = any(),
+          )
+        } just Runs
       }
 
       afterTest {
         clearAllMocks(answers = false)
+        unmockkStatic("io.infinitic.common.transport.consumers.StartProcessingWithoutKeyKt")
       }
 
       "Should be able to dispatch a workflow" {
@@ -251,18 +267,9 @@ internal class InfiniticClientTests : StringSpec(
 
         // when asynchronously dispatching a workflow, the consumer should not be started
         coVerify(exactly = 0) {
-          with(client.clientScope) {
-            with(InfiniticClient.logger) {
-              mockedConsumerFactory.startAsync(
-                  MainSubscription(ClientTopic),
-                  "$clientNameTest",
-                  null,
-                  1,
-                  any(),
-                  any(),
-              )
-            }
-          }
+          mockedConsumerFactory.newConsumer(
+              MainSubscription(ClientTopic), "$clientNameTest", null,
+          )
         }
       }
 
@@ -414,7 +421,7 @@ internal class InfiniticClientTests : StringSpec(
             methodName = MethodName("m3"),
             methodParameters = methodParametersFrom(0, "a"),
             methodParameterTypes =
-            MethodParameterTypes(listOf(Int::class.java.name, String::class.java.name)),
+                MethodParameterTypes(listOf(Int::class.java.name, String::class.java.name)),
             workflowTags = setOf(),
             workflowMeta = WorkflowMeta(),
             requester = ClientRequester(clientName = ClientName.from(emitterNameTest)),
@@ -437,7 +444,7 @@ internal class InfiniticClientTests : StringSpec(
             methodName = MethodName("m3"),
             methodParameters = methodParametersFrom(0, "a"),
             methodParameterTypes =
-            MethodParameterTypes(listOf(Int::class.java.name, String::class.java.name)),
+                MethodParameterTypes(listOf(Int::class.java.name, String::class.java.name)),
             workflowTags = setOf(),
             workflowMeta = WorkflowMeta(),
             requester = ClientRequester(clientName = ClientName.from(emitterNameTest)),
@@ -463,7 +470,7 @@ internal class InfiniticClientTests : StringSpec(
                 methodName = MethodName("m3"),
                 methodParameters = methodParametersFrom(0, "a"),
                 methodParameterTypes =
-                MethodParameterTypes(listOf(Int::class.java.name, String::class.java.name)),
+                    MethodParameterTypes(listOf(Int::class.java.name, String::class.java.name)),
                 workflowTags = setOf(),
                 workflowMeta = WorkflowMeta(),
                 requester = ClientRequester(clientName = ClientName.from(emitterNameTest)),
@@ -477,7 +484,7 @@ internal class InfiniticClientTests : StringSpec(
                 methodName = MethodName("m2"),
                 methodParameters = methodParametersFrom("b"),
                 methodParameterTypes =
-                MethodParameterTypes(listOf(String::class.java.name)),
+                    MethodParameterTypes(listOf(String::class.java.name)),
                 workflowTags = setOf(),
                 workflowMeta = WorkflowMeta(),
                 requester = ClientRequester(clientName = ClientName.from(emitterNameTest)),
@@ -541,18 +548,11 @@ internal class InfiniticClientTests : StringSpec(
 
         // when waiting for a workflow, the consumer should be started
         coVerify {
-          with(client.clientScope) {
-            with(InfiniticClient.logger) {
-              mockedConsumerFactory.startAsync(
-                  MainSubscription(ClientTopic),
-                  "$clientNameTest",
-                  null,
-                  1,
-                  any(),
-                  any(),
-              )
-            }
-          }
+          mockedConsumerFactory.newConsumer(
+              MainSubscription(ClientTopic),
+              "$clientNameTest",
+              null,
+          )
         }
 
         // restart a workflow
@@ -560,18 +560,11 @@ internal class InfiniticClientTests : StringSpec(
 
         // the consumer should be started only once
         coVerify(exactly = 1) {
-          with(client.clientScope) {
-            with(InfiniticClient.logger) {
-              mockedConsumerFactory.startAsync(
-                  MainSubscription(ClientTopic),
-                  "$clientNameTest",
-                  null,
-                  1,
-                  any(),
-                  any(),
-              )
-            }
-          }
+          mockedConsumerFactory.newConsumer(
+              MainSubscription(ClientTopic),
+              "$clientNameTest",
+              null,
+          )
         }
       }
 
@@ -690,11 +683,11 @@ internal class InfiniticClientTests : StringSpec(
             signalId = msg.signalId,
             signalData = SignalData.from(signal, FakeService::class.java),
             channelTypes =
-            setOf(
-                ChannelType.from(FakeServiceImpl::class.java),
-                ChannelType.from(FakeService::class.java),
-                ChannelType.from(FakeServiceParent::class.java),
-            ),
+                setOf(
+                    ChannelType.from(FakeServiceImpl::class.java),
+                    ChannelType.from(FakeService::class.java),
+                    ChannelType.from(FakeServiceParent::class.java),
+                ),
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowId = WorkflowId(id),
             emitterName = emitterNameTest,
@@ -717,11 +710,11 @@ internal class InfiniticClientTests : StringSpec(
             signalId = msg.signalId,
             signalData = SignalData.from(signal, FakeServiceParent::class.java),
             channelTypes =
-            setOf(
-                ChannelType.from(FakeServiceImpl::class.java),
-                ChannelType.from(FakeService::class.java),
-                ChannelType.from(FakeServiceParent::class.java),
-            ),
+                setOf(
+                    ChannelType.from(FakeServiceImpl::class.java),
+                    ChannelType.from(FakeService::class.java),
+                    ChannelType.from(FakeServiceParent::class.java),
+                ),
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowId = WorkflowId(id),
             emitterName = emitterNameTest,

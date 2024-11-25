@@ -25,10 +25,7 @@ package io.infinitic.config
 import com.sksamuel.hoplite.ConfigLoaderBuilder
 import com.sksamuel.hoplite.PropertySource
 import com.sksamuel.hoplite.yaml.YamlPropertySource
-import io.github.oshai.kotlinlogging.KotlinLogging
 import java.io.File
-
-val logger = KotlinLogging.logger("io.infinitic.common.config.loaders")
 
 /**
  * Loads a configuration object of type [T] from the given list of resource names.
@@ -40,7 +37,6 @@ inline fun <reified T : Any> loadFromYamlResource(vararg resources: String): T {
   val builder = ConfigLoaderBuilder.default()
   resources.map { builder.addSource(PropertySource.resource(it, false)) }
   val config = builder.build().loadConfigOrThrow<T>()
-  logger.info { "Config loaded from resource: $config" }
 
   return config
 }
@@ -55,7 +51,6 @@ inline fun <reified T : Any> loadFromYamlFile(vararg files: String): T {
   val builder = ConfigLoaderBuilder.default()
   files.map { builder.addSource(PropertySource.file(File(it), false)) }
   val config = builder.build().loadConfigOrThrow<T>()
-  logger.info { "Config loaded from file: $config" }
 
   return config
 }
@@ -70,7 +65,6 @@ inline fun <reified T : Any> loadFromYamlString(vararg yamls: String): T {
   val builder = ConfigLoaderBuilder.default()
   yamls.map { builder.addSource(YamlPropertySource(it)) }
   val config = builder.build().loadConfigOrThrow<T>()
-  logger.info { "Config loaded from yaml: $config" }
 
   return config
 }

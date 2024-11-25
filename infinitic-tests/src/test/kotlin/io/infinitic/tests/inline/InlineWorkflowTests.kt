@@ -29,6 +29,7 @@ import io.infinitic.exceptions.workflows.InvalidInlineException
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.delay
 
 internal class InlineWorkflowTests :
   StringSpec(
@@ -37,7 +38,11 @@ internal class InlineWorkflowTests :
 
         val inlineWorkflow = client.newWorkflow(InlineWorkflow::class.java)
 
-        "Inline task" { inlineWorkflow.inline1(7) shouldBe "2 * 7 = 14" }
+        "Inline task" {
+          inlineWorkflow.inline1(7) shouldBe "2 * 7 = 14"
+
+          delay(5000)
+        }
 
         "Inline task with asynchronous task inside" {
           val error = shouldThrow<WorkflowFailedException> { inlineWorkflow.inline2(21) }

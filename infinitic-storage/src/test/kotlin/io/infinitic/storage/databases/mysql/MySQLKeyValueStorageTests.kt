@@ -104,44 +104,44 @@ class MySQLKeyValueStorageTests :
         }
 
         "getSet should return null on unknown key" {
-          storage.getSet(setOf("foo", "unknown")) shouldBe mapOf(
+          storage.get(setOf("foo", "unknown")) shouldBe mapOf(
               "foo" to "bar".toByteArray(),
               "unknown" to null,
           )
         }
 
         "putSet on new key should create value" {
-          storage.putSet(
+          storage.put(
               mapOf(
                   "foo2" to "bar2".toByteArray(),
                   "foo3" to "bar3".toByteArray(),
               ),
           )
 
-          storage.getSet(setOf("foo2", "foo3")) shouldBe mapOf(
+          storage.get(setOf("foo2", "foo3")) shouldBe mapOf(
               "foo2" to "bar2".toByteArray(),
               "foo3" to "bar3".toByteArray(),
           )
         }
 
         "putSet on existing key should update value" {
-          storage.putSet(
+          storage.put(
               mapOf(
                   "foo" to "bar2".toByteArray(),
                   "foo3" to "bar3".toByteArray(),
               ),
           )
 
-          storage.getSet(setOf("foo", "foo3")) shouldBe mapOf(
+          storage.get(setOf("foo", "foo3")) shouldBe mapOf(
               "foo" to "bar2".toByteArray(),
               "foo3" to "bar3".toByteArray(),
           )
         }
 
         "delSet on unknown key does nothing" {
-          shouldNotThrowAny { storage.putSet(mapOf("foo" to null, "unknown" to null)) }
+          shouldNotThrowAny { storage.put(mapOf("foo" to null, "unknown" to null)) }
 
-          storage.getSet(setOf("foo", "unknown")) shouldBe mapOf(
+          storage.get(setOf("foo", "unknown")) shouldBe mapOf(
               "foo" to null,
               "unknown" to null,
           )

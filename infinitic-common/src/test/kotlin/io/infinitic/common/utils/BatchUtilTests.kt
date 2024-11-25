@@ -148,7 +148,7 @@ fun main() {
 private class FooBatch1 {
   fun bar(p: Int): String = p.toString()
 
-  @Batch(maxMessages = 10, maxSeconds = 1.0)
+  @Batch
   fun bar(p: Map<String, Int>): Map<String, String> =
       p.mapValues { it.value.toString() }
 }
@@ -157,7 +157,7 @@ private class FooBatch1 {
 private class FooBatch2 {
   fun bar(p: Int, q: Int): String = p.toString() + q.toString()
 
-  @Batch(maxMessages = 10, maxSeconds = 1.0)
+  @Batch
   fun bar(l: Map<String, PairInt>): Map<String, String> =
       l.mapValues { bar(it.value.p, it.value.q) }
 }
@@ -166,7 +166,7 @@ private class FooBatch2 {
 private class FooBatch3 {
   fun bar(p: Set<Int>): String = p.toString()
 
-  @Batch(maxMessages = 10, maxSeconds = 1.0)
+  @Batch
   fun bar(p: Map<String, Set<Int>>): Map<String, String> =
       p.mapValues { it.value.toString() }
 }
@@ -177,7 +177,7 @@ private class FooBatch4 {
     // do nothing
   }
 
-  @Batch(maxMessages = 10, maxSeconds = 1.0)
+  @Batch
   fun bar(p: Map<String, PairInt>): Map<String, Unit> =
       p.mapValues { it.value.toString() }
 }
@@ -188,7 +188,7 @@ private class FooBatch5 {
     // do nothing
   }
 
-  @Batch(maxMessages = 10, maxSeconds = 1.0)
+  @Batch
   fun bar(p: Map<String, PairInt>) {
     // do nothing
   }
@@ -200,7 +200,7 @@ private class FooBatch6 {
     // do nothing
   }
 
-  @Batch(maxMessages = 10, maxSeconds = 1.0)
+  @Batch
   fun bar(pairs: Map<String, MyPair<Int>>) {
     // do nothing
   }
@@ -210,7 +210,7 @@ private class FooBatch6 {
 private class FooBatch7 : FooBatch {
   override fun bar(p: Int) = PPairInt(p, p)
 
-  @Batch(maxMessages = 10, maxSeconds = 1.0)
+  @Batch
   fun bar(list: Map<String, Int>): Map<String, PairInt> =
       list.mapValues { PairInt(it.value, it.value) }
 }
@@ -223,7 +223,7 @@ internal interface FooBatch {
 private class FooBatch8 : FooBatch {
   override fun bar(p: Int): Nothing = thisShouldNotHappen()
 
-  @Batch(maxMessages = 10, maxSeconds = 1.0)
+  @Batch
   fun bar(list: Map<String, Int>): Map<String, PairInt> =
       list.mapValues { PairInt(it.value, it.value) }
 }
@@ -234,7 +234,7 @@ internal class PPairInt(override val p: Int, override val q: Int) : PairInt(p, q
 private class FooBatchError0 {
   fun bar(p: Int): String = p.toString()
 
-  @Batch(maxMessages = 10, maxSeconds = 1.0)
+  @Batch
   fun bar(vararg p: Int): List<String> = p.map { it.toString() }
 }
 
@@ -242,7 +242,7 @@ private class FooBatchError0 {
 private class FooBatchError1 {
   fun bar(p: Int): String = p.toString()
 
-  @Batch(maxMessages = 10, maxSeconds = 1.0)
+  @Batch
   fun bar(p: Map<String, Int>, q: Int): Map<String, String> = p.mapValues { it.toString() }
 }
 
@@ -250,7 +250,7 @@ private class FooBatchError1 {
 private class FooBatchError2 {
   fun bar(p: Int, q: Int): String = p.toString() + q.toString()
 
-  @Batch(maxMessages = 10, maxSeconds = 1.0)
+  @Batch
   fun bar(p: Map<String, Int>): Map<String, String> = p.mapValues { it.toString() }
 }
 
@@ -258,7 +258,7 @@ private class FooBatchError2 {
 private class FooBatchError4 {
   fun bar(p: Int, q: Int): String = p.toString() + q.toString()
 
-  @Batch(maxMessages = 10, maxSeconds = 1.0)
+  @Batch
   fun bar(p: Map<String, PairInt>): Map<String, Int> = p.mapValues { it.value.p + it.value.q }
 }
 
@@ -266,14 +266,14 @@ private class FooBatchError4 {
 private class FooBatchError5 {
   fun bar(p: Int, q: Int): String = p.toString() + q.toString()
 
-  @Batch(maxMessages = 10, maxSeconds = 1.0)
+  @Batch
   fun bar(p: Map<String, PairInt>): List<String> = listOf("?")
 }
 
 private class FooBatchError6 {
   fun bar(p: Int, q: Int): String = p.toString() + q.toString()
 
-  @Batch(maxMessages = 10, maxSeconds = 1.0)
+  @Batch
   fun bar(p: Map<Int, PairInt>): Map<String, String> = mapOf("?" to "?")
 }
 

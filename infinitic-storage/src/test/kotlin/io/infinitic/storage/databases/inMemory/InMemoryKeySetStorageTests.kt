@@ -25,6 +25,7 @@ package io.infinitic.storage.databases.inMemory
 import io.infinitic.storage.config.InMemoryConfig
 import io.infinitic.storage.data.Bytes
 import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
 
 class InMemoryKeySetStorageTests :
@@ -66,7 +67,9 @@ class InMemoryKeySetStorageTests :
           equalsTo(storage.get("foo"), setOf("bar".toByteArray())) shouldBe true
         }
 
-        "remove on unknown key should do nothing" { storage.remove("unknown", "42".toByteArray()) }
+        "remove on unknown key should do nothing" {
+          storage.remove("unknown", "42".toByteArray())
+        }
 
         "remove unknown value on known key should do nothing" {
           storage.remove("foo", "42".toByteArray())
@@ -78,6 +81,29 @@ class InMemoryKeySetStorageTests :
           storage.remove("foo", "bar".toByteArray())
 
           equalsTo(storage.get("foo"), setOf()) shouldBe true
+        }
+
+        "get on multiple keys" {
+          storage.add("foo", "42".toByteArray())
+          val gets = storage.get(setOf("foo", "unknown"))
+          gets.keys shouldBe setOf("foo", "unknown")
+          gets["foo"] shouldContainExactly listOf("bar".toByteArray(), "42".toByteArray())
+          gets["unknown"] shouldBe setOf<ByteArray>()
+        }
+
+        "update on multiple keys" {
+          storage.update(
+              add = mapOf(
+                  "foo" to setOf("42".toByteArray(), "43".toByteArray()),
+                  "bar" to setOf("43".toByteArray()),
+              ),
+              remove = mapOf(
+                  "foo" to setOf("bar".toByteArray(), "unknown".toByteArray()),
+                  "unknown" to setOf("42".toByteArray()),
+              ),
+          )
+          storage.get("foo") shouldContainExactly listOf("42".toByteArray(), "43".toByteArray())
+          storage.get("bar") shouldContainExactly listOf("43".toByteArray())
         }
       },
   )

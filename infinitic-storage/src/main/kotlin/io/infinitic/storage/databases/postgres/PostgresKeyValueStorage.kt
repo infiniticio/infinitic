@@ -26,6 +26,7 @@ import com.zaxxer.hikari.HikariDataSource
 import io.infinitic.storage.config.PostgresConfig
 import io.infinitic.storage.keyValue.KeyValueStorage
 import org.jetbrains.annotations.TestOnly
+import java.sql.Connection
 import kotlin.math.ceil
 
 class PostgresKeyValueStorage(
@@ -87,7 +88,9 @@ class PostgresKeyValueStorage(
     }
   }
 
-  override suspend fun getSet(keys: Set<String>): Map<String, ByteArray?> {
+  override suspend fun get(keys: Set<String>): Map<String, ByteArray?> {
+    if (keys.isEmpty()) return emptyMap() // Handle empty case
+
     return pool.connection.use { connection ->
       connection.prepareStatement(
           "SELECT key, value FROM $schema.$tableName WHERE key = ANY(?)",
@@ -109,29 +112,41 @@ class PostgresKeyValueStorage(
     }
   }
 
-  override suspend fun putSet(bytes: Map<String, ByteArray?>) {
+  override suspend fun put(bytes: Map<String, ByteArray?>) {
+    if (bytes.isEmpty()) return // Handle empty map case
+
     pool.connection.use { connection ->
+      // Sorting keys to ensure consistent order of access
+      val sortedBytes = bytes.toSortedMap()
       connection.autoCommit = false
+      // Change isolation level if necessary
+      connection.transactionIsolation = Connection.TRANSACTION_READ_COMMITTED
       try {
-        bytes.forEach { (key, value) ->
-          if (value == null) {
-            connection.prepareStatement("DELETE FROM $schema.$tableName WHERE key = ?")
-                .use { statement ->
-                  statement.setString(1, key)
-                  statement.executeUpdate()
-                }
-          } else {
-            connection.prepareStatement(
-                "INSERT INTO $schema.$tableName (key, value, value_size_in_KiB) VALUES (?, ?, ?) " +
-                    "ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, value_size_in_KiB = EXCLUDED.value_size_in_KiB",
-            ).use { statement ->
-              statement.setString(1, key)
-              statement.setBytes(2, value)
-              statement.setInt(3, ceil(value.size / 1024.0).toInt())
-              statement.executeUpdate()
+        // Batch DELETE
+        connection
+            .prepareStatement("DELETE FROM $schema.$tableName WHERE key = ?")
+            .use { deleteStatement ->
+              sortedBytes.filter { it.value == null }.forEach { (key, _) ->
+                deleteStatement.setString(1, key)
+                deleteStatement.addBatch()
+              }
+              deleteStatement.executeBatch()
             }
-          }
-        }
+        // Batch INSERT/UPDATE
+        connection
+            .prepareStatement(
+                "INSERT INTO $schema.$tableName(key, value, value_size_in_KiB) VALUES (?, ?, ?) " +
+                    "ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, value_size_in_KiB = EXCLUDED.value_size_in_KiB",
+            )
+            .use { insertStatement ->
+              sortedBytes.filter { it.value != null }.forEach { (key, value) ->
+                insertStatement.setString(1, key)
+                insertStatement.setBytes(2, value)
+                insertStatement.setInt(3, ceil(value!!.size / 1024.0).toInt())
+                insertStatement.addBatch()
+              }
+              insertStatement.executeBatch()
+            }
         connection.commit()
       } catch (e: Exception) {
         connection.rollback()

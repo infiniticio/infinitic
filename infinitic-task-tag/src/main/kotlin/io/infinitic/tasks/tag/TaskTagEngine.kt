@@ -40,41 +40,65 @@ import io.infinitic.common.tasks.tags.storage.TaskTagStorage
 import io.infinitic.common.transport.ClientTopic
 import io.infinitic.common.transport.WorkflowStateEngineTopic
 import io.infinitic.common.transport.interfaces.InfiniticProducer
+import io.infinitic.common.transport.logged.LoggerWithCounter
 import io.infinitic.common.workflows.engine.messages.RemoteTaskCompleted
 import kotlinx.coroutines.coroutineScope
 
 class TaskTagEngine(
-  private val storage: TaskTagStorage,
-  private val producer: InfiniticProducer
+  private val _storage: TaskTagStorage,
+  private val _producer: InfiniticProducer
 ) {
-  private val emitterName = producer.emitterName
+  private val emitterName = _producer.emitterName
 
-  suspend fun handle(message: ServiceTagMessage, publishTime: MillisInstant) = coroutineScope {
+  suspend fun process(message: ServiceTagMessage, publishTime: MillisInstant) = process(
+      storage = _storage,
+      producer = _producer,
+      message = message,
+      publishTime = publishTime,
+  )
+
+  private suspend fun process(
+    storage: TaskTagStorage,
+    producer: InfiniticProducer,
+    message: ServiceTagMessage,
+    publishTime: MillisInstant
+  ) = coroutineScope {
     when (message) {
-      is AddTaskIdToTag -> addTaskIdToTag(message)
-      is RemoveTaskIdFromTag -> removeTaskIdFromTag(message)
+      is AddTaskIdToTag -> addTaskIdToTag(storage, message)
+      is RemoveTaskIdFromTag -> removeTaskIdFromTag(storage, message)
       is CancelTaskByTag -> TODO()
       is RetryTaskByTag -> thisShouldNotHappen()
-      is SetDelegatedTaskData -> setDelegatedTaskData(message)
-      is CompleteDelegatedTask -> completeDelegateTask(message, publishTime)
-      is GetTaskIdsByTag -> getTaskIds(message)
+      is SetDelegatedTaskData -> setDelegatedTaskData(storage, message)
+      is CompleteDelegatedTask -> completeDelegateTask(storage, producer, message, publishTime)
+      is GetTaskIdsByTag -> getTaskIds(storage, producer, message)
       else -> thisShouldNotHappen()
     }
   }
 
-  private suspend fun addTaskIdToTag(message: AddTaskIdToTag) {
-    storage.addTaskIdToTag(message.taskTag, message.serviceName, message.taskId)
+  private suspend fun addTaskIdToTag(
+    storage: TaskTagStorage,
+    message: AddTaskIdToTag
+  ) {
+    storage.addTaskId(message.taskTag, message.serviceName, message.taskId)
   }
 
-  private suspend fun removeTaskIdFromTag(message: RemoveTaskIdFromTag) {
-    storage.removeTaskIdFromTag(message.taskTag, message.serviceName, message.taskId)
+  private suspend fun removeTaskIdFromTag(
+    storage: TaskTagStorage,
+    message: RemoveTaskIdFromTag
+  ) {
+    storage.removeTaskId(message.taskTag, message.serviceName, message.taskId)
   }
 
-  private suspend fun setDelegatedTaskData(message: SetDelegatedTaskData) {
-    storage.setDelegatedTaskData(message.taskId, message.delegatedTaskData)
+  private suspend fun setDelegatedTaskData(
+    storage: TaskTagStorage,
+    message: SetDelegatedTaskData
+  ) {
+    storage.updateDelegatedTaskData(message.taskId, message.delegatedTaskData)
   }
 
   private suspend fun completeDelegateTask(
+    storage: TaskTagStorage,
+    producer: InfiniticProducer,
     message: CompleteDelegatedTask,
     publishTime: MillisInstant
   ) {
@@ -88,13 +112,17 @@ class TaskTagEngine(
         with(producer) { it.sendTo(WorkflowStateEngineTopic) }
       }
       // delete delegatedTaskData
-      storage.delDelegatedTaskData(message.taskId)
+      storage.updateDelegatedTaskData(message.taskId, null)
     }
       ?: logger.warn { "Discarding message as no DelegatedTaskData found $message" }
   }
 
-  private suspend fun getTaskIds(message: GetTaskIdsByTag) {
-    val taskIds = storage.getTaskIdsForTag(message.taskTag, message.serviceName)
+  private suspend fun getTaskIds(
+    storage: TaskTagStorage,
+    producer: InfiniticProducer,
+    message: GetTaskIdsByTag
+  ) {
+    val taskIds = storage.getTaskIds(message.taskTag, message.serviceName)
 
     val taskIdsByTag = TaskIdsByTag(
         recipientName = ClientName.from(message.emitterName),
@@ -108,6 +136,6 @@ class TaskTagEngine(
   }
 
   companion object {
-    val logger = KotlinLogging.logger {}
+    val logger = LoggerWithCounter(KotlinLogging.logger {})
   }
 }

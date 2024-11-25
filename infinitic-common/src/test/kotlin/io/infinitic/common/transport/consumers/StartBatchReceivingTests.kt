@@ -23,6 +23,7 @@
 package io.infinitic.common.transport.consumers
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.infinitic.common.transport.logged.LoggerWithCounter
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
@@ -33,16 +34,16 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import kotlinx.coroutines.isActive
 
-internal class StartConsumingTests : StringSpec(
+internal class StartBatchReceivingTests : StringSpec(
     {
-      val logger = KotlinLogging.logger {}
+      val logger = LoggerWithCounter(KotlinLogging.logger("io.infinitic.tests"))
 
       fun getScope() = CoroutineScope(Dispatchers.IO)
 
       "Consumer should consume up to scope cancellation" {
         with(logger) {
           val scope = getScope()
-          val channel = with(scope) { IntConsumer().startConsuming(false) }
+          val channel = scope.startBatchReceiving(IntConsumer())
 
           // while no error
           shouldNotThrowAny { repeat(100) { channel.receive() } }
@@ -64,7 +65,7 @@ internal class StartConsumingTests : StringSpec(
 
         with(logger) {
           val scope = getScope()
-          val channel = with(scope) { ErrorConsumer().startConsuming(false) }
+          val channel = scope.startBatchReceiving(ErrorConsumer())
 
           // while no error
           shouldNotThrowAny { repeat(98) { channel.receive() } }
@@ -90,7 +91,7 @@ internal class StartConsumingTests : StringSpec(
 
         with(logger) {
           val scope = getScope()
-          val channel = with(scope) { ExceptionConsumer().startConsuming(false) }
+          val channel = scope.startBatchReceiving(ExceptionConsumer())
 
           shouldNotThrowAny { repeat(100) { channel.receive() } }
           scope.isActive shouldBe true

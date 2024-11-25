@@ -23,6 +23,7 @@
 package io.infinitic.workers.config
 
 import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.common.transport.config.BatchConfig
 import io.infinitic.config.loadFromYamlFile
 import io.infinitic.config.loadFromYamlResource
 import io.infinitic.config.loadFromYamlString
@@ -33,6 +34,7 @@ data class WorkflowTagEngineConfig(
   override var workflowName: String = "",
   var concurrency: Int = 1,
   override var storage: StorageConfig? = null,
+  val batch: BatchConfig? = null
 ) : WithMutableWorkflowName, WithMutableStorage {
 
   init {
@@ -40,9 +42,7 @@ data class WorkflowTagEngineConfig(
   }
 
   val workflowTagStorage by lazy {
-    (storage ?: thisShouldNotHappen()).let {
-      BinaryWorkflowTagStorage(it.keyValue, it.keySet)
-    }
+    BinaryWorkflowTagStorage((storage ?: thisShouldNotHappen()).keySet)
   }
 
   companion object {
@@ -79,6 +79,7 @@ data class WorkflowTagEngineConfig(
     private var workflowName = default.workflowName
     private var concurrency = default.concurrency
     private var storage = default.storage
+    private var batch: BatchConfig? = default.batch
 
     fun setWorkflowName(workflowName: String) =
         apply { this.workflowName = workflowName }
@@ -89,6 +90,9 @@ data class WorkflowTagEngineConfig(
     fun setStorage(storage: StorageConfig) =
         apply { this.storage = storage }
 
+    fun setBatch(maxMessages: Int, maxSeconds: Double) =
+        apply { this.batch = BatchConfig(maxMessages, maxSeconds) }
+
     fun build(): WorkflowTagEngineConfig {
       workflowName.checkWorkflowName()
       concurrency.checkConcurrency()
@@ -97,6 +101,7 @@ data class WorkflowTagEngineConfig(
           workflowName,
           concurrency,
           storage,
+          batch,
       )
     }
   }

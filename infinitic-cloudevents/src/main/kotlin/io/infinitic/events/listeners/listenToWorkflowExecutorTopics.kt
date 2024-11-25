@@ -22,7 +22,6 @@
  */
 package io.infinitic.events.listeners
 
-import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.common.messages.Message
 import io.infinitic.common.transport.SubscriptionType
 import io.infinitic.common.transport.WorkflowExecutorEventTopic
@@ -30,22 +29,23 @@ import io.infinitic.common.transport.WorkflowExecutorRetryTopic
 import io.infinitic.common.transport.WorkflowExecutorTopic
 import io.infinitic.common.transport.config.BatchConfig
 import io.infinitic.common.transport.consumers.Result
-import io.infinitic.common.transport.consumers.startConsuming
+import io.infinitic.common.transport.consumers.startBatchReceiving
 import io.infinitic.common.transport.create
 import io.infinitic.common.transport.interfaces.InfiniticConsumerFactory
 import io.infinitic.common.transport.interfaces.TransportMessage
+import io.infinitic.common.transport.logged.LoggerWithCounter
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 
-context(CoroutineScope, KLogger)
+context(CoroutineScope, LoggerWithCounter)
 internal fun InfiniticConsumerFactory.listenToWorkflowExecutorTopics(
   workflowName: WorkflowName,
-  batchConfig: BatchConfig?,
+  batchConfig: BatchConfig,
   subscriptionName: String?,
-  outChannel: Channel<Result<TransportMessage<Message>, TransportMessage<Message>>>,
+  outChannel: Channel<Result<List<TransportMessage<Message>>, List<TransportMessage<Message>>>>,
 ): Job = launch {
 
   // Send messages from WorkflowExecutorTopic to inChannel
@@ -53,22 +53,28 @@ internal fun InfiniticConsumerFactory.listenToWorkflowExecutorTopics(
       WorkflowExecutorTopic,
       subscriptionName,
   )
-  buildConsumer(workflowExecutorSubscription, workflowName.toString(), batchConfig)
-      .startConsuming(batchConfig != null, outChannel)
+  val workflowExecutorConsumer =
+      newConsumer(workflowExecutorSubscription, workflowName.toString(), batchConfig)
+
+  startBatchReceiving(workflowExecutorConsumer, outChannel)
 
   // Send messages from WorkflowExecutorEventTopic to inChannel
   val workflowExecutorEventSubscription = SubscriptionType.EVENT_LISTENER.create(
       WorkflowExecutorEventTopic,
       subscriptionName,
   )
-  buildConsumer(workflowExecutorEventSubscription, workflowName.toString(), batchConfig)
-      .startConsuming(batchConfig != null, outChannel)
+  val workflowExecutorEventConsumer =
+      newConsumer(workflowExecutorEventSubscription, workflowName.toString(), batchConfig)
+
+  startBatchReceiving(workflowExecutorEventConsumer, outChannel)
 
   // Send messages from WorkflowExecutorRetryTopic to inChannel
   val workflowExecutorRetrySubscription = SubscriptionType.EVENT_LISTENER.create(
       WorkflowExecutorRetryTopic,
       subscriptionName,
   )
-  buildConsumer(workflowExecutorRetrySubscription, workflowName.toString(), batchConfig)
-      .startConsuming(batchConfig != null, outChannel)
+  val workflowExecutorRetryConsumer =
+      newConsumer(workflowExecutorRetrySubscription, workflowName.toString(), batchConfig)
+
+  startBatchReceiving(workflowExecutorRetryConsumer, outChannel)
 }

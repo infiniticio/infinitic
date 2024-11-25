@@ -35,6 +35,7 @@ import io.infinitic.common.transport.ClientTopic
 import io.infinitic.common.transport.ServiceTagEngineTopic
 import io.infinitic.common.transport.WorkflowStateEngineTopic
 import io.infinitic.common.transport.interfaces.InfiniticProducer
+import io.infinitic.common.transport.logged.LoggerWithCounter
 import io.infinitic.common.workflows.data.commands.DispatchNewMethodPastCommand
 import io.infinitic.common.workflows.data.commands.DispatchNewWorkflowPastCommand
 import io.infinitic.common.workflows.data.commands.DispatchTaskPastCommand
@@ -55,35 +56,28 @@ import kotlinx.coroutines.launch
 
 class TaskEventHandler(val producer: InfiniticProducer) {
 
-  suspend fun batchProcess(
-    messages: List<ServiceExecutorEventMessage>,
-    publishTimes: List<MillisInstant>
-  ) = coroutineScope {
-    messages.zip(publishTimes) { msg, publishTime -> launch { process(msg, publishTime) } }
-  }
-
-  suspend fun process(msg: ServiceExecutorEventMessage, publishTime: MillisInstant) {
+  suspend fun process(msg: ServiceExecutorEventMessage, publishedAt: MillisInstant) {
     when (msg) {
-      is TaskCompletedEvent -> sendTaskCompleted(msg, publishTime)
-      is TaskFailedEvent -> sendTaskFailed(msg, publishTime)
+      is TaskCompletedEvent -> sendTaskCompleted(msg, publishedAt)
+      is TaskFailedEvent -> sendTaskFailed(msg, publishedAt)
       is TaskRetriedEvent,
       is TaskStartedEvent -> Unit
     }
   }
 
-  private suspend fun sendTaskFailed(msg: TaskFailedEvent, publishTime: MillisInstant): Unit =
+  private suspend fun sendTaskFailed(msg: TaskFailedEvent, publishedAt: MillisInstant): Unit =
       coroutineScope {
         // send to parent client
         msg.getEventForClient(producer.emitterName)?.let {
           launch { with(producer) { it.sendTo(ClientTopic) } }
         }
         // send to parent workflow
-        msg.getEventForWorkflow(producer.emitterName, publishTime)?.let {
+        msg.getEventForWorkflow(producer.emitterName, publishedAt)?.let {
           launch { with(producer) { it.sendTo(WorkflowStateEngineTopic) } }
         }
       }
 
-  private suspend fun sendTaskCompleted(msg: TaskCompletedEvent, publishTime: MillisInstant) {
+  private suspend fun sendTaskCompleted(msg: TaskCompletedEvent, publishedAt: MillisInstant) {
     coroutineScope {
       when (msg.isDelegated) {
         // if this task is marked as asynchronous, we do not forward the result, add a tag.
@@ -106,7 +100,7 @@ class TaskEventHandler(val producer: InfiniticProducer) {
             launch { with(producer) { it.sendTo(ClientTopic) } }
           }
           // send to parent workflow
-          msg.getEventForWorkflow(producer.emitterName, publishTime)?.let {
+          msg.getEventForWorkflow(producer.emitterName, publishedAt)?.let {
             launch { with(producer) { it.sendTo(WorkflowStateEngineTopic) } }
           }
           // remove tags
@@ -120,10 +114,10 @@ class TaskEventHandler(val producer: InfiniticProducer) {
     // the workflow task's completion is forwarded to the engine. This is a safeguard against potential
     // race conditions that may arise if the engine receives the outcomes of the dispatched tasks earlier
     // than the result of the workflowTask.
-    if (msg.isWorkflowTask()) completeWorkflowTask(msg, publishTime)
+    if (msg.isWorkflowTask()) completeWorkflowTask(msg, publishedAt)
   }
 
-  private suspend fun completeWorkflowTask(msg: TaskCompletedEvent, publishTime: MillisInstant) =
+  private suspend fun completeWorkflowTask(msg: TaskCompletedEvent, publishedAt: MillisInstant) =
       coroutineScope {
 
         val result = msg.returnValue.deserialize(
@@ -132,7 +126,7 @@ class TaskEventHandler(val producer: InfiniticProducer) {
         ) as WorkflowTaskReturnValue
 
         // Note: After 0.13.0, workflowTaskInstant should not be null anymore
-        val workflowTaskInstant = result.workflowTaskInstant ?: publishTime
+        val workflowTaskInstant = result.workflowTaskInstant ?: publishedAt
 
         // from there, workflowVersion is defined
         val current =
@@ -165,6 +159,6 @@ class TaskEventHandler(val producer: InfiniticProducer) {
       }
 
   companion object {
-    val logger = KotlinLogging.logger {}
+    val logger = LoggerWithCounter(KotlinLogging.logger {})
   }
 }

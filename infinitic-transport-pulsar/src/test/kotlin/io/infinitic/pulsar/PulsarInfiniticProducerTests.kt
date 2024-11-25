@@ -72,7 +72,7 @@ class PulsarInfiniticProducerTests : StringSpec(
           pulsarConfig.infiniticPulsarClient,
           pulsarConfig.producer,
           pulsarResources,
-      ).getProducer(null)
+      ).newProducer(null)
 
       beforeEach {
         InfiniticPulsarClient.clearCaches()

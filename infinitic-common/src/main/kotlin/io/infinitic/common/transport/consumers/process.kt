@@ -31,67 +31,57 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
- * Processes elements from the receiving channel with a specified concurrency level
- * and applies a processing function to each element.
+ * Processes elements from the receiving channel by applying a processing function to each element.
  *
  * If the input channel is closed, all ongoing results are sent,
  * then the output channel is closed
  *
  * @param I The type of input elements.
  * @param O The type of output elements.
- * @param concurrency The number of concurrent coroutines to use for processing.
  * @param process A suspending function that takes an input element and produces an output element.
  * @return A new channel that contains the processed results.
  */
 context(CoroutineScope, KLogger)
-fun <M : Any, I, O> Channel<Result<M, I>>.process(
-  concurrency: Int = 1,
-  process: suspend (M, I) -> O,
-): Channel<Result<M, O>> {
+fun <T : Any, I, O> Channel<Result<T, I>>.process(
+  to: Channel<Result<T, O>> = Channel(),
+  process: suspend (T, I) -> O,
+): Channel<Result<T, O>> {
   val callingScope = this@CoroutineScope
-  val outputChannel = Channel<Result<M, O>>()
 
   debug { "process: starting listening channel ${this@process.hashCode()}" }
 
   launch {
     // start a non cancellable scope
     withContext(NonCancellable) {
-      repeat(concurrency) { index ->
-        launch {
-          debug { "process: adding producer $index to output channel ${outputChannel.hashCode()}" }
-          outputChannel.addProducer()
-          trace { "process: producer added $index to output channel ${outputChannel.hashCode()}" }
-          while (true) {
+      to.addProducer("process")
+      while (true) {
+        try {
+          // the only way to quit this loop is to close the input channel
+          // which is triggered by canceling the calling scope
+          val result = receiveIfNotClose().also { trace { "process: receiving $it " } } ?: break
+          result.onSuccess {
             try {
-              // the only way to quit this loop is to close the input channel
-              // which is triggered by canceling the calling scope
-              val result = receiveIfNotClose().also { trace { "process: receiving $it " } } ?: break
-              result.onSuccess {
-                try {
-                  val o = process(result.message(), it)
-                  outputChannel.send(result.success(o))
-                } catch (e: Exception) {
-                  outputChannel.send(result.failure(e))
-                }
-              }
-              result.onFailure {
-                outputChannel.send(result.failure(it))
-              }
+              val o = process(result.message, it)
+              to.send(result.success(o))
             } catch (e: Exception) {
+              to.send(result.failure(e))
               warn(e) { "Exception while processing" }
-              throw e
             } catch (e: Error) {
-              warn(e) { "Error while processing, cancelling calling scope" }
-              callingScope.cancel()
+              to.send(result.failure(RuntimeException(e)))
+              throw e
             }
           }
-          debug { "process: exiting, removing producer $index from output channel ${outputChannel.hashCode()}" }
-          outputChannel.removeProducer()
-          trace { "process: exited, producer $index removed from output channel ${outputChannel.hashCode()}" }
+          result.onFailure {
+            to.send(result.failure(it))
+          }
+        } catch (e: Throwable) {
+          warn(e) { "Error while processing, cancelling calling scope" }
+          callingScope.cancel()
         }
       }
+      to.removeProducer("process")
     }
   }
 
-  return outputChannel
+  return to
 }

@@ -49,6 +49,18 @@ class InMemoryKeySetStorage(internal val storage: MutableMap<String, MutableSet<
     if (getBytesPerKey(key).isEmpty()) storage.remove(key)
   }
 
+  override suspend fun update(
+    add: Map<String, Set<ByteArray>>,
+    remove: Map<String, Set<ByteArray>>
+  ) {
+    add.forEach { (k, v) -> v.forEach { add(k, it) } }
+    remove.forEach { (k, v) -> v.forEach { remove(k, it) } }
+  }
+
+  override suspend fun get(keys: Set<String>): Map<String, Set<ByteArray>> {
+    return keys.associateWith { get(it) }
+  }
+
   override fun close() {
     // Do nothing
   }

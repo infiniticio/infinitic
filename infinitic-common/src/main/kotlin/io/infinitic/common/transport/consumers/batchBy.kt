@@ -24,7 +24,7 @@
 package io.infinitic.common.transport.consumers
 
 import io.github.oshai.kotlinlogging.KLogger
-import io.infinitic.common.transport.BatchProcessorConfig
+import io.infinitic.common.transport.interfaces.TransportMessage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.cancel
@@ -35,68 +35,50 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
 /**
- * Batches items from the channel based on the provided batch configuration.
- * Each message is processed to determine its batch configuration,
- * and the messages with the same batch key are grouped together.
+ * Batches messages received from the input channel based on a specified maximum number of
+ * messages or maximum duration and sends the batched messages to an output channel.
  *
- * @param I The type of message.
- * @param getBatchProcessorConfig A suspending function that returns the batch configuration for a given message.
- *                       If null, messages are not batched.
- * @return A channel that emits batched results wrapped in a [Result] containing
- *         either a [SingleMessage] or a [MultipleMessages] instance.
+ * @param maxMessages The maximum number of messages to include in a batch.
+ * @param maxMillis The maximum duration (in milliseconds) to wait for messages to form a batch.
+ * @return A [Channel] containing the batched results.
  */
 context(CoroutineScope, KLogger)
-fun <M : Any, I> Channel<Result<M, I>>.batchBy(
-  getBatchProcessorConfig: suspend (I) -> BatchProcessorConfig?,
-): Channel<OneOrMany<Result<M, I>>> {
+fun <T : TransportMessage<M>, M, D> Channel<Result<T, D>>.batchBy(
+  maxMessages: Int,
+  maxMillis: Long,
+): Channel<Result<List<T>, List<D>>> {
   val callingScope: CoroutineScope = this@CoroutineScope
 
   // output channel where result after processing are sent
-  val outputChannel = Channel<OneOrMany<Result<M, I>>>()
+  val outputChannel = Channel<Result<List<T>, List<D>>>()
 
   debug { "batchBy: starting listening channel ${this@batchBy.hashCode()}" }
 
   // channels where messages are sent to be batched (one channel per key)
   val batchingMutex = Mutex()
-  val batchingChannels = mutableMapOf<String, Channel<Result<M, I>>>()
+  val batchingChannels = mutableMapOf<String, Channel<Result<T, D>>>()
 
   launch {
     // start a non cancellable scope
     withContext(NonCancellable) {
 
-      // Create a new channel for batching
-      // WARNING: the definition is here to use the NonCancellable scope for startBatching 😓
-      suspend fun createAndStartBatchingChannel(
-        maxMessages: Int,
-        maxDuration: Long
-      ): Channel<Result<M, I>> {
-
-        val channel = Channel<Result<M, I>> { message ->
-          warn { "onUndeliveredElement $message" }
-        }
-        debug { "batchBy: adding producer to batching channel ${channel.hashCode()}" }
-        channel.addProducer()
-        trace { "batchBy: producer added to batching channel ${channel.hashCode()}" }
-        channel.startBatching(maxMessages, maxDuration, outputChannel)
-
-        return channel
-      }
-
       // Get or create a batch channel based on configuration
-      suspend fun getBatchingChannel(config: BatchProcessorConfig): Channel<Result<M, I>> {
+      suspend fun getBatchingChannel(key: String): Channel<Result<T, D>> {
         // check if the channel already exists before using a lock
-        batchingChannels[config.batchKey]?.let { return it }
+        batchingChannels[key]?.let { return it }
 
         return batchingMutex.withLock {
-          batchingChannels.getOrPut(config.batchKey) {
-            createAndStartBatchingChannel(config.maxMessages, config.maxDuration.millis)
+          batchingChannels.getOrPut(key) {
+            // Create, register and start batching channel
+            Channel<Result<T, D>> { warn { "Batch: Undelivered element $it" } }.apply {
+              addProducer("batchBy")
+              startBatching(maxMessages, maxMillis, outputChannel)
+            }
           }
         }
       }
 
-      debug { "batchBy: adding producer to output channel ${outputChannel.hashCode()}" }
-      outputChannel.addProducer()
-      trace { "batchBy: producer added to output channel ${outputChannel.hashCode()}" }
+      outputChannel.addProducer("batchBy")
       // For batching channels, the addProducer method is called at creation
       while (true) {
         try {
@@ -104,21 +86,97 @@ fun <M : Any, I> Channel<Result<M, I>>.batchBy(
           // which is triggered by canceling the calling scope
           val result = receiveIfNotClose().also { trace { "batchBy: receiving $it" } } ?: break
           if (result.isFailure) {
-            outputChannel.send(One(result.failure()))
+            outputChannel.send(Result.failure(listOf(result.message), result.exception))
           }
           if (result.isSuccess) {
-            val batchConfig = try {
-              getBatchProcessorConfig(result.value())
-            } catch (e: Exception) {
-              outputChannel.send(One(result.failure(e)))
-              continue
+            getBatchingChannel("").send(result)
+          }
+        } catch (e: Exception) {
+          warn(e) { "Exception during batching" }
+          throw e
+        } catch (e: Error) {
+          warn(e) { "Error during batching, cancelling calling scope" }
+          callingScope.cancel()
+        }
+      }
+      // if the current scope is active, we do not close channels yet
+      outputChannel.removeProducer("batchBy")
+      batchingMutex.withLock {
+        batchingChannels.forEach { (_, channel) ->
+          channel.removeProducer("batchBy")
+        }
+      }
+    }
+  }
+
+  return outputChannel
+}
+
+/**
+ * Batches messages from an input channel based on a maximum number of messages or a maximum time
+ * interval, then sends these batches to an output channel.
+ *
+ * @param maxMessages The maximum number of messages to include in a batch.
+ * @param maxMillis The maximum duration (in milliseconds) to wait for messages to form a batch.
+ * @param getBatchKey A suspend function that returns a key for grouping messages into batches.
+ * @return A new channel that emits batched messages.
+ */
+context(CoroutineScope, KLogger)
+fun <T : TransportMessage<M>, M> Channel<Result<List<T>, List<M>>>.batchBy(
+  maxMessages: Int,
+  maxMillis: Long,
+  getBatchKey: suspend (M) -> String,
+): Channel<Result<List<T>, List<M>>> {
+  val callingScope: CoroutineScope = this@CoroutineScope
+
+  // output channel where result after processing are sent
+  val outputChannel = Channel<Result<List<T>, List<M>>>()
+
+  debug { "batchBy: starting listening channel ${this@batchBy.hashCode()}" }
+
+  // channels where messages are sent to be batched (one channel per key)
+  val batchingMutex = Mutex()
+  val batchingChannels = mutableMapOf<String, Channel<Result<T, M>>>()
+
+  launch {
+    // start a non cancellable scope
+    withContext(NonCancellable) {
+
+      // Get or create a batch channel based on configuration
+      suspend fun getBatchingChannel(key: String): Channel<Result<T, M>> {
+        // check if the channel already exists before using a lock
+        batchingChannels[key]?.let { return it }
+
+        return batchingMutex.withLock {
+          batchingChannels.getOrPut(key) {
+            Channel<Result<T, M>> { warn { "Batch: Undelivered element $it" } }.apply {
+              addProducer("batchBy")
+              startBatching(maxMessages, maxMillis, outputChannel)
             }
-            when (batchConfig) {
-              null -> outputChannel.send(One(result))
-              else -> {
-                trace { "batchBy: sending $result" }
-                getBatchingChannel(batchConfig).send(result)
-                trace { "batchBy: sent $result" }
+          }
+        }
+      }
+
+      outputChannel.addProducer("batchBy")
+      // For batching channels, the addProducer method is called at creation
+      while (true) {
+        try {
+          // the only way to quit this loop is to close the input channel
+          // which is triggered by canceling the calling scope
+          val result = receiveIfNotClose().also { trace { "batchBy: receiving $it" } } ?: break
+          if (result.isFailure) {
+            outputChannel.send(result)
+          }
+          if (result.isSuccess) {
+            val messagesByKey = result.message.zip(result.data).groupBy { getBatchKey(it.second) }
+
+            when (messagesByKey.keys.size) {
+              // if there is a unique key, then the batch is already done
+              1 -> outputChannel.send(result)
+              // else send messages to the same channel by key
+              else -> messagesByKey.forEach { (key, messages) ->
+                val batchingChannel = getBatchingChannel(key)
+                messages.forEach { batchingChannel.send(Result.success(it.first, it.second)) }
               }
             }
           }
@@ -131,12 +189,10 @@ fun <M : Any, I> Channel<Result<M, I>>.batchBy(
         }
       }
       // if the current scope is active, we do not close channels yet
-      trace { "batchBy: exiting, removing producer from output channel ${outputChannel.hashCode()}" }
-      outputChannel.removeProducer()
+      outputChannel.removeProducer("batchBy")
       batchingMutex.withLock {
-        batchingChannels.forEach { (key, channel) ->
-          trace { "batchBy: exited, producer removed from $key batching channel ${channel.hashCode()}" }
-          channel.removeProducer()
+        batchingChannels.forEach { (_, channel) ->
+          channel.removeProducer("batchBy")
         }
       }
     }
@@ -144,4 +200,3 @@ fun <M : Any, I> Channel<Result<M, I>>.batchBy(
 
   return outputChannel
 }
-

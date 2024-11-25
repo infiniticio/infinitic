@@ -50,7 +50,7 @@ class PulsarInfiniticProducerFactory(
     suggestedName = name
   }
 
-  override fun getProducer(batchSendingConfig: BatchConfig?): PulsarInfiniticProducer {
+  override fun newProducer(batchSendingConfig: BatchConfig?): PulsarInfiniticProducer {
     // init client name
     runBlocking { getName() }
 

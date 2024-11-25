@@ -22,7 +22,6 @@
  */
 package io.infinitic.events.listeners
 
-import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.common.messages.Message
 import io.infinitic.common.transport.SubscriptionType
 import io.infinitic.common.transport.WorkflowStateCmdTopic
@@ -30,45 +29,52 @@ import io.infinitic.common.transport.WorkflowStateEngineTopic
 import io.infinitic.common.transport.WorkflowStateEventTopic
 import io.infinitic.common.transport.config.BatchConfig
 import io.infinitic.common.transport.consumers.Result
-import io.infinitic.common.transport.consumers.startConsuming
+import io.infinitic.common.transport.consumers.startBatchReceiving
 import io.infinitic.common.transport.create
 import io.infinitic.common.transport.interfaces.InfiniticConsumerFactory
 import io.infinitic.common.transport.interfaces.TransportMessage
+import io.infinitic.common.transport.logged.LoggerWithCounter
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 
-context(CoroutineScope, KLogger)
+context(CoroutineScope, LoggerWithCounter)
 internal fun InfiniticConsumerFactory.listenToWorkflowStateTopics(
   workflowName: WorkflowName,
   batchConfig: BatchConfig?,
   subscriptionName: String?,
-  outChannel: Channel<Result<TransportMessage<Message>, TransportMessage<Message>>>,
+  outChannel: Channel<Result<List<TransportMessage<Message>>, List<TransportMessage<Message>>>>,
 ): Job = launch {
 
-  // Send messages from WorkflowStateCmdTopic to inChannel
+  // Send messages from WorkflowStateCmdTopic to outChannel
   val workflowStateCmdSubscription = SubscriptionType.EVENT_LISTENER.create(
       WorkflowStateCmdTopic,
       subscriptionName,
   )
-  buildConsumer(workflowStateCmdSubscription, workflowName.toString(), batchConfig)
-      .startConsuming(batchConfig != null, outChannel)
+  val workflowStateCmdConsumer =
+      newConsumer(workflowStateCmdSubscription, workflowName.toString(), batchConfig)
 
-  // Send messages from WorkflowStateEngineTopic to inChannel
+  startBatchReceiving(workflowStateCmdConsumer, outChannel)
+
+  // Send messages from WorkflowStateEngineTopic to outChannel
   val workflowStateEngineSubscription = SubscriptionType.EVENT_LISTENER.create(
       WorkflowStateEngineTopic,
       subscriptionName,
   )
-  buildConsumer(workflowStateEngineSubscription, workflowName.toString(), batchConfig)
-      .startConsuming(batchConfig != null, outChannel)
+  val workflowStateEngineConsumer =
+      newConsumer(workflowStateEngineSubscription, workflowName.toString(), batchConfig)
 
-  // Send messages from WorkflowStateEventTopic to inChannel
+  startBatchReceiving(workflowStateEngineConsumer, outChannel)
+
+  // Send messages from WorkflowStateEventTopic to outChannel
   val workflowStateEventSubscription = SubscriptionType.EVENT_LISTENER.create(
       WorkflowStateEventTopic,
       subscriptionName,
   )
-  buildConsumer(workflowStateEventSubscription, workflowName.toString(), batchConfig)
-      .startConsuming(batchConfig != null, outChannel)
+  val workflowStateEventConsumer =
+      newConsumer(workflowStateEventSubscription, workflowName.toString(), batchConfig)
+
+  startBatchReceiving(workflowStateEventConsumer, outChannel)
 }

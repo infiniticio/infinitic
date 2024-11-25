@@ -35,7 +35,9 @@ import io.infinitic.common.transport.WorkflowStateEngineTopic
 import io.infinitic.common.transport.WorkflowStateEventTopic
 import io.infinitic.common.transport.WorkflowTagEngineTopic
 import io.infinitic.common.transport.interfaces.InfiniticProducer
+import io.infinitic.common.transport.logged.LoggerWithCounter
 import io.infinitic.common.transport.logged.formatLog
+import io.infinitic.common.transport.producers.BufferedInfiniticProducer
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.CompleteTimers
@@ -84,7 +86,6 @@ import io.infinitic.workflows.engine.handlers.timerCompleted
 import io.infinitic.workflows.engine.handlers.waitWorkflow
 import io.infinitic.workflows.engine.handlers.workflowTaskCompleted
 import io.infinitic.workflows.engine.handlers.workflowTaskFailed
-import io.infinitic.workflows.engine.producers.BufferedInfiniticProducer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -98,46 +99,46 @@ class WorkflowStateEngine(
   companion object {
     const val NO_STATE_DISCARDING_REASON = "for having null workflow state"
 
-    val logger = KotlinLogging.logger {}
+    val logger = LoggerWithCounter(KotlinLogging.logger {})
   }
 
   private val emitterName = _producer.emitterName
 
   suspend fun batchProcess(
-    messages: List<WorkflowStateEngineMessage>,
-    publishTimes: List<MillisInstant>
+    messages: List<Pair<WorkflowStateEngineMessage, MillisInstant>>,
   ) {
     val messagesMap: Map<WorkflowId, List<Pair<WorkflowStateEngineMessage, MillisInstant>>> =
-        messages.zip(publishTimes).groupBy { it.first.workflowId }
+        messages.groupBy { it.first.workflowId }
+
+    // get current states
+    val currentStates = storage.getStates(messagesMap.keys.toList())
 
     // process all messages by workflowId, in parallel
     val producersAndStates = coroutineScope {
       messagesMap
-          .mapValues { (workflowId, messageAndPublishTime) ->
-            async { batchProcessById(workflowId, messageAndPublishTime) }
+          .mapValues { (workflowId, messages) ->
+            async { batchProcessByWorkflowId(currentStates[workflowId], messages) }
           }
           .mapValues { it.value.await() }
     }
     // Send all messages
     coroutineScope {
-      producersAndStates.values.forEach { (producer, _) -> launch { producer.flush() } }
+      producersAndStates.values.forEach { (producer, _) -> launch { producer.send() } }
     }
 
     // atomically stores the states
-    val states = producersAndStates.mapValues { it.value.second }
-    storage.putStates(states)
+    val newStates = producersAndStates.mapValues { it.value.second }
+    storage.putStates(newStates)
   }
 
-  private suspend fun batchProcessById(
-    workflowId: WorkflowId,
+  private suspend fun batchProcessByWorkflowId(
+    currentState: WorkflowState?,
     messages: List<Pair<WorkflowStateEngineMessage, MillisInstant>>
   ): Pair<BufferedInfiniticProducer, WorkflowState?> {
     // do not send messages but buffer them
     val bufferedProducer = BufferedInfiniticProducer(_producer)
 
-    // get current state
-    var state: WorkflowState? = storage.getState(workflowId)
-
+    var state: WorkflowState? = currentState
     // process all received messages, starting by the oldest
     messages
         .sortedBy { it.second.long }
@@ -159,7 +160,7 @@ class WorkflowStateEngine(
     val updatedState = processSingle(bufferedProducer, state, message, publishTime)
 
     // send new messages
-    bufferedProducer.flush()
+    bufferedProducer.send()
 
     // store updated state
     storage.putState(message.workflowId, updatedState)
@@ -186,7 +187,10 @@ class WorkflowStateEngine(
 
     val updatedState = when (state) {
       null -> processMessageWithoutState(producer, message)
-      else -> processMessageWithState(producer, message, state)
+      else -> {
+        processMessageWithState(producer, message, state)
+        state
+      }
     }
 
     return when (updatedState?.workflowMethods?.size) {
@@ -254,9 +258,8 @@ class WorkflowStateEngine(
         return@coroutineScope message.newState()
       }
 
-      // a client wants to dispatch a method on an unknown workflow
+      // someone wants to dispatch a method on a workflow unknown or already terminated
       is DispatchMethod -> when (val requester = message.requester ?: thisShouldNotHappen()) {
-        // a client wants to dispatch a method on an unknown workflow
         is ClientRequester -> {
           if (message.clientWaiting) launch {
             val methodUnknown = MethodUnknown(
@@ -271,15 +274,14 @@ class WorkflowStateEngine(
 
         is WorkflowRequester -> {
           if (requester.workflowId != message.workflowId) launch {
-            // a workflow wants to dispatch a method on an unknown workflow
             val childMethodFailed = RemoteMethodUnknown(
                 childMethodUnknownError =
-                MethodUnknownError(
-                    workflowName = message.workflowName,
-                    workflowId = message.workflowId,
-                    workflowMethodName = message.workflowMethodName,
-                    workflowMethodId = message.workflowMethodId,
-                ),
+                    MethodUnknownError(
+                        workflowName = message.workflowName,
+                        workflowId = message.workflowId,
+                        workflowMethodName = message.workflowMethodName,
+                        workflowMethodId = message.workflowMethodId,
+                    ),
                 workflowName = requester.workflowName,
                 workflowId = requester.workflowId,
                 workflowVersion = requester.workflowVersion,
@@ -305,7 +307,6 @@ class WorkflowStateEngine(
         with(producer) { methodUnknown.sendTo(ClientTopic) }
       }
 
-
       else -> Unit
     }
 
@@ -318,7 +319,7 @@ class WorkflowStateEngine(
     producer: InfiniticProducer,
     message: WorkflowStateEngineMessage,
     state: WorkflowState
-  ): WorkflowState? {
+  ) {
 
     // if a workflow task is ongoing, we buffer all messages except those associated to a workflowTask
     when (message.isWorkflowTaskEvent()) {
@@ -330,14 +331,14 @@ class WorkflowStateEngine(
           logDiscarding(message) { "workflowTask that has a null version - retrying it" }
           coroutineScope { retryWorkflowTask(producer, state) }
 
-          return state
+          return
         }
 
         // Idempotency: discard if this workflowTask is not the current one
         if (state.runningWorkflowTaskId != (message as RemoteTaskEvent).taskId()) {
           logDiscarding(message) { "as workflowTask ${message.taskId()} is different than ${state.runningWorkflowTaskId} in state" }
 
-          return null
+          return
         }
       }
 
@@ -348,7 +349,7 @@ class WorkflowStateEngine(
           logDebug("Buffering:", message)
           state.messagesBuffer.add(message)
 
-          return state
+          return
         }
       }
     }
@@ -370,8 +371,6 @@ class WorkflowStateEngine(
       // if no method left, then the workflow is completed
       if (state.workflowMethods.isEmpty()) sendWorkflowCompletedEvent(producer, state)
     }
-
-    return state
   }
 
   private fun logDiscarding(message: WorkflowStateEngineMessage, cause: () -> String) {
@@ -394,9 +393,6 @@ class WorkflowStateEngine(
     state: WorkflowState,
     message: WorkflowStateEngineMessage
   ) {
-    // if message is related to a workflowTask, it's not running anymore
-    if (message.isWorkflowTaskEvent()) state.runningWorkflowTaskId = null
-
     when (message) {
       is DispatchMethod -> {
         // Idempotency: do not relaunch if this method has already been launched
@@ -427,6 +423,9 @@ class WorkflowStateEngine(
 
       else -> Unit
     }
+
+    // if message is related to a workflowTask, it's not running anymore
+    if (message.isWorkflowTaskEvent()) state.runningWorkflowTaskId = null
 
     when (message) {
       // CMD

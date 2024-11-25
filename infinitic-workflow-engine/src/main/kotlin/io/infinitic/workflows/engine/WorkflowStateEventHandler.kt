@@ -27,6 +27,7 @@ import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.transport.ClientTopic
 import io.infinitic.common.transport.WorkflowStateEngineTopic
 import io.infinitic.common.transport.interfaces.InfiniticProducer
+import io.infinitic.common.transport.logged.LoggerWithCounter
 import io.infinitic.common.workflows.engine.messages.MethodCanceledEvent
 import io.infinitic.common.workflows.engine.messages.MethodCommandedEvent
 import io.infinitic.common.workflows.engine.messages.MethodCompletedEvent
@@ -41,42 +42,14 @@ import io.infinitic.common.workflows.engine.messages.TimerDispatchedEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowCanceledEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowCompletedEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEventMessage
-import io.infinitic.workflows.engine.producers.BufferedInfiniticProducer
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
-class WorkflowStateEventHandler(private val _producer: InfiniticProducer) {
+class WorkflowStateEventHandler(private val producer: InfiniticProducer) {
 
-  private val emitterName = _producer.emitterName
+  private val emitterName = producer.emitterName
 
-  suspend fun batchProcess(
-    messages: List<WorkflowStateEventMessage>,
-    publishTimes: List<MillisInstant>
-  ) {
-    // do not send messages but buffer them
-    val bufferedProducer = BufferedInfiniticProducer(_producer)
-
-    // process messages in parallel
-    coroutineScope {
-      messages.zip(publishTimes).forEach { (msg, publishTime) ->
-        launch { processSingle(bufferedProducer, msg, publishTime) }
-      }
-    }
-
-    // send messages
-    bufferedProducer.flush()
-  }
-
-  suspend fun process(msg: WorkflowStateEventMessage, publishTime: MillisInstant) {
-    val bufferedProducer = BufferedInfiniticProducer(_producer)
-
-    processSingle(bufferedProducer, msg, publishTime)
-
-    bufferedProducer.flush()
-  }
-
-  private suspend fun processSingle(
-    producer: InfiniticProducer,
+  suspend fun process(
     msg: WorkflowStateEventMessage,
     publishTime: MillisInstant
   ) {
@@ -170,6 +143,6 @@ class WorkflowStateEventHandler(private val _producer: InfiniticProducer) {
   }
 
   companion object {
-    val logger = KotlinLogging.logger { }
+    val logger = LoggerWithCounter(KotlinLogging.logger {})
   }
 }

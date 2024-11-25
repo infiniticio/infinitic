@@ -38,6 +38,8 @@ import io.infinitic.common.transport.MainSubscription
 import io.infinitic.common.transport.ServiceExecutorTopic
 import io.infinitic.common.transport.Topic
 import io.infinitic.common.transport.WorkflowStateEngineTopic
+import io.infinitic.common.transport.consumers.startProcessingWithoutKey
+import io.infinitic.common.transport.logged.LoggerWithCounter
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
@@ -63,7 +65,7 @@ import java.util.concurrent.atomic.AtomicInteger
 @EnabledIf(DockerOnly::class)
 class ConsumerTests : StringSpec(
     {
-      val logger = KotlinLogging.logger("test")
+      val logger = LoggerWithCounter(KotlinLogging.logger("io.infinitic.tests"))
       val pulsarConfig = pulsarConfigTest!!
       val resources = pulsarConfig.pulsarResources
 
@@ -71,9 +73,9 @@ class ConsumerTests : StringSpec(
           pulsarConfig.infiniticPulsarClient,
           pulsarConfig.producer,
           resources,
-      ).getProducer(null)
+      ).newProducer(null)
 
-      val consumer = PulsarInfiniticConsumerFactory(
+      val consumerFactory = PulsarInfiniticConsumerFactory(
           pulsarConfig.infiniticPulsarClient,
           pulsarConfig.consumer,
           resources,
@@ -115,190 +117,194 @@ class ConsumerTests : StringSpec(
       }
 
       "consuming 1000 messages (1ms) without concurrency should take less than 5 ms in average" {
-        with(logger) {
-          val entity = RandomString(10).nextString()
+        val entity = RandomString(10).nextString()
 
-          val message = TestFactory.random<ExecuteTask>(
-              mapOf("serviceName" to ServiceName(entity)),
-          )
-          val topic = ServiceExecutorTopic
-          val total = 1000
+        val message = TestFactory.random<ExecuteTask>(
+            mapOf("serviceName" to ServiceName(entity)),
+        )
+        val topic = ServiceExecutorTopic
+        val total = 1000
 
-          later {
-            // send $total messages
-            sendMessages(topic, message, total)
-          }
-
-          val subscription = MainSubscription(topic)
-          var averageMillisToConsume = 100.0
-
-          val scope = CoroutineScope(Dispatchers.IO)
-          val counter = AtomicInteger(0)
-          lateinit var start: Instant
-
-          val handler: suspend (ServiceExecutorMessage, MillisInstant) -> Unit = { _, _ ->
-            if (counter.get() == 0) start = Instant.now()
-            // emulate a 1ms task
-            delay(1)
-            // increment counter
-            counter.incrementAndGet().let {
-              if (it == total) {
-                averageMillisToConsume = (start.fromNow() / total)
-                println("Average time to consume a message: $averageMillisToConsume ms")
-                scope.cancel()
-              }
-            }
-          }
-
-          try {
-            with(scope) {
-              consumer.start(subscription, entity, null, 1, handler, null)
-            }
-          } catch (e: CancellationException) {
-            // do nothing
-          }
-          averageMillisToConsume shouldBeLessThan 5.0
+        later {
+          // send $total messages
+          sendMessages(topic, message, total)
         }
+
+        val subscription = MainSubscription(topic)
+        var averageMillisToConsume = 100.0
+
+        val scope = CoroutineScope(Dispatchers.IO)
+        val counter = AtomicInteger(0)
+        lateinit var start: Instant
+
+        val handler: suspend (ServiceExecutorMessage, MillisInstant) -> Unit = { _, _ ->
+          if (counter.get() == 0) start = Instant.now()
+          // emulate a 1ms task
+          delay(1)
+          // increment counter
+          counter.incrementAndGet().let {
+            if (it == total) {
+              averageMillisToConsume = (start.fromNow() / total)
+              println("Average time to consume a message: $averageMillisToConsume ms")
+              scope.cancel()
+            }
+          }
+        }
+
+        try {
+          val consumer = consumerFactory.newConsumer(subscription, entity, null)
+          scope.launch {
+            coroutineScope {
+              startProcessingWithoutKey(logger, consumer, 1, handler, null)
+            }
+          }.join()
+        } catch (e: CancellationException) {
+          // do nothing
+        }
+        averageMillisToConsume shouldBeLessThan 5.0
       }
 
       "consuming 1000 messages (100ms) with 100 concurrency should take less than 5 ms in average" {
-        with(logger) {
-          val entity = RandomString(10).nextString()
+        val entity = RandomString(10).nextString()
 
-          val message = TestFactory.random<ExecuteTask>(
-              mapOf("serviceName" to ServiceName(entity)),
-          )
-          val topic = ServiceExecutorTopic
-          val total = 1000
+        val message = TestFactory.random<ExecuteTask>(
+            mapOf("serviceName" to ServiceName(entity)),
+        )
+        val topic = ServiceExecutorTopic
+        val total = 1000
 
-          later {
-            // send $total messages
-            sendMessages(topic, message, total)
-          }
-
-          val subscription = MainSubscription(topic)
-          var averageMillisToConsume = 100.0
-
-          val counter = AtomicInteger(0)
-          lateinit var start: Instant
-          val scope = CoroutineScope(Dispatchers.IO)
-
-          val handler: suspend (ServiceExecutorMessage, MillisInstant) -> Unit = { _, _ ->
-            if (counter.get() == 0) start = Instant.now()
-            // emulate a 100ms task
-            delay(100)
-            // increment counter
-            counter.incrementAndGet().let {
-              if (it == total) {
-                averageMillisToConsume = (start.fromNow() / total)
-                println("Average time to consume a message: $averageMillisToConsume ms")
-                // delete current scope
-                scope.cancel()
-              }
-            }
-          }
-
-          try {
-            with(scope) {
-              consumer.start(subscription, entity, null, 100, handler, null)
-            }
-          } catch (e: CancellationException) {
-            // do nothing
-          }
-          averageMillisToConsume shouldBeLessThan 5.0
+        later {
+          // send $total messages
+          sendMessages(topic, message, total)
         }
+
+        val subscription = MainSubscription(topic)
+        var averageMillisToConsume = 100.0
+
+        val counter = AtomicInteger(0)
+        lateinit var start: Instant
+        val scope = CoroutineScope(Dispatchers.IO)
+
+        val handler: suspend (ServiceExecutorMessage, MillisInstant) -> Unit = { _, _ ->
+          if (counter.get() == 0) start = Instant.now()
+          // emulate a 100ms task
+          delay(100)
+          // increment counter
+          counter.incrementAndGet().let {
+            if (it == total) {
+              averageMillisToConsume = (start.fromNow() / total)
+              println("Average time to consume a message: $averageMillisToConsume ms")
+              // delete current scope
+              scope.cancel()
+            }
+          }
+        }
+
+        try {
+          val consumer = consumerFactory.newConsumer(subscription, entity, null)
+          scope.launch {
+            coroutineScope {
+              startProcessingWithoutKey(logger, consumer, 100, handler, null)
+            }
+          }.join()
+        } catch (e: CancellationException) {
+          // do nothing
+        }
+        averageMillisToConsume shouldBeLessThan 5.0
       }
 
       "consuming 1000 messages (1ms) with 1 concurrency (key-shared) should take less than 5 ms in average" {
-        with(logger) {
-          val entity = RandomString(10).nextString()
+        val entity = RandomString(10).nextString()
 
-          val message = TestFactory.random<DispatchWorkflow>(
-              mapOf("workflowName" to WorkflowName(entity)),
-          )
-          val topic = WorkflowStateEngineTopic
-          val total = 1000
+        val message = TestFactory.random<DispatchWorkflow>(
+            mapOf("workflowName" to WorkflowName(entity)),
+        )
+        val topic = WorkflowStateEngineTopic
+        val total = 1000
 
-          // send $total messages
-          sendMessages(topic, message, total)
+        // send $total messages
+        sendMessages(topic, message, total)
 
-          val subscription = MainSubscription(topic)
-          var averageMillisToConsume = 100.0
+        val subscription = MainSubscription(topic)
+        var averageMillisToConsume = 100.0
 
-          val scope = CoroutineScope(Dispatchers.IO)
-          val counter = AtomicInteger(0)
-          lateinit var start: Instant
+        val scope = CoroutineScope(Dispatchers.IO)
+        val counter = AtomicInteger(0)
+        lateinit var start: Instant
 
-          val handler: suspend (WorkflowStateEngineMessage, MillisInstant) -> Unit = { _, _ ->
-            if (counter.get() == 0) start = Instant.now()
-            // emulate a 1ms task
-            delay(1)
-            // increment counter
-            counter.incrementAndGet().let {
-              if (it == total) {
-                averageMillisToConsume = (start.fromNow() / total)
-                println("Average time to consume a message: $averageMillisToConsume ms")
-                scope.cancel()
-              }
+        val handler: suspend (WorkflowStateEngineMessage, MillisInstant) -> Unit = { _, _ ->
+          if (counter.get() == 0) start = Instant.now()
+          // emulate a 1ms task
+          delay(1)
+          // increment counter
+          counter.incrementAndGet().let {
+            if (it == total) {
+              averageMillisToConsume = (start.fromNow() / total)
+              println("Average time to consume a message: $averageMillisToConsume ms")
+              scope.cancel()
             }
           }
-
-          try {
-            with(scope) {
-              consumer.start(subscription, entity, null, 1, handler, null)
-            }
-          } catch (e: CancellationException) {
-            // do nothing
-          }
-          averageMillisToConsume shouldBeLessThan 5.0
         }
+
+        try {
+          val consumer = consumerFactory.newConsumer(subscription, entity, null)
+          scope.launch {
+            coroutineScope {
+              startProcessingWithoutKey(logger, consumer, 1, handler, null)
+            }
+          }.join()
+        } catch (e: CancellationException) {
+          // do nothing
+        }
+        averageMillisToConsume shouldBeLessThan 5.0
       }
 
       "consuming 1000 messages (100ms) with 100 concurrency (key-shared) should take less than 5 ms in average" {
-        with(logger) {
-          val entity = RandomString(10).nextString()
+        val entity = RandomString(10).nextString()
 
-          val message = TestFactory.random<DispatchWorkflow>(
-              mapOf("workflowName" to WorkflowName(entity)),
-          )
-          val topic = WorkflowStateEngineTopic
-          val total = 1000
+        val message = TestFactory.random<DispatchWorkflow>(
+            mapOf("workflowName" to WorkflowName(entity)),
+        )
+        val topic = WorkflowStateEngineTopic
+        val total = 1000
 
-          val subscription = MainSubscription(topic)
-          var averageMillisToConsume = 100.0
+        val subscription = MainSubscription(topic)
+        var averageMillisToConsume = 100.0
 
-          val scope = CoroutineScope(Dispatchers.IO)
-          val counter = AtomicInteger(0)
-          lateinit var start: Instant
+        val scope = CoroutineScope(Dispatchers.IO)
+        val counter = AtomicInteger(0)
+        lateinit var start: Instant
 
-          val process: suspend (WorkflowStateEngineMessage, MillisInstant) -> Unit = { _, _ ->
-            if (counter.get() == 0) start = Instant.now()
-            // emulate a 100 ms task
-            delay(100)
-            // increment counter
-            counter.incrementAndGet().let {
-              if (it == total) {
-                averageMillisToConsume = (start.fromNow() / total)
-                println("Average time to consume a message: $averageMillisToConsume ms")
-                scope.cancel()
-              }
+        val process: suspend (WorkflowStateEngineMessage, MillisInstant) -> Unit = { _, _ ->
+          if (counter.get() == 0) start = Instant.now()
+          // emulate a 100 ms task
+          delay(100)
+          // increment counter
+          counter.incrementAndGet().let {
+            if (it == total) {
+              averageMillisToConsume = (start.fromNow() / total)
+              println("Average time to consume a message: $averageMillisToConsume ms")
+              scope.cancel()
             }
           }
-
-          try {
-            val job = with(scope) {
-              consumer.startAsync(subscription, entity, null, 100, process, null)
-            }
-            // on the consumer created, we send the messages
-            // to avoid that the first consumer up captures all keys right-away
-            sendMessages(topic, message, total)
-            // wait for the cancellation triggered when reaching total in process
-            job.join()
-          } catch (e: CancellationException) {
-            // do nothing
-          }
-          averageMillisToConsume shouldBeLessThan 5.0
         }
+
+        try {
+          val consumer = consumerFactory.newConsumer(subscription, entity, null)
+          val job = scope.launch {
+            coroutineScope {
+              startProcessingWithoutKey(logger, consumer, 100, process, null)
+            }
+          }
+          // on the consumer created, we send the messages
+          // to avoid that the first consumer up captures all keys right-away
+          sendMessages(topic, message, total)
+          // wait for the cancellation triggered when reaching total in process
+          job.join()
+        } catch (e: CancellationException) {
+          // do nothing
+        }
+        averageMillisToConsume shouldBeLessThan 5.0
       }
     },
 )

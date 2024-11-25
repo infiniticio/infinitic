@@ -36,11 +36,14 @@ interface TransportMessage<out M> {
   val topic: Topic<*>
 
   /**
-   * Deserializes the message into its original form.
    *
-   * @return The deserialized message.
    */
-  fun deserialize(): M
+  val key: String?
+
+  /**
+   * Deserializes the message into its original form.
+   */
+  suspend fun deserialize(): M
 
   /**
    * Acknowledges the given message.
@@ -48,7 +51,7 @@ interface TransportMessage<out M> {
   suspend fun acknowledge()
 
   /**
-   * Processes a negative acknowledgment for the given message.
+   * Negatively acknowledges the given message.
    */
   suspend fun negativeAcknowledge()
 
@@ -57,5 +60,5 @@ interface TransportMessage<out M> {
    * repeatedly, and the total count of negative acknowledgments has reached a predefined limit
    * after which the message will be sent to DLQ
    */
-  val hasBeenSentToDeadLetterQueue: Boolean
+  val sentToDeadLetterQueue: Boolean
 }

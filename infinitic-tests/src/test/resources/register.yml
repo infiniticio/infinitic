@@ -28,7 +28,10 @@ services:
     tagEngine:
     executor:
       class: io.infinitic.tests.batches.BatchServiceImpl
-      concurrency: 5
+      concurrency: 1
+      batch:
+        maxMessages: 10
+        maxSeconds: .25
   - name: annotatedService
     tagEngine:
     executor:
@@ -56,13 +59,19 @@ services:
 workflows:
   - name: batchWorkflow
     tagEngine:
+      batch:
+        maxMessages: 10
+        maxSeconds: .25
     stateEngine:
+      batch:
+        maxMessages: 10
+        maxSeconds: .25
     executor:
       class: io.infinitic.tests.batches.BatchWorkflowImpl
       concurrency: 1
       batch:
         maxMessages: 10
-        maxSeconds: .1
+        maxSeconds: .25
   - name: annotatedWorkflow
     tagEngine:
     stateEngine:

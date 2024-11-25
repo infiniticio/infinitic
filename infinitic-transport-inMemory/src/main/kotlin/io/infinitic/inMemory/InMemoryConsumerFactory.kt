@@ -22,17 +22,14 @@
  */
 package io.infinitic.inMemory
 
-import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.common.messages.Message
 import io.infinitic.common.transport.EventListenerSubscription
 import io.infinitic.common.transport.MainSubscription
 import io.infinitic.common.transport.Subscription
 import io.infinitic.common.transport.config.BatchConfig
 import io.infinitic.common.transport.interfaces.InfiniticConsumerFactory
-import io.infinitic.common.transport.interfaces.TransportConsumer
 import io.infinitic.inMemory.channels.InMemoryChannels
 import io.infinitic.inMemory.consumers.InMemoryConsumer
-import io.infinitic.inMemory.consumers.InMemoryTransportMessage
 import kotlinx.coroutines.channels.Channel
 
 class InMemoryConsumerFactory(
@@ -40,29 +37,17 @@ class InMemoryConsumerFactory(
   private val eventListenerChannels: InMemoryChannels,
 ) : InfiniticConsumerFactory {
 
-  context(KLogger)
-  override suspend fun <S : Message> buildConsumers(
+  override suspend fun <S : Message> newConsumer(
     subscription: Subscription<S>,
     entity: String,
-    batchConfig: BatchConfig?,
-    occurrence: Int?
-  ): List<TransportConsumer<InMemoryTransportMessage<S>>> = List(occurrence ?: 1) {
-    InMemoryConsumer(subscription.topic, batchConfig, subscription.getChannel(entity))
-  }
-
-  context(KLogger)
-  override suspend fun <S : Message> buildConsumer(
-    subscription: Subscription<S>,
-    entity: String,
-    batchConfig: BatchConfig?,
-  ): TransportConsumer<InMemoryTransportMessage<S>> =
-      buildConsumers(subscription, entity, batchConfig, 1).first()
+    batchReceivingConfig: BatchConfig?,
+  ): InMemoryConsumer<S> =
+      InMemoryConsumer(subscription.topic, batchReceivingConfig, subscription.getChannel(entity))
 
   private fun <S : Message> Subscription<S>.getChannel(entity: String): Channel<S> =
       when (this) {
         is MainSubscription -> with(mainChannels) { topic.channel(entity) }
         is EventListenerSubscription -> with(eventListenerChannels) { topic.channel(entity) }
       }
-
 }
 

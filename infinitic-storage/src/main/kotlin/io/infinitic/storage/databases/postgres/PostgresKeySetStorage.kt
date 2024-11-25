@@ -26,6 +26,7 @@ import com.zaxxer.hikari.HikariDataSource
 import io.infinitic.storage.config.PostgresConfig
 import io.infinitic.storage.keySet.KeySetStorage
 import org.jetbrains.annotations.TestOnly
+import java.sql.ResultSet
 
 class PostgresKeySetStorage(
   internal val pool: HikariDataSource,
@@ -85,6 +86,83 @@ class PostgresKeySetStorage(
             it.setBytes(2, value)
             it.executeUpdate()
           }
+    }
+  }
+
+  override suspend fun get(keys: Set<String>): Map<String, Set<ByteArray>> {
+    if (keys.isEmpty()) return emptyMap() // Handle empty case
+
+    return pool.connection.use { connection ->
+      connection.prepareStatement(
+          """
+            SELECT key, value
+            FROM ${schema}.${tableName}
+            WHERE key = ANY(?)
+        """,
+      ).use { statement ->
+        statement.setArray(1, connection.createArrayOf("VARCHAR", keys.toTypedArray()))
+        statement.executeQuery().use { resultSet -> buildResultMap(keys, resultSet) }
+      }
+    }
+  }
+
+  private fun buildResultMap(
+    keys: Set<String>,
+    resultSet: ResultSet
+  ): Map<String, MutableSet<ByteArray>> {
+    val results = mutableMapOf<String, MutableSet<ByteArray>>()
+    while (resultSet.next()) {
+      val key = resultSet.getString("key")
+      val value = resultSet.getBytes("value")
+      results.computeIfAbsent(key) { mutableSetOf() }.add(value)
+    }
+    // add missing keys
+    keys.forEach { key ->
+      results.putIfAbsent(key, mutableSetOf())
+    }
+    return results
+  }
+
+  override suspend fun update(
+    add: Map<String, Set<ByteArray>>,
+    remove: Map<String, Set<ByteArray>>
+  ) {
+    pool.connection.use { connection ->
+      connection.autoCommit = false
+      try {
+        if (remove.isNotEmpty()) connection
+            .prepareStatement("DELETE FROM $schema.$tableName WHERE key = ? AND value = ?")
+            .use { deleteStmt ->
+              remove.forEach { (key, values) ->
+                values.forEach { value ->
+                  deleteStmt.setString(1, key)
+                  deleteStmt.setBytes(2, value)
+                  deleteStmt.addBatch()
+                }
+              }
+              deleteStmt.executeBatch()
+            }
+
+        if (add.isNotEmpty()) connection
+            .prepareStatement("INSERT INTO $schema.$tableName (key, value) VALUES (?, ?)")
+            .use { insertStmt ->
+              add.forEach { (key, values) ->
+                values.forEach { value ->
+                  insertStmt.setString(1, key)
+                  insertStmt.setBytes(2, value)
+                  insertStmt.addBatch()
+                }
+              }
+              insertStmt.executeBatch()
+            }
+
+        connection.commit()
+      } catch (e: Exception) {
+        connection.rollback()
+        throw e
+      } finally {
+        connection.autoCommit = true
+      }
     }
   }
 
