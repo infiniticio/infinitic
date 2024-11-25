@@ -22,6 +22,7 @@
  */
 package io.infinitic.common.transport.consumers
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.transport.Topic
 import io.infinitic.common.transport.interfaces.TransportConsumer
@@ -31,6 +32,8 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.random.Random
+
+private val logger = KotlinLogging.logger("io.infinitic.tests")
 
 internal var deserializeHook: (IntMessage) -> Unit = { }
 internal var acknowledgeHook: (IntMessage) -> Unit = { }
@@ -75,9 +78,9 @@ internal data class IntMessage(val value: Int) : TransportMessage<Int> {
   override val key: String = (value % 10).toString()
 
   override suspend fun deserialize(): Int {
-    println("start deserializing...$this")
+    logger.debug { "start deserializing...$this" }
     deserializeHook(this)
-    println("end   deserializing...$this")
+    logger.trace { "end   deserializing...$this" }
     deserializedMutex.withLock { deserializedList.add(value) }
     return value
   }
@@ -133,17 +136,15 @@ internal open class IntConsumer(private val maxMessages: Int = 1) : TransportCon
 }
 
 internal suspend fun process(deserialized: Int, publishedAt: MillisInstant) {
-  println("start processing......$deserialized")
+  logger.debug { "start processing......$deserialized" }
   delay(Random.nextLong(10))
-  println("end   processing......$deserialized")
+  logger.trace { "end   processing......$deserialized" }
   processedMutex.withLock { processedList.add(deserialized) }
 }
 
 internal suspend fun batchProcess(messages: List<Pair<Int, MillisInstant>>) {
-  println("start processing......${messages.map { it.first }}")
+  logger.debug { "start processing......${messages.map { it.first }}" }
   delay(Random.nextLong(10))
-  println("end   processing......${messages.map { it.first }}")
+  logger.trace { "end   processing......${messages.map { it.first }}" }
   processedMutex.withLock { processedList.addAll(messages.map { it.first }) }
 }
-
-

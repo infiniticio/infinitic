@@ -45,7 +45,7 @@ internal suspend fun Channel<*>.removeProducer(origin: String = "") = producersM
     null -> thisShouldNotHappen()
     1 -> {
       producerCounters.remove(this)
-      info { "Closing channel ${hashCode()}" }
+      debug { "Closing channel ${hashCode()}" }
       close()
     }
 
