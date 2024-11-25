@@ -25,9 +25,16 @@
 
 // To publish a new version:
 // * check the new version number CI.BASE
-// * run: OSSRH_USERNAME=**** OSSRH_PASSWORD=**** RELEASE=true ./gradlew publish --rerun-tasks
+// * run: RELEASE=true ./gradlew publish --rerun-tasks
 // * login to https://s01.oss.sonatype.org#stagingRepositories
 // * once the new version is uploaded in staging repositories, close it, then release it
+//
+// You must have a gradle.properties file with
+// ossSonatypeOrgUsername=
+// ossSonatypeOrgPassword=
+// signing.keyId=
+// signing.password=
+// signing.secretKeyRingFile=/Users/you/.gnupg/secring.gpg
 //
 // To deploy a snapshot, run: ./gradlew publish --rerun-tasks
 // and add:
