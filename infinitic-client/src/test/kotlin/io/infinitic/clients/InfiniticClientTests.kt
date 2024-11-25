@@ -61,6 +61,7 @@ import io.infinitic.common.transport.Subscription
 import io.infinitic.common.transport.WorkflowStateCmdTopic
 import io.infinitic.common.transport.WorkflowTagEngineTopic
 import io.infinitic.common.transport.consumers.startProcessingWithoutKey
+import io.infinitic.common.transport.logged.LoggerWithCounter
 import io.infinitic.common.utils.IdGenerator
 import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.channels.ChannelType
@@ -230,7 +231,7 @@ internal class InfiniticClientTests : StringSpec(
 
         coEvery {
           client.clientScope.startProcessingWithoutKey(
-              logger = any<KLogger>(),
+              logger = any<LoggerWithCounter>(),
               consumer = mockedConsumer,
               concurrency = 3,
               processor = any<(suspend (ClientMessage, MillisInstant) -> Unit)>(),
@@ -420,7 +421,7 @@ internal class InfiniticClientTests : StringSpec(
             methodName = MethodName("m3"),
             methodParameters = methodParametersFrom(0, "a"),
             methodParameterTypes =
-            MethodParameterTypes(listOf(Int::class.java.name, String::class.java.name)),
+                MethodParameterTypes(listOf(Int::class.java.name, String::class.java.name)),
             workflowTags = setOf(),
             workflowMeta = WorkflowMeta(),
             requester = ClientRequester(clientName = ClientName.from(emitterNameTest)),
@@ -443,7 +444,7 @@ internal class InfiniticClientTests : StringSpec(
             methodName = MethodName("m3"),
             methodParameters = methodParametersFrom(0, "a"),
             methodParameterTypes =
-            MethodParameterTypes(listOf(Int::class.java.name, String::class.java.name)),
+                MethodParameterTypes(listOf(Int::class.java.name, String::class.java.name)),
             workflowTags = setOf(),
             workflowMeta = WorkflowMeta(),
             requester = ClientRequester(clientName = ClientName.from(emitterNameTest)),
@@ -469,7 +470,7 @@ internal class InfiniticClientTests : StringSpec(
                 methodName = MethodName("m3"),
                 methodParameters = methodParametersFrom(0, "a"),
                 methodParameterTypes =
-                MethodParameterTypes(listOf(Int::class.java.name, String::class.java.name)),
+                    MethodParameterTypes(listOf(Int::class.java.name, String::class.java.name)),
                 workflowTags = setOf(),
                 workflowMeta = WorkflowMeta(),
                 requester = ClientRequester(clientName = ClientName.from(emitterNameTest)),
@@ -483,7 +484,7 @@ internal class InfiniticClientTests : StringSpec(
                 methodName = MethodName("m2"),
                 methodParameters = methodParametersFrom("b"),
                 methodParameterTypes =
-                MethodParameterTypes(listOf(String::class.java.name)),
+                    MethodParameterTypes(listOf(String::class.java.name)),
                 workflowTags = setOf(),
                 workflowMeta = WorkflowMeta(),
                 requester = ClientRequester(clientName = ClientName.from(emitterNameTest)),
@@ -682,11 +683,11 @@ internal class InfiniticClientTests : StringSpec(
             signalId = msg.signalId,
             signalData = SignalData.from(signal, FakeService::class.java),
             channelTypes =
-            setOf(
-                ChannelType.from(FakeServiceImpl::class.java),
-                ChannelType.from(FakeService::class.java),
-                ChannelType.from(FakeServiceParent::class.java),
-            ),
+                setOf(
+                    ChannelType.from(FakeServiceImpl::class.java),
+                    ChannelType.from(FakeService::class.java),
+                    ChannelType.from(FakeServiceParent::class.java),
+                ),
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowId = WorkflowId(id),
             emitterName = emitterNameTest,
@@ -709,11 +710,11 @@ internal class InfiniticClientTests : StringSpec(
             signalId = msg.signalId,
             signalData = SignalData.from(signal, FakeServiceParent::class.java),
             channelTypes =
-            setOf(
-                ChannelType.from(FakeServiceImpl::class.java),
-                ChannelType.from(FakeService::class.java),
-                ChannelType.from(FakeServiceParent::class.java),
-            ),
+                setOf(
+                    ChannelType.from(FakeServiceImpl::class.java),
+                    ChannelType.from(FakeService::class.java),
+                    ChannelType.from(FakeServiceParent::class.java),
+                ),
             workflowName = WorkflowName(FakeWorkflow::class.java.name),
             workflowId = WorkflowId(id),
             emitterName = emitterNameTest,

@@ -22,9 +22,9 @@
  */
 package io.infinitic.common.transport.consumers
 
-import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.common.transport.interfaces.TransportConsumer
 import io.infinitic.common.transport.interfaces.TransportMessage
+import io.infinitic.common.transport.logged.LoggerWithCounter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.cancel
@@ -42,7 +42,7 @@ import kotlin.coroutines.cancellation.CancellationException
  * @param concurrency The number of concurrent shards to use for distributing the messages.
  * @return A list of channels, where each channel corresponds to a shard and contains the received messages.
  */
-context(KLogger)
+context(LoggerWithCounter)
 internal fun <T : TransportMessage<M>, M> CoroutineScope.startReceivingAndShard(
   consumer: TransportConsumer<T>,
   batchReceiving: Boolean,
@@ -60,6 +60,8 @@ internal fun <T : TransportMessage<M>, M> CoroutineScope.startReceivingAndShard(
             val batch = consumer.batchReceive()
             withContext(NonCancellable) {
               trace { "Batch (${batch.size}) received from ${consumer.name}: $batch" }
+              // counter
+              incr(batch.size)
               batch.forEach {
                 val shard = getShard(it.key!!, size)
                 trace { "sending $it (key = ${it.key}) to shard $shard}" }
@@ -70,9 +72,13 @@ internal fun <T : TransportMessage<M>, M> CoroutineScope.startReceivingAndShard(
 
           false -> {
             val msg = consumer.receive()
-            trace { "Received from ${consumer.name}: $msg" }
-            val shard = getShard(msg.key!!, size)
-            shardChannels[shard].send(Result.success(msg, msg))
+            withContext(NonCancellable) {
+              trace { "Received from ${consumer.name}: $msg" }
+              // counter
+              incr()
+              val shard = getShard(msg.key!!, size)
+              shardChannels[shard].send(Result.success(msg, msg))
+            }
           }
         }
       } catch (e: CancellationException) {

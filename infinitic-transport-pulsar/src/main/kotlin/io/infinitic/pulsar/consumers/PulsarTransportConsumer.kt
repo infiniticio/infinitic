@@ -45,12 +45,7 @@ class PulsarTransportConsumer<M : Message>(
     val pulsarMessages = pulsarConsumer.batchReceiveAsync().await()
 
     return pulsarMessages.map {
-      PulsarTransportMessage(
-          it,
-          pulsarConsumer,
-          topic,
-          maxRedeliveryCount,
-      )
+      PulsarTransportMessage(it, pulsarConsumer, topic, maxRedeliveryCount)
     }
   }
 

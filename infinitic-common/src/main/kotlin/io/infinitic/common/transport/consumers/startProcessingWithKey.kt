@@ -22,12 +22,12 @@
  */
 package io.infinitic.common.transport.consumers
 
-import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.transport.config.BatchConfig
 import io.infinitic.common.transport.config.maxMillis
 import io.infinitic.common.transport.interfaces.TransportConsumer
 import io.infinitic.common.transport.interfaces.TransportMessage
+import io.infinitic.common.transport.logged.LoggerWithCounter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -43,7 +43,7 @@ import kotlinx.coroutines.coroutineScope
  * @param beforeDlq An optional callback invoked before sending the message to the DLQ (Dead Letter Queue).
  */
 fun <T : TransportMessage<M>, M> CoroutineScope.startProcessingWithKey(
-  logger: KLogger,
+  logger: LoggerWithCounter,
   consumer: TransportConsumer<T>,
   concurrency: Int,
   processor: (suspend (M, MillisInstant) -> Unit),
@@ -77,7 +77,7 @@ fun <T : TransportMessage<M>, M> CoroutineScope.startProcessingWithKey(
  * @param beforeDlq An optional suspending function that is called before sending a message to the Dead Letter Queue (DLQ).
  */
 fun <T : TransportMessage<M>, M> CoroutineScope.startBatchProcessingWithKey(
-  logger: KLogger,
+  logger: LoggerWithCounter,
   consumer: TransportConsumer<T>,
   concurrency: Int,
   batchConfig: BatchConfig,
@@ -92,16 +92,15 @@ fun <T : TransportMessage<M>, M> CoroutineScope.startBatchProcessingWithKey(
       batchReceiving = true,
       concurrency = concurrency,
   ).forEach { messagesChannel ->
-
     messagesChannel
         .batchBy(batchConfig.maxMessages, batchConfig.maxMillis)
         .process(to = processedChannel) { transportMessages, _ ->
-          val messages =
-              coroutineScope { transportMessages.map { async { it.deserialize() } }.awaitAll() }
+          val messages = coroutineScope {
+            transportMessages.map { async { it.deserialize() } }.awaitAll()
+          }
           batchProcessor(messages.zip(transportMessages) { m, t -> m to t.publishTime })
         }
   }
-
 
   repeat(concurrency) {
     processedChannel.acknowledge(beforeDlq)

@@ -28,6 +28,7 @@ import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.transport.ServiceExecutorTopic
 import io.infinitic.common.transport.WorkflowExecutorTopic
 import io.infinitic.common.transport.interfaces.InfiniticProducer
+import io.infinitic.common.transport.logged.LoggerWithCounter
 
 @Suppress("UNUSED_PARAMETER")
 class TaskRetryHandler(val producer: InfiniticProducer) {
@@ -42,6 +43,6 @@ class TaskRetryHandler(val producer: InfiniticProducer) {
   }
 
   companion object {
-    val logger = KotlinLogging.logger {}
+    val logger = LoggerWithCounter(KotlinLogging.logger {})
   }
 }

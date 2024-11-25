@@ -22,12 +22,12 @@
  */
 package io.infinitic.common.transport.consumers
 
-import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.transport.config.BatchConfig
 import io.infinitic.common.transport.config.maxMillis
 import io.infinitic.common.transport.interfaces.TransportConsumer
 import io.infinitic.common.transport.interfaces.TransportMessage
+import io.infinitic.common.transport.logged.LoggerWithCounter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -44,7 +44,7 @@ import kotlinx.coroutines.coroutineScope
  *                  Dead Letter Queue if an exception occurs. Defaults to null.
  */
 fun <T : TransportMessage<M>, M> CoroutineScope.startProcessingWithoutKey(
-  logger: KLogger,
+  logger: LoggerWithCounter,
   consumer: TransportConsumer<T>,
   concurrency: Int,
   processor: (suspend (M, MillisInstant) -> Unit),
@@ -54,7 +54,7 @@ fun <T : TransportMessage<M>, M> CoroutineScope.startProcessingWithoutKey(
       .processWithoutKey(concurrency, processor, beforeDlq)
 }
 
-context(CoroutineScope, KLogger)
+context(CoroutineScope, LoggerWithCounter)
 fun <T : TransportMessage<M>, M> Channel<Result<T, T>>.processWithoutKey(
   concurrency: Int,
   processor: (suspend (M, MillisInstant) -> Unit),
@@ -90,7 +90,7 @@ fun <T : TransportMessage<M>, M> Channel<Result<T, T>>.processWithoutKey(
  * @param beforeDlq Optional function to execute before sending a message to the dead letter queue, in case of errors.
  */
 fun <T : TransportMessage<M>, M> CoroutineScope.startBatchProcessingWithoutKey(
-  logger: KLogger,
+  logger: LoggerWithCounter,
   consumer: TransportConsumer<T>,
   concurrency: Int,
   batchConfig: BatchConfig,
@@ -102,7 +102,7 @@ fun <T : TransportMessage<M>, M> CoroutineScope.startBatchProcessingWithoutKey(
       .processWithoutKey(concurrency, batchConfig, getBatchKey, processor, beforeDlq)
 }
 
-context(CoroutineScope, KLogger)
+context(CoroutineScope, LoggerWithCounter)
 fun <T : TransportMessage<M>, M> Channel<Result<List<T>, List<T>>>.processWithoutKey(
   concurrency: Int,
   batchConfig: BatchConfig,

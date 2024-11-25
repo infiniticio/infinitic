@@ -24,6 +24,7 @@ package io.infinitic.common.transport.consumers
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.fixtures.later
+import io.infinitic.common.transport.logged.LoggerWithCounter
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -39,7 +40,7 @@ import kotlinx.coroutines.sync.withLock
 class StartReceivingAndShardTest : StringSpec(
     {
 
-      val logger = KotlinLogging.logger("io.infinitic.tests")
+      val logger = LoggerWithCounter(KotlinLogging.logger("io.infinitic.tests"))
 
       fun getScope() = CoroutineScope(Dispatchers.IO)
 

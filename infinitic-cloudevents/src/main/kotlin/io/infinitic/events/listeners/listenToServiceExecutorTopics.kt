@@ -22,7 +22,6 @@
  */
 package io.infinitic.events.listeners
 
-import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.transport.ServiceExecutorEventTopic
@@ -35,12 +34,13 @@ import io.infinitic.common.transport.consumers.startBatchReceiving
 import io.infinitic.common.transport.create
 import io.infinitic.common.transport.interfaces.InfiniticConsumerFactory
 import io.infinitic.common.transport.interfaces.TransportMessage
+import io.infinitic.common.transport.logged.LoggerWithCounter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 
-context(CoroutineScope, KLogger)
+context(CoroutineScope, LoggerWithCounter)
 internal fun InfiniticConsumerFactory.listenToServiceExecutorTopics(
   serviceName: ServiceName,
   batchConfig: BatchConfig,

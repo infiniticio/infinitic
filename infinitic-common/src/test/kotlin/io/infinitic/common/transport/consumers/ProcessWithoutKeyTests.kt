@@ -25,6 +25,7 @@ package io.infinitic.common.transport.consumers
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.fixtures.later
+import io.infinitic.common.transport.logged.LoggerWithCounter
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldContainAll
@@ -42,7 +43,7 @@ import kotlin.random.Random
 
 internal class ProcessWithoutKeyTests : StringSpec(
     {
-      val logger = KotlinLogging.logger {}
+      val logger = LoggerWithCounter(KotlinLogging.logger("io.infinitic.tests"))
 
       fun getScope() = CoroutineScope(Dispatchers.IO)
 

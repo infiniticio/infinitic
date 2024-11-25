@@ -24,6 +24,7 @@ package io.infinitic.common.transport.consumers
 
 import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.common.transport.interfaces.TransportMessage
+import io.infinitic.common.transport.logged.LoggerWithCounter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
@@ -36,7 +37,7 @@ import kotlinx.coroutines.launch
  * @param M The type of the message contained within the transport message.
  * @param beforeDlq A suspending function that will be executed before a message is sent to the dead-letter queue.
  */
-context(CoroutineScope, KLogger)
+context(CoroutineScope, LoggerWithCounter)
 fun <T : TransportMessage<M>, M> Channel<Result<T, Unit>>.acknowledge(
   beforeDlq: (suspend (M, Exception) -> Unit)? = null,
 ) = collect { result ->
@@ -53,6 +54,9 @@ fun <T : TransportMessage<M>, M> Channel<Result<T, Unit>>.acknowledge(
     // dead letter queue hook
     message.dlq(exception, beforeDlq)
   }
+
+  // counter
+  decr()
 }
 
 /**
@@ -65,7 +69,7 @@ fun <T : TransportMessage<M>, M> Channel<Result<T, Unit>>.acknowledge(
  *                  This function takes a message and an exception as parameters. It is optional and
  *                  defaults to null.
  */
-context(CoroutineScope, KLogger)
+context(CoroutineScope, LoggerWithCounter)
 fun <T : TransportMessage<M>, M> Channel<Result<List<T>, Unit>>.acknowledge(
   beforeDlq: (suspend (M, Exception) -> Unit)? = null,
 ) {
@@ -96,6 +100,9 @@ fun <T : TransportMessage<M>, M> Channel<Result<List<T>, Unit>>.acknowledge(
         }
       }
     }
+
+    // counter
+    decr(messages.size)
   }
 }
 

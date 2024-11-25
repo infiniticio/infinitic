@@ -35,6 +35,7 @@ import io.infinitic.common.transport.WorkflowStateEngineTopic
 import io.infinitic.common.transport.WorkflowStateEventTopic
 import io.infinitic.common.transport.WorkflowTagEngineTopic
 import io.infinitic.common.transport.interfaces.InfiniticProducer
+import io.infinitic.common.transport.logged.LoggerWithCounter
 import io.infinitic.common.transport.logged.formatLog
 import io.infinitic.common.transport.producers.BufferedInfiniticProducer
 import io.infinitic.common.workflows.data.workflows.WorkflowId
@@ -98,7 +99,7 @@ class WorkflowStateEngine(
   companion object {
     const val NO_STATE_DISCARDING_REASON = "for having null workflow state"
 
-    val logger = KotlinLogging.logger {}
+    val logger = LoggerWithCounter(KotlinLogging.logger {})
   }
 
   private val emitterName = _producer.emitterName
@@ -275,12 +276,12 @@ class WorkflowStateEngine(
           if (requester.workflowId != message.workflowId) launch {
             val childMethodFailed = RemoteMethodUnknown(
                 childMethodUnknownError =
-                MethodUnknownError(
-                    workflowName = message.workflowName,
-                    workflowId = message.workflowId,
-                    workflowMethodName = message.workflowMethodName,
-                    workflowMethodId = message.workflowMethodId,
-                ),
+                    MethodUnknownError(
+                        workflowName = message.workflowName,
+                        workflowId = message.workflowId,
+                        workflowMethodName = message.workflowMethodName,
+                        workflowMethodId = message.workflowMethodId,
+                    ),
                 workflowName = requester.workflowName,
                 workflowId = requester.workflowId,
                 workflowVersion = requester.workflowVersion,
@@ -392,9 +393,6 @@ class WorkflowStateEngine(
     state: WorkflowState,
     message: WorkflowStateEngineMessage
   ) {
-    // if message is related to a workflowTask, it's not running anymore
-    if (message.isWorkflowTaskEvent()) state.runningWorkflowTaskId = null
-
     when (message) {
       is DispatchMethod -> {
         // Idempotency: do not relaunch if this method has already been launched
@@ -425,6 +423,9 @@ class WorkflowStateEngine(
 
       else -> Unit
     }
+
+    // if message is related to a workflowTask, it's not running anymore
+    if (message.isWorkflowTaskEvent()) state.runningWorkflowTaskId = null
 
     when (message) {
       // CMD

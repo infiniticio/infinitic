@@ -22,7 +22,6 @@
  */
 package io.infinitic.events.listeners
 
-import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.common.messages.Message
 import io.infinitic.common.transport.consumers.Result
 import io.infinitic.common.transport.consumers.acknowledge
@@ -31,6 +30,7 @@ import io.infinitic.common.transport.consumers.process
 import io.infinitic.common.transport.interfaces.InfiniticConsumerFactory
 import io.infinitic.common.transport.interfaces.InfiniticResources
 import io.infinitic.common.transport.interfaces.TransportMessage
+import io.infinitic.common.transport.logged.LoggerWithCounter
 import io.infinitic.events.config.EventListenerConfig
 import io.infinitic.events.toCloudEvent
 import kotlinx.coroutines.CoroutineScope
@@ -40,7 +40,7 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 
-context(CoroutineScope, KLogger)
+context(CoroutineScope, LoggerWithCounter)
 fun InfiniticConsumerFactory.startCloudEventListener(
   resources: InfiniticResources,
   config: EventListenerConfig,

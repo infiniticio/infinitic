@@ -42,6 +42,7 @@ import io.infinitic.common.transport.WorkflowStateEventTopic
 import io.infinitic.common.transport.WorkflowStateTimerTopic
 import io.infinitic.common.transport.WorkflowTagEngineTopic
 import io.infinitic.common.transport.consumers.startProcessingWithKey
+import io.infinitic.common.transport.logged.LoggerWithCounter
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.pulsar.client.InfiniticPulsarClient
 import io.infinitic.pulsar.config.PulsarConfig
@@ -65,7 +66,7 @@ import org.apache.pulsar.client.api.Message as PulsarMessage
 
 class PulsarInfiniticConsumerTests : StringSpec(
     {
-      val logger = KotlinLogging.logger {}
+      val logger = LoggerWithCounter(KotlinLogging.logger("io.infinitic.tests"))
       val clientName = ClientName("clientTest")
       val workflowName = WorkflowName("workflowTest")
       val serviceName = ServiceName("serviceTest")

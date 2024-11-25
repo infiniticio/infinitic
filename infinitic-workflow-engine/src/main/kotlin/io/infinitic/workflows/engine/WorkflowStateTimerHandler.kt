@@ -26,6 +26,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.transport.WorkflowStateEngineTopic
 import io.infinitic.common.transport.interfaces.InfiniticProducer
+import io.infinitic.common.transport.logged.LoggerWithCounter
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
 
 @Suppress("UNUSED_PARAMETER")
@@ -36,6 +37,6 @@ class WorkflowStateTimerHandler(val producer: InfiniticProducer) {
   }
 
   companion object {
-    val logger = KotlinLogging.logger { }
+    val logger = LoggerWithCounter(KotlinLogging.logger {})
   }
 }

@@ -32,6 +32,7 @@ import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.transport.MainSubscription
 import io.infinitic.common.transport.ServiceExecutorTopic
 import io.infinitic.common.transport.consumers.startProcessingWithoutKey
+import io.infinitic.common.transport.logged.LoggerWithCounter
 import io.infinitic.inMemory.channels.InMemoryChannels
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.longs.shouldBeLessThan
@@ -47,7 +48,7 @@ import kotlin.system.measureTimeMillis
 
 class InMemoryInfiniticConsumerTests : StringSpec(
     {
-      val logger = KotlinLogging.logger {}
+      val logger = LoggerWithCounter(KotlinLogging.logger("io.infinitic.tests"))
       val serviceName = ServiceName("ServiceTest")
       val mainChannels = InMemoryChannels()
       val eventListenerChannels = InMemoryChannels()

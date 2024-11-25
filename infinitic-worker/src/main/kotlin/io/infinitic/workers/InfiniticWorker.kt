@@ -22,7 +22,6 @@
  */
 package io.infinitic.workers
 
-import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.clients.InfiniticClient
 import io.infinitic.common.data.MillisInstant
@@ -54,6 +53,7 @@ import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.transport.interfaces.TransportConsumer
 import io.infinitic.common.transport.interfaces.TransportMessage
 import io.infinitic.common.transport.logged.LoggedInfiniticProducer
+import io.infinitic.common.transport.logged.LoggerWithCounter
 import io.infinitic.common.workflows.emptyWorkflowContext
 import io.infinitic.common.workflows.engine.messages.WorkflowStateCmdMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
@@ -135,6 +135,39 @@ class InfiniticWorker(
               "Some ongoing messages may not have been processed properly."
         }
       } finally {
+        if (config.services.any { it.tagEngine != null }) {
+          with(TaskTagEngine.logger) {
+            logger.info { "TaskTagEngine: remaining messages $remaining ($received received)" }
+          }
+        }
+        if (config.services.any { it.executor != null } || config.workflows.any { it.executor != null }) {
+          with(TaskExecutor.logger) {
+            logger.info { "TaskExecutor: remaining messages $remaining ($received received)" }
+          }
+          with(TaskRetryHandler.logger) {
+            logger.info { "TaskRetryHandler: remaining messages $remaining ($received received)" }
+          }
+          with(TaskEventHandler.logger) {
+            logger.info { "TaskEventHandler: remaining messages $remaining ($received received)" }
+          }
+        }
+        if (config.workflows.any { it.tagEngine != null }) {
+          with(WorkflowTagEngine.logger) {
+            logger.info { "WorkflowTagEngine counter: $remaining ($received received)" }
+          }
+        }
+        if (config.workflows.any { it.stateEngine != null }) {
+          with(WorkflowStateEngine.logger) {
+            logger.info { "WorkflowStateEngine: remaining messages $remaining ($received received)" }
+          }
+          with(WorkflowStateEventHandler.logger) {
+            logger.info { "WorkflowStateEventHandler: remaining messages $remaining ($received received)" }
+          }
+          with(WorkflowStateCmdHandler.logger) {
+            logger.info { "WorkflowStateCmdHandler: remaining messages $remaining ($received received)" }
+          }
+        }
+        // closing client
         client.close()
       }
       logger.info { "Worker closed." }
@@ -283,7 +316,7 @@ class InfiniticWorker(
             config.eventListener?.let {
               logEventListenerStart(it)
 
-              with(logger) {
+              with(LoggerWithCounter(logger)) {
                 consumerFactory.startCloudEventListener(resources, it, cloudEventSourcePrefix)
               }
             }
@@ -643,7 +676,7 @@ class InfiniticWorker(
   }
 
   // TASK-TAG
-  context(KLogger)
+  context(LoggerWithCounter)
   private fun CoroutineScope.startServiceTagEngine(
     consumer: TransportConsumer<out TransportMessage<ServiceTagMessage>>,
     producer: InfiniticProducer,
@@ -667,7 +700,7 @@ class InfiniticWorker(
         }
 
     startProcessingWithKey(
-        logger = this@KLogger,
+        logger = this@LoggerWithCounter,
         consumer = consumer,
         concurrency = concurrency,
         processor = processor,
@@ -675,7 +708,7 @@ class InfiniticWorker(
   }
 
   // TASK-EXECUTOR
-  context(KLogger)
+  context(LoggerWithCounter)
   private fun CoroutineScope.startServiceExecutor(
     consumer: TransportConsumer<out TransportMessage<ServiceExecutorMessage>>,
     producer: InfiniticProducer,
@@ -702,7 +735,7 @@ class InfiniticWorker(
 
     when (batchConfig) {
       null -> startProcessingWithoutKey(
-          logger = this@KLogger,
+          logger = this@LoggerWithCounter,
           consumer = consumer,
           concurrency = concurrency,
           processor = { message, publishedAt ->
@@ -713,7 +746,7 @@ class InfiniticWorker(
       )
 
       else -> startBatchProcessingWithoutKey(
-          logger = this@KLogger,
+          logger = this@LoggerWithCounter,
           consumer = consumer,
           concurrency = concurrency,
           batchConfig = batchConfig,
@@ -732,7 +765,7 @@ class InfiniticWorker(
   }
 
   // TASK-EXECUTOR-RETRY
-  context(KLogger)
+  context(LoggerWithCounter)
   private fun CoroutineScope.startServiceExecutorRetry(
     consumer: TransportConsumer<out TransportMessage<ServiceExecutorMessage>>,
     producer: InfiniticProducer,
@@ -743,14 +776,14 @@ class InfiniticWorker(
 
     when (batchConfig) {
       null -> startProcessingWithoutKey(
-          logger = this@KLogger,
+          logger = this@LoggerWithCounter,
           consumer = consumer,
           concurrency = concurrency,
           processor = taskRetryHandler::process,
       )
 
       else -> startBatchProcessingWithoutKey(
-          logger = this@KLogger,
+          logger = this@LoggerWithCounter,
           consumer = consumer,
           concurrency = concurrency,
           batchConfig = batchConfig,
@@ -768,7 +801,7 @@ class InfiniticWorker(
   }
 
   // TASK-EVENTS
-  context(KLogger)
+  context(LoggerWithCounter)
   private fun CoroutineScope.startServiceExecutorEvent(
     consumer: TransportConsumer<out TransportMessage<ServiceExecutorEventMessage>>,
     producer: InfiniticProducer,
@@ -786,7 +819,7 @@ class InfiniticWorker(
 
     when (batchConfig) {
       null -> startProcessingWithoutKey(
-          logger = this@KLogger,
+          logger = this@LoggerWithCounter,
           consumer = consumer,
           concurrency = config.concurrency,
           processor = { message, publishedAt ->
@@ -798,7 +831,7 @@ class InfiniticWorker(
       )
 
       else -> startBatchProcessingWithoutKey(
-          logger = this@KLogger,
+          logger = this@LoggerWithCounter,
           consumer = consumer,
           concurrency = config.concurrency,
           batchConfig = batchConfig,
@@ -815,7 +848,7 @@ class InfiniticWorker(
   }
 
   // WORKFLOW-TAG
-  context(KLogger)
+  context(LoggerWithCounter)
   private fun CoroutineScope.startWorkflowTagEngine(
     consumer: TransportConsumer<out TransportMessage<WorkflowTagEngineMessage>>,
     producer: InfiniticProducer,
@@ -835,7 +868,7 @@ class InfiniticWorker(
 
     when (batchConfig) {
       null -> startProcessingWithKey(
-          logger = this@KLogger,
+          logger = this@LoggerWithCounter,
           consumer = consumer,
           concurrency = concurrency,
           processor = { message, publishedAt ->
@@ -845,7 +878,7 @@ class InfiniticWorker(
       )
 
       else -> startBatchProcessingWithKey(
-          logger = this@KLogger,
+          logger = this@LoggerWithCounter,
           consumer = consumer,
           concurrency = concurrency,
           batchConfig = batchConfig,
@@ -862,7 +895,7 @@ class InfiniticWorker(
   }
 
   // WORKFLOW-STATE-CMD
-  context(KLogger)
+  context(LoggerWithCounter)
   private fun CoroutineScope.startWorkflowStateCmd(
     consumer: TransportConsumer<out TransportMessage<WorkflowStateCmdMessage>>,
     producer: InfiniticProducer,
@@ -881,7 +914,7 @@ class InfiniticWorker(
 
     when (batchConfig) {
       null -> startProcessingWithKey(
-          logger = this@KLogger,
+          logger = this@LoggerWithCounter,
           consumer = consumer,
           concurrency = concurrency,
           processor = { message, publishedAt ->
@@ -893,7 +926,7 @@ class InfiniticWorker(
       )
 
       else -> startBatchProcessingWithKey(
-          logger = this@KLogger,
+          logger = this@LoggerWithCounter,
           consumer = consumer,
           concurrency = concurrency,
           batchConfig = batchConfig,
@@ -910,7 +943,7 @@ class InfiniticWorker(
   }
 
   // WORKFLOW-STATE-ENGINE
-  context(KLogger)
+  context(LoggerWithCounter)
   private fun CoroutineScope.startWorkflowStateEngine(
     consumer: TransportConsumer<out TransportMessage<WorkflowStateEngineMessage>>,
     producer: InfiniticProducer,
@@ -930,7 +963,7 @@ class InfiniticWorker(
 
     when (batchConfig) {
       null -> startProcessingWithKey(
-          logger = this@KLogger,
+          logger = this@LoggerWithCounter,
           consumer = consumer,
           concurrency = concurrency,
           processor = { message, publishedAt ->
@@ -942,7 +975,7 @@ class InfiniticWorker(
       )
 
       else -> startBatchProcessingWithKey(
-          logger = this@KLogger,
+          logger = this@LoggerWithCounter,
           consumer = consumer,
           concurrency = concurrency,
           batchConfig = batchConfig,
@@ -959,7 +992,7 @@ class InfiniticWorker(
   }
 
   // WORKFLOW-STATE-TIMERS
-  context(KLogger)
+  context(LoggerWithCounter)
   private fun CoroutineScope.startWorkflowStateTimer(
     consumer: TransportConsumer<out TransportMessage<WorkflowStateEngineMessage>>,
     producer: InfiniticProducer,
@@ -970,14 +1003,14 @@ class InfiniticWorker(
 
     when (batchConfig) {
       null -> startProcessingWithoutKey(
-          logger = this@KLogger,
+          logger = this@LoggerWithCounter,
           consumer = consumer,
           concurrency = concurrency,
           processor = workflowStateTimerHandler::process,
       )
 
       else -> startBatchProcessingWithoutKey(
-          logger = this@KLogger,
+          logger = this@LoggerWithCounter,
           consumer = consumer,
           concurrency = concurrency,
           batchConfig = batchConfig,
@@ -993,7 +1026,7 @@ class InfiniticWorker(
   }
 
   // WORKFLOW-STATE-EVENTS
-  context(KLogger)
+  context(LoggerWithCounter)
   private fun CoroutineScope.startWorkflowStateEvent(
     consumer: TransportConsumer<out TransportMessage<WorkflowStateEventMessage>>,
     producer: InfiniticProducer,
@@ -1012,7 +1045,7 @@ class InfiniticWorker(
 
     when (batchConfig) {
       null -> startProcessingWithoutKey(
-          logger = this@KLogger,
+          logger = this@LoggerWithCounter,
           consumer = consumer,
           concurrency = concurrency,
           processor = { message, publishedAt ->
@@ -1024,7 +1057,7 @@ class InfiniticWorker(
       )
 
       else -> startBatchProcessingWithoutKey(
-          logger = this@KLogger,
+          logger = this@LoggerWithCounter,
           consumer = consumer,
           concurrency = concurrency,
           batchConfig = batchConfig,
@@ -1041,7 +1074,7 @@ class InfiniticWorker(
   }
 
   // WORKFLOW-EXECUTOR
-  context(KLogger)
+  context(LoggerWithCounter)
   private fun CoroutineScope.startWorkflowExecutor(
     consumer: TransportConsumer<out TransportMessage<ServiceExecutorMessage>>,
     producer: InfiniticProducer,
@@ -1069,7 +1102,7 @@ class InfiniticWorker(
 
     when (batchConfig) {
       null -> startProcessingWithoutKey(
-          logger = this@KLogger,
+          logger = this@LoggerWithCounter,
           consumer = consumer,
           concurrency = concurrency,
           processor = { message, publishedAt ->
@@ -1082,7 +1115,7 @@ class InfiniticWorker(
       )
 
       else -> startBatchProcessingWithoutKey(
-          logger = this@KLogger,
+          logger = this@LoggerWithCounter,
           consumer = consumer,
           concurrency = concurrency,
           batchConfig = batchConfig,
@@ -1100,7 +1133,7 @@ class InfiniticWorker(
   }
 
   // WORKFLOW-EXECUTOR-RETRY
-  context(KLogger)
+  context(LoggerWithCounter)
   private fun CoroutineScope.startWorkflowExecutorRetry(
     consumer: TransportConsumer<out TransportMessage<ServiceExecutorMessage>>,
     producer: InfiniticProducer,
@@ -1111,14 +1144,14 @@ class InfiniticWorker(
 
     when (batchConfig) {
       null -> startProcessingWithoutKey(
-          logger = this@KLogger,
+          logger = this@LoggerWithCounter,
           consumer = consumer,
           concurrency = concurrency,
           processor = taskRetryHandler::process,
       )
 
       else -> startBatchProcessingWithoutKey(
-          logger = this@KLogger,
+          logger = this@LoggerWithCounter,
           consumer = consumer,
           concurrency = concurrency,
           batchConfig = batchConfig,
@@ -1134,7 +1167,7 @@ class InfiniticWorker(
   }
 
   // WORKFLOW-EXECUTOR-EVENT
-  context(KLogger)
+  context(LoggerWithCounter)
   private fun CoroutineScope.startWorkflowExecutorEvent(
     consumer: TransportConsumer<out TransportMessage<ServiceExecutorEventMessage>>,
     producer: InfiniticProducer,
@@ -1153,7 +1186,7 @@ class InfiniticWorker(
 
     when (batchConfig) {
       null -> startProcessingWithoutKey(
-          logger = this@KLogger,
+          logger = this@LoggerWithCounter,
           consumer = consumer,
           concurrency = concurrency,
           processor = { message, publishedAt ->
@@ -1165,7 +1198,7 @@ class InfiniticWorker(
       )
 
       else -> startBatchProcessingWithoutKey(
-          logger = this@KLogger,
+          logger = this@LoggerWithCounter,
           consumer = consumer,
           concurrency = concurrency,
           batchConfig = batchConfig,

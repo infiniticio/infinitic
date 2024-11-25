@@ -27,6 +27,7 @@ import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.transport.ClientTopic
 import io.infinitic.common.transport.WorkflowStateEngineTopic
 import io.infinitic.common.transport.interfaces.InfiniticProducer
+import io.infinitic.common.transport.logged.LoggerWithCounter
 import io.infinitic.common.workflows.engine.messages.MethodCanceledEvent
 import io.infinitic.common.workflows.engine.messages.MethodCommandedEvent
 import io.infinitic.common.workflows.engine.messages.MethodCompletedEvent
@@ -142,6 +143,6 @@ class WorkflowStateEventHandler(private val producer: InfiniticProducer) {
   }
 
   companion object {
-    val logger = KotlinLogging.logger { }
+    val logger = LoggerWithCounter(KotlinLogging.logger {})
   }
 }

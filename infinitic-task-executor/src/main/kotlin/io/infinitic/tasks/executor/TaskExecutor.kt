@@ -46,6 +46,7 @@ import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.transport.ServiceExecutorEventTopic
 import io.infinitic.common.transport.ServiceExecutorRetryTopic
 import io.infinitic.common.transport.interfaces.InfiniticProducer
+import io.infinitic.common.transport.logged.LoggerWithCounter
 import io.infinitic.common.utils.BatchMethod
 import io.infinitic.common.utils.checkMode
 import io.infinitic.common.utils.getBatchMethod
@@ -802,7 +803,7 @@ class TaskExecutor(
   }
 
   companion object {
-    val logger = KotlinLogging.logger {}
+    val logger = LoggerWithCounter(KotlinLogging.logger {})
 
     val TASK_WITH_TIMEOUT_DEFAULT: WithTimeout? = null
     val TASK_WITH_RETRY_DEFAULT: WithRetry? = null

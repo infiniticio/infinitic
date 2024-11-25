@@ -22,8 +22,8 @@
  */
 package io.infinitic.common.transport.consumers
 
-import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.common.transport.interfaces.TransportMessage
+import io.infinitic.common.transport.logged.LoggerWithCounter
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -32,7 +32,7 @@ import kotlinx.coroutines.runBlocking
  * Creates a new channel
  * that negatively acknowledge the `TransportMessage` object if non-distributed
  */
-context(KLogger)
+context(LoggerWithCounter)
 fun <T : TransportMessage<M>, M> createChannel(): Channel<Result<T, T>> =
     Channel {
       runBlocking {
@@ -44,7 +44,7 @@ fun <T : TransportMessage<M>, M> createChannel(): Channel<Result<T, T>> =
  * Creates a new channel
  * that negatively acknowledge the `TransportMessage` objects if non-distributed
  */
-context(KLogger)
+context(LoggerWithCounter)
 fun <T : TransportMessage<M>, M> createBatchChannel(): Channel<Result<List<T>, List<T>>> =
     Channel {
       runBlocking {

@@ -38,6 +38,7 @@ import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.transport.interfaces.InfiniticResources
 import io.infinitic.common.transport.logged.LoggedInfiniticProducer
+import io.infinitic.common.transport.logged.LoggerWithCounter
 import io.infinitic.common.utils.annotatedName
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
@@ -277,7 +278,7 @@ class InfiniticClient(
 
   companion object {
 
-    internal val logger = KotlinLogging.logger {}
+    internal val logger = LoggerWithCounter(KotlinLogging.logger {})
 
     @JvmStatic
     fun builder() = InfiniticClientBuilder()

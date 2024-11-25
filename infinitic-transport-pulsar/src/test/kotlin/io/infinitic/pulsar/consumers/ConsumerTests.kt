@@ -39,6 +39,7 @@ import io.infinitic.common.transport.ServiceExecutorTopic
 import io.infinitic.common.transport.Topic
 import io.infinitic.common.transport.WorkflowStateEngineTopic
 import io.infinitic.common.transport.consumers.startProcessingWithoutKey
+import io.infinitic.common.transport.logged.LoggerWithCounter
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
@@ -64,7 +65,7 @@ import java.util.concurrent.atomic.AtomicInteger
 @EnabledIf(DockerOnly::class)
 class ConsumerTests : StringSpec(
     {
-      val logger = KotlinLogging.logger("test")
+      val logger = LoggerWithCounter(KotlinLogging.logger("io.infinitic.tests"))
       val pulsarConfig = pulsarConfigTest!!
       val resources = pulsarConfig.pulsarResources
 

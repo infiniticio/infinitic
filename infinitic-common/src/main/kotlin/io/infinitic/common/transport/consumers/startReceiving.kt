@@ -22,9 +22,9 @@
  */
 package io.infinitic.common.transport.consumers
 
-import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.common.transport.interfaces.TransportConsumer
 import io.infinitic.common.transport.interfaces.TransportMessage
+import io.infinitic.common.transport.logged.LoggerWithCounter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.cancel
@@ -43,7 +43,7 @@ import kotlin.coroutines.cancellation.CancellationException
  *                      If not provided, a new channel is created and used.
  * @return The channel to which received messages are sent.
  */
-context(KLogger)
+context(LoggerWithCounter)
 fun <T : TransportMessage<M>, M> CoroutineScope.startReceiving(
   consumer: TransportConsumer<out T>,
   outputChannel: Channel<Result<T, T>> = createChannel()
@@ -57,8 +57,12 @@ fun <T : TransportMessage<M>, M> CoroutineScope.startReceiving(
     while (isActive) {
       try {
         val msg = consumer.receive()
-        trace { "Received from ${consumer.name}: $msg " }
-        outputChannel.send(Result.success(msg, msg))
+        withContext(NonCancellable) {
+          trace { "Received from ${consumer.name}: $msg " }
+          // counter
+          incr()
+          outputChannel.send(Result.success(msg, msg))
+        }
       } catch (_: CancellationException) {
         // do nothing, will exit if calling scope is not active anymore
       } catch (e: Exception) {
@@ -86,7 +90,7 @@ fun <T : TransportMessage<M>, M> CoroutineScope.startReceiving(
  *                      If not provided, a new channel is created and used.
  * @return The output channel where the batches of transport messages are sent.
  */
-context(KLogger)
+context(LoggerWithCounter)
 fun <T : TransportMessage<M>, M> CoroutineScope.startBatchReceiving(
   consumer: TransportConsumer<out T>,
   outputChannel: Channel<Result<List<T>, List<T>>> = createBatchChannel()
@@ -100,8 +104,12 @@ fun <T : TransportMessage<M>, M> CoroutineScope.startBatchReceiving(
     while (isActive) {
       try {
         val batch = consumer.batchReceive()
-        trace { "Batch (${batch.size}) received from ${consumer.name}: $batch" }
-        outputChannel.send(Result.success(batch, batch))
+        withContext(NonCancellable) {
+          trace { "Batch (${batch.size}) received from ${consumer.name}: $batch" }
+          // counter
+          incr(batch.size)
+          outputChannel.send(Result.success(batch, batch))
+        }
       } catch (_: CancellationException) {
         // do nothing, will exit if calling scope is not active anymore
       } catch (e: Exception) {

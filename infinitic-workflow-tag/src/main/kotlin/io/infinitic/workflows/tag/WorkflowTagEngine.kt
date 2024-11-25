@@ -31,6 +31,7 @@ import io.infinitic.common.requester.workflowId
 import io.infinitic.common.transport.ClientTopic
 import io.infinitic.common.transport.WorkflowStateCmdTopic
 import io.infinitic.common.transport.interfaces.InfiniticProducer
+import io.infinitic.common.transport.logged.LoggerWithCounter
 import io.infinitic.common.transport.producers.BufferedInfiniticProducer
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
@@ -433,6 +434,6 @@ class WorkflowTagEngine(
   }
 
   companion object {
-    val logger = KotlinLogging.logger {}
+    val logger = LoggerWithCounter(KotlinLogging.logger {})
   }
 }

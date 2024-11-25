@@ -40,6 +40,7 @@ import io.infinitic.common.tasks.tags.storage.TaskTagStorage
 import io.infinitic.common.transport.ClientTopic
 import io.infinitic.common.transport.WorkflowStateEngineTopic
 import io.infinitic.common.transport.interfaces.InfiniticProducer
+import io.infinitic.common.transport.logged.LoggerWithCounter
 import io.infinitic.common.workflows.engine.messages.RemoteTaskCompleted
 import kotlinx.coroutines.coroutineScope
 
@@ -135,6 +136,6 @@ class TaskTagEngine(
   }
 
   companion object {
-    val logger = KotlinLogging.logger {}
+    val logger = LoggerWithCounter(KotlinLogging.logger {})
   }
 }
