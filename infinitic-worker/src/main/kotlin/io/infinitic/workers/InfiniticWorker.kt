@@ -135,36 +135,37 @@ class InfiniticWorker(
               "Some ongoing messages may not have been processed properly."
         }
       } finally {
+        logger.info { "In Flight Messages:" }
         if (config.services.any { it.tagEngine != null }) {
           with(TaskTagEngine.logger) {
-            logger.info { "TaskTagEngine: remaining messages $remaining ($received received)" }
+            logger.info { "* TaskTagEngine: $remaining ($received received)" }
           }
         }
         if (config.services.any { it.executor != null } || config.workflows.any { it.executor != null }) {
           with(TaskExecutor.logger) {
-            logger.info { "TaskExecutor: remaining messages $remaining ($received received)" }
+            logger.info { "* TaskExecutor: $remaining ($received received)" }
           }
           with(TaskRetryHandler.logger) {
-            logger.info { "TaskRetryHandler: remaining messages $remaining ($received received)" }
+            logger.info { "* TaskRetryHandler: $remaining ($received received)" }
           }
           with(TaskEventHandler.logger) {
-            logger.info { "TaskEventHandler: remaining messages $remaining ($received received)" }
+            logger.info { "* TaskEventHandler: $remaining ($received received)" }
           }
         }
         if (config.workflows.any { it.tagEngine != null }) {
           with(WorkflowTagEngine.logger) {
-            logger.info { "WorkflowTagEngine counter: $remaining ($received received)" }
+            logger.info { "* WorkflowTagEngine: $remaining ($received received)" }
           }
         }
         if (config.workflows.any { it.stateEngine != null }) {
           with(WorkflowStateEngine.logger) {
-            logger.info { "WorkflowStateEngine: remaining messages $remaining ($received received)" }
+            logger.info { "* WorkflowStateEngine: $remaining ($received received)" }
           }
           with(WorkflowStateEventHandler.logger) {
-            logger.info { "WorkflowStateEventHandler: remaining messages $remaining ($received received)" }
+            logger.info { "* WorkflowStateEventHandler: $remaining ($received received)" }
           }
           with(WorkflowStateCmdHandler.logger) {
-            logger.info { "WorkflowStateCmdHandler: remaining messages $remaining ($received received)" }
+            logger.info { "* WorkflowStateCmdHandler: $remaining ($received received)" }
           }
         }
         // closing client
@@ -491,8 +492,8 @@ class InfiniticWorker(
       val loggedProducer = LoggedInfiniticProducer(this, producer)
       val consumer = consumerFactory.newConsumer(
           subscription = MainSubscription(ServiceExecutorEventTopic),
-          entity = config.serviceName,
-          batchReceivingConfig = config.batch,
+          entity = serviceName,
+          batchReceivingConfig = batchConfig,
       )
       scope.startServiceExecutorEvent(consumer, loggedProducer, config)
     }
@@ -517,7 +518,7 @@ class InfiniticWorker(
       val consumer = consumerFactory.newConsumer(
           subscription = MainSubscription(WorkflowTagEngineTopic),
           entity = workflowName,
-          batchReceivingConfig = null,
+          batchReceivingConfig = batchConfig,
       )
       scope.startWorkflowTagEngine(
           consumer,
