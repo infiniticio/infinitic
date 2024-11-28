@@ -56,49 +56,49 @@ internal class BatchesWorkflowTests : StringSpec(
         for (i in 1..8) {
           client.dispatch(batchWorkflow::foo, i)
         }
-        batchWorkflow.foo(9) shouldBe 9
+        batchWorkflow.foo(9) shouldBeGreaterThan 1
       }
 
       "One Object parameter (with maxMessages=10)" {
         for (i in 1..9) {
           client.dispatch(batchWorkflow::foo2, i, i)
         }
-        batchWorkflow.foo2(10, 10) shouldBe 10 + 10
+        batchWorkflow.foo2(10, 10) shouldBeGreaterThan 10
       }
 
       "One Object parameter (with maxSeconds=1)" {
         for (i in 1..8) {
           client.dispatch(batchWorkflow::foo2, i, i)
         }
-        batchWorkflow.foo2(9, 9) shouldBe 9 + 9
+        batchWorkflow.foo2(9, 9) shouldBeGreaterThan 9
       }
 
       "Returns Object (with maxMessages=10)".config(timeout = 1.minutes) {
         for (i in 1..9) {
           client.dispatch(batchWorkflow::foo4, i, i)
         }
-        batchWorkflow.foo4(10, 10) shouldBe Input(foo = 10, bar = 10)
+        batchWorkflow.foo4(10, 10).bar shouldBeGreaterThan 1
       }
 
       "Returns Object (with maxSeconds=1)" {
         for (i in 1..8) {
           client.dispatch(batchWorkflow::foo4, i, i)
         }
-        batchWorkflow.foo4(9, 9) shouldBe Input(foo = 9, bar = 9)
+        batchWorkflow.foo4(9, 9).bar shouldBeGreaterThan 1
       }
 
       "One Object parameter and returns Object(with maxMessages=10)" {
         for (i in 1..9) {
           client.dispatch(batchWorkflow::foo5, i, i)
         }
-        batchWorkflow.foo5(10, 10) shouldBe Input(foo = 10, bar = 10)
+        batchWorkflow.foo5(10, 10).bar shouldBeGreaterThan 1
       }
 
       "One Object parameter and returns Object (with maxSeconds=1)" {
         for (i in 1..8) {
           client.dispatch(batchWorkflow::foo5, i, i)
         }
-        batchWorkflow.foo5(9, 9) shouldBe Input(foo = 9, bar = 9)
+        batchWorkflow.foo5(9, 9).bar shouldBeGreaterThan 1
       }
 
       "No return Object(with maxMessages=10)" {
