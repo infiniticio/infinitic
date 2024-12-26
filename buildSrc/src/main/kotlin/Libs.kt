@@ -26,7 +26,7 @@ object Libs {
   const val org = "io.infinitic"
 
   object Kotlin {
-    const val reflect = "org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion"
+    const val reflect = "org.jetbrains.kotlin:kotlin-reflect"
   }
 
   object Coroutines {
