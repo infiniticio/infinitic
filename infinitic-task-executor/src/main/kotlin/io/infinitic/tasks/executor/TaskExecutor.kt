@@ -79,17 +79,45 @@ import java.lang.reflect.Type
 import java.util.concurrent.TimeoutException
 import kotlin.reflect.jvm.javaMethod
 
+
+/**
+ * Handles the execution of workflow and service tasks. The `TaskExecutor` coordinates
+ * task execution by processing messages related to workflow or service tasks, adhering
+ * to specific timeout and retry policies defined for each task type.
+ *
+ * This executor leverages a registry, a producer, and a client to:
+ * - Retrieve configuration settings and task-specific executors
+ * - Send task-related messages such as "task started", "task failed", or "task completed"
+ * - Execute tasks directly or in batches, depending on task type
+ *
+ * The class supports detailed handling of timeouts, retries, and exceptions during task execution.
+ */
 class TaskExecutor(
   private val registry: ExecutorRegistryInterface,
   private val producer: InfiniticProducer,
   private val client: InfiniticClientInterface
 ) {
+
+  /**
+   * Processes a given message of type `ServiceExecutorMessage`.
+   * If the message is an instance of `ExecuteTask`, it delegates the processing to the `process` method of `ExecuteTask`.
+   */
   suspend fun process(msg: ServiceExecutorMessage) {
     when (msg) {
       is ExecuteTask -> msg.process()
     }
   }
 
+
+  /**
+   * Processes a batch of service execution messages. Depending on the type of task represented
+   * by each message (workflow task or service task), the messages are processed either in parallel
+   * or using a batch processing method. If a batch method is not available for service tasks,
+   * the tasks are processed individually.
+   *
+   * @param messages a list of `ServiceExecutorMessage` objects to be processed. Each message
+   * represents either a workflow task or a service task associated with a specific service and method.
+   */
   suspend fun batchProcess(messages: List<ServiceExecutorMessage>) {
     val executeTasks = messages.map {
       when (it) {
@@ -122,6 +150,11 @@ class TaskExecutor(
     }
   }
 
+
+  /**
+   * Retrieves the batch key associated with the given service executor message.
+   * If the message is an instance of `ExecuteTask`, it delegates the retrieval to the `getBatchKey` method of `ExecuteTask`.
+   */
   fun getBatchKey(msg: ServiceExecutorMessage): String? = when (msg) {
     is ExecuteTask -> msg.getBatchKey()
   }
@@ -164,6 +197,7 @@ class TaskExecutor(
 
   private suspend fun ExecuteTask.process() {
     logDebug { "Start processing $this" }
+
     // Signal that the task has started
     sendTaskStarted()
 
