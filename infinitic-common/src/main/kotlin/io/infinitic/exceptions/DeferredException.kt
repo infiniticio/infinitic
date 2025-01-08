@@ -37,17 +37,12 @@ import io.infinitic.common.tasks.executors.errors.TaskTimedOutError
 import io.infinitic.common.tasks.executors.errors.TaskUnknownError
 import io.infinitic.common.tasks.executors.errors.WorkflowTaskFailedError
 import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
 
 /**
  * DeferredException are use-facing exceptions.
  *
  * They can be thrown when an exception occurs while synchronously waiting for a deferred.
  */
-
-
-@Serializable
 sealed class DeferredException : kotlin.RuntimeException() {
   abstract val description: String
 
@@ -62,7 +57,6 @@ sealed class DeferredException : kotlin.RuntimeException() {
   }
 }
 
-@Serializable
 sealed class DeferredUnknownException : DeferredException() {
   companion object {
     fun from(error: DeferredUnknownError) =
@@ -73,7 +67,6 @@ sealed class DeferredUnknownException : DeferredException() {
   }
 }
 
-@Serializable
 sealed class DeferredTimedOutException : DeferredException() {
   companion object {
     fun from(error: DeferredTimedOutError) =
@@ -84,7 +77,6 @@ sealed class DeferredTimedOutException : DeferredException() {
   }
 }
 
-@Serializable
 sealed class DeferredCanceledException : DeferredException() {
   companion object {
     fun from(error: DeferredCanceledError) =
@@ -95,7 +87,6 @@ sealed class DeferredCanceledException : DeferredException() {
   }
 }
 
-@Serializable
 sealed class DeferredFailedException : DeferredException() {
   companion object {
     fun from(error: DeferredFailedError) =
@@ -108,17 +99,15 @@ sealed class DeferredFailedException : DeferredException() {
 }
 
 /** Exception occurring when waiting for an unknown task */
-@Serializable
 data class TaskUnknownException(
   /** Name of the canceled task */
   @SerialName("taskName") val serviceName: String,
 
   val methodName: String? = null,
 
-  /** Id of the canceled task */
+  /** ID of the canceled task */
   val taskId: String
 ) : DeferredUnknownException() {
-  @Transient
   override val description = "Unable to fetch the result of a remote task. " +
       "It appears this task has either already terminated or is not recognized " +
       "(serviceName: $serviceName, " +
@@ -136,12 +125,11 @@ data class TaskUnknownException(
 }
 
 /** Exception occurring when waiting for an unknown workflow */
-@Serializable
 data class WorkflowUnknownException(
   /** Name of the canceled child workflow */
   val workflowName: String,
 
-  /** Id of the canceled child workflow */
+  /** ID of the canceled child workflow */
   val workflowId: String,
 
   val workflowMethodName: String?,
@@ -149,7 +137,6 @@ data class WorkflowUnknownException(
   /** Id of the methodRun */
   val workflowMethodId: String?
 ) : DeferredUnknownException() {
-  @Transient
   override val description = "Unable to fetch the result of a remote workflow. " +
       "It appears this workflow has either already terminated or is not recognized " +
       "(workflowName: $workflowName, workflowId: $workflowId" +
@@ -169,18 +156,16 @@ data class WorkflowUnknownException(
 }
 
 /** Exception occurring when waiting for a timed-out task */
-@Serializable
 data class TaskTimedOutException(
   /** Name of the canceled task */
-  @SerialName("taskName") val serviceName: String,
+  val serviceName: String,
 
-  /** Id of the canceled task */
+  /** ID of the canceled task */
   val taskId: String,
 
   /** Method called */
   val methodName: String
 ) : DeferredTimedOutException() {
-  @Transient
   override val description = "Unable to fetch the result of a remote task. " +
       "The time allotted for this task has expired. " +
       "(Service Name: $serviceName, Method Name: $methodName, Task ID: $taskId)"
@@ -196,12 +181,11 @@ data class TaskTimedOutException(
 }
 
 /** Error occurring when waiting for a timed-out workflow */
-@Serializable
 data class WorkflowTimedOutException(
   /** Name of the canceled child workflow */
   val workflowName: String,
 
-  /** Id of the canceled child workflow */
+  /** ID of the canceled child workflow */
   val workflowId: String,
 
   val workflowMethodName: String,
@@ -209,7 +193,6 @@ data class WorkflowTimedOutException(
   /** Id of the methodRun */
   val workflowMethodId: String?
 ) : DeferredTimedOutException() {
-  @Transient
   override val description = "Unable to fetch the result of a remote workflow. " +
       "The time allotted for this workflow has expired. " +
       "(Workflow Name: $workflowName, Workflow ID: $workflowId, Method Name: $workflowMethodName" +
@@ -228,18 +211,16 @@ data class WorkflowTimedOutException(
 }
 
 /** Exception occurring when waiting for a canceled task */
-@Serializable
 data class TaskCanceledException(
   /** Name of the canceled task */
-  @SerialName("taskName") val serviceName: String,
+  val serviceName: String,
 
-  /** Id of the canceled task */
+  /** ID of the canceled task */
   val taskId: String,
 
   /** Method called */
   val methodName: String
 ) : DeferredCanceledException() {
-  @Transient
   override val description = "Unable to fetch the result of a remote task. " +
       "It appears this task has been canceled " +
       "(Service Name: $serviceName, Method Name: $methodName, Task ID: $taskId)"
@@ -255,20 +236,18 @@ data class TaskCanceledException(
 }
 
 /** Exception occurring when waiting for a canceled workflow */
-@Serializable
 data class WorkflowCanceledException(
   /** Name of the canceled child workflow */
   val workflowName: String,
 
-  /** Id of the canceled child workflow */
+  /** ID of the canceled child workflow */
   val workflowId: String,
 
   val workflowMethodName: String?,
 
-  /** Id of the methodRun */
+  /** ID of the method execution */
   val workflowMethodId: String?
 ) : DeferredCanceledException() {
-  @Transient
   override val description = "Unable to fetch the result of a remote workflow. " +
       "It appears this workflow has been canceled " +
       "(Workflow Name: $workflowName, Workflow ID: $workflowId" +
@@ -288,12 +267,11 @@ data class WorkflowCanceledException(
 }
 
 /** Exception occurring when waiting fora failed task */
-@Serializable
 data class TaskFailedException(
   /** Name of the task where the error occurred */
-  @SerialName("taskName") val serviceName: String,
+  val serviceName: String,
 
-  /** Id of the task where the error occurred */
+  /** ID of the task where the error occurred */
   val taskId: String,
 
   /** Method called where the error occurred */
@@ -302,7 +280,7 @@ data class TaskFailedException(
   /** cause of the error */
   val workerException: WorkerException
 ) : DeferredFailedException() {
-  @Transient
+
   override val description = "Unable to fetch the result of a remote task. " +
       "It appears this task has failed " +
       "(Service Name: $serviceName, Method Name: $methodName, Task ID: $taskId)"
@@ -318,12 +296,11 @@ data class TaskFailedException(
 }
 
 /** Exception occurring when waiting fora failed task */
-@Serializable
 data class WorkflowFailedException(
   /** Name of the workflow where the error occurred */
   val workflowName: String,
 
-  /** Id of the workflow where the error occurred */
+  /** ID of the workflow where the error occurred */
   val workflowId: String,
 
   /** Method called where the error occurred */
@@ -335,7 +312,6 @@ data class WorkflowFailedException(
   /** cause of the error */
   val deferredException: DeferredException
 ) : DeferredFailedException() {
-  @Transient
   override val description = "Unable to fetch the result of a remote workflow. " +
       "It appears this workflow has failed " +
       "(Workflow Name: $workflowName, Workflow ID: $workflowId, Method Name: $workflowMethodName" +
@@ -355,21 +331,19 @@ data class WorkflowFailedException(
 }
 
 /** Exception occurred during a workflow task */
-@Serializable
 data class WorkflowTaskFailedException(
   /** Name of the workflow for which the error occurred */
   val workflowName: String,
 
-  /** Id of the workflow for which the error occurred */
+  /** ID of the workflow for which the error occurred */
   val workflowId: String,
 
-  /** Id of the workflow task for which the error occurred */
+  /** ID of the workflow task for which the error occurred */
   val workflowTaskId: String,
 
   /** cause of the error */
   val workerException: WorkerException
 ) : DeferredFailedException() {
-  @Transient
   override val description =
       "Unable to continue the execution of this workflow. An exception has raised."
 

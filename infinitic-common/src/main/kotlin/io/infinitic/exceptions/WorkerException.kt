@@ -24,9 +24,7 @@ package io.infinitic.exceptions
 
 import io.infinitic.common.tasks.executors.errors.ExecutionError
 import io.infinitic.common.workers.data.WorkerName
-import kotlinx.serialization.Serializable
 
-@Serializable
 data class WorkerException(
   /** Name of the worker */
   val workerName: String,
@@ -42,7 +40,7 @@ data class WorkerException(
 
   /** cause of the error */
   override val cause: WorkerException?
-) : kotlin.RuntimeException() {
+) : RuntimeException() {
   companion object {
     fun from(error: ExecutionError): WorkerException =
         WorkerException(
