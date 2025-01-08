@@ -22,48 +22,52 @@
 # Licensor: infinitic.io
 
 services:
-  # Pulsar settings
   pulsar:
-    image: apachepulsar/pulsar:2.11.2
-    environment:
-      - BOOKIE_MEM=" -Xms512m -Xmx512m -XX:MaxDirectMemorySize=1g"
-    command: >
-      /bin/bash -c "bin/apply-config-from-env.py conf/standalone.conf && bin/pulsar standalone"
-    volumes:
-      - "pulsardata:/pulsar/data"
-      - "pulsarconf:/pulsar/conf"
-      - "../infinitic-pulsar/build/libs:/infinitic/libs:delegated"
-      - "../infinitic-pulsar/build/schemas:/infinitic/schemas:delegated"
+    image: apachepulsar/pulsar:3.0.7
+    command: sh -c "bin/apply-config-from-env.py conf/standalone.conf && bin/pulsar standalone"
+    hostname: pulsar
     ports:
-      - "6650:6650"
-      - "8080:8080"
-      - "8081:8081"
+      - '8080:8080'
+      - '6650:6650'
     restart: unless-stopped
+    volumes:
+      - './data/pulsar/data/:/pulsar/data'
+    healthcheck:
+      test: [ 'CMD', 'bin/pulsar-admin', 'brokers', 'healthcheck' ]
+      interval: 5s
+      timeout: 10s
+      retries: 10
+    environment:
+      - 'PULSAR_PREFIX_advertisedAddress=pulsar'
+      - 'PULSAR_PREFIX_advertisedListeners=internal:pulsar://pulsar:6650,external:pulsar://127.0.0.1:6650'
+      - 'PULSAR_STANDALONE_USE_ZOOKEEPER=1'
 
-  # Pulsar Manager
-  dashboard:
-    image: apachepulsar/pulsar-manager:v0.3.0
+  streamvisor:
+    image: ghcr.io/streamvisor/streamvisor:3.1.1
     ports:
-      - "9527:9527"
-      - "7750:7750"
+      - '8888:8888'
+      - '7750:7750'
+    volumes:
+      - './data/streamvisor/data/:/streamvisor/data'
     depends_on:
-      - pulsar
+      pulsar:
+        condition: service_healthy
     links:
       - pulsar
-    volumes:
-      - "pulsardata:/data"
     environment:
-      SPRING_CONFIGURATION_FILE: /pulsar-manager/pulsar-manager/application.properties
+      - 'STREAMVISOR_ENVIRONMENTS_0_NAME=standalone'
+      - 'STREAMVISOR_ENVIRONMENTS_0_SERVICEURL=http://pulsar:8080'
+      - 'STREAMVISOR_ENVIRONMENTS_0_BROKERURL=pulsar://pulsar:6650'
 
-  # Redis storage for state persistence
-  redis:
-    image: redis:6.0-alpine
-    ports:
-      - "6379:6379"
-    volumes:
-      - "redisdata:/data"
-
-volumes:
-  pulsardata:
-  pulsarconf:
-  redisdata:
+  data-faker:
+    image: ghcr.io/streamvisor/data-faker:1.2.1
+    profiles:
+      - demo
+    depends_on:
+      pulsar:
+        condition: service_healthy
+    links:
+      - pulsar
+    environment:
+      - 'PULSAR_ADMIN_URL=http://pulsar:8080'
+      - 'PULSAR_BROKER_SERVICEURL=pulsar://pulsar:6650'
