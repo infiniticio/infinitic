@@ -90,9 +90,6 @@ data class ExecuteTask(
   override val taskRetrySequence: TaskRetrySequence,
   override val taskRetryIndex: TaskRetryIndex,
   @AvroDefault(Avro.NULL) override var requester: Requester?,
-  @Deprecated("Not used since version 0.13.0") val workflowName: WorkflowName? = null,
-  @Deprecated("Not used since version 0.13.0") val workflowId: WorkflowId? = null,
-  @Deprecated("Not used since version 0.13.0") @AvroName("methodRunId") val workflowMethodId: WorkflowMethodId? = null,
   val taskTags: Set<TaskTag>,
   val taskMeta: TaskMeta,
   val clientWaiting: Boolean,
@@ -100,6 +97,9 @@ data class ExecuteTask(
   val methodParameterTypes: MethodParameterTypes?,
   @SerialName("methodParameters") val methodArgs: MethodArgs,
   val lastError: ExecutionError?,
+  @Deprecated("Not used since version 0.13.0") val workflowName: WorkflowName? = null,
+  @Deprecated("Not used since version 0.13.0") val workflowId: WorkflowId? = null,
+  @Deprecated("Not used since version 0.13.0") @AvroName("methodRunId") val workflowMethodId: WorkflowMethodId? = null,
   @Deprecated("Not used since version 0.13.0") @AvroDefault(Avro.NULL) val workflowVersion: WorkflowVersion? = null
 ) : ServiceExecutorMessage() {
 
