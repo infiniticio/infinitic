@@ -29,7 +29,7 @@ import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.data.TaskRetrySequence
-import io.infinitic.common.tasks.executors.errors.ExecutionError
+import io.infinitic.common.tasks.executors.errors.TaskFailure
 import io.infinitic.common.workers.config.WorkflowVersion
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
@@ -47,7 +47,7 @@ data class TaskContextImpl(
   override val workflowVersion: WorkflowVersion?,
   override val retrySequence: TaskRetrySequence,
   override val retryIndex: TaskRetryIndex,
-  override val lastError: ExecutionError?,
+  override val lastError: TaskFailure?,
   override val tags: Set<String>,
   override val meta: MutableMap<String, ByteArray>,
   override val withTimeout: WithTimeout?,

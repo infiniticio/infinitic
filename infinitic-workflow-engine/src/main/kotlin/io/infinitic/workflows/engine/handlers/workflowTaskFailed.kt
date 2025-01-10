@@ -25,11 +25,9 @@ package io.infinitic.workflows.engine.handlers
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.executors.errors.DeferredError
-import io.infinitic.common.tasks.executors.errors.ExecutionError
 import io.infinitic.common.tasks.executors.errors.WorkflowTaskFailedError
 import io.infinitic.common.transport.WorkflowStateEventTopic
 import io.infinitic.common.transport.interfaces.InfiniticProducer
-import io.infinitic.common.workers.data.WorkerName
 import io.infinitic.common.workflows.data.workflowMethods.awaitingRequesters
 import io.infinitic.common.workflows.engine.messages.MethodFailedEvent
 import io.infinitic.common.workflows.engine.messages.RemoteTaskFailed
@@ -52,15 +50,7 @@ internal fun CoroutineScope.workflowTaskFailed(
         workflowName = message.workflowName,
         workflowId = message.workflowId,
         workflowTaskId = message.taskId(),
-        cause = with(message.taskFailedError.cause) {
-          ExecutionError(
-              workerName = WorkerName.from(message.emitterName),
-              name = name,
-              message = this.message,
-              stackTraceToString = stackTraceToString,
-              cause = cause,
-          )
-        },
+        lastFailure = message.taskFailedError.failure ?: thisShouldNotHappen(),
     )
     // a deferred Exception has thrown in the workflow task
     else -> deferredError

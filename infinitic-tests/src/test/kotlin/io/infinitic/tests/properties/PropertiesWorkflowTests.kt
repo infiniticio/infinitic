@@ -67,7 +67,8 @@ internal class PropertiesWorkflowTests :
             propertiesWorkflow.prop6() shouldBe "abab"
           }
           e.deferredException shouldBe instanceOf<WorkflowTaskFailedException>()
-          val workerException = (e.deferredException as WorkflowTaskFailedException).workerException
+          val workerException =
+              (e.deferredException as WorkflowTaskFailedException).lastFailure.exceptionDetail!!
           workerException.message shouldContain Deferred::class.java.name
         }
 
@@ -79,7 +80,8 @@ internal class PropertiesWorkflowTests :
             propertiesWorkflow.prop6bis() shouldBe "abab"
           }
           e.deferredException shouldBe instanceOf<WorkflowTaskFailedException>()
-          val workerException = (e.deferredException as WorkflowTaskFailedException).workerException
+          val workerException =
+              (e.deferredException as WorkflowTaskFailedException).lastFailure.exceptionDetail!!
           workerException.message shouldContain Deferred::class.java.name
         }
 
@@ -91,7 +93,8 @@ internal class PropertiesWorkflowTests :
             propertiesWorkflow.prop7() shouldBe "abab"
           }
           e.deferredException shouldBe instanceOf<WorkflowTaskFailedException>()
-          val workerException = (e.deferredException as WorkflowTaskFailedException).workerException
+          val workerException =
+              (e.deferredException as WorkflowTaskFailedException).lastFailure.exceptionDetail!!
           workerException.message shouldContain Deferred::class.java.name
         }
 
@@ -103,7 +106,8 @@ internal class PropertiesWorkflowTests :
             propertiesWorkflow.prop7bis() shouldBe "abab"
           }
           e.deferredException shouldBe instanceOf<WorkflowTaskFailedException>()
-          val workerException = (e.deferredException as WorkflowTaskFailedException).workerException
+          val workerException =
+              (e.deferredException as WorkflowTaskFailedException).lastFailure.exceptionDetail!!
           workerException.message shouldContain Deferred::class.java.name
         }
 

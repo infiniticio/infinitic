@@ -283,7 +283,7 @@ data class TaskFailedError(
   val taskId: TaskId,
 
   /** cause of the error */
-  val cause: ExecutionError
+  @SerialName("cause") val failure: TaskFailure? = null
 ) : DeferredFailedError() {
   companion object {
     fun from(e: TaskFailedException) =
@@ -291,7 +291,7 @@ data class TaskFailedError(
             serviceName = ServiceName(e.serviceName),
             methodName = MethodName(e.methodName),
             taskId = TaskId(e.taskId),
-            cause = ExecutionError.from(e.workerException),
+            failure = e.failure,
         )
   }
 }
@@ -343,7 +343,7 @@ data class WorkflowTaskFailedError(
   val workflowTaskId: TaskId,
 
   /** cause of the error */
-  val cause: ExecutionError
+  @SerialName("cause") val lastFailure: TaskFailure
 ) : DeferredFailedError() {
   companion object {
     fun from(e: WorkflowTaskFailedException): WorkflowTaskFailedError =
@@ -351,7 +351,7 @@ data class WorkflowTaskFailedError(
             workflowName = WorkflowName(e.workflowName),
             workflowId = WorkflowId(e.workflowId),
             workflowTaskId = TaskId(e.workflowTaskId),
-            cause = ExecutionError.from(e.workerException),
+            lastFailure = e.lastFailure,
         )
   }
 }

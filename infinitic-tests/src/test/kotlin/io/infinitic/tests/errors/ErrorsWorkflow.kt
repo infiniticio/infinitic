@@ -187,7 +187,7 @@ class ErrorsWorkflowImpl : Workflow(), ErrorsWorkflow {
       } catch (e: WorkflowFailedException) {
         val deferredException = e.deferredException as TaskFailedException
         utilService.await(100)
-        deferredException.workerException.name
+        deferredException.failure!!.exceptionDetail!!.name
       }
 
   override fun failing8() = utilService.successAtRetry()

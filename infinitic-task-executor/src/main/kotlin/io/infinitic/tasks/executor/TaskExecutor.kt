@@ -602,7 +602,7 @@ class TaskExecutor(
       workflowVersion = requester.workflowVersion,
       retrySequence = taskRetrySequence,
       retryIndex = taskRetryIndex,
-      lastError = lastError,
+      lastError = lastFailure,
       tags = taskTags.map { it.tag }.toSet(),
       meta = taskMeta.map.toMutableMap(),
       withRetry = withRetry,

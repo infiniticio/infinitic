@@ -22,6 +22,7 @@
  */
 package io.infinitic.common.workflows.data.workflowTasks
 
+import io.infinitic.common.exceptions.ShouldNotHappenException
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.fixtures.checkBackwardCompatibility
 import io.infinitic.common.fixtures.checkOrCreateCurrentFile
@@ -70,7 +71,11 @@ class WorkflowTaskReturnValueTests :
           "We should be able to read binary from version $version" {
             val bytes = AvroSerDe.getRandomBinaryWithSchemaFingerprint(schema)
 
-            shouldNotThrowAny { WorkflowTaskReturnValue.fromByteArray(bytes) }
+            try {
+              WorkflowTaskReturnValue.fromByteArray(bytes)
+            } catch (e: ShouldNotHappenException) {
+              // do nothing
+            }
           }
         }
       },

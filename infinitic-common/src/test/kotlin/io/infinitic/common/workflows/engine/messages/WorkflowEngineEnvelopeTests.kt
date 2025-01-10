@@ -22,6 +22,7 @@
  */
 package io.infinitic.common.workflows.engine.messages
 
+import io.infinitic.common.exceptions.ShouldNotHappenException
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.fixtures.checkBackwardCompatibility
 import io.infinitic.common.fixtures.checkOrCreateCurrentFile
@@ -78,6 +79,8 @@ class WorkflowEngineEnvelopeTests :
                 val bytes = AvroSerDe.getRandomBinary(schema)
                 val e = shouldThrowAny { WorkflowEngineEnvelope.fromByteArray(bytes, schema) }
                 e::class shouldBeOneOf listOf(
+                    // ShouldNotHappenException can be thrown when deserializing ExceptionDetails
+                    ShouldNotHappenException::class,
                     // IllegalArgumentException is thrown because we have more than 1 message in the envelope
                     IllegalArgumentException::class,
                     // NullPointerException is thrown because message() can be null

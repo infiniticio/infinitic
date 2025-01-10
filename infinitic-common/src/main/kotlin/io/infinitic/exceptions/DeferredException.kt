@@ -33,6 +33,7 @@ import io.infinitic.common.tasks.executors.errors.MethodTimedOutError
 import io.infinitic.common.tasks.executors.errors.MethodUnknownError
 import io.infinitic.common.tasks.executors.errors.TaskCanceledError
 import io.infinitic.common.tasks.executors.errors.TaskFailedError
+import io.infinitic.common.tasks.executors.errors.TaskFailure
 import io.infinitic.common.tasks.executors.errors.TaskTimedOutError
 import io.infinitic.common.tasks.executors.errors.TaskUnknownError
 import io.infinitic.common.tasks.executors.errors.WorkflowTaskFailedError
@@ -277,8 +278,8 @@ data class TaskFailedException(
   /** Method called where the error occurred */
   val methodName: String,
 
-  /** cause of the error */
-  val workerException: WorkerException
+  /** Description of the last failure **/
+  val failure: TaskFailure?
 ) : DeferredFailedException() {
 
   override val description = "Unable to fetch the result of a remote task. " +
@@ -290,7 +291,7 @@ data class TaskFailedException(
         serviceName = error.serviceName.toString(),
         taskId = error.taskId.toString(),
         methodName = error.methodName.toString(),
-        workerException = WorkerException.from(error.cause),
+        failure = error.failure,
     )
   }
 }
@@ -341,8 +342,8 @@ data class WorkflowTaskFailedException(
   /** ID of the workflow task for which the error occurred */
   val workflowTaskId: String,
 
-  /** cause of the error */
-  val workerException: WorkerException
+  /** Description of the last failure **/
+  val lastFailure: TaskFailure
 ) : DeferredFailedException() {
   override val description =
       "Unable to continue the execution of this workflow. An exception has raised."
@@ -353,7 +354,7 @@ data class WorkflowTaskFailedException(
             workflowName = error.workflowName.toString(),
             workflowId = error.workflowId.toString(),
             workflowTaskId = error.workflowTaskId.toString(),
-            workerException = WorkerException.from(error.cause),
+            lastFailure = error.lastFailure,
         )
   }
 }

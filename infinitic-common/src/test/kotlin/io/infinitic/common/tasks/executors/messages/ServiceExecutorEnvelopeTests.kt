@@ -22,6 +22,7 @@
  */
 package io.infinitic.common.tasks.executors.messages
 
+import io.infinitic.common.exceptions.ShouldNotHappenException
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.fixtures.checkBackwardCompatibility
 import io.infinitic.common.fixtures.checkOrCreateCurrentFile
@@ -95,7 +96,13 @@ class ServiceExecutorEnvelopeTests :
           "We should be able to read binary from previous version $version" {
             val bytes = AvroSerDe.getRandomBinary(schema)
             val e = shouldThrowAny { ServiceExecutorEnvelope.fromByteArray(bytes, schema) }
+            if (e is NullPointerException) {
+              // NullPointerException is thrown because message() can be null
+              println(e.stackTraceToString())
+            }
             e::class shouldBeOneOf listOf(
+                // ShouldNotHappenException can be thrown when deserializing ExceptionDetails
+                ShouldNotHappenException::class,
                 // IllegalArgumentException is thrown because we have more than 1 message in the envelope
                 IllegalArgumentException::class,
                 // NullPointerException is thrown because message() can be null

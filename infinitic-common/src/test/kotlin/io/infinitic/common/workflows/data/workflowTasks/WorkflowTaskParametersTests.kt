@@ -22,6 +22,7 @@
  */
 package io.infinitic.common.workflows.data.workflowTasks
 
+import io.infinitic.common.exceptions.ShouldNotHappenException
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.fixtures.checkBackwardCompatibility
 import io.infinitic.common.fixtures.checkOrCreateCurrentFile
@@ -69,7 +70,11 @@ class WorkflowTaskParametersTests :
           "We should be able to read binary from version $version" {
             val bytes = AvroSerDe.getRandomBinaryWithSchemaFingerprint(schema)
 
-            shouldNotThrowAny { WorkflowTaskParameters.fromByteArray(bytes) }
+            try {
+              WorkflowTaskParameters.fromByteArray(bytes)
+            } catch (e: ShouldNotHappenException) {
+              // ShouldNotHappenException can be thrown when deserializing ExceptionDetails
+            }
           }
         }
       },

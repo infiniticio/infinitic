@@ -76,7 +76,7 @@ internal class ErrorsWorkflowTests :
 
           val taskException = error.deferredException as TaskFailedException
           taskException.serviceName shouldBe UtilService::class.java.name
-          taskException.workerException.name shouldBe Exception::class.java.name
+          taskException.failure!!.exceptionDetail!!.name shouldBe Exception::class.java.name
         }
 
         // This test checks that a throwable triggering a message sent to DLQ is correctly handle by the engine

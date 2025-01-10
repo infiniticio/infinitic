@@ -37,7 +37,7 @@ import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskTag
 import io.infinitic.common.tasks.executors.errors.DeferredError
-import io.infinitic.common.tasks.executors.errors.ExecutionError
+import io.infinitic.common.tasks.executors.errors.TaskFailure
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
@@ -84,7 +84,7 @@ data class TaskCompleted(
 data class TaskFailed(
   override val recipientName: ClientName,
   override val taskId: TaskId,
-  val cause: ExecutionError,
+  val cause: TaskFailure,
   override val emitterName: EmitterName
 ) : ClientMessage(), TaskMessage
 

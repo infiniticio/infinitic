@@ -48,8 +48,8 @@ import io.infinitic.common.tasks.data.TaskRetrySequence
 import io.infinitic.common.tasks.data.TaskReturnValue
 import io.infinitic.common.tasks.data.TaskTag
 import io.infinitic.common.tasks.executors.errors.DeferredError
-import io.infinitic.common.tasks.executors.errors.ExecutionError
 import io.infinitic.common.tasks.executors.errors.TaskFailedError
+import io.infinitic.common.tasks.executors.errors.TaskFailure
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.tags.messages.RemoveTaskIdFromTag
 import io.infinitic.common.workers.data.WorkerName
@@ -58,6 +58,7 @@ import io.infinitic.common.workflows.engine.messages.RemoteTaskCompleted
 import io.infinitic.common.workflows.engine.messages.RemoteTaskFailed
 import io.infinitic.currentVersion
 import io.infinitic.exceptions.DeferredException
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -129,7 +130,7 @@ data class TaskFailedEvent(
   override val clientWaiting: Boolean?,
   override val taskTags: Set<TaskTag>,
   override val taskMeta: TaskMeta,
-  val executionError: ExecutionError,
+  val executionError: TaskFailure,
   val deferredError: DeferredError?,
 ) : ServiceExecutorEventMessage() {
 
@@ -156,7 +157,7 @@ data class TaskFailedEvent(
             serviceName = serviceName,
             methodName = methodName,
             taskId = taskId,
-            cause = executionError,
+            failure = executionError,
         ),
         deferredError = deferredError,
         emitterName = emitterName,
@@ -183,7 +184,7 @@ data class TaskFailedEvent(
         clientWaiting = msg.clientWaiting,
         taskTags = msg.taskTags,
         taskMeta = TaskMeta(meta),
-        executionError = cause.getExecutionError(emitterName),
+        executionError = cause.getExecutionError(emitterName, msg.lastFailure),
         deferredError = cause.deferredError,
     )
   }
@@ -204,7 +205,7 @@ data class TaskRetriedEvent(
   override val taskTags: Set<TaskTag>,
   override val taskMeta: TaskMeta,
   val taskRetryDelay: MillisDuration,
-  val lastError: ExecutionError,
+  @SerialName("lastError") val failure: TaskFailure,
 ) : ServiceExecutorEventMessage() {
 
   companion object {
@@ -226,7 +227,7 @@ data class TaskRetriedEvent(
         taskTags = msg.taskTags,
         taskMeta = TaskMeta(meta),
         taskRetryDelay = delay,
-        lastError = cause.getExecutionError(emitterName),
+        failure = cause.getExecutionError(emitterName, msg.lastFailure),
     )
   }
 }
@@ -335,5 +336,5 @@ private val Throwable.deferredError
     false -> null
   }
 
-private fun Throwable.getExecutionError(emitterName: EmitterName) =
-    ExecutionError.from(WorkerName.from(emitterName), this)
+private fun Throwable.getExecutionError(emitterName: EmitterName, lastFailure: TaskFailure?) =
+    TaskFailure.from(WorkerName.from(emitterName), this, lastFailure)

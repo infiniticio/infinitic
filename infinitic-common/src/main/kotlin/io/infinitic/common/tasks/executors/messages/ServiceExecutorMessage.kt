@@ -45,7 +45,7 @@ import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.data.TaskRetrySequence
 import io.infinitic.common.tasks.data.TaskTag
-import io.infinitic.common.tasks.executors.errors.ExecutionError
+import io.infinitic.common.tasks.executors.errors.TaskFailure
 import io.infinitic.common.workers.config.WorkflowVersion
 import io.infinitic.common.workers.data.WorkerName
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
@@ -96,11 +96,11 @@ data class ExecuteTask(
   val methodName: MethodName,
   val methodParameterTypes: MethodParameterTypes?,
   @SerialName("methodParameters") val methodArgs: MethodArgs,
-  val lastError: ExecutionError?,
-  @Deprecated("Not used since version 0.13.0") val workflowName: WorkflowName? = null,
-  @Deprecated("Not used since version 0.13.0") val workflowId: WorkflowId? = null,
-  @Deprecated("Not used since version 0.13.0") @AvroName("methodRunId") val workflowMethodId: WorkflowMethodId? = null,
-  @Deprecated("Not used since version 0.13.0") @AvroDefault(Avro.NULL) val workflowVersion: WorkflowVersion? = null
+  @SerialName("lastError") val lastFailure: TaskFailure?,
+  @Deprecated("Not used after 0.13.0") val workflowName: WorkflowName? = null,
+  @Deprecated("Not used after 0.13.0") val workflowId: WorkflowId? = null,
+  @Deprecated("Not used after 0.13.0") @AvroName("methodRunId") val workflowMethodId: WorkflowMethodId? = null,
+  @Deprecated("Not used after 0.13.0") @AvroDefault(Avro.NULL) val workflowVersion: WorkflowVersion? = null
 ) : ServiceExecutorMessage() {
 
   init {
@@ -137,10 +137,7 @@ data class ExecuteTask(
         methodName = msg.methodName,
         methodParameterTypes = msg.methodParameterTypes,
         methodArgs = msg.methodArgs,
-        lastError = cause.getExecutionError(emitterName),
+        lastFailure = TaskFailure.from(WorkerName.from(emitterName), cause, msg.lastFailure),
     )
   }
 }
-
-private fun Throwable.getExecutionError(emitterName: EmitterName) =
-    ExecutionError.from(WorkerName.from(emitterName), this)

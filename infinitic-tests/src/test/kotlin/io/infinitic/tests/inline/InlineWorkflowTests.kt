@@ -48,14 +48,14 @@ internal class InlineWorkflowTests :
           val error = shouldThrow<WorkflowFailedException> { inlineWorkflow.inline2(21) }
 
           val deferredException = error.deferredException as WorkflowTaskFailedException
-          deferredException.workerException.name shouldBe InvalidInlineException::class.java.name
+          deferredException.lastFailure.exceptionDetail!!.name shouldBe InvalidInlineException::class.java.name
         }
 
         "Inline task with synchronous task inside" {
           val error = shouldThrow<WorkflowFailedException> { inlineWorkflow.inline3(14) }
 
           val deferredException = error.deferredException as WorkflowTaskFailedException
-          deferredException.workerException.name shouldBe InvalidInlineException::class.java.name
+          deferredException.lastFailure.exceptionDetail!!.name shouldBe InvalidInlineException::class.java.name
         }
       },
   )

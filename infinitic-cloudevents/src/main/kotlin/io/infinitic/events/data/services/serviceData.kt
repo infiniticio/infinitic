@@ -79,7 +79,7 @@ fun ServiceExecutorEventMessage.toJson(): JsonObject = when (this) {
 
   is TaskRetriedEvent -> JsonObject(
       mapOf(
-          ERROR to lastError.toJson(),
+          ERROR to failure.toJson(),
           TASK_RETRY_DELAY to taskRetryDelay.toJson(),
           TASK_RETRY_SEQUENCE to taskRetrySequence.toJson(),
           TASK_RETRY_INDEX to taskRetryIndex.toJson(),

@@ -57,14 +57,14 @@ import kotlinx.serialization.json.JsonObject
 fun DeferredError.toJson(): Pair<String, JsonObject> = when (this) {
   is WorkflowTaskFailedError -> EXECUTOR_FAILED to JsonObject(
       mapOf(
-          ERROR to cause.toJson(),
+          ERROR to lastFailure.toJson(),
           TASK_ID to workflowTaskId.toJson(),
       ),
   )
 
   is TaskFailedError -> TASK_FAILED to JsonObject(
       mapOf(
-          ERROR to cause.toJson(),
+          ERROR to failure.toJson(),
           TASK_ID to taskId.toJson(),
           TASK_NAME to methodName.toJson(),
           SERVICE_NAME to serviceName.toJson(),
