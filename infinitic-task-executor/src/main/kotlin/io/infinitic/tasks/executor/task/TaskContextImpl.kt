@@ -29,11 +29,11 @@ import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.data.TaskRetrySequence
-import io.infinitic.common.tasks.executors.errors.TaskFailure
 import io.infinitic.common.workers.config.WorkflowVersion
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.tasks.TaskContext
+import io.infinitic.tasks.TaskFailure
 import io.infinitic.tasks.WithRetry
 import io.infinitic.tasks.WithTimeout
 

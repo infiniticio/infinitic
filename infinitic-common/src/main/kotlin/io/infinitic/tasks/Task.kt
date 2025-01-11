@@ -23,7 +23,6 @@
 package io.infinitic.tasks
 
 import io.infinitic.clients.InfiniticClientInterface
-import io.infinitic.common.tasks.executors.errors.TaskFailure
 import org.jetbrains.annotations.TestOnly
 
 object Task {

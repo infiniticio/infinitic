@@ -37,11 +37,11 @@ import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskTag
 import io.infinitic.common.tasks.executors.errors.DeferredError
-import io.infinitic.common.tasks.executors.errors.TaskFailure
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
+import io.infinitic.tasks.TaskFailure
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 

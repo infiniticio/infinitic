@@ -20,7 +20,7 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.tasks.executors.errors
+package io.infinitic.tasks
 
 import com.github.avrokotlin.avro4k.Avro
 import com.github.avrokotlin.avro4k.AvroDefault
@@ -30,9 +30,9 @@ import io.infinitic.cloudEvents.ERROR
 import io.infinitic.cloudEvents.PREVIOUS
 import io.infinitic.cloudEvents.WORKER_NAME
 import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.common.tasks.executors.errors.ExceptionDetail
 import io.infinitic.common.utils.JsonAble
 import io.infinitic.common.utils.toJson
-import io.infinitic.common.workers.data.WorkerName
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
@@ -43,51 +43,45 @@ import kotlinx.serialization.json.JsonPrimitive
 @AvroNamespace("io.infinitic.tasks.executor")
 @AvroName("WorkerError")
 data class TaskFailure(
-    /** Name of the worker */
-    val workerName: WorkerName,
+  /** Name of the worker */
+  val workerName: String,
 
-    /** details of the exception */
-    @AvroDefault(Avro.NULL) var exceptionDetail: ExceptionDetail?,
+  /** Sequence of the retry */
+    //@AvroDefault("0") val retrySequence: Int,
 
-    /** cause of the error */
-    @SerialName("cause") val previousFailure: TaskFailure?,
+  /** Index of the retry */
+    //@AvroDefault("0") val retryIndex: Int,
 
-    /** Name of the error */
-    @Deprecated("Unused after v0.17.0") private val name: String? = null,
-    /** Message of the error */
-    @Deprecated("Unused after v0.17.0") private val message: String? = null,
-    /** String version of the stack trace */
-    @Deprecated("Unused after v0.17.0") private val stackTraceToString: String? = null,
+  /** details of the exception */
+  @AvroDefault(Avro.NULL) var exceptionDetail: ExceptionDetail?,
+
+  /** cause of the error */
+  @SerialName("cause") val previousFailure: TaskFailure?,
+
+  /** Name of the error */
+  @Deprecated("Unused after v0.17.0") private val name: String? = null,
+  /** Message of the error */
+  @Deprecated("Unused after v0.17.0") private val message: String? = null,
+  /** String version of the stack trace */
+  @Deprecated("Unused after v0.17.0") private val stackTraceToString: String? = null,
 ) : JsonAble {
 
-    init {
-        // Used to convert old data to new format (v0.17.0)
-        exceptionDetail = exceptionDetail ?: ExceptionDetail(
-            name = name ?: thisShouldNotHappen(),
-            message = message,
-            stackTrace = stackTraceToString ?: thisShouldNotHappen(),
-            serializedData = emptyMap(),
-            cause = null,
-        )
-    }
-
-    override fun toJson(): JsonObject = JsonObject(
-        mapOf(
-            WORKER_NAME to JsonPrimitive(workerName.toString()),
-            ERROR to exceptionDetail.toJson(),
-            PREVIOUS to previousFailure.toJson(),
-        ),
+  init {
+    // Used to convert old data to new format (v0.17.0)
+    exceptionDetail = exceptionDetail ?: ExceptionDetail(
+        name = name ?: thisShouldNotHappen(),
+        message = message,
+        stackTrace = stackTraceToString ?: thisShouldNotHappen(),
+        serializedData = emptyMap(),
+        cause = null,
     )
+  }
 
-    companion object {
-        fun from(
-            workerName: WorkerName,
-            throwable: Throwable,
-            previousFailure: TaskFailure?
-        ): TaskFailure = TaskFailure(
-            workerName = workerName,
-            exceptionDetail = ExceptionDetail.from(throwable),
-            previousFailure = previousFailure,
-        )
-    }
+  override fun toJson(): JsonObject = JsonObject(
+      mapOf(
+          WORKER_NAME to JsonPrimitive(workerName.toString()),
+          ERROR to exceptionDetail.toJson(),
+          PREVIOUS to previousFailure.toJson(),
+      ),
+  )
 }

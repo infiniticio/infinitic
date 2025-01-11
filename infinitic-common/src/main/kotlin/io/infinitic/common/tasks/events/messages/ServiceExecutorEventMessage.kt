@@ -48,16 +48,16 @@ import io.infinitic.common.tasks.data.TaskRetrySequence
 import io.infinitic.common.tasks.data.TaskReturnValue
 import io.infinitic.common.tasks.data.TaskTag
 import io.infinitic.common.tasks.executors.errors.DeferredError
+import io.infinitic.common.tasks.executors.errors.ExceptionDetail
 import io.infinitic.common.tasks.executors.errors.TaskFailedError
-import io.infinitic.common.tasks.executors.errors.TaskFailure
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.tags.messages.RemoveTaskIdFromTag
-import io.infinitic.common.workers.data.WorkerName
 import io.infinitic.common.workflows.data.workflowTasks.isWorkflowTask
 import io.infinitic.common.workflows.engine.messages.RemoteTaskCompleted
 import io.infinitic.common.workflows.engine.messages.RemoteTaskFailed
 import io.infinitic.currentVersion
 import io.infinitic.exceptions.DeferredException
+import io.infinitic.tasks.TaskFailure
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -130,7 +130,7 @@ data class TaskFailedEvent(
   override val clientWaiting: Boolean?,
   override val taskTags: Set<TaskTag>,
   override val taskMeta: TaskMeta,
-  val executionError: TaskFailure,
+  @SerialName("executionError") val failure: TaskFailure,
   val deferredError: DeferredError?,
 ) : ServiceExecutorEventMessage() {
 
@@ -139,7 +139,7 @@ data class TaskFailedEvent(
         true -> TaskFailed(
             recipientName = requester.clientName,
             taskId = taskId,
-            cause = executionError,
+            cause = failure,
             emitterName = emitterName,
         )
 
@@ -157,7 +157,7 @@ data class TaskFailedEvent(
             serviceName = serviceName,
             methodName = methodName,
             taskId = taskId,
-            failure = executionError,
+            failure = failure,
         ),
         deferredError = deferredError,
         emitterName = emitterName,
@@ -184,7 +184,13 @@ data class TaskFailedEvent(
         clientWaiting = msg.clientWaiting,
         taskTags = msg.taskTags,
         taskMeta = TaskMeta(meta),
-        executionError = cause.getExecutionError(emitterName, msg.lastFailure),
+        failure = TaskFailure(
+            workerName = emitterName.toString(),
+            //retrySequence = msg.taskRetrySequence.toInt(),
+            //retryIndex = msg.taskRetryIndex.toInt(),
+            exceptionDetail = ExceptionDetail.from(cause),
+            previousFailure = msg.lastFailure,
+        ),
         deferredError = cause.deferredError,
     )
   }
@@ -221,13 +227,19 @@ data class TaskRetriedEvent(
         taskId = msg.taskId,
         emitterName = emitterName,
         taskRetrySequence = msg.taskRetrySequence,
-        taskRetryIndex = msg.taskRetryIndex + 1,
+        taskRetryIndex = msg.taskRetryIndex,
         requester = msg.requester ?: thisShouldNotHappen(),
         clientWaiting = msg.clientWaiting,
         taskTags = msg.taskTags,
         taskMeta = TaskMeta(meta),
         taskRetryDelay = delay,
-        failure = cause.getExecutionError(emitterName, msg.lastFailure),
+        failure = TaskFailure(
+            workerName = emitterName.toString(),
+            //retrySequence = msg.taskRetrySequence.toInt(),
+            //retryIndex = msg.taskRetryIndex.toInt(),
+            exceptionDetail = ExceptionDetail.from(cause),
+            previousFailure = msg.lastFailure,
+        ),
     )
   }
 }
@@ -336,5 +348,3 @@ private val Throwable.deferredError
     false -> null
   }
 
-private fun Throwable.getExecutionError(emitterName: EmitterName, lastFailure: TaskFailure?) =
-    TaskFailure.from(WorkerName.from(emitterName), this, lastFailure)

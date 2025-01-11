@@ -46,6 +46,7 @@ import io.infinitic.exceptions.WorkflowFailedException
 import io.infinitic.exceptions.WorkflowTaskFailedException
 import io.infinitic.exceptions.WorkflowTimedOutException
 import io.infinitic.exceptions.WorkflowUnknownException
+import io.infinitic.tasks.TaskFailure
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
