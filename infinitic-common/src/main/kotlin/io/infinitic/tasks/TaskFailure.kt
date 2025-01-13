@@ -28,9 +28,10 @@ import com.github.avrokotlin.avro4k.AvroName
 import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.cloudEvents.ERROR
 import io.infinitic.cloudEvents.PREVIOUS
+import io.infinitic.cloudEvents.TASK_RETRY_INDEX
+import io.infinitic.cloudEvents.TASK_RETRY_SEQUENCE
 import io.infinitic.cloudEvents.WORKER_NAME
 import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.common.tasks.executors.errors.ExceptionDetail
 import io.infinitic.common.utils.JsonAble
 import io.infinitic.common.utils.toJson
 import kotlinx.serialization.SerialName
@@ -47,13 +48,13 @@ data class TaskFailure(
   val workerName: String,
 
   /** Sequence of the retry */
-    //@AvroDefault("0") val retrySequence: Int,
+  @AvroDefault("0") val retrySequence: Int?,
 
   /** Index of the retry */
-    //@AvroDefault("0") val retryIndex: Int,
+  @AvroDefault("0") val retryIndex: Int?,
 
   /** details of the exception */
-  @AvroDefault(Avro.NULL) var exceptionDetail: ExceptionDetail?,
+  @AvroDefault(Avro.NULL) var exceptionDetail: TaskExceptionDetail?,
 
   /** cause of the error */
   @SerialName("cause") val previousFailure: TaskFailure?,
@@ -68,7 +69,7 @@ data class TaskFailure(
 
   init {
     // Used to convert old data to new format (v0.17.0)
-    exceptionDetail = exceptionDetail ?: ExceptionDetail(
+    exceptionDetail = exceptionDetail ?: TaskExceptionDetail(
         name = name ?: thisShouldNotHappen(),
         message = message,
         stackTrace = stackTraceToString ?: thisShouldNotHappen(),
@@ -79,7 +80,9 @@ data class TaskFailure(
 
   override fun toJson(): JsonObject = JsonObject(
       mapOf(
-          WORKER_NAME to JsonPrimitive(workerName.toString()),
+          WORKER_NAME to JsonPrimitive(workerName),
+          TASK_RETRY_SEQUENCE to JsonPrimitive(retrySequence.toString()),
+          TASK_RETRY_INDEX to JsonPrimitive(retryIndex.toString()),
           ERROR to exceptionDetail.toJson(),
           PREVIOUS to previousFailure.toJson(),
       ),

@@ -45,13 +45,13 @@ import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.data.TaskRetrySequence
 import io.infinitic.common.tasks.data.TaskTag
-import io.infinitic.common.tasks.executors.errors.ExceptionDetail
 import io.infinitic.common.workers.config.WorkflowVersion
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflowTasks.isWorkflowTask
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.currentVersion
+import io.infinitic.tasks.TaskExceptionDetail
 import io.infinitic.tasks.TaskFailure
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -139,9 +139,9 @@ data class ExecuteTask(
         methodArgs = msg.methodArgs,
         lastFailure = TaskFailure(
             workerName = emitterName.toString(),
-            //retrySequence = msg.taskRetrySequence.toInt(),
-            //retryIndex = msg.taskRetryIndex.toInt(),
-            exceptionDetail = ExceptionDetail.from(cause),
+            retrySequence = msg.taskRetrySequence.toInt(),
+            retryIndex = msg.taskRetryIndex.toInt(),
+            exceptionDetail = TaskExceptionDetail.from(cause),
             previousFailure = msg.lastFailure,
         ),
     )

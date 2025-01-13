@@ -20,8 +20,9 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.tasks.executors.errors
+package io.infinitic.tasks
 
+import com.github.avrokotlin.avro4k.AvroName
 import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.cloudEvents.ERROR_CAUSE
 import io.infinitic.cloudEvents.ERROR_DATA
@@ -41,7 +42,8 @@ import kotlin.reflect.jvm.isAccessible
 /** Data class representing an error */
 @Serializable
 @AvroNamespace("io.infinitic.tasks.executor")
-data class ExceptionDetail(
+@AvroName("ExceptionDetail")
+data class TaskExceptionDetail(
   /** Name of the exception */
   val name: String,
 
@@ -55,7 +57,7 @@ data class ExceptionDetail(
   private val serializedData: Map<String, SerializedData>,
 
   /** cause of the exception */
-  val cause: ExceptionDetail?
+  val cause: TaskExceptionDetail?
 ) : JsonAble {
 
   /** Mapped custom properties of the exception **/
@@ -71,7 +73,7 @@ data class ExceptionDetail(
 
   companion object {
 
-    fun from(throwable: Throwable): ExceptionDetail = ExceptionDetail(
+    fun from(throwable: Throwable): TaskExceptionDetail = TaskExceptionDetail(
         name = throwable::class.java.name,
         message = throwable.message,
         stackTrace = throwable.stackTraceToString(),

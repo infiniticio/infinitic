@@ -29,7 +29,6 @@ import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.tasks.events.messages.ServiceEventEnvelope
 import io.infinitic.common.tasks.events.messages.ServiceExecutorEventMessage
 import io.infinitic.common.tasks.executors.errors.DeferredError
-import io.infinitic.common.tasks.executors.errors.ExceptionDetail
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.steps.NewStep
 import io.infinitic.common.workflows.data.steps.Step
@@ -38,6 +37,7 @@ import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEventEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEventMessage
+import io.infinitic.tasks.TaskExceptionDetail
 import io.infinitic.tasks.TaskFailure
 import org.jeasy.random.EasyRandom
 import org.jeasy.random.EasyRandomParameters
@@ -77,10 +77,16 @@ object TestFactory {
           SerializedData.encode(random<String>(), String::class.java, null)
         }
         .randomize(TaskFailure::class.java) {
-          TaskFailure(random(), random(), null)
+          TaskFailure(
+              random(),
+              retrySequence = 0,
+              retryIndex = 0,
+              exceptionDetail = random(),
+              previousFailure = null,
+          )
         }
-        .randomize(ExceptionDetail::class.java) {
-          ExceptionDetail(random(), random(), random(), emptyMap(), null)
+        .randomize(TaskExceptionDetail::class.java) {
+          TaskExceptionDetail(random(), random(), random(), emptyMap(), null)
         }
         .randomize(MethodArgs::class.java) {
           methodParametersFrom(random<ByteArray>(), random<String>())

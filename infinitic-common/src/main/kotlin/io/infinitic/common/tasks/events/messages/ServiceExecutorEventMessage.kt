@@ -48,7 +48,6 @@ import io.infinitic.common.tasks.data.TaskRetrySequence
 import io.infinitic.common.tasks.data.TaskReturnValue
 import io.infinitic.common.tasks.data.TaskTag
 import io.infinitic.common.tasks.executors.errors.DeferredError
-import io.infinitic.common.tasks.executors.errors.ExceptionDetail
 import io.infinitic.common.tasks.executors.errors.TaskFailedError
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.tags.messages.RemoveTaskIdFromTag
@@ -57,6 +56,7 @@ import io.infinitic.common.workflows.engine.messages.RemoteTaskCompleted
 import io.infinitic.common.workflows.engine.messages.RemoteTaskFailed
 import io.infinitic.currentVersion
 import io.infinitic.exceptions.DeferredException
+import io.infinitic.tasks.TaskExceptionDetail
 import io.infinitic.tasks.TaskFailure
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -186,9 +186,9 @@ data class TaskFailedEvent(
         taskMeta = TaskMeta(meta),
         failure = TaskFailure(
             workerName = emitterName.toString(),
-            //retrySequence = msg.taskRetrySequence.toInt(),
-            //retryIndex = msg.taskRetryIndex.toInt(),
-            exceptionDetail = ExceptionDetail.from(cause),
+            retrySequence = msg.taskRetrySequence.toInt(),
+            retryIndex = msg.taskRetryIndex.toInt(),
+            exceptionDetail = TaskExceptionDetail.from(cause),
             previousFailure = msg.lastFailure,
         ),
         deferredError = cause.deferredError,
@@ -235,9 +235,9 @@ data class TaskRetriedEvent(
         taskRetryDelay = delay,
         failure = TaskFailure(
             workerName = emitterName.toString(),
-            //retrySequence = msg.taskRetrySequence.toInt(),
-            //retryIndex = msg.taskRetryIndex.toInt(),
-            exceptionDetail = ExceptionDetail.from(cause),
+            retrySequence = msg.taskRetrySequence.toInt(),
+            retryIndex = msg.taskRetryIndex.toInt(),
+            exceptionDetail = TaskExceptionDetail.from(cause),
             previousFailure = msg.lastFailure,
         ),
     )
