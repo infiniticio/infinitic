@@ -516,7 +516,7 @@ class TaskExecutor(
   ) {
     logWarn(cause) { "Retrying in $delay" }
 
-    val executeTask = ExecuteTask.retryFrom(this, emitterName, cause, meta)
+    val executeTask = ExecuteTask.retryFrom(this, emitterName, delay, cause, meta)
     with(producer) { executeTask.sendTo(ServiceExecutorRetryTopic, delay) }
 
     // once sent, we publish the event

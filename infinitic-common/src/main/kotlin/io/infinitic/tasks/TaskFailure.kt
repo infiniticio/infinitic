@@ -53,6 +53,9 @@ data class TaskFailure(
   /** Index of the retry */
   @AvroDefault("0") val retryIndex: Int?,
 
+  /** Seconds before retry (null if no retry)*/
+  @AvroDefault(Avro.NULL) val secondsBeforeRetry: Double?,
+
   /** details of the exception */
   @AvroDefault(Avro.NULL) var exceptionDetail: TaskExceptionDetail?,
 

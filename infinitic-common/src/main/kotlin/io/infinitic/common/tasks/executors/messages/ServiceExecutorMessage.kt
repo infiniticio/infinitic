@@ -28,6 +28,7 @@ import com.github.avrokotlin.avro4k.AvroName
 import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.MessageId
+import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.Version
 import io.infinitic.common.data.methods.MethodArgs
 import io.infinitic.common.data.methods.MethodName
@@ -122,6 +123,7 @@ data class ExecuteTask(
     fun retryFrom(
       msg: ExecuteTask,
       emitterName: EmitterName,
+      delay: MillisDuration,
       cause: Throwable,
       meta: Map<String, ByteArray>
     ) = ExecuteTask(
@@ -141,6 +143,7 @@ data class ExecuteTask(
             workerName = emitterName.toString(),
             retrySequence = msg.taskRetrySequence.toInt(),
             retryIndex = msg.taskRetryIndex.toInt(),
+            secondsBeforeRetry = delay.toSeconds(),
             exceptionDetail = TaskExceptionDetail.from(cause),
             previousFailure = msg.lastFailure,
         ),
