@@ -121,7 +121,7 @@ data class TaskUnknownError(
   @SerialName("taskName")
   val serviceName: ServiceName,
 
-  @AvroDefault(Avro.Companion.NULL) val methodName: MethodName?,
+  @AvroDefault(Avro.NULL) val methodName: MethodName?,
 
   /** Id of the unknown task */
   val taskId: TaskId
@@ -284,7 +284,7 @@ data class TaskFailedError(
   val taskId: TaskId,
 
   /** cause of the error */
-  @SerialName("cause") val failure: TaskFailure? = null
+  @SerialName("cause") val failure: TaskFailure
 ) : DeferredFailedError() {
   companion object {
     fun from(e: TaskFailedException) =

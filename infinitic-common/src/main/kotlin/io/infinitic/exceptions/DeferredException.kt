@@ -278,7 +278,7 @@ data class TaskFailedException(
   val methodName: String,
 
   /** Description of the last failure **/
-  val failure: TaskFailure?
+  val failure: TaskFailure
 ) : DeferredFailedException() {
 
   override val description = REMOTE_TASK_ERROR +
