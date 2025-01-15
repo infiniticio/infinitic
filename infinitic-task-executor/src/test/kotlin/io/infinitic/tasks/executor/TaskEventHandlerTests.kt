@@ -285,7 +285,7 @@ private fun getTaskRetried(requester: Requester) = TaskRetriedEvent(
     taskRetryIndex = TaskRetryIndex(7),
     requester = requester,
     clientWaiting = null,
-    lastError = TestFactory.random(),
+    failure = TestFactory.random(),
     taskMeta = TestFactory.random(),
     taskTags = TestFactory.random(),
     taskRetryDelay = TestFactory.random(),
@@ -357,7 +357,7 @@ private fun getTaskFailed(requester: Requester) = TaskFailedEvent(
     clientWaiting = null,
     taskTags = TestFactory.random(),
     taskMeta = TestFactory.random(),
-    executionError = TestFactory.random(),
+    failure = TestFactory.random(),
     deferredError = TestFactory.random(),
 )
 
@@ -365,7 +365,7 @@ private fun getTaskFailedClient(msg: TaskFailedEvent) =
     io.infinitic.common.clients.messages.TaskFailed(
         recipientName = msg.requester.clientName!!,
         taskId = msg.taskId,
-        cause = msg.executionError,
+        cause = msg.failure,
         emitterName = testEmitterName,
     )
 
@@ -380,7 +380,7 @@ private fun getTaskFailedWorkflow(msg: TaskFailedEvent) =
             serviceName = msg.serviceName,
             methodName = msg.methodName,
             taskId = msg.taskId,
-            cause = msg.executionError,
+            lastFailure = msg.failure,
         ),
         deferredError = msg.deferredError,
         emitterName = testEmitterName,

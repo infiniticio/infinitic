@@ -505,8 +505,8 @@ fun ExecuteTask.check(
   methodName shouldBe msg.methodName
   taskMeta shouldBe TaskMeta(meta)
   taskId shouldBe msg.taskId
-  lastError!!.name shouldBe errorName
-  lastError!!.workerName shouldBe WorkerName.from(msg.emitterName)
+  lastFailure!!.exception!!.name shouldBe errorName
+  lastFailure!!.workerName shouldBe msg.emitterName.toString()
 }
 
 fun TaskFailedEvent.check(
@@ -521,8 +521,8 @@ fun TaskFailedEvent.check(
   taskRetryIndex shouldBe msg.taskRetryIndex
   requester shouldBe msg.requester
   clientWaiting shouldBe msg.clientWaiting
-  executionError.name shouldBe errorName
-  executionError.workerName shouldBe WorkerName.from(msg.emitterName)
+  failure.exception!!.name shouldBe errorName
+  failure.workerName shouldBe msg.emitterName.toString()
   methodName shouldBe msg.methodName
   taskMeta shouldBe TaskMeta(meta)
   taskId shouldBe msg.taskId
@@ -538,13 +538,13 @@ fun TaskRetriedEvent.check(
   taskId shouldBe msg.taskId
   emitterName shouldBe testEmitterName
   taskRetrySequence shouldBe msg.taskRetrySequence
-  taskRetryIndex shouldBe msg.taskRetryIndex + 1
+  taskRetryIndex shouldBe msg.taskRetryIndex
   requester shouldBe msg.requester
   taskTags shouldBe msg.taskTags
   taskMeta shouldBe TaskMeta(meta)
   taskRetryDelay shouldBe delay
-  lastError.name shouldBe errorName
-  lastError.workerName shouldBe WorkerName.from(msg.emitterName)
+  failure.exception!!.name shouldBe errorName
+  failure.workerName shouldBe msg.emitterName.toString()
 }
 
 internal fun getExecuteTask(method: String, input: Array<out Any?>, types: List<String>?) =
@@ -561,7 +561,7 @@ internal fun getExecuteTask(method: String, input: Array<out Any?>, types: List<
         methodName = MethodName(method),
         methodParameterTypes = types?.let { MethodParameterTypes(it) },
         methodArgs = methodParametersFrom(*input),
-        lastError = null,
+        lastFailure = null,
     )
 
 private fun getTaskStarted(msg: ExecuteTask, messageId: MessageId) = TaskStartedEvent(

@@ -45,6 +45,8 @@ data class MillisDuration(val millis: Long) : Comparable<Long>, JsonAble {
   operator fun minus(other: MillisDuration) = MillisDuration(this.millis - other.millis)
 
   operator fun plus(other: MillisInstant) = MillisInstant(this.millis + other.long)
+
+  fun toSeconds(): Double = millis / 1000.0
 }
 
 object MillisDurationSerializer : KSerializer<MillisDuration> {

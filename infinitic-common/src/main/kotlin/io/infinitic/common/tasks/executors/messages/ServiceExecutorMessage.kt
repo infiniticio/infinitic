@@ -28,6 +28,7 @@ import com.github.avrokotlin.avro4k.AvroName
 import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.MessageId
+import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.Version
 import io.infinitic.common.data.methods.MethodArgs
 import io.infinitic.common.data.methods.MethodName
@@ -45,14 +46,14 @@ import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.data.TaskRetrySequence
 import io.infinitic.common.tasks.data.TaskTag
-import io.infinitic.common.tasks.executors.errors.ExecutionError
 import io.infinitic.common.workers.config.WorkflowVersion
-import io.infinitic.common.workers.data.WorkerName
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflowTasks.isWorkflowTask
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.currentVersion
+import io.infinitic.exceptions.GenericException
+import io.infinitic.tasks.TaskFailure
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -90,17 +91,17 @@ data class ExecuteTask(
   override val taskRetrySequence: TaskRetrySequence,
   override val taskRetryIndex: TaskRetryIndex,
   @AvroDefault(Avro.NULL) override var requester: Requester?,
-  @Deprecated("Not used since version 0.13.0") val workflowName: WorkflowName? = null,
-  @Deprecated("Not used since version 0.13.0") val workflowId: WorkflowId? = null,
-  @Deprecated("Not used since version 0.13.0") @AvroName("methodRunId") val workflowMethodId: WorkflowMethodId? = null,
   val taskTags: Set<TaskTag>,
   val taskMeta: TaskMeta,
   val clientWaiting: Boolean,
   val methodName: MethodName,
   val methodParameterTypes: MethodParameterTypes?,
   @SerialName("methodParameters") val methodArgs: MethodArgs,
-  val lastError: ExecutionError?,
-  @Deprecated("Not used since version 0.13.0") @AvroDefault(Avro.NULL) val workflowVersion: WorkflowVersion? = null
+  @SerialName("lastError") val lastFailure: TaskFailure?,
+  @Deprecated("Not used after 0.13.0") val workflowName: WorkflowName? = null,
+  @Deprecated("Not used after 0.13.0") val workflowId: WorkflowId? = null,
+  @Deprecated("Not used after 0.13.0") @AvroName("methodRunId") val workflowMethodId: WorkflowMethodId? = null,
+  @Deprecated("Not used after 0.13.0") @AvroDefault(Avro.NULL) val workflowVersion: WorkflowVersion? = null
 ) : ServiceExecutorMessage() {
 
   init {
@@ -122,6 +123,7 @@ data class ExecuteTask(
     fun retryFrom(
       msg: ExecuteTask,
       emitterName: EmitterName,
+      delay: MillisDuration,
       cause: Throwable,
       meta: Map<String, ByteArray>
     ) = ExecuteTask(
@@ -137,10 +139,15 @@ data class ExecuteTask(
         methodName = msg.methodName,
         methodParameterTypes = msg.methodParameterTypes,
         methodArgs = msg.methodArgs,
-        lastError = cause.getExecutionError(emitterName),
+        lastFailure = TaskFailure(
+            workerName = emitterName.toString(),
+            retrySequence = msg.taskRetrySequence.toInt(),
+            retryIndex = msg.taskRetryIndex.toInt(),
+            secondsBeforeRetry = delay.toSeconds(),
+            stackTraceString = cause.stackTraceToString(),
+            exception = GenericException.from(cause),
+            previousFailure = msg.lastFailure,
+        ),
     )
   }
 }
-
-private fun Throwable.getExecutionError(emitterName: EmitterName) =
-    ExecutionError.from(WorkerName.from(emitterName), this)

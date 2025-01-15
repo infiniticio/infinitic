@@ -30,7 +30,7 @@ object Libs {
   }
 
   object Coroutines {
-    private const val version = "1.8.1"
+    private const val version = "1.10.1"
     const val core = "org.jetbrains.kotlinx:kotlinx-coroutines-core:$version"
     const val jdk8 = "org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:$version"
   }
@@ -40,7 +40,7 @@ object Libs {
   }
 
   object Serialization {
-    private const val version = "1.7.1"
+    private const val version = "1.8.0"
     const val json = "org.jetbrains.kotlinx:kotlinx-serialization-json:$version"
     const val core = "org.jetbrains.kotlinx:kotlinx-serialization-core:$version"
   }
@@ -57,7 +57,7 @@ object Libs {
   }
 
   object Jackson {
-    private const val version = "2.17.2"
+    private const val version = "2.18.2"
     const val core = "com.fasterxml.jackson.core:jackson-core:$version"
     const val databind = "com.fasterxml.jackson.core:jackson-databind:$version"
     const val kotlin = "com.fasterxml.jackson.module:jackson-module-kotlin:$version"
@@ -76,14 +76,14 @@ object Libs {
   }
 
   object TestContainers {
-    private const val version = "1.20.1"
+    private const val version = "1.20.4"
     const val testcontainers = "org.testcontainers:testcontainers:$version"
     const val mysql = "org.testcontainers:mysql:$version"
     const val postgresql = "org.testcontainers:postgresql:$version"
   }
 
   object Mockk {
-    const val mockk = "io.mockk:mockk:1.13.12"
+    const val mockk = "io.mockk:mockk:1.13.14"
   }
 
   object Avro4k {
@@ -91,7 +91,7 @@ object Libs {
   }
 
   object Hoplite {
-    private const val version = "2.7.5"
+    private const val version = "2.9.0"
     const val core = "com.sksamuel.hoplite:hoplite-core:$version"
     const val yaml = "com.sksamuel.hoplite:hoplite-yaml:$version"
   }
@@ -120,7 +120,7 @@ object Libs {
   }
 
   object Logging {
-    const val jvm = "io.github.oshai:kotlin-logging-jvm:7.0.0"
+    const val jvm = "io.github.oshai:kotlin-logging-jvm:7.0.3"
   }
 
   object Compress {

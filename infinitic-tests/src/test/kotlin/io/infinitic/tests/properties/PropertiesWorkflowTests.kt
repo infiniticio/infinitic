@@ -23,8 +23,8 @@
 package io.infinitic.tests.properties
 
 import io.infinitic.Test
+import io.infinitic.exceptions.WorkflowExecutorException
 import io.infinitic.exceptions.WorkflowFailedException
-import io.infinitic.exceptions.WorkflowTaskFailedException
 import io.infinitic.workflows.Deferred
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
@@ -66,9 +66,10 @@ internal class PropertiesWorkflowTests :
           val e = shouldThrow<WorkflowFailedException> {
             propertiesWorkflow.prop6() shouldBe "abab"
           }
-          e.deferredException shouldBe instanceOf<WorkflowTaskFailedException>()
-          val workerException = (e.deferredException as WorkflowTaskFailedException).workerException
-          workerException.message shouldContain Deferred::class.java.name
+          e.deferredException shouldBe instanceOf<WorkflowExecutorException>()
+          val exception =
+              (e.deferredException as WorkflowExecutorException).lastFailure.exception!!
+          exception.message shouldContain Deferred::class.java.name
         }
 
         /**
@@ -78,9 +79,10 @@ internal class PropertiesWorkflowTests :
           val e = shouldThrow<WorkflowFailedException> {
             propertiesWorkflow.prop6bis() shouldBe "abab"
           }
-          e.deferredException shouldBe instanceOf<WorkflowTaskFailedException>()
-          val workerException = (e.deferredException as WorkflowTaskFailedException).workerException
-          workerException.message shouldContain Deferred::class.java.name
+          e.deferredException shouldBe instanceOf<WorkflowExecutorException>()
+          val exception =
+              (e.deferredException as WorkflowExecutorException).lastFailure.exception!!
+          exception.message shouldContain Deferred::class.java.name
         }
 
         /**
@@ -90,9 +92,10 @@ internal class PropertiesWorkflowTests :
           val e = shouldThrow<WorkflowFailedException> {
             propertiesWorkflow.prop7() shouldBe "abab"
           }
-          e.deferredException shouldBe instanceOf<WorkflowTaskFailedException>()
-          val workerException = (e.deferredException as WorkflowTaskFailedException).workerException
-          workerException.message shouldContain Deferred::class.java.name
+          e.deferredException shouldBe instanceOf<WorkflowExecutorException>()
+          val exception =
+              (e.deferredException as WorkflowExecutorException).lastFailure.exception!!
+          exception.message shouldContain Deferred::class.java.name
         }
 
         /**
@@ -102,9 +105,10 @@ internal class PropertiesWorkflowTests :
           val e = shouldThrow<WorkflowFailedException> {
             propertiesWorkflow.prop7bis() shouldBe "abab"
           }
-          e.deferredException shouldBe instanceOf<WorkflowTaskFailedException>()
-          val workerException = (e.deferredException as WorkflowTaskFailedException).workerException
-          workerException.message shouldContain Deferred::class.java.name
+          e.deferredException shouldBe instanceOf<WorkflowExecutorException>()
+          val exception =
+              (e.deferredException as WorkflowExecutorException).lastFailure.exception!!
+          exception.message shouldContain Deferred::class.java.name
         }
 
         "Check prop8" {

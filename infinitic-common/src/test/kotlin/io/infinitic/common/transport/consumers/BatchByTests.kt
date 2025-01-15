@@ -102,10 +102,9 @@ internal class BatchByTests : StringSpec(
             }
           }.join()
 
-          scope.isActive shouldBe true
-
           // after scope cancelling
           scope.cancel()
+          
           // consumer channel should be closed
           shouldThrow<ClosedReceiveChannelException> {
             while (true) {

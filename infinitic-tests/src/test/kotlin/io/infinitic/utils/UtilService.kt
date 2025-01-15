@@ -31,11 +31,11 @@ import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.tasks.Task
 import io.infinitic.workflows.DeferredStatus
 
-interface ParentInterface {
+internal interface ParentInterface {
   fun parent(): String
 }
 
-interface UtilService : ParentInterface {
+internal interface UtilService : ParentInterface {
   fun concat(str1: String, str2: String): String
 
   fun reverse(str: String): String
@@ -51,6 +51,10 @@ interface UtilService : ParentInterface {
   fun cancelWorkflow(workflowName: String, id: String)
 
   fun failingWithException()
+
+  fun failingWithCustomException()
+
+  fun failingWithNestedCustomException()
 
   fun failingWithThrowable()
 
@@ -77,7 +81,7 @@ interface UtilService : ParentInterface {
 }
 
 @Retry(Only1Retry::class)
-class UtilServiceImpl : UtilService {
+internal class UtilServiceImpl : UtilService {
   override fun concat(str1: String, str2: String): String = str1 + str2
 
   override fun reverse(str: String) = str.reversed()
@@ -104,6 +108,10 @@ class UtilServiceImpl : UtilService {
   }
 
   override fun failingWithException() = throw Exception("sorry")
+
+  override fun failingWithCustomException() = throw CustomException()
+
+  override fun failingWithNestedCustomException() = throw Exception(CustomException())
 
   override fun failingWithThrowable() = throw Throwable("really sorry")
 
@@ -148,3 +156,10 @@ class UtilServiceImpl : UtilService {
     lateinit var delegatedServiceName: String
   }
 }
+
+internal class CustomException(
+  val customString: String = "42",
+  val customInt: Int = 42,
+  val customDouble: Double = 42.0,
+  val customList: List<Int> = List(10) { it }
+) : Exception()

@@ -272,17 +272,52 @@
                             "name" : "workerName",
                             "type" : "string"
                           }, {
-                            "name" : "name",
-                            "type" : "string"
+                            "name" : "retrySequence",
+                            "type" : [ "int", "null" ],
+                            "default" : 0
                           }, {
-                            "name" : "message",
-                            "type" : [ "null", "string" ]
+                            "name" : "retryIndex",
+                            "type" : [ "int", "null" ],
+                            "default" : 0
+                          }, {
+                            "name" : "secondsBeforeRetry",
+                            "type" : [ "null", "double" ],
+                            "default" : null
                           }, {
                             "name" : "stackTraceToString",
-                            "type" : "string"
+                            "type" : [ "null", "string" ]
+                          }, {
+                            "name" : "exception",
+                            "type" : [ "null", {
+                              "type" : "record",
+                              "name" : "GenericException",
+                              "fields" : [ {
+                                "name" : "name",
+                                "type" : "string"
+                              }, {
+                                "name" : "message",
+                                "type" : [ "null", "string" ]
+                              }, {
+                                "name" : "serializedCustomProperties",
+                                "type" : {
+                                  "type" : "map",
+                                  "values" : "io.infinitic.data.SerializedData"
+                                }
+                              }, {
+                                "name" : "cause",
+                                "type" : [ "null", "GenericException" ]
+                              } ]
+                            } ],
+                            "default" : null
                           }, {
                             "name" : "cause",
                             "type" : [ "null", "WorkerError" ]
+                          }, {
+                            "name" : "name",
+                            "type" : [ "null", "string" ]
+                          }, {
+                            "name" : "message",
+                            "type" : [ "null", "string" ]
                           } ]
                         }
                       } ]

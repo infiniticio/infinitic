@@ -26,18 +26,22 @@ import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.Version
 import io.infinitic.common.data.methods.MethodArgs
 import io.infinitic.common.serDe.SerializedData
+import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.events.messages.ServiceEventEnvelope
 import io.infinitic.common.tasks.events.messages.ServiceExecutorEventMessage
 import io.infinitic.common.tasks.executors.errors.DeferredError
-import io.infinitic.common.tasks.executors.errors.ExecutionError
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.steps.NewStep
 import io.infinitic.common.workflows.data.steps.Step
 import io.infinitic.common.workflows.data.steps.StepStatus
+import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEventEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEventMessage
+import io.infinitic.exceptions.GenericException
+import io.infinitic.tasks.TaskFailure
+import org.apache.commons.lang3.RandomStringUtils
 import org.jeasy.random.EasyRandom
 import org.jeasy.random.EasyRandomParameters
 import org.jeasy.random.FieldPredicates
@@ -71,12 +75,25 @@ object TestFactory {
         .randomize(StepStatus.Completed::class.java) { StepStatus.Completed(random(), random()) }
         .randomize(ByteArray::class.java) { Random(seed).nextBytes(10) }
         .randomize(ByteBuffer::class.java) { ByteBuffer.wrap(random()) }
-        .randomize(ExecutionError::class.java) {
-          ExecutionError(random(), random(), random(), random(), null)
-        }
         .randomize(Version::class.java) { Version(random<String>()) }
+        .randomize(ServiceName::class.java) { ServiceName(RandomStringUtils.random(10)) }
+        .randomize(WorkflowName::class.java) { WorkflowName(RandomStringUtils.random(10)) }
         .randomize(SerializedData::class.java) {
           SerializedData.encode(random<String>(), String::class.java, null)
+        }
+        .randomize(TaskFailure::class.java) {
+          TaskFailure(
+              workerName = random(),
+              retrySequence = random(),
+              retryIndex = random(),
+              secondsBeforeRetry = random(),
+              stackTraceString = random(),
+              exception = random(),
+              previousFailure = null,
+          )
+        }
+        .randomize(GenericException::class.java) {
+          GenericException(random(), random(), emptyMap(), null)
         }
         .randomize(MethodArgs::class.java) {
           methodParametersFrom(random<ByteArray>(), random<String>())

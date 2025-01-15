@@ -23,8 +23,8 @@
 package io.infinitic.tests.inline
 
 import io.infinitic.Test
+import io.infinitic.exceptions.WorkflowExecutorException
 import io.infinitic.exceptions.WorkflowFailedException
-import io.infinitic.exceptions.WorkflowTaskFailedException
 import io.infinitic.exceptions.workflows.InvalidInlineException
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
@@ -47,15 +47,15 @@ internal class InlineWorkflowTests :
         "Inline task with asynchronous task inside" {
           val error = shouldThrow<WorkflowFailedException> { inlineWorkflow.inline2(21) }
 
-          val deferredException = error.deferredException as WorkflowTaskFailedException
-          deferredException.workerException.name shouldBe InvalidInlineException::class.java.name
+          val workflowTaskFailed = error.deferredException as WorkflowExecutorException
+          workflowTaskFailed.lastFailure.exception!!.name shouldBe InvalidInlineException::class.java.name
         }
 
         "Inline task with synchronous task inside" {
           val error = shouldThrow<WorkflowFailedException> { inlineWorkflow.inline3(14) }
 
-          val deferredException = error.deferredException as WorkflowTaskFailedException
-          deferredException.workerException.name shouldBe InvalidInlineException::class.java.name
+          val workflowTaskFailed = error.deferredException as WorkflowExecutorException
+          workflowTaskFailed.lastFailure.exception!!.name shouldBe InvalidInlineException::class.java.name
         }
       },
   )

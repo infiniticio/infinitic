@@ -39,9 +39,9 @@ import kotlin.reflect.KClass
 fun <T : Any> checkOrCreateCurrentFile(klass: KClass<T>, serializer: KSerializer<T>) {
   // Non-release version are not saved to the sources
   if (isRelease) {
-    val schemasFolderPath = File(System.getProperty("resourcePath"), "/$SCHEMAS_FOLDER/")
+    val schemasFolderPath = File(System.getProperty("resourcePath"), "/$SCHEMAS_FOLDER")
     val schemaFilePath = File(
-        "$schemasFolderPath${getSchemaFilePrefix(klass)}-$currentVersion.avsc",
+        "$schemasFolderPath/${getSchemaFilePrefix(klass)}-$currentVersion.avsc",
     )
 
     val schema = AvroSerDe.currentSchema(serializer).toString(true)

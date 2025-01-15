@@ -149,17 +149,73 @@
             "name" : "workerName",
             "type" : "string"
           }, {
-            "name" : "name",
-            "type" : "string"
+            "name" : "retrySequence",
+            "type" : [ "int", "null" ],
+            "default" : 0
           }, {
-            "name" : "message",
-            "type" : [ "null", "string" ]
+            "name" : "retryIndex",
+            "type" : [ "int", "null" ],
+            "default" : 0
+          }, {
+            "name" : "secondsBeforeRetry",
+            "type" : [ "null", "double" ],
+            "default" : null
           }, {
             "name" : "stackTraceToString",
-            "type" : "string"
+            "type" : [ "null", "string" ]
+          }, {
+            "name" : "exception",
+            "type" : [ "null", {
+              "type" : "record",
+              "name" : "GenericException",
+              "fields" : [ {
+                "name" : "name",
+                "type" : "string"
+              }, {
+                "name" : "message",
+                "type" : [ "null", "string" ]
+              }, {
+                "name" : "serializedCustomProperties",
+                "type" : {
+                  "type" : "map",
+                  "values" : {
+                    "type" : "record",
+                    "name" : "SerializedData",
+                    "namespace" : "io.infinitic.data",
+                    "fields" : [ {
+                      "name" : "bytes",
+                      "type" : "bytes"
+                    }, {
+                      "name" : "type",
+                      "type" : {
+                        "type" : "enum",
+                        "name" : "SerializedDataType",
+                        "symbols" : [ "NULL", "AVRO_WITH_SCHEMA", "JSON", "JSON_JACKSON", "JSON_KOTLIN" ]
+                      }
+                    }, {
+                      "name" : "meta",
+                      "type" : {
+                        "type" : "map",
+                        "values" : "bytes"
+                      }
+                    } ]
+                  }
+                }
+              }, {
+                "name" : "cause",
+                "type" : [ "null", "GenericException" ]
+              } ]
+            } ],
+            "default" : null
           }, {
             "name" : "cause",
             "type" : [ "null", "WorkerError" ]
+          }, {
+            "name" : "name",
+            "type" : [ "null", "string" ]
+          }, {
+            "name" : "message",
+            "type" : [ "null", "string" ]
           } ]
         }
       } ]
@@ -416,28 +472,7 @@
         "type" : "boolean"
       }, {
         "name" : "returnValue",
-        "type" : {
-          "type" : "record",
-          "name" : "SerializedData",
-          "namespace" : "io.infinitic.data",
-          "fields" : [ {
-            "name" : "bytes",
-            "type" : "bytes"
-          }, {
-            "name" : "type",
-            "type" : {
-              "type" : "enum",
-              "name" : "SerializedDataType",
-              "symbols" : [ "NULL", "AVRO_WITH_SCHEMA", "JSON", "JSON_JACKSON", "JSON_KOTLIN" ]
-            }
-          }, {
-            "name" : "meta",
-            "type" : {
-              "type" : "map",
-              "values" : "bytes"
-            }
-          } ]
-        }
+        "type" : "io.infinitic.data.SerializedData"
       } ]
     } ]
   } ]

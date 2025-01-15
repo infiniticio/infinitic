@@ -23,7 +23,7 @@
 
 package io.infinitic.events.data.services
 
-import io.infinitic.cloudEvents.ERROR
+import io.infinitic.cloudEvents.FAILURE
 import io.infinitic.cloudEvents.INFINITIC_VERSION
 import io.infinitic.cloudEvents.OUTPUT
 import io.infinitic.cloudEvents.REQUESTER
@@ -79,7 +79,7 @@ fun ServiceExecutorEventMessage.toJson(): JsonObject = when (this) {
 
   is TaskRetriedEvent -> JsonObject(
       mapOf(
-          ERROR to lastError.toJson(),
+          FAILURE to failure.toJsonWithoutAttemptDetails(),
           TASK_RETRY_DELAY to taskRetryDelay.toJson(),
           TASK_RETRY_SEQUENCE to taskRetrySequence.toJson(),
           TASK_RETRY_INDEX to taskRetryIndex.toJson(),
@@ -94,7 +94,7 @@ fun ServiceExecutorEventMessage.toJson(): JsonObject = when (this) {
 
   is TaskFailedEvent -> JsonObject(
       mapOf(
-          ERROR to executionError.toJson(),
+          FAILURE to failure.toJsonWithoutAttemptDetails(),
           TASK_RETRY_SEQUENCE to taskRetrySequence.toJson(),
           TASK_RETRY_INDEX to taskRetryIndex.toJson(),
           SERVICE_NAME to serviceName.toJson(),

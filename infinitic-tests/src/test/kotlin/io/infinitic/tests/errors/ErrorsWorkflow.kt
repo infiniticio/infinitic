@@ -41,6 +41,10 @@ interface ErrorsWorkflow {
 
   fun failingWithException()
 
+  fun failingWithCustomException()
+
+  fun failingWithNestedCustomException()
+
   fun failingWithThrowable()
 
   fun failing2a(): Long
@@ -118,6 +122,10 @@ class ErrorsWorkflowImpl : Workflow(), ErrorsWorkflow {
 
   override fun failingWithException() = utilService.failingWithException()
 
+  override fun failingWithCustomException() = utilService.failingWithCustomException()
+
+  override fun failingWithNestedCustomException() = utilService.failingWithNestedCustomException()
+
   override fun failingWithThrowable() = utilService.failingWithThrowable()
 
   override fun failing2a(): Long {
@@ -187,7 +195,7 @@ class ErrorsWorkflowImpl : Workflow(), ErrorsWorkflow {
       } catch (e: WorkflowFailedException) {
         val deferredException = e.deferredException as TaskFailedException
         utilService.await(100)
-        deferredException.workerException.name
+        deferredException.lastFailure.exception!!.name
       }
 
   override fun failing8() = utilService.successAtRetry()

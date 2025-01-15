@@ -23,7 +23,6 @@
 
 package io.infinitic.cloudEvents
 
-const val ERROR = "error"
 const val OUTPUT = "output"
 const val WORKER_NAME = "workerName"
 const val INFINITIC_VERSION = "infiniticVersion"
@@ -34,7 +33,7 @@ const val TIMEOUT = "timeout"
 const val SERVICE_NAME = "serviceName"
 const val TASK_RETRY_SEQUENCE = "retrySequence"
 const val TASK_RETRY_INDEX = "retryIndex"
-const val TASK_RETRY_DELAY = "retryDelayMillis"
+const val TASK_RETRY_DELAY = "secondsBeforeRetry"
 const val TASK_META = "taskMeta"
 const val TASK_TAGS = "taskTags"
 const val TASK_NAME = "taskName"
@@ -62,7 +61,12 @@ const val TIMER_ID = "timerId"
 const val TIMER_DURATION = "timerDuration"
 const val TIMER_INSTANT = "timerInstant"
 
+const val FAILURE = "failure"
+const val FAILURE_STACKTRACE = "stackTrace"
+const val FAILURE_PREVIOUS = "previousFailure"
+
+const val ERROR = "error"
 const val ERROR_NAME = "name"
 const val ERROR_MESSAGE = "message"
-const val ERROR_STACKTRACE = "stackTrace"
 const val ERROR_CAUSE = "cause"
+const val ERROR_CUSTOM_PROPERTIES = "customProperties"
