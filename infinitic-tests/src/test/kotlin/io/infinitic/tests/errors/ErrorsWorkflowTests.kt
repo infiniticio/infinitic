@@ -26,10 +26,11 @@ import io.infinitic.Test
 import io.infinitic.common.fixtures.later
 import io.infinitic.exceptions.TaskFailedException
 import io.infinitic.exceptions.WorkflowCanceledException
+import io.infinitic.exceptions.WorkflowExecutorException
 import io.infinitic.exceptions.WorkflowFailedException
-import io.infinitic.exceptions.WorkflowTaskFailedException
 import io.infinitic.exceptions.WorkflowUnknownException
 import io.infinitic.tests.channels.ChannelsWorkflow
+import io.infinitic.utils.CustomException
 import io.infinitic.utils.UtilService
 import io.infinitic.utils.UtilWorkflow
 import io.infinitic.workflows.DeferredStatus
@@ -64,7 +65,7 @@ internal class ErrorsWorkflowTests :
           val e = shouldThrow<WorkflowFailedException> {
             errorsWorkflow.failing0()
           }
-          e.deferredException shouldBe instanceOf<WorkflowTaskFailedException>()
+          e.deferredException shouldBe instanceOf<WorkflowExecutorException>()
         }
 
         "try/catch a failing task" {
@@ -76,7 +77,38 @@ internal class ErrorsWorkflowTests :
 
           val taskException = error.deferredException as TaskFailedException
           taskException.serviceName shouldBe UtilService::class.java.name
-          taskException.failure!!.exceptionDetail!!.name shouldBe Exception::class.java.name
+          taskException.lastFailure.exception!!.name shouldBe Exception::class.java.name
+        }
+
+        "I can retrieve custom properties from Custom Exception" {
+          val error = shouldThrow<WorkflowFailedException> {
+            errorsWorkflow.failingWithCustomException()
+          }
+
+          val taskFailed = error.deferredException as TaskFailedException
+          taskFailed.serviceName shouldBe UtilService::class.java.name
+
+          val detail = taskFailed.lastFailure.exception!!
+          detail.name shouldBe CustomException::class.java.name
+          detail.getCustomProperty("customString") shouldBe CustomException().customString
+          detail.getCustomProperty("customList") shouldBe CustomException().customList
+
+          // retrieve also the previous failure
+          taskFailed.lastFailure.previousFailure!!.exception!!.name shouldBe CustomException::class.java.name
+        }
+
+        "I can retrieve custom properties from nested Custom Exception" {
+          val error = shouldThrow<WorkflowFailedException> {
+            errorsWorkflow.failingWithNestedCustomException()
+          }
+
+          val taskFailed = error.deferredException as TaskFailedException
+          taskFailed.serviceName shouldBe UtilService::class.java.name
+
+          val detail = taskFailed.lastFailure.exception!!.cause!!
+          detail.name shouldBe CustomException::class.java.name
+          detail.getCustomProperty("customString") shouldBe CustomException().customString
+          detail.getCustomProperty("customList") shouldBe CustomException().customList
         }
 
         // This test checks that a throwable triggering a message sent to DLQ is correctly handle by the engine

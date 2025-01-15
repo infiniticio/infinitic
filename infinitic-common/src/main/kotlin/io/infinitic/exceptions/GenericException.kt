@@ -20,15 +20,13 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.tasks
+package io.infinitic.exceptions
 
-import com.github.avrokotlin.avro4k.AvroName
 import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.cloudEvents.ERROR_CAUSE
-import io.infinitic.cloudEvents.ERROR_DATA
+import io.infinitic.cloudEvents.ERROR_CUSTOM_PROPERTIES
 import io.infinitic.cloudEvents.ERROR_MESSAGE
 import io.infinitic.cloudEvents.ERROR_NAME
-import io.infinitic.cloudEvents.ERROR_STACKTRACE
 import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.utils.JsonAble
 import io.infinitic.common.utils.toJson
@@ -42,27 +40,22 @@ import kotlin.reflect.jvm.isAccessible
 /** Data class representing an error */
 @Serializable
 @AvroNamespace("io.infinitic.tasks.executor")
-@AvroName("ExceptionDetail")
-data class TaskExceptionDetail(
-  /** Name of the exception */
+data class GenericException(
+  /** Name of the original exception */
   val name: String,
 
-  /** Message of the exception */
-  val message: String?,
+  /** Message of the original exception */
+  override val message: String?,
 
-  /** the stack trace of the exception (String version) */
-  val stackTrace: String,
+  /** Serialized custom properties of the original exception **/
+  private val serializedCustomProperties: Map<String, SerializedData>,
 
-  /** Serialized custom properties of the exception **/
-  private val serializedData: Map<String, SerializedData>,
+  /** cause of the original exception */
+  override val cause: GenericException?
+) : Exception(), JsonAble {
 
-  /** cause of the exception */
-  val cause: TaskExceptionDetail?
-) : JsonAble {
-
-  /** Mapped custom properties of the exception **/
-  val data: Map<String, Any?> by lazy {
-    serializedData.mapValues { (_, v) ->
+  private val _customProperties: Map<String, Any?> by lazy {
+    serializedCustomProperties.mapValues { (_, v) ->
       try {
         v.decode(null, null)
       } catch (e: Exception) {
@@ -71,20 +64,26 @@ data class TaskExceptionDetail(
     }
   }
 
+  /** Custom properties of the original exception **/
+  fun getCustomProperties(): Map<String, Any?> = _customProperties
+
+  /** Custom property of the original exception **/
+  fun getCustomProperty(name: String): Any? = _customProperties[name]
+
   companion object {
 
-    fun from(throwable: Throwable): TaskExceptionDetail = TaskExceptionDetail(
-        name = throwable::class.java.name,
-        message = throwable.message,
-        stackTrace = throwable.stackTraceToString(),
-        serializedData = captureData(throwable),
-        cause = when (val cause = throwable.cause) {
-          null, throwable -> null
-          else -> from(cause)
-        },
-    )
+    fun from(throwable: Throwable): GenericException =
+        GenericException(
+            name = throwable::class.java.name,
+            message = throwable.message,
+            serializedCustomProperties = captureCustomProperties(throwable),
+            cause = when (val cause = throwable.cause) {
+              null, throwable -> null
+              else -> from(cause)
+            },
+        )
 
-    private fun captureData(exception: Throwable): Map<String, SerializedData> =
+    private fun captureCustomProperties(exception: Throwable): Map<String, SerializedData> =
         exception::class.memberProperties
             .filter {
               // Ensure property is public and not a common property
@@ -92,8 +91,7 @@ data class TaskExceptionDetail(
                   it.name !in listOf(
                   "message",
                   "cause",
-                  "stackTrace",
-                  "localizedMessage",
+                  "stackTraceString",
                   "suppressed",
               )
             }
@@ -121,13 +119,12 @@ data class TaskExceptionDetail(
             }
   }
 
-  // we remove end of line for stackTrace of the output to preserve logs
+  // we remove end of line for stackTraceString of the output to preserve logs
   override fun toString(): String = this::class.java.simpleName + "(" +
       listOf(
           "name" to name,
           "message" to message,
-          "stackTrace" to stackTrace.replace("\n", ""),
-          "data" to serializedData.mapValues { (_, v) -> v.toJsonString() },
+          "customProperties" to serializedCustomProperties.mapValues { (_, v) -> v.toJsonString() },
           "cause" to cause.toString(),
       ).joinToString { "${it.first}=${it.second}" } + ")"
 
@@ -135,8 +132,7 @@ data class TaskExceptionDetail(
       mapOf(
           ERROR_NAME to JsonPrimitive(name),
           ERROR_MESSAGE to JsonPrimitive(message),
-          ERROR_STACKTRACE to JsonPrimitive(stackTrace),
-          ERROR_DATA to JsonObject(serializedData.mapValues { (_, v) -> v.toJson() }),
+          ERROR_CUSTOM_PROPERTIES to JsonObject(serializedCustomProperties.mapValues { (_, v) -> v.toJson() }),
           ERROR_CAUSE to cause.toJson(),
       ),
   )

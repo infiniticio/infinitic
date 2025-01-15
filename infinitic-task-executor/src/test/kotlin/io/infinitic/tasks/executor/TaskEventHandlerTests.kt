@@ -380,7 +380,7 @@ private fun getTaskFailedWorkflow(msg: TaskFailedEvent) =
             serviceName = msg.serviceName,
             methodName = msg.methodName,
             taskId = msg.taskId,
-            failure = msg.failure,
+            lastFailure = msg.failure,
         ),
         deferredError = msg.deferredError,
         emitterName = testEmitterName,

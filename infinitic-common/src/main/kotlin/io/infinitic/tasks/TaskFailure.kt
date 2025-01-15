@@ -27,13 +27,16 @@ import com.github.avrokotlin.avro4k.AvroDefault
 import com.github.avrokotlin.avro4k.AvroName
 import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.cloudEvents.ERROR
-import io.infinitic.cloudEvents.PREVIOUS
+import io.infinitic.cloudEvents.FAILURE_PREVIOUS
+import io.infinitic.cloudEvents.FAILURE_STACKTRACE
+import io.infinitic.cloudEvents.TASK_RETRY_DELAY
 import io.infinitic.cloudEvents.TASK_RETRY_INDEX
 import io.infinitic.cloudEvents.TASK_RETRY_SEQUENCE
 import io.infinitic.cloudEvents.WORKER_NAME
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.utils.JsonAble
 import io.infinitic.common.utils.toJson
+import io.infinitic.exceptions.GenericException
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
@@ -56,8 +59,11 @@ data class TaskFailure(
   /** Seconds before retry (null if no retry)*/
   @AvroDefault(Avro.NULL) val secondsBeforeRetry: Double?,
 
+  /** String version of the stack trace */
+  @SerialName("stackTraceToString") val stackTraceString: String?,
+
   /** details of the exception */
-  @AvroDefault(Avro.NULL) var exceptionDetail: TaskExceptionDetail?,
+  @AvroDefault(Avro.NULL) var exception: GenericException?,
 
   /** cause of the error */
   @SerialName("cause") val previousFailure: TaskFailure?,
@@ -66,17 +72,14 @@ data class TaskFailure(
   @Deprecated("Unused after v0.17.0") private val name: String? = null,
   /** Message of the error */
   @Deprecated("Unused after v0.17.0") private val message: String? = null,
-  /** String version of the stack trace */
-  @Deprecated("Unused after v0.17.0") private val stackTraceToString: String? = null,
 ) : JsonAble {
 
   init {
-    // Used to convert old data to new format (v0.17.0)
-    exceptionDetail = exceptionDetail ?: TaskExceptionDetail(
+    // Useful to convert data with version < 0.17.0
+    exception = exception ?: GenericException(
         name = name ?: thisShouldNotHappen(),
         message = message,
-        stackTrace = stackTraceToString ?: thisShouldNotHappen(),
-        serializedData = emptyMap(),
+        serializedCustomProperties = emptyMap(),
         cause = null,
     )
   }
@@ -84,10 +87,31 @@ data class TaskFailure(
   override fun toJson(): JsonObject = JsonObject(
       mapOf(
           WORKER_NAME to JsonPrimitive(workerName),
-          TASK_RETRY_SEQUENCE to JsonPrimitive(retrySequence.toString()),
-          TASK_RETRY_INDEX to JsonPrimitive(retryIndex.toString()),
-          ERROR to exceptionDetail.toJson(),
-          PREVIOUS to previousFailure.toJson(),
+          TASK_RETRY_SEQUENCE to JsonPrimitive(retrySequence),
+          TASK_RETRY_INDEX to JsonPrimitive(retryIndex),
+          TASK_RETRY_DELAY to JsonPrimitive(secondsBeforeRetry),
+          ERROR to exception.toJson(),
+          FAILURE_STACKTRACE to JsonPrimitive(stackTraceString),
+          FAILURE_PREVIOUS to previousFailure.toJson(),
       ),
   )
+
+  fun toJsonWithoutAttemptDetails(): JsonObject = JsonObject(
+      mapOf(
+          ERROR to exception.toJson(),
+          FAILURE_STACKTRACE to JsonPrimitive(stackTraceString),
+          FAILURE_PREVIOUS to previousFailure.toJson(),
+      ),
+  )
+
+  override fun toString(): String {
+    return "TaskFailure(" +
+        "workerName='$workerName'," +
+        "retrySequence=$retrySequence, " +
+        "retryIndex=$retryIndex, " +
+        "secondsBeforeRetry=$secondsBeforeRetry, " +
+        "stackTraceString='${stackTraceString?.replace("\n", "\\n")}', " +
+        "exception=$exception, " +
+        "previousFailure=$previousFailure)"
+  }
 }

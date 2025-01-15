@@ -35,7 +35,7 @@ import io.infinitic.common.tasks.executors.errors.TaskCanceledError
 import io.infinitic.common.tasks.executors.errors.TaskFailedError
 import io.infinitic.common.tasks.executors.errors.TaskTimedOutError
 import io.infinitic.common.tasks.executors.errors.TaskUnknownError
-import io.infinitic.common.tasks.executors.errors.WorkflowTaskFailedError
+import io.infinitic.common.tasks.executors.errors.WorkflowExecutorError
 import io.infinitic.tasks.TaskFailure
 import kotlinx.serialization.SerialName
 
@@ -93,7 +93,7 @@ sealed class DeferredFailedException : DeferredException() {
     fun from(error: DeferredFailedError) = when (error) {
       is TaskFailedError -> TaskFailedException.from(error)
       is MethodFailedError -> WorkflowFailedException.from(error)
-      is WorkflowTaskFailedError -> WorkflowTaskFailedException.from(error)
+      is WorkflowExecutorError -> WorkflowExecutorException.from(error)
     }
   }
 }
@@ -278,7 +278,7 @@ data class TaskFailedException(
   val methodName: String,
 
   /** Description of the last failure **/
-  val failure: TaskFailure
+  val lastFailure: TaskFailure
 ) : DeferredFailedException() {
 
   override val description = REMOTE_TASK_ERROR +
@@ -290,7 +290,7 @@ data class TaskFailedException(
         serviceName = error.serviceName.toString(),
         taskId = error.taskId.toString(),
         methodName = error.methodName.toString(),
-        failure = error.failure,
+        lastFailure = error.lastFailure,
     )
   }
 }
@@ -307,7 +307,7 @@ data class WorkflowFailedException(
   val workflowMethodName: String,
 
   /** Id of the methodRun */
-  val workflowMethodId: String?,
+  val workflowMethodId: String,
 
   /** cause of the error */
   val deferredException: DeferredException
@@ -315,7 +315,7 @@ data class WorkflowFailedException(
   override val description = REMOTE_WORKFLOW_ERROR +
       "It appears this workflow has failed " +
       "(Workflow Name: $workflowName, Workflow ID: $workflowId, Method Name: $workflowMethodName" +
-      (workflowMethodId?.let { ", Method ID: $it" } ?: "") +
+      workflowMethodId.let { ", Method ID: $it" } +
       ")."
 
   companion object {
@@ -324,14 +324,14 @@ data class WorkflowFailedException(
             workflowName = error.workflowName.toString(),
             workflowId = error.workflowId.toString(),
             workflowMethodName = error.workflowMethodName.toString(),
-            workflowMethodId = error.workflowMethodId.toString(),
+            workflowMethodId = (error.workflowMethodId ?: error.workflowId).toString(),
             deferredException = from(error.deferredError),
         )
   }
 }
 
 /** Exception occurred during a workflow task */
-data class WorkflowTaskFailedException(
+data class WorkflowExecutorException(
   /** Name of the workflow for which the error occurred */
   val workflowName: String,
 
@@ -341,15 +341,15 @@ data class WorkflowTaskFailedException(
   /** ID of the workflow task for which the error occurred */
   val workflowTaskId: String,
 
-  /** Description of the last failure **/
+  /** Description of the last lastFailure **/
   val lastFailure: TaskFailure
 ) : DeferredFailedException() {
   override val description =
       "Unable to continue the execution of this workflow. An exception has raised."
 
   companion object {
-    fun from(error: WorkflowTaskFailedError): WorkflowTaskFailedException =
-        WorkflowTaskFailedException(
+    fun from(error: WorkflowExecutorError): WorkflowExecutorException =
+        WorkflowExecutorException(
             workflowName = error.workflowName.toString(),
             workflowId = error.workflowId.toString(),
             workflowTaskId = error.workflowTaskId.toString(),

@@ -39,7 +39,7 @@ import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEventEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEventMessage
-import io.infinitic.tasks.TaskExceptionDetail
+import io.infinitic.exceptions.GenericException
 import io.infinitic.tasks.TaskFailure
 import org.apache.commons.lang3.RandomStringUtils
 import org.jeasy.random.EasyRandom
@@ -87,12 +87,13 @@ object TestFactory {
               retrySequence = random(),
               retryIndex = random(),
               secondsBeforeRetry = random(),
-              exceptionDetail = random(),
+              stackTraceString = random(),
+              exception = random(),
               previousFailure = null,
           )
         }
-        .randomize(TaskExceptionDetail::class.java) {
-          TaskExceptionDetail(random(), random(), random(), emptyMap(), null)
+        .randomize(GenericException::class.java) {
+          GenericException(random(), random(), emptyMap(), null)
         }
         .randomize(MethodArgs::class.java) {
           methodParametersFrom(random<ByteArray>(), random<String>())

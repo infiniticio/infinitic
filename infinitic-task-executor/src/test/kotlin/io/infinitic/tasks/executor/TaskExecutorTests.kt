@@ -505,7 +505,7 @@ fun ExecuteTask.check(
   methodName shouldBe msg.methodName
   taskMeta shouldBe TaskMeta(meta)
   taskId shouldBe msg.taskId
-  lastFailure!!.exceptionDetail!!.name shouldBe errorName
+  lastFailure!!.exception!!.name shouldBe errorName
   lastFailure!!.workerName shouldBe msg.emitterName.toString()
 }
 
@@ -521,7 +521,7 @@ fun TaskFailedEvent.check(
   taskRetryIndex shouldBe msg.taskRetryIndex
   requester shouldBe msg.requester
   clientWaiting shouldBe msg.clientWaiting
-  failure.exceptionDetail!!.name shouldBe errorName
+  failure.exception!!.name shouldBe errorName
   failure.workerName shouldBe msg.emitterName.toString()
   methodName shouldBe msg.methodName
   taskMeta shouldBe TaskMeta(meta)
@@ -543,7 +543,7 @@ fun TaskRetriedEvent.check(
   taskTags shouldBe msg.taskTags
   taskMeta shouldBe TaskMeta(meta)
   taskRetryDelay shouldBe delay
-  failure.exceptionDetail!!.name shouldBe errorName
+  failure.exception!!.name shouldBe errorName
   failure.workerName shouldBe msg.emitterName.toString()
 }
 

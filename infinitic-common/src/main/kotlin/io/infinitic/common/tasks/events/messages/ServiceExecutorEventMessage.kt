@@ -56,7 +56,7 @@ import io.infinitic.common.workflows.engine.messages.RemoteTaskCompleted
 import io.infinitic.common.workflows.engine.messages.RemoteTaskFailed
 import io.infinitic.currentVersion
 import io.infinitic.exceptions.DeferredException
-import io.infinitic.tasks.TaskExceptionDetail
+import io.infinitic.exceptions.GenericException
 import io.infinitic.tasks.TaskFailure
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -157,7 +157,7 @@ data class TaskFailedEvent(
             serviceName = serviceName,
             methodName = methodName,
             taskId = taskId,
-            failure = failure,
+            lastFailure = failure,
         ),
         deferredError = deferredError,
         emitterName = emitterName,
@@ -189,7 +189,8 @@ data class TaskFailedEvent(
             retrySequence = msg.taskRetrySequence.toInt(),
             retryIndex = msg.taskRetryIndex.toInt(),
             secondsBeforeRetry = 0.0,
-            exceptionDetail = TaskExceptionDetail.from(cause),
+            stackTraceString = cause.stackTraceToString(),
+            exception = GenericException.from(cause),
             previousFailure = msg.lastFailure,
         ),
         deferredError = cause.deferredError,
@@ -239,7 +240,8 @@ data class TaskRetriedEvent(
             retrySequence = msg.taskRetrySequence.toInt(),
             retryIndex = msg.taskRetryIndex.toInt(),
             secondsBeforeRetry = delay.toSeconds(),
-            exceptionDetail = TaskExceptionDetail.from(cause),
+            stackTraceString = cause.stackTraceToString(),
+            exception = GenericException.from(cause),
             previousFailure = msg.lastFailure,
         ),
     )

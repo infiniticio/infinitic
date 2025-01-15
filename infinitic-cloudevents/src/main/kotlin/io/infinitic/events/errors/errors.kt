@@ -23,7 +23,7 @@
 
 package io.infinitic.events.errors
 
-import io.infinitic.cloudEvents.ERROR
+import io.infinitic.cloudEvents.FAILURE
 import io.infinitic.cloudEvents.METHOD_ID
 import io.infinitic.cloudEvents.METHOD_NAME
 import io.infinitic.cloudEvents.SERVICE_NAME
@@ -40,7 +40,7 @@ import io.infinitic.common.tasks.executors.errors.TaskCanceledError
 import io.infinitic.common.tasks.executors.errors.TaskFailedError
 import io.infinitic.common.tasks.executors.errors.TaskTimedOutError
 import io.infinitic.common.tasks.executors.errors.TaskUnknownError
-import io.infinitic.common.tasks.executors.errors.WorkflowTaskFailedError
+import io.infinitic.common.tasks.executors.errors.WorkflowExecutorError
 import io.infinitic.common.utils.toJson
 import io.infinitic.events.types.EXECUTOR_FAILED
 import io.infinitic.events.types.REMOTE_METHOD_CANCELED
@@ -55,16 +55,16 @@ import kotlinx.serialization.json.JsonObject
 
 
 fun DeferredError.toJson(): Pair<String, JsonObject> = when (this) {
-  is WorkflowTaskFailedError -> EXECUTOR_FAILED to JsonObject(
+  is WorkflowExecutorError -> EXECUTOR_FAILED to JsonObject(
       mapOf(
-          ERROR to lastFailure.toJson(),
+          FAILURE to lastFailure.toJson(),
           TASK_ID to workflowTaskId.toJson(),
       ),
   )
 
   is TaskFailedError -> TASK_FAILED to JsonObject(
       mapOf(
-          ERROR to failure.toJson(),
+          FAILURE to lastFailure.toJson(),
           TASK_ID to taskId.toJson(),
           TASK_NAME to methodName.toJson(),
           SERVICE_NAME to serviceName.toJson(),

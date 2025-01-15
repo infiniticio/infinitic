@@ -26,7 +26,7 @@ import io.infinitic.utils.ParentInterface
 import io.infinitic.utils.UtilService
 import io.infinitic.workflows.Workflow
 
-interface SyntaxWorkflow : ParentInterface {
+internal interface SyntaxWorkflow : ParentInterface {
   fun empty(): String
 
   fun await(duration: Long): Long

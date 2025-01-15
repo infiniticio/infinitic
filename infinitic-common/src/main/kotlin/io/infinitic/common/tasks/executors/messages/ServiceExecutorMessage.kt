@@ -52,7 +52,7 @@ import io.infinitic.common.workflows.data.workflowTasks.isWorkflowTask
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.currentVersion
-import io.infinitic.tasks.TaskExceptionDetail
+import io.infinitic.exceptions.GenericException
 import io.infinitic.tasks.TaskFailure
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -144,7 +144,8 @@ data class ExecuteTask(
             retrySequence = msg.taskRetrySequence.toInt(),
             retryIndex = msg.taskRetryIndex.toInt(),
             secondsBeforeRetry = delay.toSeconds(),
-            exceptionDetail = TaskExceptionDetail.from(cause),
+            stackTraceString = cause.stackTraceToString(),
+            exception = GenericException.from(cause),
             previousFailure = msg.lastFailure,
         ),
     )
