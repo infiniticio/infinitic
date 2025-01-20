@@ -22,11 +22,12 @@
  */
 package io.infinitic.tests.deferred
 
-import io.infinitic.tests.Test
-import io.infinitic.tests.utils.UtilWorkflow
+import io.infinitic.Test
+import io.infinitic.utils.UtilWorkflow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldBeIn
 import io.kotest.matchers.shouldBe
+import kotlin.time.Duration.Companion.seconds
 
 internal class DeferredWorkflowTests :
   StringSpec(
@@ -37,7 +38,9 @@ internal class DeferredWorkflowTests :
             client.newWorkflow(DeferredWorkflow::class.java, tags = setOf("foo", "bar"))
         val utilWorkflow = client.newWorkflow(UtilWorkflow::class.java)
 
-        "Simple Sequential Workflow" { deferredWorkflow.seq1() shouldBe "123" }
+        "Simple Sequential Workflow".config(timeout = 30.seconds) {
+          deferredWorkflow.seq1() shouldBe "123"
+        }
 
         "Wait for a dispatched Workflow" {
           val deferred = client.dispatch(deferredWorkflow::await, 200L)

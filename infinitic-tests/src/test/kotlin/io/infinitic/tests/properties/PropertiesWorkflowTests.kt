@@ -22,9 +22,15 @@
  */
 package io.infinitic.tests.properties
 
-import io.infinitic.tests.Test
+import io.infinitic.Test
+import io.infinitic.exceptions.WorkflowExecutorException
+import io.infinitic.exceptions.WorkflowFailedException
+import io.infinitic.workflows.Deferred
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.types.instanceOf
 
 internal class PropertiesWorkflowTests :
   StringSpec(
@@ -33,20 +39,80 @@ internal class PropertiesWorkflowTests :
 
         val propertiesWorkflow = client.newWorkflow(PropertiesWorkflow::class.java)
 
-        "Check prop1" { propertiesWorkflow.prop1() shouldBe "ac" }
+        "Share data between branches" {
+          propertiesWorkflow.prop1() shouldBe "abc"
+        }
 
-        "Check prop2" { propertiesWorkflow.prop2() shouldBe "acbd" }
+        "Share data between branches processed in parallel" {
+          propertiesWorkflow.prop2() shouldBe "acbd"
+        }
 
-        "Check prop3" { propertiesWorkflow.prop3() shouldBe "acbd" }
+        "Share data between branches processed in parallel (multiple steps)" {
+          propertiesWorkflow.prop3() shouldBe "acbd"
+        }
 
-        "Check prop4" { propertiesWorkflow.prop4() shouldBe "acd" }
+        "Share data between multiple branches processed in parallel (time)" {
+          propertiesWorkflow.prop4() shouldBe "acd"
+        }
 
-        "Check prop5" { propertiesWorkflow.prop5() shouldBe "adbc" }
+        "Check prop5" {
+          propertiesWorkflow.prop5() shouldBe "adcb"
+        }
 
-        "Check prop6" { propertiesWorkflow.prop6() shouldBe "abab" }
+        /**
+         * It is not possible to use Deferred in arguments, so here we just check the error
+         */
+        "With non completed Deferred as branch argument" {
+          val e = shouldThrow<WorkflowFailedException> {
+            propertiesWorkflow.prop6() shouldBe "abab"
+          }
+          e.deferredException shouldBe instanceOf<WorkflowExecutorException>()
+          val exception =
+              (e.deferredException as WorkflowExecutorException).lastFailure.exception!!
+          exception.message shouldContain Deferred::class.java.name
+        }
 
-        "Check prop7" { propertiesWorkflow.prop7() shouldBe "abab" }
+        /**
+         * It is not possible to use Deferred in arguments, so here we just check the error
+         */
+        "With completed Deferred as branch argument" {
+          val e = shouldThrow<WorkflowFailedException> {
+            propertiesWorkflow.prop6bis() shouldBe "abab"
+          }
+          e.deferredException shouldBe instanceOf<WorkflowExecutorException>()
+          val exception =
+              (e.deferredException as WorkflowExecutorException).lastFailure.exception!!
+          exception.message shouldContain Deferred::class.java.name
+        }
 
-        "Check prop8" { propertiesWorkflow.prop8() shouldBe "acbd" }
+        /**
+         * It is still not possible to use Deferred in properties, so here we just check the error
+         */
+        "With non-completed Deferred as property" {
+          val e = shouldThrow<WorkflowFailedException> {
+            propertiesWorkflow.prop7() shouldBe "abab"
+          }
+          e.deferredException shouldBe instanceOf<WorkflowExecutorException>()
+          val exception =
+              (e.deferredException as WorkflowExecutorException).lastFailure.exception!!
+          exception.message shouldContain Deferred::class.java.name
+        }
+
+        /**
+         * It is still not possible to use Deferred in properties, so here we just check the error
+         */
+        "With completed Deferred as property" {
+          val e = shouldThrow<WorkflowFailedException> {
+            propertiesWorkflow.prop7bis() shouldBe "abab"
+          }
+          e.deferredException shouldBe instanceOf<WorkflowExecutorException>()
+          val exception =
+              (e.deferredException as WorkflowExecutorException).lastFailure.exception!!
+          exception.message shouldContain Deferred::class.java.name
+        }
+
+        "Check prop8" {
+          propertiesWorkflow.prop8() shouldBe "acbd"
+        }
       },
   )

@@ -22,18 +22,39 @@
  */
 package io.infinitic.storage.keyValue
 
-import io.infinitic.storage.compressor.Compressor
+import io.infinitic.storage.compression.CompressionConfig
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 
-class CompressedKeyValueStorage(private val compressor: Compressor?, val storage: KeyValueStorage) :
-  KeyValueStorage by storage {
+class CompressedKeyValueStorage(
+  private val compressionConfig: CompressionConfig?,
+  val storage: KeyValueStorage
+) : KeyValueStorage by storage {
 
   override suspend fun get(key: String): ByteArray? =
   // As the compression method can change over time,
-  // we always detect if the state is compressed or not
+  // we always detect if the state is compressed or not,
       // independently of the provided compressor
-      storage.get(key)?.let { Compressor.decompress(it) }
+      storage.get(key)?.let { decompress(it) }
 
-  override suspend fun put(key: String, value: ByteArray) =
+  override suspend fun put(key: String, bytes: ByteArray?) =
       // apply the provided compression method, if any
-      storage.put(key, compressor?.compress(value) ?: value)
+      storage.put(key, bytes?.let { compress(it) })
+
+  override suspend fun get(keys: Set<String>): Map<String, ByteArray?> = coroutineScope {
+    storage.get(keys)
+        .mapValues { async { it.value?.let { v -> decompress(v) } } }
+        .mapValues { it.value.await() }
+  }
+
+  override suspend fun put(bytes: Map<String, ByteArray?>) = coroutineScope {
+    bytes
+        .mapValues { async { it.value?.let { v -> compress(v) } } }
+        .mapValues { it.value.await() }
+        .let { storage.put(it) }
+  }
+
+  private fun compress(value: ByteArray) = compressionConfig?.compress(value) ?: value
+
+  private fun decompress(value: ByteArray) = CompressionConfig.decompress(value)
 }

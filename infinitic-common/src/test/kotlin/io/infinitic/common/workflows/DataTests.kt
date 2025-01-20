@@ -22,7 +22,7 @@
  */
 package io.infinitic.common.workflows
 
-import io.infinitic.common.data.ReturnValue
+import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.workflows.data.channels.ChannelName
@@ -76,11 +76,11 @@ class DataTests :
 
         "CommandOutput should be serialized as SerializedData and reversible in json" {
           val id = TestFactory.random<String>()
-          val m = ReturnValue.from(id)
+          val m = MethodReturnValue.from(id, String::class.java)
           val json = Json.encodeToString(m)
-          val m2 = Json.decodeFromString<ReturnValue>(json)
+          val m2 = Json.decodeFromString<MethodReturnValue>(json)
 
-          json shouldBe Json.encodeToString(SerializedData.from(id))
+          json shouldBe Json.encodeToString(SerializedData.encode(id, String::class.java, null))
           m2 shouldBe m
         }
 
@@ -96,11 +96,11 @@ class DataTests :
 
         "ChannelSignal should be serialized as SerializedData and reversible in json" {
           val id = TestFactory.random<String>()
-          val m = SignalData(SerializedData.from(id))
+          val m = SignalData(SerializedData.encode(id, String::class.java, null))
           val json = Json.encodeToString(m)
           val m2 = Json.decodeFromString<SignalData>(json)
 
-          json shouldBe Json.encodeToString(SerializedData.from(id))
+          json shouldBe Json.encodeToString(SerializedData.encode(id, String::class.java, null))
           m2 shouldBe m
         }
 
@@ -175,11 +175,11 @@ class DataTests :
 
         "PropertyValue should be serialized as SerializedData and reversible in json" {
           val id = TestFactory.random<String>()
-          val m = PropertyValue.from(id)
+          val m = PropertyValue.from(id, String::class.java)
           val json = Json.encodeToString(m)
           val m2 = Json.decodeFromString<PropertyValue>(json)
 
-          json shouldBe Json.encodeToString(SerializedData.from(id))
+          json shouldBe Json.encodeToString(SerializedData.encode(id, String::class.java, null))
           m2 shouldBe m
         }
 
@@ -205,11 +205,11 @@ class DataTests :
 
         "StepOutput should be serialized as SerializedData and reversible in json" {
           val id = TestFactory.random<String>()
-          val m = ReturnValue.from(id)
+          val m = MethodReturnValue.from(id, String::class.java)
           val json = Json.encodeToString(m)
-          val m2 = Json.decodeFromString<ReturnValue>(json)
+          val m2 = Json.decodeFromString<MethodReturnValue>(json)
 
-          json shouldBe Json.encodeToString(SerializedData.from(id))
+          json shouldBe Json.encodeToString(SerializedData.encode(id, String::class.java, null))
           m2 shouldBe m
         }
 

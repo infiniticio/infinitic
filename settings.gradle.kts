@@ -20,7 +20,7 @@
  *
  * Licensor: infinitic.io
  */
-include("infinitic-autoclose")
+include("infinitic-utils")
 
 include("infinitic-common")
 

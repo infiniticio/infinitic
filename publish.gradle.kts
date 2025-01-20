@@ -29,8 +29,17 @@
 // * login to https://s01.oss.sonatype.org#stagingRepositories
 // * once the new version is uploaded in staging repositories, close it, then release it
 //
+// You must have a gradle.properties file with
+// ossSonatypeOrgUsername=
+// ossSonatypeOrgPassword=
+// signing.keyId=
+// signing.password=
+// signing.secretKeyRingFile=/Users/you/.gnupg/secring.gpg
+//
 // To deploy a snapshot, run: ./gradlew publish --rerun-tasks
-// and add: maven(url = "https://s01.oss.sonatype.org/content/repositories/snapshots/")
+// and add:
+// Kotlin: maven(url = "https://s01.oss.sonatype.org/content/repositories/snapshots/")
+// Java: maven { url = 'https://s01.oss.sonatype.org/content/repositories/snapshots/' }
 // in the repositories section of the gradle.build file
 
 apply(plugin = "java")
@@ -57,8 +66,7 @@ fun Project.signing(configure: SigningExtension.() -> Unit): Unit = configure(co
 
 fun Project.java(configure: JavaPluginExtension.() -> Unit): Unit = configure(configure)
 
-val publications: PublicationContainer =
-    (extensions.getByName("publishing") as PublishingExtension).publications
+val publications = (extensions.getByName("publishing") as PublishingExtension).publications
 
 signing {
   if (Ci.isRelease) {

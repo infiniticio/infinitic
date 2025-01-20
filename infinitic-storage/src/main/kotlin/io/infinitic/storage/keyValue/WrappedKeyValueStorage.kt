@@ -33,19 +33,24 @@ class WrappedKeyValueStorage(val storage: KeyValueStorage) : KeyValueStorage {
         throwWrappedException(e)
       }
 
-  override suspend fun put(key: String, value: ByteArray) =
+  override suspend fun put(key: String, bytes: ByteArray?) =
       try {
-        storage.put(key, value)
+        storage.put(key, bytes)
       } catch (e: Exception) {
         throwWrappedException(e)
       }
 
-  override suspend fun del(key: String) =
-      try {
-        storage.del(key)
-      } catch (e: Exception) {
-        throwWrappedException(e)
-      }
+  override suspend fun get(keys: Set<String>): Map<String, ByteArray?> = try {
+    storage.get(keys)
+  } catch (e: Exception) {
+    throwWrappedException(e)
+  }
+
+  override suspend fun put(bytes: Map<String, ByteArray?>) = try {
+    storage.put(bytes)
+  } catch (e: Exception) {
+    throwWrappedException(e)
+  }
 
   @TestOnly
   override fun flush() =

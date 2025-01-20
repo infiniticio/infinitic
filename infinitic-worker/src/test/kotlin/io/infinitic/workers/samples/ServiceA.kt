@@ -24,9 +24,9 @@
 
 package io.infinitic.workers.samples
 
-internal interface ServiceA
+interface ServiceA
 
-internal class ServiceAImpl : ServiceA
+class ServiceAImpl : ServiceA
 
 internal class ServiceWithInvocationTargetException : ServiceA {
   init {

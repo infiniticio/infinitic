@@ -25,17 +25,17 @@ package io.infinitic.clients.deferred
 import io.infinitic.clients.Deferred
 import io.infinitic.clients.dispatcher.ClientDispatcher
 import io.infinitic.common.data.MillisDuration
-import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.proxies.RequestBy
 import io.infinitic.common.proxies.RequestByWorkflowId
 import io.infinitic.common.proxies.RequestByWorkflowTag
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
+import java.lang.reflect.Method
 
 class ExistingDeferredWorkflow<R> internal constructor(
   internal val workflowName: WorkflowName,
   internal val requestBy: RequestBy,
-  internal val methodName: MethodName,
+  internal val method: Method,
   internal val methodReturnClass: Class<R>,
   internal val methodTimeout: MillisDuration?,
   private val dispatcher: ClientDispatcher
@@ -53,7 +53,7 @@ class ExistingDeferredWorkflow<R> internal constructor(
   // this method retries workflowTask (unique for a workflow instance)
   override fun retryAsync() = dispatcher.retryWorkflowTaskAsync(workflowName, requestBy)
 
-  override fun await(): R = dispatcher.awaitExistingWorkflow(this, true)
+  override suspend fun await(): R = dispatcher.awaitExistingWorkflow(this, true)
 
   override val id by lazy {
     when (requestBy) {

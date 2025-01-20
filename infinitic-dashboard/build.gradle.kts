@@ -27,14 +27,14 @@ plugins { application }
 application { mainClass.set("io.infinitic.dashboard.MainKt") }
 
 dependencies {
+  implementation(project(":infinitic-transport"))
+  implementation(project(":infinitic-transport-pulsar"))
+
   implementation(Libs.Kweb.core)
   implementation(Libs.Pulsar.client)
   implementation(Libs.Pulsar.clientAdmin)
-  
-  implementation(project(":infinitic-autoclose"))
 
-  api(project(":infinitic-transport-pulsar"))
-  api(project(":infinitic-transport"))
+  implementation(project(":infinitic-utils"))
 }
 
 apply("../publish.gradle.kts")

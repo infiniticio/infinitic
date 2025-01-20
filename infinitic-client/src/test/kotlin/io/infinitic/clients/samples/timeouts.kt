@@ -26,5 +26,5 @@ package io.infinitic.clients.samples
 import io.infinitic.tasks.WithTimeout
 
 class After50MilliSeconds : WithTimeout {
-  override fun getTimeoutInSeconds() = 0.05
+  override fun getTimeoutSeconds() = 0.05
 }

@@ -24,7 +24,7 @@ package io.infinitic.tasks.executor.task
 
 import java.lang.reflect.Method
 
-internal data class TaskCommand(val service: Any, val method: Method, val parameters: Array<Any?>) {
+internal data class TaskCommand(val service: Any, val method: Method, val parameters: Array<*>) {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (javaClass != other?.javaClass) return false

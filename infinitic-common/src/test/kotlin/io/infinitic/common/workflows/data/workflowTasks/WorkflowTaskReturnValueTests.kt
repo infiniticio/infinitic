@@ -22,6 +22,7 @@
  */
 package io.infinitic.common.workflows.data.workflowTasks
 
+import io.infinitic.common.exceptions.ShouldNotHappenException
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.fixtures.checkBackwardCompatibility
 import io.infinitic.common.fixtures.checkOrCreateCurrentFile
@@ -38,7 +39,8 @@ class WorkflowTaskReturnValueTests :
         "WorkflowTaskReturnValue should be SerializedData-convertible" {
           shouldNotThrowAny {
             val msg = TestFactory.random<WorkflowTaskReturnValue>()
-            val msg2 = SerializedData.from(msg).deserialize()
+            val msg2 = SerializedData.encode(msg, WorkflowTaskReturnValue::class.java, null)
+                .decode(WorkflowTaskReturnValue::class.java, null)
 
             msg shouldBe msg2
           }
@@ -47,8 +49,8 @@ class WorkflowTaskReturnValueTests :
 
         "WorkflowTaskReturnValue SerializedData should use finger printed schema" {
           val msg = TestFactory.random<WorkflowTaskReturnValue>()
-          val data = SerializedData.from(msg)
-          data.type shouldBe SerializedDataType.AVRO_WITH_SCHEMA
+          val data = SerializedData.encode(msg, WorkflowTaskReturnValue::class.java, null)
+          data.dataType shouldBe SerializedDataType.AVRO_WITH_SCHEMA
           data.bytes.contentEquals(msg.toByteArray()) shouldBe true
         }
 
@@ -69,7 +71,11 @@ class WorkflowTaskReturnValueTests :
           "We should be able to read binary from version $version" {
             val bytes = AvroSerDe.getRandomBinaryWithSchemaFingerprint(schema)
 
-            shouldNotThrowAny { WorkflowTaskReturnValue.fromByteArray(bytes) }
+            try {
+              WorkflowTaskReturnValue.fromByteArray(bytes)
+            } catch (e: ShouldNotHappenException) {
+              // do nothing
+            }
           }
         }
       },

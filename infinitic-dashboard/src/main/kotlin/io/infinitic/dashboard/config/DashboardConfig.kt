@@ -25,38 +25,27 @@ package io.infinitic.dashboard.config
 import io.infinitic.common.config.loadConfigFromFile
 import io.infinitic.common.config.loadConfigFromResource
 import io.infinitic.common.config.loadConfigFromYaml
-import io.infinitic.pulsar.config.Pulsar
+import io.infinitic.transport.config.TransportConfig
 
 data class DashboardConfig(
-    /*
-    Pulsar configuration
-     */
-    val pulsar: Pulsar,
-
-    /*
-    Port configuration
-     */
-    val port: Int = 16097,
-
-    /*
-    Debug (KWeb) configuration
-     */
-    val debug: Boolean = true
+  val transport: TransportConfig,
+  val dashboard: DashboardSettingsConfig = DashboardSettingsConfig()
 ) {
 
   companion object {
     /** Create DashboardConfig from file in file system */
     @JvmStatic
-    fun fromFile(vararg files: String): DashboardConfig = loadConfigFromFile(*files)
+    fun fromYamlFile(vararg files: String) =
+        loadConfigFromFile<DashboardConfig>(*files)
 
     /** Create DashboardConfig from file in resources directory */
     @JvmStatic
-    fun fromResource(vararg resources: String): DashboardConfig =
-        loadConfigFromResource(*resources)
+    fun fromYamlResource(vararg resources: String) =
+        loadConfigFromResource<DashboardConfig>(*resources)
 
     /** Create DashboardConfig from yaml strings */
     @JvmStatic
-    fun fromYaml(vararg yamls: String): DashboardConfig =
-        loadConfigFromYaml(*yamls)
+    fun fromYamlString(vararg yamls: String) =
+        loadConfigFromYaml<DashboardConfig>(*yamls)
   }
 }

@@ -28,16 +28,13 @@ import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.data.TaskRetrySequence
-import io.infinitic.common.tasks.executors.errors.ExecutionError
 import io.infinitic.common.workers.config.WorkflowVersion
-import io.infinitic.common.workers.registry.WorkerRegistry
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 
 interface TaskContext {
   val client: InfiniticClientInterface
   val workerName: String
-  val workerRegistry: WorkerRegistry
   val serviceName: ServiceName
   val taskId: TaskId
   val taskName: MethodName
@@ -46,7 +43,8 @@ interface TaskContext {
   val workflowVersion: WorkflowVersion?
   val retrySequence: TaskRetrySequence
   val retryIndex: TaskRetryIndex
-  val lastError: ExecutionError?
+  val lastError: TaskFailure?
+  val batchKey: String?
   val tags: Set<String>
   val meta: MutableMap<String, ByteArray>
   val withTimeout: WithTimeout?

@@ -24,23 +24,23 @@
 
 package io.infinitic.clients
 
-import io.infinitic.workflows.Consumer0
-import io.infinitic.workflows.Consumer1
-import io.infinitic.workflows.Consumer2
-import io.infinitic.workflows.Consumer3
-import io.infinitic.workflows.Consumer4
-import io.infinitic.workflows.Consumer5
-import io.infinitic.workflows.Consumer6
-import io.infinitic.workflows.Consumer7
-import io.infinitic.workflows.Consumer8
-import io.infinitic.workflows.Consumer9
+import io.infinitic.common.workflows.Consumer0
+import io.infinitic.common.workflows.Consumer1
+import io.infinitic.common.workflows.Consumer2
+import io.infinitic.common.workflows.Consumer3
+import io.infinitic.common.workflows.Consumer4
+import io.infinitic.common.workflows.Consumer5
+import io.infinitic.common.workflows.Consumer6
+import io.infinitic.common.workflows.Consumer7
+import io.infinitic.common.workflows.Consumer8
+import io.infinitic.common.workflows.Consumer9
 import io.infinitic.workflows.DeferredStatus
 import java.io.Closeable
 import java.util.concurrent.CompletableFuture
 
 interface InfiniticClientInterface : Closeable {
   /** Client's name - this name must be unique through all connected clients */
-  val name: String
+  fun getName(): String
 
   /** Get last Deferred created by the call of a stub */
   val lastDeferred: Deferred<*>?
@@ -91,15 +91,15 @@ interface InfiniticClientInterface : Closeable {
   fun <T : Any> getWorkflowByTag(klass: Class<out T>, tag: String): T
 
   /** Dispatch without parameter a task or workflow returning an object */
-  fun <R : Any?> dispatchAsync(method: () -> R): CompletableFuture<Deferred<R>> = startAsync {
-    method.invoke()
-  }
+  fun <R : Any?> dispatchAsync(
+    method: () -> R
+  ): CompletableFuture<Deferred<R>> = startAsync { method.invoke() }
 
   /** Dispatch with 1 parameter a task or workflow returning an object */
-  fun <P1, R : Any?> dispatchAsync(method: (p1: P1) -> R, p1: P1): CompletableFuture<Deferred<R>> =
-      startAsync {
-        method.invoke(p1)
-      }
+  fun <P1, R : Any?> dispatchAsync(
+    method: (p1: P1) -> R,
+    p1: P1
+  ): CompletableFuture<Deferred<R>> = startAsync { method.invoke(p1) }
 
   /** Dispatch with 2 parameters a task or workflow returning an object */
   fun <P1, P2, R : Any?> dispatchAsync(

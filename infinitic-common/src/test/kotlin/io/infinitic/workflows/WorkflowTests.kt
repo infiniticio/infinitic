@@ -27,6 +27,7 @@ import io.infinitic.common.proxies.NewWorkflowProxyHandler
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskTag
+import io.infinitic.common.workflows.WorkflowDispatcher
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
@@ -57,7 +58,7 @@ class WorkflowTests :
 
           with(newTaskSlot.captured) {
             serviceName shouldBe ServiceName(TaskA::class.java.name)
-            methodName.toString() shouldBe TaskA::await.name
+            annotatedMethodName.toString() shouldBe TaskA::await.name
             methodArgs.toList() shouldBe listOf(100)
             taskTags shouldBe setOf(TaskTag("foo"), TaskTag("bar"))
             taskMeta shouldBe TaskMeta(mutableMapOf("foo" to "bar".toByteArray()))
@@ -71,7 +72,7 @@ class WorkflowTests :
 
           with(newTaskSlot.captured) {
             serviceName shouldBe ServiceName(TaskA::class.java.name)
-            methodName.toString() shouldBe TaskA::await.name
+            annotatedMethodName.toString() shouldBe TaskA::await.name
             methodArgs.toList() shouldBe listOf(100)
             taskTags shouldBe setOf(TaskTag("foo"), TaskTag("bar"))
             taskMeta shouldBe TaskMeta(mutableMapOf("foo" to "bar".toByteArray()))
@@ -85,7 +86,7 @@ class WorkflowTests :
 
           with(newWorkflowSlot.captured) {
             workflowName shouldBe WorkflowName(WorkflowA::class.java.name)
-            methodName.toString() shouldBe WorkflowA::syncTask.name
+            annotatedMethodName.toString() shouldBe WorkflowA::syncTask.name
             methodArgs.toList() shouldBe listOf(100)
             workflowTags shouldBe setOf(WorkflowTag("foo"), WorkflowTag("bar"))
             workflowMeta shouldBe WorkflowMeta(mapOf("foo" to "bar".toByteArray()))
@@ -99,7 +100,7 @@ class WorkflowTests :
 
           with(newWorkflowSlot.captured) {
             workflowName shouldBe WorkflowName(WorkflowA::class.java.name)
-            methodName.toString() shouldBe WorkflowA::syncTask.name
+            annotatedMethodName.toString() shouldBe WorkflowA::syncTask.name
             methodArgs.toList() shouldBe listOf(100)
             workflowTags shouldBe setOf(WorkflowTag("foo"), WorkflowTag("bar"))
             workflowMeta shouldBe WorkflowMeta(mapOf("foo" to "bar".toByteArray()))

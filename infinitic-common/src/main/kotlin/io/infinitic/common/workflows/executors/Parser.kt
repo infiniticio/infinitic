@@ -22,31 +22,96 @@
  */
 package io.infinitic.common.workflows.executors
 
+import com.fasterxml.jackson.annotation.JsonView
+import io.github.oshai.kotlinlogging.KLogger
+import io.infinitic.annotations.Ignore
 import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.data.properties.PropertyName
 import io.infinitic.common.workflows.data.properties.PropertyValue
+import io.infinitic.workflows.Channel
+import io.infinitic.workflows.Workflow
+import org.slf4j.Logger
+import java.lang.reflect.Proxy
+import java.security.InvalidParameterException
 import kotlin.reflect.KProperty1
+import kotlin.reflect.full.createType
+import kotlin.reflect.full.findAnnotations
+import kotlin.reflect.full.hasAnnotation
+import kotlin.reflect.full.isSubtypeOf
 import kotlin.reflect.full.memberProperties
+import kotlin.reflect.full.starProjectedType
 import kotlin.reflect.jvm.javaField
 
-fun <T : Any> setPropertiesToObject(obj: T, values: Map<PropertyName, PropertyValue>) {
-  val properties = obj::class.memberProperties
+context(KLogger)
+fun Workflow.setProperties(
+  propertiesHashValue: Map<PropertyHash, PropertyValue>,
+  propertiesNameHash: Map<PropertyName, PropertyHash>
+) {
+  val properties = propertiesNameHash.mapValues {
+    propertiesHashValue[it.value]
+      ?: thisShouldNotHappen("unknown hash ${it.value} in $propertiesHashValue")
+  }
+
+  setProperties(properties)
+}
+
+fun Workflow.getProperties() = filterProperties {
+  // excludes Channels
+  !it.first.returnType.isSubtypeOf(Channel::class.starProjectedType) &&
+      // excludes Proxies (tasks and workflows) and null
+      !(it.second?.let { Proxy.isProxyClass(it::class.java) } ?: true) &&
+      // exclude SLF4J loggers
+      !it.first.returnType.isSubtypeOf(Logger::class.createType()) &&
+      // exclude KotlinLogging loggers
+      !it.first.returnType.isSubtypeOf(KLogger::class.createType()) &&
+      // exclude Ignore annotation
+      !it.first.hasAnnotation<Ignore>()
+}
+
+context(KLogger)
+private fun Workflow.setProperties(values: Map<PropertyName, PropertyValue>) {
+  val properties = this::class.memberProperties
   values.forEach { (name, value) ->
-    properties.find { it.name == name.name }?.let { setProperty(obj, it, value.value()) }
-        ?: thisShouldNotHappen(
-            "Trying to set unknown property ${obj::class.java.name}:${name.name}")
+    properties.find { it.name == name.name }?.let { setProperty(this, it, value) }
+      ?: warn {
+        "The property '${name.name}' present in the workflow history for class " +
+            "'${this::class.java.name} is not recognized and will be ignored."
+      }
   }
 }
 
-fun <T : Any> getPropertiesFromObject(
-    obj: T,
-    filter: (p: Pair<KProperty1<out T, *>, Any?>) -> Boolean = { true }
+private fun Workflow.filterProperties(
+  filter: (p: Pair<KProperty1<out Workflow, *>, Any?>) -> Boolean = { true }
 ): Map<PropertyName, PropertyValue> =
-    obj::class
-        .memberProperties
-        .map { p: KProperty1<out T, *> -> Pair(p, getProperty(obj, p)) }
+    this::class.memberProperties
+        .map { p: KProperty1<out Workflow, *> -> Pair(p, getProperty(this, p)) }
         .filter { filter(it) }
-        .associateBy({ PropertyName(it.first.name) }, { PropertyValue.from(it.second) })
+        .associateBy(
+            { PropertyName(it.first.name) },
+            {
+              PropertyValue.from(
+                  it.second,
+                  it.first.javaField!!.genericType,
+              )
+            },
+        )
+
+private val KProperty1<*, *>.jsonViewClass
+  get(): Class<*>? {
+    val jsonViewAnnotation = findAnnotations(JsonView::class)
+        .also {
+          if (it.size > 1)
+            throw InvalidParameterException("Property '$name' should not have more than one @JsonView annotation")
+        }
+        .firstOrNull()
+    return jsonViewAnnotation?.value
+        ?.also {
+          if (it.size != 1)
+            throw InvalidParameterException("The annotation @JsonView on property '$name' must have one parameter")
+        }
+        ?.firstOrNull()?.java
+  }
 
 private fun <T : Any> getProperty(obj: T, kProperty: KProperty1<out T, *>): Any? =
     kProperty.javaField?.let {
@@ -57,34 +122,25 @@ private fun <T : Any> getProperty(obj: T, kProperty: KProperty1<out T, *>): Any?
       } catch (e: SecurityException) {
         throw RuntimeException("$errorMsg (can not set accessible)")
       }
-      val value =
-          try {
-            it.get(obj)
-          } catch (e: Exception) {
-            throw RuntimeException("$errorMsg ($e)")
-          }
 
-      value
+      it.get(obj)
     }
 
-private fun <T : Any> setProperty(obj: T, kProperty: KProperty1<out T, *>, value: Any?) {
+private fun <T : Any> setProperty(
+  obj: T,
+  kProperty: KProperty1<out T, *>,
+  propertyValue: PropertyValue
+) {
   kProperty.javaField?.apply {
     val errorMsg = "Property ${obj::class.java.name}:$name can not be set"
 
     try {
       isAccessible = true
     } catch (e: SecurityException) {
-      throw RuntimeException("$errorMsg (can not set it as accessible)")
+      throw RuntimeException("$errorMsg (not accessible)", e)
     }
-    try {
-      set(obj, value)
-    } catch (e: IllegalAccessException) {
-      throw RuntimeException("$errorMsg can not be set (is final)")
-    } catch (e: IllegalArgumentException) {
-      throw RuntimeException(
-          "$errorMsg can not be set (wrong ${value?.let { it::class.java.name }} type)")
-    } catch (e: Exception) {
-      throw RuntimeException("$errorMsg ($e)")
-    }
+    val value = propertyValue.value(genericType, kProperty.jsonViewClass)
+
+    set(obj, value)
   }
 }

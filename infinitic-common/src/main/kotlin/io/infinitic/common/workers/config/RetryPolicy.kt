@@ -25,16 +25,13 @@ package io.infinitic.common.workers.config
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.utils.getClass
 import io.infinitic.tasks.WithRetry
+import io.infinitic.tasks.WithRetryBuilder
 import kotlin.math.min
 import kotlin.math.pow
 import kotlin.random.Random
 
 sealed class RetryPolicy(open val maximumRetries: Int, open val ignoredExceptions: List<String>) :
   WithRetry {
-
-  companion object {
-    val DEFAULT = ExponentialBackoffRetryPolicy()
-  }
 
   val ignoredClasses: List<Class<*>> by lazy {
     ignoredExceptions.map { klass ->
@@ -68,7 +65,14 @@ sealed class RetryPolicy(open val maximumRetries: Int, open val ignoredException
   protected abstract fun getSecondsBeforeRetry(attempt: Int): Double?
 }
 
-data class ExponentialBackoffRetryPolicy(
+@Suppress("ClassName")
+data object UNSET_RETRY_POLICY : RetryPolicy(0, listOf()) {
+  override fun check() {}
+  override fun getSecondsBeforeRetry(attempt: Int) = -Double.MAX_VALUE
+}
+
+@Suppress("unused")
+data class WithExponentialBackoffRetry(
   val minimumSeconds: Double = 1.0,
   val maximumSeconds: Double = 1000 * minimumSeconds,
   val backoffCoefficient: Double = 2.0,
@@ -77,8 +81,8 @@ data class ExponentialBackoffRetryPolicy(
   override val ignoredExceptions: List<String> = listOf()
 ) : RetryPolicy(maximumRetries, ignoredExceptions) {
 
-  // checks can not be in init {} as throwing exception in constructor prevents sealed class
-  // recognition by Hoplite
+  // checks can not be in init {} as throwing exception in constructor
+  // prevents sealed class recognition by Hoplite
   override fun check() {
     require(minimumSeconds > 0) { "${::minimumSeconds.name} MUST be > 0" }
     require(maximumSeconds >= 0) { "${::maximumSeconds.name} MUST be > 0" }
@@ -97,4 +101,46 @@ data class ExponentialBackoffRetryPolicy(
   override fun getSecondsBeforeRetry(attempt: Int): Double =
       min(maximumSeconds, minimumSeconds * backoffCoefficient.pow(attempt)) *
           (1 + randomFactor * (2 * Random.nextDouble() - 1))
+
+  companion object {
+    @JvmStatic
+    fun builder() = ExponentialBackoffRetryPolicyBuilder()
+  }
+
+  class ExponentialBackoffRetryPolicyBuilder : WithRetryBuilder {
+    private val default = WithExponentialBackoffRetry()
+    private var minimumSeconds = default.minimumSeconds
+    private var maximumSeconds = default.maximumSeconds
+    private var backoffCoefficient = default.backoffCoefficient
+    private var randomFactor = default.randomFactor
+    private var maximumRetries = default.maximumRetries
+    private var ignoredExceptions = default.ignoredExceptions as MutableList<String>
+
+    override fun build() = WithExponentialBackoffRetry(
+        minimumSeconds,
+        maximumSeconds,
+        backoffCoefficient,
+        randomFactor,
+        maximumRetries,
+        ignoredExceptions,
+    )
+
+    fun setMinimumSeconds(minimumSeconds: Double) =
+        apply { this.minimumSeconds = minimumSeconds }
+
+    fun setMaximumSeconds(maximumSeconds: Double) =
+        apply { this.maximumSeconds = maximumSeconds }
+
+    fun setBackoffCoefficient(backoffCoefficient: Double) =
+        apply { this.backoffCoefficient = backoffCoefficient }
+
+    fun setRandomFactor(randomFactor: Double) =
+        apply { this.randomFactor = randomFactor }
+
+    fun setMaximumRetries(maximumRetries: Int) =
+        apply { this.maximumRetries = maximumRetries }
+
+    fun addIgnoredException(exception: Class<Exception>) =
+        apply { ignoredExceptions.add(exception.name) }
+  }
 }

@@ -33,8 +33,10 @@ import io.infinitic.cloudEvents.SIGNAL_DATA
 import io.infinitic.cloudEvents.SIGNAL_ID
 import io.infinitic.cloudEvents.TASK_ARGS
 import io.infinitic.cloudEvents.TASK_ID
+import io.infinitic.cloudEvents.TASK_META
 import io.infinitic.cloudEvents.TASK_NAME
 import io.infinitic.cloudEvents.TASK_RETRY_SEQUENCE
+import io.infinitic.cloudEvents.TASK_TAGS
 import io.infinitic.cloudEvents.TIMEOUT
 import io.infinitic.cloudEvents.TIMER_DURATION
 import io.infinitic.cloudEvents.TIMER_ID
@@ -46,9 +48,9 @@ import io.infinitic.cloudEvents.WORKFLOW_TAG
 import io.infinitic.cloudEvents.WORKFLOW_TAGS
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
+import io.infinitic.common.data.methods.MethodArgs
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
-import io.infinitic.common.data.methods.MethodParameters
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
@@ -62,6 +64,7 @@ import io.infinitic.common.workflows.data.channels.SignalData
 import io.infinitic.common.workflows.data.channels.SignalId
 import io.infinitic.common.workflows.data.timers.TimerId
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
+import io.infinitic.common.workflows.data.workflowTasks.isWorkflowTask
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
@@ -100,7 +103,7 @@ sealed interface RemoteMethodDispatched : JsonAble {
   val workflowMethodName: MethodName
   val workflowMethodId: WorkflowMethodId
   val methodName: MethodName
-  val methodParameters: MethodParameters
+  val methodParameters: MethodArgs
   val methodParameterTypes: MethodParameterTypes?
   val timeout: MillisDuration?
   val emittedAt: MillisInstant
@@ -116,7 +119,7 @@ data class RemoteWorkflowDispatched(
   override val workflowMethodName: MethodName,
   override val workflowMethodId: WorkflowMethodId,
   override val methodName: MethodName,
-  override val methodParameters: MethodParameters,
+  override val methodParameters: MethodArgs,
   override val methodParameterTypes: MethodParameterTypes?,
   override val timeout: MillisDuration?,
   override val emittedAt: MillisInstant
@@ -146,7 +149,7 @@ data class RemoteWorkflowDispatchedByCustomId(
   override val workflowMethodName: MethodName,
   override val workflowMethodId: WorkflowMethodId,
   override val methodName: MethodName,
-  override val methodParameters: MethodParameters,
+  override val methodParameters: MethodArgs,
   override val methodParameterTypes: MethodParameterTypes?,
   override val timeout: MillisDuration?,
   override val emittedAt: MillisInstant
@@ -173,7 +176,7 @@ data class RemoteMethodDispatchedById(
   override val workflowMethodId: WorkflowMethodId,
   override val workflowMethodName: MethodName,
   override val methodName: MethodName,
-  override val methodParameters: MethodParameters,
+  override val methodParameters: MethodArgs,
   override val methodParameterTypes: MethodParameterTypes?,
   override val timeout: MillisDuration?,
   override val emittedAt: MillisInstant
@@ -198,7 +201,7 @@ data class RemoteMethodDispatchedByTag(
   override val workflowMethodId: WorkflowMethodId,
   override val workflowMethodName: MethodName,
   override val methodName: MethodName,
-  override val methodParameters: MethodParameters,
+  override val methodParameters: MethodArgs,
   override val methodParameterTypes: MethodParameterTypes?,
   override val timeout: MillisDuration?,
   override val emittedAt: MillisInstant
@@ -222,19 +225,29 @@ data class TaskDispatched(
   val taskRetrySequence: TaskRetrySequence,
   val methodName: MethodName,
   val methodParameterTypes: MethodParameterTypes?,
-  val methodParameters: MethodParameters,
+  val methodParameters: MethodArgs,
   val taskTags: Set<TaskTag>,
   val taskMeta: TaskMeta,
   val timeoutInstant: MillisInstant?,
 ) : JsonAble {
   override fun toJson() = JsonObject(
-      mapOf(
-          SERVICE_NAME to serviceName.toJson(),
-          TASK_NAME to methodName.toJson(),
-          TASK_ARGS to methodParameters.toJson(),
-          TASK_ID to taskId.toJson(),
-          TASK_RETRY_SEQUENCE to taskRetrySequence.toJson(),
-      ),
+      when (serviceName.isWorkflowTask()) {
+        true -> mapOf(
+            TASK_ARGS to methodParameters.toJson(),
+            TASK_ID to taskId.toJson(),
+            TASK_RETRY_SEQUENCE to taskRetrySequence.toJson(),
+        )
+
+        false -> mapOf(
+            SERVICE_NAME to serviceName.toJson(),
+            TASK_NAME to methodName.toJson(),
+            TASK_ARGS to methodParameters.toJson(),
+            TASK_ID to taskId.toJson(),
+            TASK_META to taskMeta.toJson(),
+            TASK_TAGS to taskTags.toJson(),
+            TASK_RETRY_SEQUENCE to taskRetrySequence.toJson(),
+        )
+      },
   )
 }
 

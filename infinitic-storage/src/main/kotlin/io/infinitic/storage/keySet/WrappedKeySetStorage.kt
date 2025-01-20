@@ -47,6 +47,22 @@ class WrappedKeySetStorage(val storage: KeySetStorage) : KeySetStorage {
         throwWrappedException(e)
       }
 
+  override suspend fun get(keys: Set<String>): Map<String, Set<ByteArray>> =
+      try {
+        storage.get(keys)
+      } catch (e: Exception) {
+        throwWrappedException(e)
+      }
+
+  override suspend fun update(
+    add: Map<String, Set<ByteArray>>,
+    remove: Map<String, Set<ByteArray>>
+  ) = try {
+    storage.update(add, remove)
+  } catch (e: Exception) {
+    throwWrappedException(e)
+  }
+
   @TestOnly
   override fun flush() =
       try {

@@ -25,9 +25,10 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins { id("java-test-fixtures") }
 
 dependencies {
-  implementation(Libs.Serialization.json)
-  implementation(Libs.JsonPath.jayway)
+  // JsonPath is used on client API
+  api(Libs.JsonPath.jayway)
 
+  implementation(Libs.Serialization.json)
   implementation(Libs.Mockk.mockk)
   implementation(Libs.Hoplite.core)
   implementation(Libs.Hoplite.yaml)
@@ -39,10 +40,12 @@ dependencies {
   implementation(Libs.Coroutines.jdk8)
   implementation(Libs.Uuid.generator)
   implementation(Libs.CloudEvents.api)
+  implementation(Libs.CloudEvents.json)
 
   testFixturesImplementation(Libs.Kotlin.reflect)
   testFixturesImplementation(Libs.EasyRandom.core)
   testFixturesImplementation(Libs.Coroutines.core)
+  testFixturesImplementation(Libs.Serialization.core)
   testFixturesImplementation(Libs.Kotest.junit5)
   testFixturesImplementation(Libs.Kotest.property)
   testFixturesImplementation(Libs.Pulsar.client)
@@ -52,10 +55,12 @@ dependencies {
 
 tasks.withType<KotlinCompile> {
   doFirst {
-    // File containing the list of all released versions
-    val file = File(project.projectDir.absolutePath, "/src/main/resources/versions")
+    val mainSourceSet = project.sourceSets.getByName("main")
+    val resourcePath = mainSourceSet.resources.srcDirs.first().absolutePath
 
     if (Ci.isRelease) {
+      // File containing the list of all released versions
+      val file = File("$resourcePath/versions")
       // append current release version if not yet present
       if (!file.useLines { lines -> lines.any { it == Ci.version } }) {
         file.appendText(Ci.version + "\n")
@@ -63,12 +68,20 @@ tasks.withType<KotlinCompile> {
     }
 
     // current version (snapshot or release)
-    File(project.projectDir.absolutePath, "/src/main/resources/currentVersion")
-        .writeText(Ci.version)
+    File("$resourcePath/currentVersion").writeText(Ci.version)
 
     // Pulsar version
-    File(project.projectDir.absolutePath, "/src/testFixtures/resources/pulsar")
-        .writeText(Libs.Pulsar.version)
+    val testFixturesResourcePath =
+        project.sourceSets.getByName("testFixtures").resources.srcDirs.first().absolutePath
+    File(testFixturesResourcePath, "/pulsar").writeText(Libs.Pulsar.version)
+  }
+}
+
+tasks.withType<Test> {
+  doFirst {
+    val mainSourceSet = project.sourceSets.getByName("main")
+    val resourcePath = mainSourceSet.resources.srcDirs.first().absolutePath
+    systemProperty("resourcePath", resourcePath)
   }
 }
 

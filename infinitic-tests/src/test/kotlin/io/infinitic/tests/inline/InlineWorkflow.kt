@@ -22,7 +22,7 @@
  */
 package io.infinitic.tests.inline
 
-import io.infinitic.tests.utils.UtilService
+import io.infinitic.utils.UtilService
 import io.infinitic.workflows.Workflow
 
 interface InlineWorkflow {

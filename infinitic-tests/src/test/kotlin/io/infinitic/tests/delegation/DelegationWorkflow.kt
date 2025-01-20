@@ -23,7 +23,7 @@
 package io.infinitic.tests.delegation
 
 import io.infinitic.annotations.Name
-import io.infinitic.tests.utils.UtilService
+import io.infinitic.utils.UtilService
 import io.infinitic.workflows.Workflow
 
 @Name("Delegation")

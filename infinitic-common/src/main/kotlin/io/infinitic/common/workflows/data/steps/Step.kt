@@ -22,12 +22,9 @@
  */
 package io.infinitic.common.workflows.data.steps
 
-import com.fasterxml.jackson.annotation.JsonCreator
-import com.fasterxml.jackson.annotation.JsonIgnore
-import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.github.avrokotlin.avro4k.Avro
 import com.github.avrokotlin.avro4k.AvroDefault
-import io.infinitic.common.data.ReturnValue
+import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.workflows.data.commands.CommandId
@@ -41,24 +38,23 @@ import io.infinitic.common.workflows.data.commands.CommandStatus.Unknown
 import io.infinitic.common.workflows.data.commands.PastCommand
 import io.infinitic.common.workflows.data.commands.ReceiveSignalPastCommand
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
-import io.infinitic.exceptions.workflows.OutOfBoundAwaitException
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import java.lang.reflect.Type
 import kotlin.Int.Companion.MAX_VALUE
+import kotlin.reflect.jvm.javaType
+import kotlin.reflect.typeOf
 
 @Serializable
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "@class")
 sealed class Step {
   // is this step currently terminated?
-  @JsonIgnore
   fun isTerminated(): Boolean = isTerminatedAt(WorkflowTaskIndex(MAX_VALUE))
 
   // get current status
   fun status(): StepStatus = statusAt(WorkflowTaskIndex(MAX_VALUE))
 
   // is this step terminated at provided index?
-  @JsonIgnore
   abstract fun isTerminatedAt(index: WorkflowTaskIndex): Boolean
 
   // get status at provided index
@@ -67,11 +63,13 @@ sealed class Step {
   // increase wait index and update current status
   abstract fun nextAwaitIndex()
 
-  // check wait index is valid
-  abstract fun checkAwaitIndex()
-
   /** hash provides a unique hash linked to the structure of the step (excluding commandStatus) */
   abstract fun hash(): StepHash
+
+  /**
+   * Function providing the value when completed. This should be used only in workflow task
+   */
+  abstract fun valueCompletedFn(): Any?
 
   @Serializable
   @SerialName("Step.Id")
@@ -81,44 +79,50 @@ sealed class Step {
     @AvroDefault("0") // before this feature was added, we consider it was the first wait
     var awaitIndex: Int = 0
   ) : Step() {
+
+    // the type of the returned value, can be null for inline tasks
+    @Transient
+    var returnValueType: Type? = null
+
+    // the JsonViewClass of the returned value
+    @Transient
+    var returnValueJsonViewClass: Class<*>? = null
+
     // status of first wait occurrence
-    @JsonIgnore
     var commandStatus: CommandStatus = Ongoing
 
     // only used in workflow task
     // statuses of multiple wait occurrences, non-null for ReceiveSignalPastCommand only
     @Transient
-    @JsonIgnore
     @AvroDefault(Avro.NULL)
     var commandStatuses: List<CommandStatus>? = null
 
     // max number of result for the command
     @Transient
-    @JsonIgnore
     @AvroDefault("1")
     var commandStatusLimit: Int? = null
 
     companion object {
       // only used in workflow task
-      fun from(pastCommand: PastCommand) =
-          Id(pastCommand.commandId).apply {
-            commandStatus = pastCommand.commandStatus
+      fun from(
+        pastCommand: PastCommand,
+        returnValueType: Type?,
+        returnValueJsonViewClass: Class<*>?
+      ) = Id(pastCommand.commandId).apply {
+        this.returnValueType = returnValueType
+        this.returnValueJsonViewClass = returnValueJsonViewClass
+        this.commandStatus = pastCommand.commandStatus
 
-            if (pastCommand is ReceiveSignalPastCommand) {
-              commandStatuses = pastCommand.commandStatuses
-              commandStatusLimit = pastCommand.command.receivedSignalLimit
-            }
-          }
-
-      // This is needed for Jackson deserialization
-      @JsonCreator
-      @JvmStatic
-      fun new(commandId: String) = Id(CommandId(commandId))
+        if (pastCommand is ReceiveSignalPastCommand) {
+          this.commandStatuses = pastCommand.commandStatuses
+          this.commandStatusLimit = pastCommand.command.receivedSignalLimit
+        }
+      }
     }
 
-    override fun hash() = StepHash(SerializedData.from(commandId).hash())
+    override fun hash() =
+        StepHash(SerializedData.encode(commandId, CommandId::class.java, null).hash())
 
-    @JsonIgnore
     override fun isTerminatedAt(index: WorkflowTaskIndex) =
         when (statusAt(index)) {
           is StepStatus.Waiting -> false
@@ -131,91 +135,95 @@ sealed class Step {
           is StepStatus.Completed -> true
         }
 
-    override fun checkAwaitIndex() {
-      // user is asking more than the limit, we consider it as a failure
-      if (commandStatuses != null &&
-        commandStatusLimit != null &&
-        awaitIndex >= commandStatusLimit!!) {
-        throw OutOfBoundAwaitException
-      }
-    }
-
     override fun nextAwaitIndex() {
-      awaitIndex++
-
-      // update commandStatus if needed
       if (commandStatuses != null) {
-        // update current status
-        commandStatus =
-            commandStatuses!!.firstOrNull { (it is Completed) && (it.returnIndex == awaitIndex) }
-              ?: Ongoing
+        // if there is no limit, or there is a limit but not yet reached
+        if (commandStatusLimit == null || awaitIndex + 1 < commandStatusLimit!!) {
+          awaitIndex++
+
+          // update commandStatus if needed
+          // update current status
+          commandStatus = commandStatuses!!.firstOrNull {
+            (it is Completed) && (it.returnIndex == awaitIndex)
+          } ?: Ongoing
+        }
       }
     }
 
     override fun statusAt(index: WorkflowTaskIndex) =
         when (val status = commandStatus) {
           is Ongoing -> StepStatus.Waiting
+
           is Unknown ->
             when (index >= status.unknowingWorkflowTaskIndex) {
-              true ->
-                StepStatus.Unknown(
-                    status.deferredUnknownError, status.unknowingWorkflowTaskIndex,
-                )
+              true -> StepStatus.Unknown(
+                  status.deferredUnknownError, status.unknowingWorkflowTaskIndex,
+              )
 
               false -> StepStatus.Waiting
             }
 
           is Canceled ->
             when (index >= status.cancellationWorkflowTaskIndex) {
-              true ->
-                StepStatus.Canceled(
-                    status.deferredCanceledError, status.cancellationWorkflowTaskIndex,
-                )
+              true -> StepStatus.Canceled(
+                  status.deferredCanceledError, status.cancellationWorkflowTaskIndex,
+              )
 
               false -> StepStatus.Waiting
             }
 
           is TimedOut ->
             when (index >= status.timeoutWorkflowTaskIndex) {
-              true ->
-                StepStatus.CurrentlyTimedOut(
-                    status.deferredTimedOutError, status.timeoutWorkflowTaskIndex,
-                )
+              true -> StepStatus.CurrentlyTimedOut(
+                  status.deferredTimedOutError, status.timeoutWorkflowTaskIndex,
+              )
 
               false -> StepStatus.Waiting
             }
 
           is Failed ->
             when (index >= status.failureWorkflowTaskIndex) {
-              true ->
-                StepStatus.CurrentlyFailed(
-                    status.deferredFailedError, status.failureWorkflowTaskIndex,
-                )
+              true -> StepStatus.CurrentlyFailed(
+                  status.deferredFailedError, status.failureWorkflowTaskIndex,
+              )
 
               false -> StepStatus.Waiting
             }
 
           is Completed ->
             when (index >= status.completionWorkflowTaskIndex) {
-              true -> StepStatus.Completed(status.returnValue, status.completionWorkflowTaskIndex)
+              true -> StepStatus.Completed(
+                  status.returnValue, status.completionWorkflowTaskIndex,
+              )
+
               false -> StepStatus.Waiting
             }
         }
+
+    override fun valueCompletedFn() = when (val status = status()) {
+      is StepStatus.Completed -> status.returnValue.deserialize(
+          returnValueType,
+          returnValueJsonViewClass,
+      ).also { nextAwaitIndex() }
+
+      else -> thisShouldNotHappen(status.toString())
+    }
   }
 
   @Serializable
   @SerialName("Step.And")
   data class And(var steps: List<Step>) : Step() {
 
-    override fun hash() = StepHash(SerializedData.from(steps.map { it.hash() }).hash())
+    override fun hash() = StepHash(
+        SerializedData.encode(
+            steps.map { it.hash() },
+            typeOf<List<StepHash>>().javaType,
+            null,
+        ).hash(),
+    )
 
-    @JsonIgnore
     override fun isTerminatedAt(index: WorkflowTaskIndex) =
-        this.steps.all { it.isTerminatedAt(index) }
-
-    override fun checkAwaitIndex() {
-      steps.map { it.checkAwaitIndex() }
-    }
+        steps.all { it.isTerminatedAt(index) }
 
     override fun nextAwaitIndex() {
       steps.map { it.nextAwaitIndex() }
@@ -224,28 +232,26 @@ sealed class Step {
     override fun statusAt(index: WorkflowTaskIndex): StepStatus {
       val statuses = steps.map { it.statusAt(index) }
 
-      // if at least one step is canceled or currentlyFailed, then And(...steps) is the first of
-      // them
-      val firstTerminated =
-          statuses
-              .filter {
-                it is StepStatus.CurrentlyFailed ||
-                    it is StepStatus.CurrentlyTimedOut ||
-                    it is StepStatus.Canceled ||
-                    it is StepStatus.Unknown
-              }
-              .minByOrNull {
-                when (it) {
-                  is StepStatus.Unknown -> it.unknowingWorkflowTaskIndex
-                  is StepStatus.Canceled -> it.cancellationWorkflowTaskIndex
-                  is StepStatus.CurrentlyFailed -> it.failureWorkflowTaskIndex
-                  is StepStatus.CurrentlyTimedOut -> it.timeoutWorkflowTaskIndex
-                  is StepStatus.Completed,
-                  is StepStatus.Failed,
-                  is StepStatus.TimedOut,
-                  is StepStatus.Waiting -> thisShouldNotHappen()
-                }
-              }
+      // if at least one step is canceled or currentlyFailed, then And(...steps) is the first of them
+      val firstTerminated = statuses
+          .filter {
+            it is StepStatus.CurrentlyFailed ||
+                it is StepStatus.CurrentlyTimedOut ||
+                it is StepStatus.Canceled ||
+                it is StepStatus.Unknown
+          }
+          .minByOrNull {
+            when (it) {
+              is StepStatus.Unknown -> it.unknowingWorkflowTaskIndex
+              is StepStatus.Canceled -> it.cancellationWorkflowTaskIndex
+              is StepStatus.CurrentlyFailed -> it.failureWorkflowTaskIndex
+              is StepStatus.CurrentlyTimedOut -> it.timeoutWorkflowTaskIndex
+              is StepStatus.Completed,
+              is StepStatus.Failed,
+              is StepStatus.TimedOut,
+              is StepStatus.Waiting -> thisShouldNotHappen()
+            }
+          }
 
       if (firstTerminated != null) return firstTerminated
 
@@ -255,28 +261,30 @@ sealed class Step {
       // if all steps are completed, then And(...steps) is completed
       if (statuses.all { it is StepStatus.Completed }) {
         val maxIndex = statuses.maxOf { (it as StepStatus.Completed).completionWorkflowTaskIndex }
-        val results = statuses.map { (it as StepStatus.Completed).returnValue.value() }
 
-        return StepStatus.Completed(ReturnValue.from(results), maxIndex)
+        return StepStatus.Completed(MethodReturnValue(SerializedData.NULL), maxIndex)
       }
 
       thisShouldNotHappen()
     }
+
+    override fun valueCompletedFn() = steps.map { it.valueCompletedFn() }
   }
 
   @Serializable
   @SerialName("Step.Or")
   data class Or(var steps: List<Step>) : Step() {
 
-    override fun hash() = StepHash(SerializedData.from(steps.map { it.hash() }).hash())
+    override fun hash() = StepHash(
+        SerializedData.encode(
+            steps.map { it.hash() },
+            typeOf<List<StepHash>>().javaType,
+            null,
+        ).hash(),
+    )
 
-    @JsonIgnore
     override fun isTerminatedAt(index: WorkflowTaskIndex) =
         steps.any { it.isTerminatedAt(index) }
-
-    override fun checkAwaitIndex() {
-      steps.map { it.checkAwaitIndex() }
-    }
 
     override fun nextAwaitIndex() {
       steps.map { it.nextAwaitIndex() }
@@ -285,33 +293,45 @@ sealed class Step {
     override fun statusAt(index: WorkflowTaskIndex): StepStatus {
       val statuses = steps.map { it.statusAt(index) }
 
-      // if at least one step is completed, then Or(...steps) is the first completed
-      val firstCompleted =
-          statuses.filterIsInstance<StepStatus.Completed>().minByOrNull {
-            it.completionWorkflowTaskIndex
-          }
-      if (firstCompleted != null) return firstCompleted
+      // return first completed status (if it exists)
+      statuses.filterIsInstance<StepStatus.Completed>().minByOrNull {
+        it.completionWorkflowTaskIndex
+      }?.let {
+        return it
+      }
 
       // if at least one step is ongoing, then Or(...steps) is ongoing
       if (statuses.any { it is StepStatus.Waiting }) return StepStatus.Waiting
 
       // all steps are neither completed, neither ongoing => canceled, failed based on last one
-      val lastTerminated =
-          statuses.maxByOrNull {
-            when (it) {
-              is StepStatus.Canceled -> it.cancellationWorkflowTaskIndex
-              is StepStatus.Unknown -> it.unknowingWorkflowTaskIndex
-              is StepStatus.CurrentlyFailed -> it.failureWorkflowTaskIndex
-              is StepStatus.CurrentlyTimedOut -> it.timeoutWorkflowTaskIndex
-              is StepStatus.Completed,
-              is StepStatus.Failed,
-              is StepStatus.TimedOut,
-              is StepStatus.Waiting -> thisShouldNotHappen()
-            }
-          }
+      val lastTerminated = statuses.maxByOrNull {
+        when (it) {
+          is StepStatus.Canceled -> it.cancellationWorkflowTaskIndex
+          is StepStatus.Unknown -> it.unknowingWorkflowTaskIndex
+          is StepStatus.CurrentlyFailed -> it.failureWorkflowTaskIndex
+          is StepStatus.CurrentlyTimedOut -> it.timeoutWorkflowTaskIndex
+          is StepStatus.Completed,
+          is StepStatus.Failed,
+          is StepStatus.TimedOut,
+          is StepStatus.Waiting -> thisShouldNotHappen()
+        }
+      }
       if (lastTerminated != null) return lastTerminated
 
       thisShouldNotHappen()
+    }
+
+    override fun valueCompletedFn(): Any? {
+      when (val orStatus = status()) {
+        is StepStatus.Completed -> {
+          // retrieve first completed step
+          val completedStep = steps.first { it.status() == orStatus }
+          // return value of first completed step
+          return completedStep.valueCompletedFn()
+        }
+
+        else -> thisShouldNotHappen()
+      }
     }
   }
 

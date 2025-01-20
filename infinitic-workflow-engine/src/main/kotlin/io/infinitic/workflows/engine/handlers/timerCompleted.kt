@@ -22,9 +22,9 @@
  */
 package io.infinitic.workflows.engine.handlers
 
-import io.infinitic.common.data.ReturnValue
+import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.common.transport.InfiniticProducer
+import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandStatus
 import io.infinitic.common.workflows.engine.messages.RemoteTimerCompleted
@@ -43,7 +43,7 @@ internal fun CoroutineScope.timerCompleted(
     message.workflowMethodId,
     CommandId.from(message.timerId),
     CommandStatus.Completed(
-        returnValue = ReturnValue.from(Instant.now()),
+        returnValue = MethodReturnValue.from(Instant.now(), Instant::class.java),
         completionWorkflowTaskIndex = state.workflowTaskIndex,
     ),
     message.emittedAt ?: thisShouldNotHappen(),

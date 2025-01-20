@@ -22,11 +22,13 @@
  */
 package io.infinitic.common.exceptions
 
-fun thisShouldNotHappen(reason: String? = null): Nothing =
-    throw RuntimeException(
-        "this should not happen${
-    when (reason) {
+internal class ShouldNotHappenException(reason: String? = null) : RuntimeException(
+    "this should not happen${
+      when (reason) {
         null -> ""
         else -> ": $reason"
-    }
-    }")
+      }
+    }",
+)
+
+fun thisShouldNotHappen(reason: String? = null): Nothing = throw ShouldNotHappenException(reason)

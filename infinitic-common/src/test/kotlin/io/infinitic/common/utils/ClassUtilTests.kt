@@ -25,16 +25,18 @@ package io.infinitic.common.utils
 import io.infinitic.annotations.Name
 import io.infinitic.annotations.Timeout
 import io.infinitic.common.data.MillisDuration
+import io.infinitic.exceptions.tasks.NoMethodFoundWithParameterTypesException
 import io.infinitic.tasks.WithTimeout
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import java.lang.reflect.Method
 import kotlin.reflect.jvm.javaMethod
 
 class ClassUtilTests : StringSpec(
     {
-
       val method: Method = Foo::bar.javaMethod!!
       val klass: Class<Foo> = Foo::class.java
 
@@ -77,32 +79,32 @@ class ClassUtilTests : StringSpec(
       }
 
       "Should be able to find name annotation on interface" {
-        method.findName() shouldBe "bar"
+        method.annotatedName shouldBe "barAnnotated"
       }
 
       "Interface name with annotation should be annotation" {
-        FooParentInterface::class.java.findName() shouldBe "FooParentInterface"
+        FooParentInterface::class.java.annotatedName shouldBe "FooParentInterfaceAnnotated"
       }
 
-      "class name without annotation should be interface name with annotation" {
-        FooParent::class.java.findName() shouldBe "FooParentInterface"
+      "Class name without annotation should be interface name with annotation" {
+        FooParent::class.java.annotatedName shouldBe "FooParentInterfaceAnnotated"
       }
 
-      "class name with annotation should be annotation name" {
-        Foo::class.java.findName() shouldBe "Foo"
+      "Class name with annotation should be annotation name" {
+        Foo::class.java.annotatedName shouldBe "FooAnnotatedAnnotated"
       }
 
-      "class name with annotation should be class name" {
-        BarImpl::class.java.findName() shouldBe BarImpl::class.java.name
+      "Class name with annotation should be class name" {
+        BarImpl::class.java.annotatedName shouldBe BarImpl::class.java.name
       }
 
       "can read timeout from interface with default" {
-        TrueBar::getTimeoutInSeconds.javaMethod!!.getMillisDuration(TrueBar::class.java)
+        TrueBar::getTimeoutSeconds.javaMethod!!.getMillisDuration(TrueBar::class.java)
             .getOrThrow() shouldBe MillisDuration(1000L)
       }
 
       "can not read timeout from interface without default" {
-        Bar::getTimeoutInSeconds.javaMethod!!.getMillisDuration(Bar::class.java)
+        Bar::getTimeoutSeconds.javaMethod!!.getMillisDuration(Bar::class.java)
             .getOrThrow() shouldBe null
       }
 
@@ -116,15 +118,86 @@ class ClassUtilTests : StringSpec(
             .getOrThrow() shouldBe MillisDuration(10)
       }
 
+      "Find parameter annotation" {
+        FooParentInterface::bar.javaMethod
+            ?.findParameterAnnotation(Parameter::class.java, 0).shouldBeInstanceOf<Parameter>()
+      }
+
+      "Find parameter annotation on parent interface" {
+        val annotation = FooParent::bar.javaMethod
+            ?.findParameterAnnotation(Parameter::class.java, 0)
+        annotation.shouldBeInstanceOf<Parameter>()
+        annotation.name shouldBe ""
+      }
+
+      "Find parameter annotation on parent" {
+        val annotation = Foo2::bar.javaMethod
+            ?.findParameterAnnotation(Parameter::class.java, 0)
+        annotation.shouldBeInstanceOf<Parameter>()
+        annotation.name shouldBe "2"
+      }
+
+      "Full method name should not change (as it could trigger false positive in change detection)" {
+        klass.getFullMethodName(method) shouldBe "FooAnnotatedAnnotated::barAnnotated"
+
+        val k1 = Foo2::class.java
+        val m1 = k1.getMethod("bar", String::class.java)
+        k1.getFullMethodName(m1) shouldBe "FooInterfaceAnnotated::barMethodInterface"
+
+        val k2 = Foo3::class.java
+        val m2 = k2.getMethod("bar", String::class.java)
+        k2.getFullMethodName(m2) shouldBe "Foo3::bar"
+      }
+
+      "getMethodPerNameAndParameters should throw" {
+        shouldThrow<NoMethodFoundWithParameterTypesException> {
+          klass.getMethodPerNameAndParameters(
+              "unknown",
+              listOf(String::class.java.name),
+              1,
+          )
+        }
+
+        shouldThrow<NoMethodFoundWithParameterTypesException> {
+          klass.getMethodPerNameAndParameters(
+              "bar",
+              listOf(Object::class.java.name),
+              1,
+          ) shouldNotBe null
+        }
+
+        shouldThrow<NoMethodFoundWithParameterTypesException> {
+          klass.getMethodPerNameAndParameters(
+              "barAnnotated",
+              listOf(Object::class.java.name),
+              1,
+          ) shouldNotBe null
+        }
+      }
+
+      "getMethodPerNameAndParameters should return method" {
+        klass.getMethodPerNameAndParameters(
+            "bar",
+            listOf(String::class.java.name),
+            1,
+        ) shouldNotBe null
+
+        klass.getMethodPerNameAndParameters(
+            "barAnnotated",
+            listOf(String::class.java.name),
+            1,
+        ) shouldNotBe null
+
+      }
     },
 )
 
 @Test8
-@Name("FooParentInterface")
+@Name("FooParentInterfaceAnnotated")
 private interface FooParentInterface {
   @Test7
   @Name("barMethodInterface")
-  fun bar(p: String): String
+  fun bar(@Parameter p: String): String
 }
 
 @Test6
@@ -134,18 +207,26 @@ private open class FooParent : FooParentInterface {
 }
 
 @Test4
-@Name("FooInterface")
+@Name("FooInterfaceAnnotated")
 private interface FooInterface {
   @Test3
   fun bar(p: String): String
 }
 
 @Test2
-@Name("Foo")
+@Name("FooAnnotatedAnnotated")
 private class Foo : FooParent(), FooInterface {
   @Test1
-  @Name("bar")
+  @Name("barAnnotated")
   override fun bar(p: String) = p
+}
+
+private class Foo2 : FooParent(), FooInterface {
+  override fun bar(@Parameter("2") p: String) = p
+}
+
+private class Foo3 {
+  fun bar(p: String) = p
 }
 
 @Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION)
@@ -175,6 +256,9 @@ private annotation class Test7()
 @Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION)
 private annotation class Test8()
 
+@Target(AnnotationTarget.VALUE_PARAMETER)
+private annotation class Parameter(val name: String = "")
+
 private interface Bar : WithTimeout {
   fun foo()
 }
@@ -182,12 +266,12 @@ private interface Bar : WithTimeout {
 private class BarImpl : Bar {
   override fun foo() {}
 
-  override fun getTimeoutInSeconds() = 1.0
+  override fun getTimeoutSeconds() = 1.0
 }
 
 private interface TrueBar : WithTimeout {
   fun foo()
-  override fun getTimeoutInSeconds() = 1.0
+  override fun getTimeoutSeconds() = 1.0
 }
 
 private class TrueBarImpl : TrueBar {
@@ -197,5 +281,5 @@ private class TrueBarImpl : TrueBar {
 }
 
 class After10MilliSeconds : WithTimeout {
-  override fun getTimeoutInSeconds() = 0.01
+  override fun getTimeoutSeconds() = 0.01
 }

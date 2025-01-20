@@ -23,9 +23,8 @@
 package io.infinitic.common.workflows.engine.commands
 
 import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.requester.WorkflowRequester
-import io.infinitic.common.transport.InfiniticProducer
+import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.workflows.engine.messages.RemoteTimerCompleted
 import io.infinitic.common.workflows.engine.messages.data.DurationTimerDispatched
 import io.infinitic.common.workflows.engine.messages.data.InstantTimerDispatched
@@ -35,8 +34,6 @@ suspend fun InfiniticProducer.dispatchTimer(
   timerDispatched: TimerDispatched,
   requester: WorkflowRequester
 ) {
-  val emitterName = EmitterName(name)
-
   val timerInstant = when (timerDispatched) {
     is InstantTimerDispatched -> timerDispatched.timerInstant
     is DurationTimerDispatched -> timerDispatched.emittedAt + timerDispatched.duration
@@ -55,5 +52,5 @@ suspend fun InfiniticProducer.dispatchTimer(
 
   // todo: Check if there is a way not to use MillisInstant.now()
   val delay = timerInstant - MillisInstant.now()
-  remoteTimerCompleted.sendTo(io.infinitic.common.transport.DelayedWorkflowEngineTopic, delay)
+  remoteTimerCompleted.sendTo(io.infinitic.common.transport.WorkflowStateTimerTopic, delay)
 }

@@ -23,17 +23,16 @@
 package io.infinitic.common.workflows.engine.commands
 
 import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.requester.Requester
 import io.infinitic.common.requester.WorkflowRequester
 import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.executors.errors.TaskTimedOutError
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.tags.messages.AddTaskIdToTag
-import io.infinitic.common.transport.DelayedWorkflowEngineTopic
-import io.infinitic.common.transport.InfiniticProducer
 import io.infinitic.common.transport.ServiceExecutorTopic
-import io.infinitic.common.transport.ServiceTagTopic
+import io.infinitic.common.transport.ServiceTagEngineTopic
+import io.infinitic.common.transport.WorkflowStateTimerTopic
+import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.workflows.engine.messages.RemoteTaskTimedOut
 import io.infinitic.common.workflows.engine.messages.data.TaskDispatched
 import kotlinx.coroutines.coroutineScope
@@ -43,8 +42,6 @@ suspend fun InfiniticProducer.dispatchTask(
   taskDispatched: TaskDispatched,
   requester: Requester
 ) = coroutineScope {
-  val emitterName = EmitterName(name)
-
   val executeTask = with(taskDispatched) {
     ExecuteTask(
         serviceName = serviceName,
@@ -57,8 +54,8 @@ suspend fun InfiniticProducer.dispatchTask(
         clientWaiting = false,
         methodName = methodName,
         methodParameterTypes = methodParameterTypes,
-        methodParameters = methodParameters,
-        lastError = null,
+        methodArgs = methodParameters,
+        lastFailure = null,
         emitterName = emitterName,
     )
   }
@@ -75,7 +72,7 @@ suspend fun InfiniticProducer.dispatchTask(
           taskId = executeTask.taskId,
           emitterName = emitterName,
       )
-      addTaskIdToTag.sendTo(ServiceTagTopic)
+      addTaskIdToTag.sendTo(ServiceTagEngineTopic)
     }
   }
 
@@ -97,7 +94,7 @@ suspend fun InfiniticProducer.dispatchTask(
             emitterName = emitterName,
             emittedAt = it,
         )
-        remoteTaskTimedOut.sendTo(DelayedWorkflowEngineTopic, it - MillisInstant.now())
+        remoteTaskTimedOut.sendTo(WorkflowStateTimerTopic, it - MillisInstant.now())
       }
     }
   }

@@ -23,7 +23,7 @@
 package io.infinitic.dashboard.panels.infrastructure.workflow
 
 import io.infinitic.common.transport.Topic
-import io.infinitic.common.transport.WorkflowEngineTopic
+import io.infinitic.common.transport.WorkflowStateEngineTopic
 import io.infinitic.common.transport.WorkflowTopic
 import io.infinitic.dashboard.InfiniticDashboard
 import io.infinitic.dashboard.Panel
@@ -73,7 +73,7 @@ class WorkflowPanel private constructor(private val workflowName: String) : Pane
   private val workflowIsLoading = workflowState.property(WorkflowState::isLoading)
   private val workflowLastUpdated = workflowState.property(WorkflowState::lastUpdatedAt)
 
-  private val selectionTopic: KVar<Topic<*>> = KVar(WorkflowEngineTopic)
+  private val selectionTopic: KVar<Topic<*>> = KVar(WorkflowStateEngineTopic)
   private val selectionTopicStats: KVar<Request<PartitionedTopicStats>> = KVar(Loading())
 
   private val selectionSlide = selectionSlide(selectionTopic, selectionTopicStats)

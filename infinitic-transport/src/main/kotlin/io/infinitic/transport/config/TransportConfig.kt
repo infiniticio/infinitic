@@ -22,86 +22,38 @@
  */
 package io.infinitic.transport.config
 
-import io.infinitic.autoclose.addAutoCloseResource
-import io.infinitic.common.transport.InfiniticConsumerAsync
-import io.infinitic.common.transport.InfiniticProducerAsync
-import io.infinitic.inMemory.InMemoryChannels
-import io.infinitic.inMemory.InMemoryInfiniticConsumerAsync
-import io.infinitic.inMemory.InMemoryInfiniticProducerAsync
-import io.infinitic.pulsar.PulsarInfiniticConsumerAsync
-import io.infinitic.pulsar.PulsarInfiniticProducerAsync
-import io.infinitic.pulsar.client.PulsarInfiniticClient
-import io.infinitic.pulsar.config.Pulsar
-import io.infinitic.pulsar.consumers.Consumer
-import io.infinitic.pulsar.producers.Producer
-import io.infinitic.pulsar.resources.PulsarResources
-import java.net.URLEncoder
+import io.infinitic.common.transport.interfaces.InfiniticConsumerFactory
+import io.infinitic.common.transport.interfaces.InfiniticProducerFactory
+import io.infinitic.common.transport.interfaces.InfiniticResources
 
-data class TransportConfig(
-  /** Transport configuration */
-  override val transport: Transport,
+sealed class TransportConfig : AutoCloseable {
+  /**
+   * Specifies the duration, in seconds, allowed for the system to gracefully shut down.
+   * During this period, the system will attempt to complete handle ongoing messages
+   */
+  abstract val shutdownGracePeriodSeconds: Double
 
-  /** Pulsar configuration */
-  override val pulsar: Pulsar?,
+  /**
+   * This property denotes the origin of the CloudEvents being generated or consumed.
+   */
+  abstract val cloudEventSourcePrefix: String
 
-  /** Shutdown Grace Period */
-  override val shutdownGracePeriodInSeconds: Double
-) : TransportConfigInterface {
+  /**
+   * This property provides methods to fetch available services and workflows,
+   */
+  abstract val resources: InfiniticResources
 
-  init {
-    if (transport == Transport.pulsar) {
-      require(pulsar != null) { "Missing Pulsar configuration" }
-    }
+  /**
+   * Provides methods to create consumers for processing messages.
+   */
+  abstract val consumerFactory: InfiniticConsumerFactory
 
-    require(shutdownGracePeriodInSeconds >= 0) { "shutdownGracePeriodInSeconds must be >= 0" }
+  /**
+   * Provides methods to create producers for sending messages.
+   */
+  abstract val producerFactory: InfiniticProducerFactory
+
+  interface TransportConfigBuilder {
+    fun build(): TransportConfig
   }
-
-  /** This is used as source prefix for CloudEvents */
-  val source: String = when (transport) {
-    Transport.pulsar -> pulsar!!.brokerServiceUrl.removeSuffix("/") + "/" +
-        URLEncoder.encode(pulsar.tenant, Charsets.UTF_8) + "/" +
-        URLEncoder.encode(pulsar.namespace, Charsets.UTF_8)
-
-    Transport.inMemory -> "inmemory"
-  }
-
-  // we provide consumer and producer together,
-  // as they must share the same configuration
-  private val cp: Pair<InfiniticConsumerAsync, InfiniticProducerAsync> =
-      when (transport) {
-        Transport.pulsar -> with(PulsarResources.from(pulsar!!)) {
-          val client = PulsarInfiniticClient(pulsar.client)
-          val consumerAsync = PulsarInfiniticConsumerAsync(
-              Consumer(client, pulsar.consumer),
-              this,
-              shutdownGracePeriodInSeconds,
-          )
-          val producerAsync = PulsarInfiniticProducerAsync(
-              Producer(client, pulsar.producer),
-              this,
-          )
-
-          // Pulsar client will be closed with consumer
-          consumerAsync.addAutoCloseResource(pulsar.client)
-          // Pulsar admin will be closed with consumer
-          consumerAsync.addAutoCloseResource(pulsar.admin)
-
-          Pair(consumerAsync, producerAsync)
-        }
-
-        Transport.inMemory -> {
-          val mainChannels = InMemoryChannels()
-          val listenerChannels = InMemoryChannels()
-          val consumerAsync = InMemoryInfiniticConsumerAsync(mainChannels, listenerChannels)
-          val producerAsync = InMemoryInfiniticProducerAsync(mainChannels, listenerChannels)
-          Pair(consumerAsync, producerAsync)
-        }
-      }
-
-  /** Infinitic Consumer */
-  val consumerAsync: InfiniticConsumerAsync = cp.first
-
-  /** Infinitic Producer */
-  val producerAsync: InfiniticProducerAsync = cp.second
 }
-

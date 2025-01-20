@@ -35,6 +35,7 @@ import io.infinitic.dashboard.panels.workflows.WorkflowsPanel
 import io.infinitic.dashboard.plugins.images.imagesPlugin
 import io.infinitic.dashboard.plugins.tailwind.tailwindPlugin
 import io.infinitic.pulsar.resources.PulsarResources
+import io.infinitic.transport.config.PulsarTransportConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -43,17 +44,21 @@ import kweb.Kweb
 import kweb.WebBrowser
 import kweb.route
 
-@Suppress("MemberVisibilityCanBePrivate", "CanBeParameter")
+@Suppress("MemberVisibilityCanBePrivate")
 class InfiniticDashboard(
-  val pulsarResources: PulsarResources,
-  val port: Int,
-  val debug: Boolean
+  val config: DashboardConfig
 ) : AutoCloseable {
+
+  val pulsarResources by lazy { PulsarResources((config.transport as PulsarTransportConfig).pulsar) }
+  val port = config.dashboard.port
+  val debug = config.dashboard.debug
+
   init {
+    require(config.transport is PulsarTransportConfig) {
+      "Dashboard only support Pulsar as transport layer"
+    }
     Infinitic.pulsarResources = pulsarResources
   }
-
-  private val logger = KotlinLogging.logger {}
 
   override fun close() {
     autoClose()
@@ -89,29 +94,24 @@ class InfiniticDashboard(
   }
 
   companion object {
+    private val logger = KotlinLogging.logger {}
 
     internal val scope = CoroutineScope(Dispatchers.IO + Job())
 
-    /** Create Dashboard from a DashboardConfig */
+    /** Create InfiniticDashboard from YAML resources */
     @JvmStatic
-    fun fromConfig(dashboardConfig: DashboardConfig) = InfiniticDashboard(
-        PulsarResources.from(dashboardConfig.pulsar),
-        dashboardConfig.port,
-        dashboardConfig.debug,
-    ).also {
-      // should close PulsarAdmin when closing dashboard
-      // but Kweb does not provide a way to be used as resource
-      // it.addAutoCloseResource(dashboardConfig.pulsar.admin)
-    }
+    fun fromYamlResource(vararg resources: String) =
+        InfiniticDashboard(DashboardConfig.fromYamlResource(*resources))
 
-    /** Create InfiniticDashboard from file in resources directory */
+    /** Create InfiniticDashboard from YAML file */
     @JvmStatic
-    fun fromConfigResource(vararg resources: String) =
-        fromConfig(DashboardConfig.fromResource(*resources))
+    fun fromYamlFile(vararg files: String) =
+        InfiniticDashboard(DashboardConfig.fromYamlFile(*files))
 
-    /** Create InfiniticDashboard from file in system file */
+    /** Create InfiniticDashboard from YAML string */
     @JvmStatic
-    fun fromConfigFile(vararg files: String) = fromConfig(DashboardConfig.fromFile(*files))
+    fun fromYamlString(vararg strings: String) =
+        InfiniticDashboard(DashboardConfig.fromYamlString(*strings))
   }
 }
 

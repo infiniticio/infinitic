@@ -23,11 +23,10 @@
 package io.infinitic.workflows.engine.handlers
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.infinitic.common.data.ReturnValue
-import io.infinitic.common.emitters.EmitterName
+import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.common.transport.InfiniticProducer
-import io.infinitic.common.transport.WorkflowEventsTopic
+import io.infinitic.common.transport.WorkflowStateEventTopic
+import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.workflows.data.commands.CommandStatus.Completed
 import io.infinitic.common.workflows.engine.messages.SendSignal
 import io.infinitic.common.workflows.engine.messages.SignalDiscardedEvent
@@ -46,7 +45,6 @@ internal fun CoroutineScope.sendSignal(
   state: WorkflowState,
   message: SendSignal
 ) {
-  val emitterName = EmitterName(producer.name)
 
   state.receivingChannels
       .firstOrNull {
@@ -69,7 +67,7 @@ internal fun CoroutineScope.sendSignal(
             it.commandId,
             Completed(
                 returnIndex = it.receivedSignalCount - 1,
-                returnValue = ReturnValue(message.signalData.serializedData),
+                returnValue = MethodReturnValue(message.signalData.serializedData),
                 completionWorkflowTaskIndex = state.workflowTaskIndex,
                 signalId = message.signalId,
             ),
@@ -83,9 +81,9 @@ internal fun CoroutineScope.sendSignal(
               workflowName = message.workflowName,
               workflowId = message.workflowId,
               workflowVersion = state.workflowVersion,
-              emitterName = emitterName,
+              emitterName = producer.emitterName,
           )
-          with(producer) { signalReceivedEvent.sendTo(WorkflowEventsTopic) }
+          with(producer) { signalReceivedEvent.sendTo(WorkflowStateEventTopic) }
         }
 
       } ?: launch {
@@ -97,9 +95,9 @@ internal fun CoroutineScope.sendSignal(
         workflowName = message.workflowName,
         workflowId = message.workflowId,
         workflowVersion = state.workflowVersion,
-        emitterName = emitterName,
+        emitterName = producer.emitterName,
     )
 
-    with(producer) { signalDiscardedEvent.sendTo(WorkflowEventsTopic) }
+    with(producer) { signalDiscardedEvent.sendTo(WorkflowStateEventTopic) }
   }
 }

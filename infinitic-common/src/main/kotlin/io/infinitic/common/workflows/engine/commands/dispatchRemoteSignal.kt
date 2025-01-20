@@ -22,12 +22,11 @@
  */
 package io.infinitic.common.workflows.engine.commands
 
-import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.requester.Requester
 import io.infinitic.common.requester.workflowId
-import io.infinitic.common.transport.InfiniticProducer
-import io.infinitic.common.transport.WorkflowCmdTopic
-import io.infinitic.common.transport.WorkflowTagTopic
+import io.infinitic.common.transport.WorkflowStateCmdTopic
+import io.infinitic.common.transport.WorkflowTagEngineTopic
+import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.workflows.engine.messages.SendSignal
 import io.infinitic.common.workflows.engine.messages.data.RemoteSignalDispatched
 import io.infinitic.common.workflows.engine.messages.data.RemoteSignalDispatchedById
@@ -38,8 +37,6 @@ suspend fun InfiniticProducer.dispatchRemoteSignal(
   signal: RemoteSignalDispatched,
   requester: Requester
 ) {
-  val emitterName = EmitterName(name)
-
   when (signal) {
     is RemoteSignalDispatchedById -> when (signal.workflowId) {
       requester.workflowId -> {
@@ -61,7 +58,7 @@ suspend fun InfiniticProducer.dispatchRemoteSignal(
               requester = requester,
           )
         }
-        sendToChannel.sendTo(WorkflowCmdTopic)
+        sendToChannel.sendTo(WorkflowStateCmdTopic)
       }
     }
 
@@ -82,7 +79,7 @@ suspend fun InfiniticProducer.dispatchRemoteSignal(
       }
       // Note: tag engine MUST ignore this message for workflowId = requester.workflowId
       // as the signal is handled from the workflowTaskCompleted
-      sendSignalByTag.sendTo(WorkflowTagTopic)
+      sendSignalByTag.sendTo(WorkflowTagEngineTopic)
     }
   }
 }

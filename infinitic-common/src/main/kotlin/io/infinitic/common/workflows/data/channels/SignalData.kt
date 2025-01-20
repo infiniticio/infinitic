@@ -28,11 +28,12 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import java.lang.reflect.Type
 
-@Serializable(with = ChannelSignalSerializer::class)
+@Serializable(with = SignalDataSerializer::class)
 data class SignalData(val serializedData: SerializedData) {
   companion object {
-    fun from(data: Any?) = SignalData(SerializedData.from(data))
+    fun from(data: Any?, type: Type) = SignalData(SerializedData.encode(data, type, null))
   }
 
   override fun toString() = serializedData.toString()
@@ -40,7 +41,10 @@ data class SignalData(val serializedData: SerializedData) {
   fun toJson() = serializedData.toJson()
 }
 
-object ChannelSignalSerializer : KSerializer<SignalData> {
+/**
+ * Serializer for SignalData objects.
+ */
+object SignalDataSerializer : KSerializer<SignalData> {
   override val descriptor: SerialDescriptor = SerializedData.serializer().descriptor
 
   override fun serialize(encoder: Encoder, value: SignalData) {

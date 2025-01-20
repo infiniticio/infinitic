@@ -22,7 +22,8 @@
  */
 package io.infinitic.tests.timers
 
-import io.infinitic.tests.utils.UtilService
+import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.utils.UtilService
 import io.infinitic.workflows.SendChannel
 import io.infinitic.workflows.Workflow
 import io.infinitic.workflows.or
@@ -37,7 +38,7 @@ interface TimerWorkflow {
 
   fun await(instant: Instant): Instant
 
-  fun awaitSignal(millis: Long): Any
+  fun awaitSignal(millis: Long): String
 }
 
 @Suppress("unused")
@@ -45,20 +46,24 @@ class TimerWorkflowImpl : Workflow(), TimerWorkflow {
 
   override val channel = channel<String>()
 
-  private val utilService =
-      newService(
-          UtilService::class.java,
-          tags = setOf("foo", "bar"),
-          meta = mutableMapOf("foo" to "bar".toByteArray()))
+  private val utilService = newService(
+      UtilService::class.java,
+      tags = setOf("foo", "bar"),
+      meta = mutableMapOf("foo" to "bar".toByteArray()),
+  )
 
   override fun await(millis: Long) = timer(Duration.ofMillis(millis)).await()
 
   override fun await(instant: Instant) = timer(instant).await()
 
-  override fun awaitSignal(millis: Long): Any {
+  override fun awaitSignal(millis: Long): String {
     val deferred = channel.receive()
     val timer = timer(Duration.ofMillis(millis))
 
-    return (deferred or timer).await()
+    return when (val any = (deferred or timer).await()) {
+      is Instant -> "Instant"
+      is String -> any
+      else -> thisShouldNotHappen()
+    }
   }
 }

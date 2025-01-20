@@ -25,7 +25,7 @@ package io.infinitic.common.tasks.tags.messages
 import com.github.avrokotlin.avro4k.AvroName
 import com.github.avrokotlin.avro4k.AvroNamespace
 import io.infinitic.common.data.MessageId
-import io.infinitic.common.data.ReturnValue
+import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.messages.Message
 import io.infinitic.common.tasks.data.DelegatedTaskData
@@ -41,12 +41,12 @@ sealed interface ServiceTagMessage : Message {
   override fun entity() = serviceName.toString()
 }
 
-interface WithTagAsKey : ServiceTagMessage {
+sealed interface WithTagAsKey : ServiceTagMessage {
   val taskTag: TaskTag
   override fun key() = taskTag.toString()
 }
 
-interface WithTaskIdAsKey : ServiceTagMessage {
+sealed interface WithTaskIdAsKey : ServiceTagMessage {
   val taskId: TaskId
   override fun key(): String? = taskId.toString()
 }
@@ -64,12 +64,21 @@ data class SetDelegatedTaskData(
 @Serializable
 @AvroNamespace("io.infinitic.tasks.tag")
 data class CompleteDelegatedTask(
-  val returnValue: ReturnValue,
+  val returnValue: MethodReturnValue,
   override val messageId: MessageId = MessageId(),
   override val serviceName: ServiceName,
   override val taskId: TaskId,
   override val emitterName: EmitterName,
 ) : WithTaskIdAsKey
+
+@Serializable
+@AvroNamespace("io.infinitic.tasks.tag")
+data class GetTaskIdsByTag(
+  override val messageId: MessageId = MessageId(),
+  @SerialName("taskName") override val serviceName: ServiceName,
+  override val taskTag: TaskTag,
+  override val emitterName: EmitterName
+) : WithTagAsKey
 
 @Serializable
 @AvroNamespace("io.infinitic.tasks.tag")
@@ -112,11 +121,3 @@ data class RemoveTaskIdFromTag(
   override val emitterName: EmitterName
 ) : WithTagAsKey
 
-@Serializable
-@AvroNamespace("io.infinitic.tasks.tag")
-data class GetTaskIdsByTag(
-  override val messageId: MessageId = MessageId(),
-  @SerialName("taskName") override val serviceName: ServiceName,
-  override val taskTag: TaskTag,
-  override val emitterName: EmitterName
-) : WithTagAsKey

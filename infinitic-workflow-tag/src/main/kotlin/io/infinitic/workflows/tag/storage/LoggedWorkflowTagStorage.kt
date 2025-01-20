@@ -22,7 +22,7 @@
  */
 package io.infinitic.workflows.tag.storage
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
@@ -30,11 +30,9 @@ import io.infinitic.common.workflows.tags.storage.WorkflowTagStorage
 import org.jetbrains.annotations.TestOnly
 
 class LoggedWorkflowTagStorage(
-  logName: String,
+  private val logger: KLogger,
   private val storage: WorkflowTagStorage
 ) : WorkflowTagStorage {
-
-  private val logger = KotlinLogging.logger(logName)
 
   override suspend fun getWorkflowIds(
     tag: WorkflowTag,
@@ -42,7 +40,7 @@ class LoggedWorkflowTagStorage(
   ): Set<WorkflowId> {
     val workflowIds = storage.getWorkflowIds(tag, workflowName)
     logger.debug {
-      "tag $tag - workflowName $workflowName - getWorkflowIds ${workflowIds.size} found"
+      "TAG $tag - workflowName $workflowName - getWorkflowIds ${workflowIds.size} found"
     }
 
     return workflowIds
@@ -53,7 +51,7 @@ class LoggedWorkflowTagStorage(
     workflowName: WorkflowName,
     workflowId: WorkflowId
   ) {
-    logger.debug { "tag $tag - name $workflowName - addWorkflowId $workflowId" }
+    logger.debug { "TAG $tag - name $workflowName - addWorkflowId $workflowId" }
     storage.addWorkflowId(tag, workflowName, workflowId)
   }
 
@@ -62,8 +60,37 @@ class LoggedWorkflowTagStorage(
     workflowName: WorkflowName,
     workflowId: WorkflowId
   ) {
-    logger.debug { "tag $tag - name $workflowName - removeWorkflowId $workflowId" }
+    logger.debug { "TAG $tag - name $workflowName - removeWorkflowId $workflowId" }
     storage.removeWorkflowId(tag, workflowName, workflowId)
+  }
+
+  override suspend fun getWorkflowIds(
+    tagAndNames: Set<Pair<WorkflowTag, WorkflowName>>
+  ): Map<Pair<WorkflowTag, WorkflowName>, Set<WorkflowId>> {
+    val map = storage.getWorkflowIds(tagAndNames)
+    map.forEach { (tagAndNames, workflowIds) ->
+      logger.debug {
+        "TAG ${tagAndNames.first} - workflowName ${tagAndNames.second} - getWorkflowIds ${workflowIds.size} found"
+      }
+    }
+    return map
+  }
+
+  override suspend fun updateWorkflowIds(
+    add: Map<Pair<WorkflowTag, WorkflowName>, Set<WorkflowId>>,
+    remove: Map<Pair<WorkflowTag, WorkflowName>, Set<WorkflowId>>
+  ) {
+    add.forEach { (tagAndNames, workflowIds) ->
+      workflowIds.forEach { workflowId ->
+        logger.debug { "TAG ${tagAndNames.first} - name ${tagAndNames.second} - addWorkflowId $workflowId" }
+      }
+    }
+    remove.forEach { (tagAndNames, workflowIds) ->
+      workflowIds.forEach { workflowId ->
+        logger.debug { "TAG ${tagAndNames.first} - name ${tagAndNames.second} - removeWorkflowId $workflowId" }
+      }
+    }
+    storage.updateWorkflowIds(add, remove)
   }
 
   @TestOnly

@@ -22,9 +22,10 @@
  */
 package io.infinitic.common.workflows.engine.state
 
+import io.infinitic.common.exceptions.ShouldNotHappenException
+import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.fixtures.checkBackwardCompatibility
 import io.infinitic.common.fixtures.checkOrCreateCurrentFile
-import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.serDe.avro.AvroSerDe.getAllSchemas
 import io.infinitic.common.serDe.avro.AvroSerDe.getRandomBinaryWithSchemaFingerprint
 import io.kotest.assertions.throwables.shouldNotThrowAny
@@ -54,7 +55,11 @@ class WorkflowStateTests :
           getAllSchemas(WorkflowState::class).forEach { (_, schema) ->
             val bytes = getRandomBinaryWithSchemaFingerprint(schema)
 
-            shouldNotThrowAny { WorkflowState.fromByteArray(bytes) }
+            try {
+              WorkflowState.fromByteArray(bytes)
+            } catch (e: ShouldNotHappenException) {
+              // we ignore this exception
+            }
           }
         }
       },

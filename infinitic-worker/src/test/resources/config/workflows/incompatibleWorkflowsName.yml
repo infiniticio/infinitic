@@ -23,18 +23,19 @@
 
 # Uncomment the line below to perform test on a local Pulsar cluster
 
-transport: inMemory
 storage: inMemory
 
-pulsar:
-  brokerServiceUrl: pulsar://localhost:6650
-  webServiceUrl: http://localhost:8080
-  tenant: infinitic
-  namespace: dev
+transport:
+  pulsar:
+    brokerServiceUrl: pulsar://localhost:6650
+    webServiceUrl: http://localhost:8080
+    tenant: infinitic
+    namespace: dev
 
 workflows:
   - name: io.infinitic.workers.samples.WorkflowA
-    classes:
-      - io.infinitic.workers.samples.WorkflowAImpl
-      - io.infinitic.workers.samples.WorkflowAImpl2
+    executor:
+      classes:
+        - io.infinitic.workers.samples.WorkflowAImpl
+        - io.infinitic.workers.samples.WorkflowAImpl2
 

@@ -30,145 +30,89 @@ import io.infinitic.common.data.Name
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.messages.Message
 import io.infinitic.common.requester.workflowName
-import io.infinitic.common.tasks.events.messages.ServiceEventMessage
+import io.infinitic.common.tasks.events.messages.ServiceExecutorEventMessage
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
-import io.infinitic.common.workflows.engine.messages.WorkflowCmdMessage
-import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
-import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
+import io.infinitic.common.transport.Topic
+import io.infinitic.common.transport.WorkflowStateEngineTopic
+import io.infinitic.common.workflows.engine.messages.WorkflowStateCmdMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateEventMessage
 import io.infinitic.events.data.services.serviceType
 import io.infinitic.events.data.services.toJson
 import io.infinitic.events.data.workflows.toJson
 import io.infinitic.events.data.workflows.workflowType
 import java.net.URI
 import java.net.URLEncoder
-import java.time.OffsetDateTime
 
-fun Message.toServiceCloudEvent(publishedAt: MillisInstant, prefix: String): CloudEvent? =
-    with(CloudEventContext.SERVICE) {
-      when (val type = type()) {
-        null -> null
-        else -> CloudEventBuilder()
-            .withId(messageId.toString())
-            .withTime(time(publishedAt))
-            .withType(type)
-            .withSubject(subject())
-            .withSource(source(prefix))
-            .withDataContentType("application/json")
-            .withoutDataSchema()
-            .withData(dataBytes())
-            .build()
-      }
-    }
+private fun <S : Message> S.isRedundantIn(topic: Topic<*>) = when (topic) {
+  is WorkflowStateEngineTopic -> this is WorkflowStateCmdMessage
+  else -> false
+}
 
-fun Message.toWorkflowCloudEvent(publishedAt: MillisInstant, sourcePrefix: String): CloudEvent? =
-    with(CloudEventContext.WORKFLOW) {
-      when (val type = type()) {
-        null -> null
-        else -> CloudEventBuilder()
-            .withId(messageId.toString())
-            .withTime(time(publishedAt))
-            .withType(type)
-            .withSubject(subject())
-            .withSource(source(sourcePrefix))
-            .withDataContentType("application/json")
-            .withoutDataSchema()
-            .withData(dataBytes())
-            .build()
-      }
-    }
-
-enum class CloudEventContext {
-
-  WORKFLOW {
-
-    override fun Message.type(): String? = when (this) {
-      is WorkflowCmdMessage -> workflowType()
-      is WorkflowEngineMessage -> workflowType()
-      is WorkflowEventMessage -> workflowType()
-      else -> null
-    }
-
-    override fun Message.subject(): String = when (this) {
-      is WorkflowCmdMessage -> workflowId
-      is WorkflowEngineMessage -> workflowId
-      is WorkflowEventMessage -> workflowId
-      else -> thisShouldNotHappen()
-    }.toString()
-
-    override fun Message.source(prefix: String): URI = when (this) {
-      is WorkflowCmdMessage -> workflowName
-      is WorkflowEngineMessage -> workflowName
-      is WorkflowEventMessage -> workflowName
-      else -> thisShouldNotHappen()
-    }.let {
-      URI.create("$prefix/workflows/${it.encoded}")
-    }
-
-    override fun Message.dataBytes(): ByteArray = when (this) {
-      is WorkflowCmdMessage -> toJson()
-      is WorkflowEngineMessage -> toJson()
-      is WorkflowEventMessage -> toJson()
-      else -> thisShouldNotHappen()
-    }.toString().toByteArray()
-
-    override fun Message.time(publishedAt: MillisInstant): OffsetDateTime = when (this) {
-      is WorkflowCmdMessage -> publishedAt
-      is WorkflowEngineMessage -> emittedAt ?: publishedAt
-      is WorkflowEventMessage -> publishedAt
-      else -> thisShouldNotHappen()
-    }.toOffsetDateTime()
-  },
-
-  SERVICE {
-
-    override fun Message.type(): String? = when (this) {
-      is ServiceExecutorMessage -> serviceType()
-      is ServiceEventMessage -> serviceType()
-      else -> null
-    }
-
-    override fun Message.subject(): String = when (this) {
-      is ServiceExecutorMessage -> taskId
-      is ServiceEventMessage -> taskId
-      else -> thisShouldNotHappen()
-    }.toString()
-
-    override fun Message.source(prefix: String): URI = when (this) {
-      is ServiceExecutorMessage -> when (isWorkflowTask()) {
-        true -> "executor/${requester.workflowName.encoded}"
-        false -> serviceName.encoded
-      }
-
-      is ServiceEventMessage -> when (isWorkflowTask()) {
-        true -> "executor/${requester.workflowName.encoded}"
-        false -> serviceName.encoded
-      }
-
-      else -> thisShouldNotHappen()
-    }.let {
-      URI.create("$prefix/services/$it")
-    }
-
-    override fun Message.dataBytes(): ByteArray = when (this) {
-      is ServiceExecutorMessage -> toJson()
-      is ServiceEventMessage -> toJson()
-      else -> thisShouldNotHappen()
-    }.toString().toByteArray()
-
-    override fun Message.time(publishedAt: MillisInstant): OffsetDateTime =
-        publishedAt.toOffsetDateTime()
-  };
-
-  companion object {
-    private val Name?.encoded
-      get() = URLEncoder.encode(toString(), Charsets.UTF_8)
+fun <S : Message> S.toCloudEvent(
+  topic: Topic<*>,
+  publishedAt: MillisInstant,
+  prefix: String
+): CloudEvent? = if (isRedundantIn(topic)) null else
+  when (val type = type()) {
+    null -> null
+    else -> CloudEventBuilder()
+        .withId(messageId.toString())
+        .withTime(publishedAt.toOffsetDateTime())
+        .withType(type)
+        .withSubject(subject())
+        .withSource(source(prefix))
+        .withDataContentType("application/json")
+        .withoutDataSchema()
+        .withData(dataBytes())
+        .build()
   }
 
-
-  abstract fun Message.time(publishedAt: MillisInstant): OffsetDateTime
-  abstract fun Message.type(): String?
-  abstract fun Message.subject(): String
-  abstract fun Message.source(prefix: String): URI
-  abstract fun Message.dataBytes(): ByteArray
-
+private fun Message.type(): String? = when (this) {
+  is WorkflowStateCmdMessage -> workflowType()
+  is WorkflowStateEngineMessage -> workflowType()
+  is WorkflowStateEventMessage -> workflowType()
+  is ServiceExecutorMessage -> serviceType()
+  is ServiceExecutorEventMessage -> serviceType()
+  else -> null
 }
+
+private fun Message.subject(): String = when (this) {
+  is WorkflowStateCmdMessage -> workflowId
+  is WorkflowStateEngineMessage -> workflowId
+  is WorkflowStateEventMessage -> workflowId
+  is ServiceExecutorMessage -> taskId
+  is ServiceExecutorEventMessage -> taskId
+  else -> thisShouldNotHappen()
+}.toString()
+
+private fun Message.source(prefix: String): URI = when (this) {
+  is WorkflowStateCmdMessage -> "workflows/stateEngine/${workflowName.encoded}"
+  is WorkflowStateEngineMessage -> "workflows/stateEngine/${workflowName.encoded}"
+  is WorkflowStateEventMessage -> "workflows/stateEngine/${workflowName.encoded}"
+  is ServiceExecutorMessage -> when (isWorkflowTask()) {
+    true -> "workflows/executor/${requester.workflowName.encoded}"
+    false -> "services/executor/${serviceName.encoded}"
+  }
+
+  is ServiceExecutorEventMessage -> when (isWorkflowTask()) {
+    true -> "workflows/executor/${requester.workflowName.encoded}"
+    false -> "services/executor/${serviceName.encoded}"
+  }
+
+  else -> thisShouldNotHappen()
+}.let {
+  URI.create("$prefix/$it")
+}
+
+private fun Message.dataBytes(): ByteArray = when (this) {
+  is WorkflowStateCmdMessage -> toJson()
+  is WorkflowStateEngineMessage -> toJson()
+  is WorkflowStateEventMessage -> toJson()
+  is ServiceExecutorMessage -> toJson()
+  is ServiceExecutorEventMessage -> toJson()
+  else -> thisShouldNotHappen()
+}.toString().toByteArray()
+
+internal val Name?.encoded: String
+  get() = URLEncoder.encode(toString(), Charsets.UTF_8)

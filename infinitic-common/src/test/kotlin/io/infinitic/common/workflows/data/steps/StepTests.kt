@@ -22,7 +22,7 @@
  */
 package io.infinitic.common.workflows.data.steps
 
-import io.infinitic.common.data.ReturnValue
+import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandStatus.Completed
 import io.infinitic.common.workflows.data.steps.Step.And
@@ -31,152 +31,155 @@ import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 
-fun getStepId() = Step.Id(CommandId())
+internal fun getStepId() = Step.Id(CommandId())
 
-fun getCompletedStatus(output: Any? = null, index: Int = 0) =
+internal fun getCompletedStatus(output: Any? = null, index: Int = 0) =
     Completed(
-        returnValue = ReturnValue.from(output),
-        completionWorkflowTaskIndex = WorkflowTaskIndex(index))
+        returnValue = MethodReturnValue.from(output, null),
+        completionWorkflowTaskIndex = WorkflowTaskIndex(index),
+    )
 
-class StepTests :
-    StringSpec({
-      "Step should not be terminated by default" {
-        val step = getStepId()
+internal class StepTests :
+  StringSpec(
+      {
+        "Step should not be terminated by default" {
+          val step = getStepId()
 
-        step.isTerminated() shouldBe false
-      }
+          step.isTerminated() shouldBe false
+        }
 
-      "Complete (OR A)" {
-        val stepA = getStepId()
-        val step = Or(listOf(stepA))
+        "Complete (OR A)" {
+          val stepA = getStepId()
+          val step = Or(listOf(stepA))
 
-        step.isTerminated() shouldBe false
-        step.updateWith(stepA.commandId, getCompletedStatus())
-        step.isTerminated() shouldBe true
-      }
+          step.isTerminated() shouldBe false
+          step.updateWith(stepA.commandId, getCompletedStatus())
+          step.isTerminated() shouldBe true
+        }
 
-      "Complete (AND A)" {
-        val stepA = getStepId()
-        val step = And(listOf(stepA))
+        "Complete (AND A)" {
+          val stepA = getStepId()
+          val step = And(listOf(stepA))
 
-        step.isTerminated() shouldBe false
-        step.updateWith(stepA.commandId, getCompletedStatus())
-        step.isTerminated() shouldBe true
-      }
+          step.isTerminated() shouldBe false
+          step.updateWith(stepA.commandId, getCompletedStatus())
+          step.isTerminated() shouldBe true
+        }
 
-      "Complete (A AND B)" {
-        val stepA = getStepId()
-        val stepB = getStepId()
-        val step = And(listOf(stepA, stepB))
+        "Complete (A AND B)" {
+          val stepA = getStepId()
+          val stepB = getStepId()
+          val step = And(listOf(stepA, stepB))
 
-        step.isTerminated() shouldBe false
-        step.updateWith(stepA.commandId, getCompletedStatus())
-        step.isTerminated() shouldBe false
-        step.updateWith(stepB.commandId, getCompletedStatus())
-        step.isTerminated() shouldBe true
-        step shouldBe And(listOf(stepA, stepB))
-      }
+          step.isTerminated() shouldBe false
+          step.updateWith(stepA.commandId, getCompletedStatus())
+          step.isTerminated() shouldBe false
+          step.updateWith(stepB.commandId, getCompletedStatus())
+          step.isTerminated() shouldBe true
+          step shouldBe And(listOf(stepA, stepB))
+        }
 
-      "Complete (A OR B)" {
-        val stepA = getStepId()
-        val stepB = getStepId()
-        val step = Or(listOf(stepA, stepB))
+        "Complete (A OR B)" {
+          val stepA = getStepId()
+          val stepB = getStepId()
+          val step = Or(listOf(stepA, stepB))
 
-        step.isTerminated() shouldBe false
-        step.updateWith(stepA.commandId, getCompletedStatus())
-        step shouldBe Or(listOf(stepA))
-      }
+          step.isTerminated() shouldBe false
+          step.updateWith(stepA.commandId, getCompletedStatus())
+          step shouldBe Or(listOf(stepA))
+        }
 
-      "Complete (A OR (B OR C))" {
-        val stepA = getStepId()
-        val stepB = getStepId()
-        val stepC = getStepId()
-        val step = Or(listOf(stepA, Or(listOf(stepB, stepC))))
+        "Complete (A OR (B OR C))" {
+          val stepA = getStepId()
+          val stepB = getStepId()
+          val stepC = getStepId()
+          val step = Or(listOf(stepA, Or(listOf(stepB, stepC))))
 
-        step.isTerminated() shouldBe false
-        step.updateWith(stepB.commandId, getCompletedStatus())
-        step shouldBe Or(listOf(stepB))
-      }
+          step.isTerminated() shouldBe false
+          step.updateWith(stepB.commandId, getCompletedStatus())
+          step shouldBe Or(listOf(stepB))
+        }
 
-      "Complete (A AND (B OR C))" {
-        val stepA = getStepId()
-        val stepB = getStepId()
-        val stepC = getStepId()
-        val step = And(listOf(stepA, Or(listOf(stepB, stepC))))
+        "Complete (A AND (B OR C))" {
+          val stepA = getStepId()
+          val stepB = getStepId()
+          val stepC = getStepId()
+          val step = And(listOf(stepA, Or(listOf(stepB, stepC))))
 
-        step.isTerminated() shouldBe false
-        step.updateWith(stepA.commandId, getCompletedStatus())
-        step.isTerminated() shouldBe false
-        step.updateWith(stepB.commandId, getCompletedStatus())
-        step shouldBe And(listOf(stepA, stepB))
-      }
+          step.isTerminated() shouldBe false
+          step.updateWith(stepA.commandId, getCompletedStatus())
+          step.isTerminated() shouldBe false
+          step.updateWith(stepB.commandId, getCompletedStatus())
+          step shouldBe And(listOf(stepA, stepB))
+        }
 
-      "Complete (A AND (B AND C))" {
-        val stepA = getStepId()
-        val stepB = getStepId()
-        val stepC = getStepId()
-        val step = And(listOf(stepA, And(listOf(stepB, stepC))))
+        "Complete (A AND (B AND C))" {
+          val stepA = getStepId()
+          val stepB = getStepId()
+          val stepC = getStepId()
+          val step = And(listOf(stepA, And(listOf(stepB, stepC))))
 
-        step.isTerminated() shouldBe false
-        step.updateWith(stepA.commandId, getCompletedStatus())
-        step.isTerminated() shouldBe false
-        step.updateWith(stepB.commandId, getCompletedStatus())
-        step.isTerminated() shouldBe false
-        step.updateWith(stepC.commandId, getCompletedStatus())
-        step.isTerminated() shouldBe true
-        step shouldBe And(listOf(stepA, stepB, stepC))
-      }
+          step.isTerminated() shouldBe false
+          step.updateWith(stepA.commandId, getCompletedStatus())
+          step.isTerminated() shouldBe false
+          step.updateWith(stepB.commandId, getCompletedStatus())
+          step.isTerminated() shouldBe false
+          step.updateWith(stepC.commandId, getCompletedStatus())
+          step.isTerminated() shouldBe true
+          step shouldBe And(listOf(stepA, stepB, stepC))
+        }
 
-      "A OR B resolution" {
-        val stepA = getStepId()
-        val stepB = getStepId()
-        val step = Or(listOf(stepA, stepB))
+        "A OR B resolution" {
+          val stepA = getStepId()
+          val stepB = getStepId()
+          val step = Or(listOf(stepA, stepB))
 
-        step.updateWith(stepA.commandId, getCompletedStatus())
-        step shouldBe Or(listOf(stepA))
-      }
+          step.updateWith(stepA.commandId, getCompletedStatus())
+          step shouldBe Or(listOf(stepA))
+        }
 
-      "A OR (B OR C) resolution" {
-        val stepA = getStepId()
-        val stepB = getStepId()
-        val stepC = getStepId()
-        val step = Or(listOf(stepA, Or(listOf(stepB, stepC))))
+        "A OR (B OR C) resolution" {
+          val stepA = getStepId()
+          val stepB = getStepId()
+          val stepC = getStepId()
+          val step = Or(listOf(stepA, Or(listOf(stepB, stepC))))
 
-        step.updateWith(stepB.commandId, getCompletedStatus())
-        step shouldBe Or(listOf(stepB))
-      }
+          step.updateWith(stepB.commandId, getCompletedStatus())
+          step shouldBe Or(listOf(stepB))
+        }
 
-      "A OR (B AND C) resolution" {
-        val stepA = getStepId()
-        val stepB = getStepId()
-        val stepC = getStepId()
-        val step = Or(listOf(stepA, And(listOf(stepB, stepC))))
+        "A OR (B AND C) resolution" {
+          val stepA = getStepId()
+          val stepB = getStepId()
+          val stepC = getStepId()
+          val step = Or(listOf(stepA, And(listOf(stepB, stepC))))
 
-        step.updateWith(stepB.commandId, getCompletedStatus())
-        step.updateWith(stepC.commandId, getCompletedStatus())
-        step.isTerminated() shouldBe true
-        step shouldBe Or(listOf(And(listOf(stepB, stepC))))
-      }
+          step.updateWith(stepB.commandId, getCompletedStatus())
+          step.updateWith(stepC.commandId, getCompletedStatus())
+          step.isTerminated() shouldBe true
+          step shouldBe Or(listOf(And(listOf(stepB, stepC))))
+        }
 
-      "A AND (B OR C) resolution" {
-        val stepA = getStepId()
-        val stepB = getStepId()
-        val stepC = getStepId()
-        val step = And(listOf(stepA, Or(listOf(stepB, stepC))))
+        "A AND (B OR C) resolution" {
+          val stepA = getStepId()
+          val stepB = getStepId()
+          val stepC = getStepId()
+          val step = And(listOf(stepA, Or(listOf(stepB, stepC))))
 
-        step.updateWith(stepB.commandId, getCompletedStatus())
-        step shouldBe And(listOf(stepA, stepB))
-      }
+          step.updateWith(stepB.commandId, getCompletedStatus())
+          step shouldBe And(listOf(stepA, stepB))
+        }
 
-      "A OR (B AND (C OR D)) resolution" {
-        val stepA = getStepId()
-        val stepB = getStepId()
-        val stepC = getStepId()
-        val stepD = getStepId()
-        val step = Or(listOf(stepA, And(listOf(stepB, Or(listOf(stepC, stepD))))))
+        "A OR (B AND (C OR D)) resolution" {
+          val stepA = getStepId()
+          val stepB = getStepId()
+          val stepC = getStepId()
+          val stepD = getStepId()
+          val step = Or(listOf(stepA, And(listOf(stepB, Or(listOf(stepC, stepD))))))
 
-        step.updateWith(stepC.commandId, getCompletedStatus())
-        step.updateWith(stepB.commandId, getCompletedStatus())
-        step shouldBe Or(listOf(And(listOf(stepB, stepC))))
-      }
-    })
+          step.updateWith(stepC.commandId, getCompletedStatus())
+          step.updateWith(stepB.commandId, getCompletedStatus())
+          step shouldBe Or(listOf(And(listOf(stepB, stepC))))
+        }
+      },
+  )

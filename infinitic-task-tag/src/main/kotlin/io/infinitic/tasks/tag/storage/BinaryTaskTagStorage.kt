@@ -47,35 +47,29 @@ class BinaryTaskTagStorage(keyValueStorage: KeyValueStorage, keySetStorage: KeyS
   private val keyValueStorage = WrappedKeyValueStorage(keyValueStorage)
   private val keySetStorage = WrappedKeySetStorage(keySetStorage)
 
-  override suspend fun getTaskIdsForTag(tag: TaskTag, serviceName: ServiceName): Set<TaskId> {
+  override suspend fun getTaskIds(tag: TaskTag, serviceName: ServiceName): Set<TaskId> {
     val key = getTaskIdsByTagKey(tag, serviceName)
     return keySetStorage.get(key).map { TaskId(String(it)) }.toSet()
   }
 
-  override suspend fun addTaskIdToTag(tag: TaskTag, serviceName: ServiceName, taskId: TaskId) {
+  override suspend fun addTaskId(tag: TaskTag, serviceName: ServiceName, taskId: TaskId) {
     val key = getTaskIdsByTagKey(tag, serviceName)
     keySetStorage.add(key, taskId.toString().toByteArray())
   }
 
-  override suspend fun removeTaskIdFromTag(tag: TaskTag, serviceName: ServiceName, taskId: TaskId) {
+  override suspend fun removeTaskId(tag: TaskTag, serviceName: ServiceName, taskId: TaskId) {
     val key = getTaskIdsByTagKey(tag, serviceName)
     keySetStorage.remove(key, taskId.toString().toByteArray())
   }
 
-  override suspend fun setDelegatedTaskData(taskId: TaskId, data: DelegatedTaskData) {
+  override suspend fun updateDelegatedTaskData(taskId: TaskId, data: DelegatedTaskData?) {
     val key = getDelegatedTaskDataKey(taskId)
-    keyValueStorage.put(key, data.toByteArray())
-  }
-
-  override suspend fun delDelegatedTaskData(taskId: TaskId) {
-    val key = getDelegatedTaskDataKey(taskId)
-    keyValueStorage.del(key)
+    keyValueStorage.put(key, data?.toByteArray())
   }
 
   override suspend fun getDelegatedTaskData(taskId: TaskId): DelegatedTaskData? {
     val key = getDelegatedTaskDataKey(taskId)
     return keyValueStorage.get(key)?.let { DelegatedTaskData.fromByteArray(it) }
-
   }
 
   private fun getTaskIdsByTagKey(tag: TaskTag, serviceName: ServiceName) =

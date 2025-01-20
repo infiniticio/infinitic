@@ -27,7 +27,6 @@ import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.TaskCompleted
 import io.infinitic.common.clients.messages.TaskIdsByTag
 import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.tasks.tags.messages.AddTaskIdToTag
 import io.infinitic.common.tasks.tags.messages.CancelTaskByTag
@@ -39,55 +38,67 @@ import io.infinitic.common.tasks.tags.messages.ServiceTagMessage
 import io.infinitic.common.tasks.tags.messages.SetDelegatedTaskData
 import io.infinitic.common.tasks.tags.storage.TaskTagStorage
 import io.infinitic.common.transport.ClientTopic
-import io.infinitic.common.transport.InfiniticProducerAsync
-import io.infinitic.common.transport.LoggedInfiniticProducer
-import io.infinitic.common.transport.WorkflowEngineTopic
+import io.infinitic.common.transport.WorkflowStateEngineTopic
+import io.infinitic.common.transport.interfaces.InfiniticProducer
+import io.infinitic.common.transport.logged.LoggerWithCounter
 import io.infinitic.common.workflows.engine.messages.RemoteTaskCompleted
-import io.infinitic.tasks.tag.storage.LoggedTaskTagStorage
 import kotlinx.coroutines.coroutineScope
 
 class TaskTagEngine(
-  storage: TaskTagStorage,
-  producerAsync: InfiniticProducerAsync
+  private val _storage: TaskTagStorage,
+  private val _producer: InfiniticProducer
 ) {
-  private val storage = LoggedTaskTagStorage(storage).apply {
-    logName = this::class.java.name
-  }
+  private val emitterName = _producer.emitterName
 
-  private val producer = LoggedInfiniticProducer(this::class.java.name, producerAsync)
+  suspend fun process(message: ServiceTagMessage, publishTime: MillisInstant) = process(
+      storage = _storage,
+      producer = _producer,
+      message = message,
+      publishTime = publishTime,
+  )
 
-  private val logger = KotlinLogging.logger(this::class.java.name)
-
-  private val emitterName by lazy { EmitterName(producer.name) }
-
-  suspend fun handle(message: ServiceTagMessage, publishTime: MillisInstant) = coroutineScope {
-    logger.debug { "receiving $message" }
-
+  private suspend fun process(
+    storage: TaskTagStorage,
+    producer: InfiniticProducer,
+    message: ServiceTagMessage,
+    publishTime: MillisInstant
+  ) = coroutineScope {
     when (message) {
-      is AddTaskIdToTag -> addTaskIdToTag(message)
-      is RemoveTaskIdFromTag -> removeTaskIdFromTag(message)
+      is AddTaskIdToTag -> addTaskIdToTag(storage, message)
+      is RemoveTaskIdFromTag -> removeTaskIdFromTag(storage, message)
       is CancelTaskByTag -> TODO()
       is RetryTaskByTag -> thisShouldNotHappen()
-      is SetDelegatedTaskData -> setDelegatedTaskData(message)
-      is CompleteDelegatedTask -> completeAsyncTask(message, publishTime)
-      is GetTaskIdsByTag -> getTaskIds(message)
+      is SetDelegatedTaskData -> setDelegatedTaskData(storage, message)
+      is CompleteDelegatedTask -> completeDelegateTask(storage, producer, message, publishTime)
+      is GetTaskIdsByTag -> getTaskIds(storage, producer, message)
       else -> thisShouldNotHappen()
     }
   }
 
-  private suspend fun addTaskIdToTag(message: AddTaskIdToTag) {
-    storage.addTaskIdToTag(message.taskTag, message.serviceName, message.taskId)
+  private suspend fun addTaskIdToTag(
+    storage: TaskTagStorage,
+    message: AddTaskIdToTag
+  ) {
+    storage.addTaskId(message.taskTag, message.serviceName, message.taskId)
   }
 
-  private suspend fun removeTaskIdFromTag(message: RemoveTaskIdFromTag) {
-    storage.removeTaskIdFromTag(message.taskTag, message.serviceName, message.taskId)
+  private suspend fun removeTaskIdFromTag(
+    storage: TaskTagStorage,
+    message: RemoveTaskIdFromTag
+  ) {
+    storage.removeTaskId(message.taskTag, message.serviceName, message.taskId)
   }
 
-  private suspend fun setDelegatedTaskData(message: SetDelegatedTaskData) {
-    storage.setDelegatedTaskData(message.taskId, message.delegatedTaskData)
+  private suspend fun setDelegatedTaskData(
+    storage: TaskTagStorage,
+    message: SetDelegatedTaskData
+  ) {
+    storage.updateDelegatedTaskData(message.taskId, message.delegatedTaskData)
   }
 
-  private suspend fun completeAsyncTask(
+  private suspend fun completeDelegateTask(
+    storage: TaskTagStorage,
+    producer: InfiniticProducer,
     message: CompleteDelegatedTask,
     publishTime: MillisInstant
   ) {
@@ -98,16 +109,20 @@ class TaskTagEngine(
       }
       // send to waiting workflow
       RemoteTaskCompleted.from(it, message.returnValue, emitterName, publishTime)?.let {
-        with(producer) { it.sendTo(WorkflowEngineTopic) }
+        with(producer) { it.sendTo(WorkflowStateEngineTopic) }
       }
       // delete delegatedTaskData
-      storage.delDelegatedTaskData(message.taskId)
+      storage.updateDelegatedTaskData(message.taskId, null)
     }
       ?: logger.warn { "Discarding message as no DelegatedTaskData found $message" }
   }
 
-  private suspend fun getTaskIds(message: GetTaskIdsByTag) {
-    val taskIds = storage.getTaskIdsForTag(message.taskTag, message.serviceName)
+  private suspend fun getTaskIds(
+    storage: TaskTagStorage,
+    producer: InfiniticProducer,
+    message: GetTaskIdsByTag
+  ) {
+    val taskIds = storage.getTaskIds(message.taskTag, message.serviceName)
 
     val taskIdsByTag = TaskIdsByTag(
         recipientName = ClientName.from(message.emitterName),
@@ -118,5 +133,9 @@ class TaskTagEngine(
     )
 
     with(producer) { taskIdsByTag.sendTo(ClientTopic) }
+  }
+
+  companion object {
+    val logger = LoggerWithCounter(KotlinLogging.logger {})
   }
 }

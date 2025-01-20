@@ -26,7 +26,7 @@ import com.jayway.jsonpath.Criteria
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.data.ReturnValue
+import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.proxies.ChannelProxyHandler
 import io.infinitic.common.proxies.ExistingServiceProxyHandler
@@ -35,6 +35,8 @@ import io.infinitic.common.proxies.NewServiceProxyHandler
 import io.infinitic.common.proxies.NewWorkflowProxyHandler
 import io.infinitic.common.proxies.ProxyHandler
 import io.infinitic.common.utils.IdGenerator
+import io.infinitic.common.utils.jsonViewClass
+import io.infinitic.common.workflows.WorkflowDispatcher
 import io.infinitic.common.workflows.data.channels.ChannelFilter
 import io.infinitic.common.workflows.data.channels.ChannelName
 import io.infinitic.common.workflows.data.channels.ChannelType
@@ -82,7 +84,7 @@ import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.DeferredStatus
 import io.infinitic.workflows.SendChannel
 import io.infinitic.workflows.WorkflowCheckMode
-import io.infinitic.workflows.WorkflowDispatcher
+import java.lang.reflect.Type
 import java.time.Duration as JavaDuration
 import java.time.Instant as JavaInstant
 
@@ -97,10 +99,10 @@ internal class WorkflowDispatcherImpl(
   lateinit var setProperties: (Map<PropertyName, PropertyHash>) -> Unit
 
   // new commands discovered during execution of the method
-  var newCommands: MutableList<PastCommand> = mutableListOf()
+  val newPastCommands: MutableList<PastCommand> = mutableListOf()
 
   // new step discovered during execution the method
-  var newStep: NewStep? = null
+  var newCurrentStep: NewStep? = null
 
   // position in the current method processing
   private var positionInMethod = PositionInWorkflowMethod()
@@ -139,13 +141,13 @@ internal class WorkflowDispatcherImpl(
         // record result
         val command = InlineTaskCommand()
 
-        newCommands.add(
+        newPastCommands.add(
             InlineTaskPastCommand(
                 commandId = getCurrentCommandId(),
                 commandPosition = positionInMethod,
                 commandSimpleName = InlineTaskCommand.simpleName(),
                 commandStatus = CommandStatus.Completed(
-                    returnValue = ReturnValue.from(value),
+                    returnValue = MethodReturnValue.from(value, null),
                     completionWorkflowTaskIndex = workflowTaskIndex,
                 ),
                 command = command,
@@ -158,7 +160,7 @@ internal class WorkflowDispatcherImpl(
       else -> when (pastCommand.commandSimpleName == InlineTaskCommand.simpleName()) {
         true ->
           when (val status = pastCommand.commandStatus) {
-            is CommandStatus.Completed -> status.returnValue.value() as S
+            is CommandStatus.Completed -> status.returnValue.deserialize(null, null) as S
             else -> thisShouldNotHappen()
           }
 
@@ -175,9 +177,7 @@ internal class WorkflowDispatcherImpl(
 
     // create a new step
     val newStep = NewStep(step = deferred.step, stepPosition = positionInMethod)
-
-    deferred.step.checkAwaitIndex()
-
+    
     val result = when (val pastStep = getSimilarPastStep(newStep)) {
       // this step is not found in the history
       null -> {
@@ -185,7 +185,7 @@ internal class WorkflowDispatcherImpl(
         when (val stepStatus = newStep.step.statusAt(workflowTaskIndex)) {
           // we do not know the status of this step based on history
           is Waiting -> {
-            this.newStep = newStep
+            this.newCurrentStep = newStep
 
             throw NewStepException
           }
@@ -199,15 +199,12 @@ internal class WorkflowDispatcherImpl(
             throw getDeferredException(stepStatus)
           }
 
-          is Completed -> {
-            stepStatus.returnValue.value() as T
-          }
+          is Completed -> deferred.step.valueCompletedFn() as T
         }
       }
       // this step is already in the history
       else -> {
         val stepStatus = pastStep.stepStatus
-
         // if still ongoing, we stop here
         if (stepStatus == Waiting) throw KnownStepException
 
@@ -216,9 +213,7 @@ internal class WorkflowDispatcherImpl(
 
         // return deferred value
         when (stepStatus) {
-          is Waiting -> {
-            thisShouldNotHappen()
-          }
+          is Waiting -> thisShouldNotHappen()
 
           is Unknown -> {
             // workflowTaskIndex is now the one where this deferred was unknowing
@@ -265,14 +260,12 @@ internal class WorkflowDispatcherImpl(
           is Completed -> {
             // workflowTaskIndex is now the one where this deferred was completed
             workflowTaskIndex = stepStatus.completionWorkflowTaskIndex
-
-            stepStatus.returnValue.value() as T
+            // return value completed
+            deferred.step.valueCompletedFn() as T
           }
         }
       }
     }
-
-    deferred.step.nextAwaitIndex()
 
     return result
   }
@@ -284,23 +277,24 @@ internal class WorkflowDispatcherImpl(
         is Unknown -> DeferredStatus.UNKNOWN
         is Completed -> DeferredStatus.COMPLETED
         is Canceled -> DeferredStatus.CANCELED
-        is CurrentlyFailed,
-        is Failed -> DeferredStatus.FAILED
-
-        is CurrentlyTimedOut,
-        is TimedOut -> DeferredStatus.TIMED_OUT
+        is CurrentlyFailed, is Failed -> DeferredStatus.FAILED
+        is CurrentlyTimedOut, is TimedOut -> DeferredStatus.TIMED_OUT
       }
 
   override fun timer(duration: JavaDuration): Deferred<JavaInstant> =
       dispatchCommand(
           StartDurationTimerCommand(MillisDuration(duration.toMillis())),
           StartDurationTimerCommand.simpleName(),
+          JavaInstant::class.java,
+          null,
       )
 
   override fun timer(instant: JavaInstant): Deferred<JavaInstant> =
       dispatchCommand(
           StartInstantTimerCommand(MillisInstant(instant.toEpochMilli())),
           StartInstantTimerCommand.simpleName(),
+          JavaInstant::class.java,
+          null,
       )
 
   override fun <S : T, T : Any> receive(
@@ -317,6 +311,8 @@ internal class WorkflowDispatcherImpl(
           limit,
       ),
       ReceiveSignalCommand.simpleName(),
+      channel.type,
+      null,
   )
 
   override fun <T : Any> send(channel: Channel<T>, signal: T) {
@@ -327,9 +323,11 @@ internal class WorkflowDispatcherImpl(
             workflowTag = null,
             channelName = ChannelName(channel.name),
             channelTypes = ChannelType.allFrom(signal::class.java),
-            signalData = SignalData.from(signal),
+            signalData = SignalData.from(signal, channel.type),
         ),
         SendSignalCommand.simpleName(),
+        null,
+        null,
     )
   }
 
@@ -364,19 +362,20 @@ internal class WorkflowDispatcherImpl(
   }
 
   /** Task dispatching */
-  private fun <R : Any?> NewServiceProxyHandler<*>.dispatchTask(): Deferred<R> =
-      dispatchCommand(
-          DispatchTaskCommand(
-              serviceName = serviceName,
-              methodParameters = methodParameters,
-              methodParameterTypes = methodParameterTypes,
-              methodName = methodName,
-              methodTimeout = timeoutInMillisDuration.getOrThrow(),
-              taskTags = taskTags,
-              taskMeta = taskMeta,
-          ),
-          CommandSimpleName(fullMethodName),
-      )
+  private fun <R : Any?> NewServiceProxyHandler<*>.dispatchTask(): Deferred<R> = dispatchCommand(
+      DispatchTaskCommand(
+          serviceName = serviceName,
+          methodParameters = methodParameters,
+          methodParameterTypes = methodParameterTypes,
+          methodName = annotatedMethodName,
+          methodTimeout = timeoutInMillisDuration.getOrThrow(),
+          taskTags = taskTags,
+          taskMeta = taskMeta,
+      ),
+      CommandSimpleName(fullMethodName),
+      method.genericReturnType,
+      method.jsonViewClass,
+  )
 
   /** Workflow dispatching */
   private fun <R : Any?> NewWorkflowProxyHandler<*>.dispatchWorkflow(): Deferred<R> =
@@ -391,7 +390,7 @@ internal class WorkflowDispatcherImpl(
           dispatchCommand(
               DispatchNewWorkflowCommand(
                   workflowName = workflowName,
-                  methodName = methodName,
+                  methodName = annotatedMethodName,
                   methodParameterTypes = methodParameterTypes,
                   methodParameters = methodParameters,
                   methodTimeout = timeoutInMillisDuration.getOrThrow(),
@@ -399,6 +398,8 @@ internal class WorkflowDispatcherImpl(
                   workflowMeta = workflowMeta,
               ),
               CommandSimpleName(fullMethodName),
+              method.genericReturnType,
+              method.jsonViewClass,
           )
         }
       }
@@ -412,18 +413,20 @@ internal class WorkflowDispatcherImpl(
                 workflowName = workflowName,
                 workflowId = requestBy.workflowId,
                 workflowTag = requestBy.workflowTag,
-                methodName = methodName,
+                methodName = annotatedMethodName,
                 methodParameterTypes = methodParameterTypes,
                 methodParameters = methodParameters,
                 methodTimeout = timeoutInMillisDuration.getOrThrow(),
             ),
             CommandSimpleName(fullMethodName),
+            method.genericReturnType,
+            method.jsonViewClass,
         )
       }
 
   /** Signal dispatching */
   private fun <R : Any?> ChannelProxyHandler<*>.dispatchSignal(): Deferred<R> {
-    if (methodName.toString() != SendChannel<*>::send.name) thisShouldNotHappen()
+    if (annotatedMethodName.toString() != SendChannel<*>::send.name) thisShouldNotHappen()
 
     return dispatchCommand(
         SendSignalCommand(
@@ -435,19 +438,23 @@ internal class WorkflowDispatcherImpl(
             signalData = signalData,
         ),
         SendSignalCommand.simpleName(),
+        null,
+        null,
     )
   }
 
   private fun <S> dispatchCommand(
     command: Command,
-    commandSimpleName: CommandSimpleName
+    commandSimpleName: CommandSimpleName,
+    returnValueType: Type?,
+    returnValueJsonViewClass: Class<*>?
   ): Deferred<S> {
     // increment position
     nextPosition()
 
     // create instruction that will be sent to engine
     // if it does not already exist in the history
-    val newCommand = PastCommand.from(
+    val commandCandidate = PastCommand.from(
         commandId = getCurrentCommandId(),
         commandPosition = positionInMethod,
         commandSimpleName = commandSimpleName,
@@ -456,20 +463,15 @@ internal class WorkflowDispatcherImpl(
     )
 
     // do we know the same command from the history?
-    val pastCommand = getSimilarPastCommand(newCommand)
+    val pastCommand = getSimilarPastCommand(commandCandidate)
 
-    return if (pastCommand == null) {
-      // if this is a new command, we add it to the newCommands list
-      newCommands.add(newCommand)
-      // and returns a Deferred with an ongoing step
-      Deferred<S>(Step.Id.from(newCommand)).apply {
-        this.workflowDispatcher = this@WorkflowDispatcherImpl
-      }
-    } else {
-      // else returns a Deferred linked to pastCommand
-      Deferred<S>(Step.Id.from(pastCommand)).apply {
-        this.workflowDispatcher = this@WorkflowDispatcherImpl
-      }
+    // new or existing command
+    val c = pastCommand ?: commandCandidate.also {
+      newPastCommands.add(commandCandidate)
+    }
+
+    return Deferred<S>(Step.Id.from(c, returnValueType, returnValueJsonViewClass)).apply {
+      this.workflowDispatcher = this@WorkflowDispatcherImpl
     }
   }
 
@@ -518,7 +520,7 @@ internal class WorkflowDispatcherImpl(
     // if it exists, check it has not changed
     if (pastStep != null && !pastStep.isSameThan(newStep)) {
       val e = WorkflowChangedException(
-          workflowTaskParameters.workflowName.name,
+          "${workflowTaskParameters.workflowName}",
           "${workflowTaskParameters.workflowMethod.methodName}",
           "$positionInMethod",
       )

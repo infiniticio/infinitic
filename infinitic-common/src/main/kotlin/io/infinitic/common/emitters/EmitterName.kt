@@ -39,5 +39,7 @@ value class EmitterName(private val name: String) : JsonAble {
   companion object {
     fun from(clientName: ClientName) = EmitterName(clientName.toString())
     fun from(workerName: WorkerName) = EmitterName(workerName.toString())
+
+    val BUFFERED = EmitterName("buffered")
   }
 }

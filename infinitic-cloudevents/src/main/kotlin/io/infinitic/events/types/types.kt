@@ -27,9 +27,8 @@ private const val TYPE_DOMAIN = "infinitic"
 const val TYPE_TASK = "$TYPE_DOMAIN.task"
 const val TYPE_WORKFLOW = "$TYPE_DOMAIN.workflow"
 
-const val START = "start"
+const val DISPATCH = "dispatch"
 const val CANCEL = "cancel"
-const val ENDED = "ended"
 
 const val STARTED = "started"
 const val FAILED = "failed"
@@ -52,7 +51,7 @@ const val EXECUTOR_COMPLETED = "executorCompleted"
 const val EXECUTOR_FAILED = "executorFailed"
 
 // events related to workflow methods
-const val START_METHOD = "startMethod"
+const val DISPATCH_METHOD = "dispatchMethod"
 const val CANCEL_METHOD = "cancelMethod"
 const val METHOD_CANCELED = "methodCanceled"
 const val METHOD_COMPLETED = "methodCompleted"

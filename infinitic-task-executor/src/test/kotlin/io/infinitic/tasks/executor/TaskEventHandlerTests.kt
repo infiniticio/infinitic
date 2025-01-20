@@ -26,8 +26,8 @@ import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.data.MillisDuration
 import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.data.methods.MethodName
+import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.requester.ClientRequester
@@ -55,24 +55,23 @@ import io.infinitic.common.tasks.tags.messages.RemoveTaskIdFromTag
 import io.infinitic.common.tasks.tags.messages.ServiceTagMessage
 import io.infinitic.common.tasks.tags.messages.SetDelegatedTaskData
 import io.infinitic.common.transport.ClientTopic
-import io.infinitic.common.transport.DelayedWorkflowEngineTopic
-import io.infinitic.common.transport.InfiniticProducerAsync
-import io.infinitic.common.transport.ServiceTagTopic
-import io.infinitic.common.transport.WorkflowEngineTopic
+import io.infinitic.common.transport.ServiceTagEngineTopic
+import io.infinitic.common.transport.WorkflowStateEngineTopic
+import io.infinitic.common.transport.WorkflowStateTimerTopic
+import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.workers.config.WorkflowVersion
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.engine.messages.RemoteTaskCompleted
 import io.infinitic.common.workflows.engine.messages.RemoteTaskFailed
-import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
-import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CopyOnWriteArrayList
 
 private val testServiceName = ServiceName("serviceTest")
@@ -99,23 +98,22 @@ class TaskEventHandlerTests :
         val afterSlot = slot<MillisDuration>()
         val taskTagSlots = CopyOnWriteArrayList<ServiceTagMessage>() // multithreading update
         val clientSlot = slot<ClientMessage>()
-        val workflowEngineSlot = slot<WorkflowEngineMessage>()
+        val workflowEngineSlot = slot<WorkflowStateEngineMessage>()
 
         // mocks
-        fun completed() = CompletableFuture.completedFuture(Unit)
-        val producerAsync = mockk<InfiniticProducerAsync> {
-          every { producerName } returns "$testEmitterName"
-          coEvery { capture(taskTagSlots).sendToAsync(ServiceTagTopic) } returns completed()
-          coEvery { capture(clientSlot).sendToAsync(ClientTopic) } returns completed()
+        val producerAsync = mockk<InfiniticProducer> {
+          every { emitterName } returns EmitterName("$testEmitterName")
+          coEvery { capture(taskTagSlots).sendTo(ServiceTagEngineTopic) } returns Unit
+          coEvery { capture(clientSlot).sendTo(ClientTopic) } returns Unit
           coEvery {
-            capture(workflowEngineSlot).sendToAsync(WorkflowEngineTopic)
-          } returns completed()
+            capture(workflowEngineSlot).sendTo(WorkflowStateEngineTopic)
+          } returns Unit
           coEvery {
-            capture(workflowEngineSlot).sendToAsync(
-                DelayedWorkflowEngineTopic,
+            capture(workflowEngineSlot).sendTo(
+                WorkflowStateTimerTopic,
                 capture(afterSlot),
             )
-          } returns completed()
+          } returns Unit
         }
 
         val taskEventHandler = TaskEventHandler(producerAsync)
@@ -129,7 +127,7 @@ class TaskEventHandlerTests :
         }
 
         "on TaskStarted, should do nothing" {
-          taskEventHandler.handle(getTaskStarted(workflowRequester), emittedAt)
+          taskEventHandler.process(getTaskStarted(workflowRequester), emittedAt)
 
           clientSlot.isCaptured shouldBe false
           workflowEngineSlot.isCaptured shouldBe false
@@ -137,7 +135,7 @@ class TaskEventHandlerTests :
         }
 
         "on TaskRetried, should do nothing" {
-          taskEventHandler.handle(getTaskRetried(workflowRequester), emittedAt)
+          taskEventHandler.process(getTaskRetried(workflowRequester), emittedAt)
 
           clientSlot.isCaptured shouldBe false
           workflowEngineSlot.isCaptured shouldBe false
@@ -146,12 +144,12 @@ class TaskEventHandlerTests :
 
         "on TaskCompleted, should send message back to parent workflow" {
           // requested by client
-          taskEventHandler.handle(getTaskCompleted(clientRequester), emittedAt)
+          taskEventHandler.process(getTaskCompleted(clientRequester), emittedAt)
           clientSlot.isCaptured shouldBe false
           workflowEngineSlot.isCaptured shouldBe false
 
           // requested by workflow, but async
-          taskEventHandler.handle(
+          taskEventHandler.process(
               getTaskCompleted(workflowRequester).copy(isDelegated = true),
               emittedAt,
           )
@@ -159,21 +157,21 @@ class TaskEventHandlerTests :
 
           // with parent workflow
           val msg = getTaskCompleted(workflowRequester)
-          taskEventHandler.handle(msg, emittedAt)
+          taskEventHandler.process(msg, emittedAt)
           workflowEngineSlot.captured shouldBe getTaskCompletedWorkflow(msg)
         }
 
         "on TaskCompleted, should send message back to waiting client" {
           // requested by workflow
-          taskEventHandler.handle(getTaskCompleted(workflowRequester), emittedAt)
+          taskEventHandler.process(getTaskCompleted(workflowRequester), emittedAt)
           clientSlot.isCaptured shouldBe false
 
           // requested by client, but not waiting
-          taskEventHandler.handle(getTaskCompleted(clientRequester), emittedAt)
+          taskEventHandler.process(getTaskCompleted(clientRequester), emittedAt)
           clientSlot.isCaptured shouldBe false
 
           // requested by waiting client, but async
-          taskEventHandler.handle(
+          taskEventHandler.process(
               getTaskCompleted(clientRequester).copy(clientWaiting = true, isDelegated = true),
               emittedAt,
           )
@@ -181,7 +179,7 @@ class TaskEventHandlerTests :
 
           // sync task, requested by waiting client
           val msg = getTaskCompleted(clientRequester).copy(clientWaiting = true)
-          taskEventHandler.handle(msg, emittedAt)
+          taskEventHandler.process(msg, emittedAt)
 
           clientSlot.isCaptured shouldBe true
           clientSlot.captured shouldBe getTaskCompletedClient(msg)
@@ -189,11 +187,11 @@ class TaskEventHandlerTests :
 
         "on TaskCompleted, should send messages to remove tags" {
           // without tags
-          taskEventHandler.handle(getTaskCompleted(clientRequester), emittedAt)
+          taskEventHandler.process(getTaskCompleted(clientRequester), emittedAt)
           taskTagSlots.size shouldBe 0
 
           // with tags, but async
-          taskEventHandler.handle(
+          taskEventHandler.process(
               getTaskCompleted(clientRequester).copy(taskTags = taskTags, isDelegated = true),
               emittedAt,
           )
@@ -202,7 +200,7 @@ class TaskEventHandlerTests :
 
           // with tags
           val msg = getTaskCompleted(clientRequester).copy(taskTags = taskTags)
-          taskEventHandler.handle(msg, emittedAt)
+          taskEventHandler.process(msg, emittedAt)
 
           taskTagSlots.size shouldBe 2
           val msg0 = taskTagSlots[0] as RemoveTaskIdFromTag
@@ -218,7 +216,7 @@ class TaskEventHandlerTests :
         "on TaskCompleted, if asynchronous, should send SetDelegatedTaskData to tag engine" {
           val msg =
               getTaskCompleted(workflowRequester).copy(taskTags = taskTags, isDelegated = true)
-          taskEventHandler.handle(msg, emittedAt)
+          taskEventHandler.process(msg, emittedAt)
 
           workflowEngineSlot.isCaptured shouldBe false
           clientSlot.isCaptured shouldBe false
@@ -243,35 +241,35 @@ class TaskEventHandlerTests :
 
         "on TaskFailed, should send message back to parent workflow" {
           // without parent workflow
-          taskEventHandler.handle(getTaskFailed(clientRequester), emittedAt)
+          taskEventHandler.process(getTaskFailed(clientRequester), emittedAt)
           workflowEngineSlot.isCaptured shouldBe false
 
           // with parent workflow
           val msg = getTaskFailed(workflowRequester)
-          taskEventHandler.handle(msg, emittedAt)
+          taskEventHandler.process(msg, emittedAt)
           workflowEngineSlot.captured shouldBe getTaskFailedWorkflow(msg)
         }
 
         "on TaskFailed, should send message back to waiting client" {
           // without waiting client
-          taskEventHandler.handle(getTaskFailed(workflowRequester), emittedAt)
+          taskEventHandler.process(getTaskFailed(workflowRequester), emittedAt)
           clientSlot.isCaptured shouldBe false
 
           // with waiting client
           val msg = getTaskFailed(clientRequester).copy(clientWaiting = true)
-          taskEventHandler.handle(msg, emittedAt)
+          taskEventHandler.process(msg, emittedAt)
           clientSlot.isCaptured shouldBe true
           clientSlot.captured shouldBe getTaskFailedClient(msg)
         }
 
         "on TaskFailed, should NOT send messages to remove tags" {
           // without tags
-          taskEventHandler.handle(getTaskFailed(clientRequester), emittedAt)
+          taskEventHandler.process(getTaskFailed(clientRequester), emittedAt)
           taskTagSlots.size shouldBe 0
 
           // with tags
           val msg = getTaskFailed(clientRequester).copy(taskTags = taskTags)
-          taskEventHandler.handle(msg, emittedAt)
+          taskEventHandler.process(msg, emittedAt)
 
           taskTagSlots.size shouldBe 0
         }
@@ -287,7 +285,7 @@ private fun getTaskRetried(requester: Requester) = TaskRetriedEvent(
     taskRetryIndex = TaskRetryIndex(7),
     requester = requester,
     clientWaiting = null,
-    lastError = TestFactory.random(),
+    failure = TestFactory.random(),
     taskMeta = TestFactory.random(),
     taskTags = TestFactory.random(),
     taskRetryDelay = TestFactory.random(),
@@ -317,7 +315,7 @@ private fun getTaskCompleted(requester: Requester) = TaskCompletedEvent(
     clientWaiting = null,
     taskTags = setOf(),
     taskMeta = TestFactory.random(),
-    returnValue = ReturnValue.from("42"),
+    returnValue = MethodReturnValue.from("42", null),
     isDelegated = false,
 )
 
@@ -359,7 +357,7 @@ private fun getTaskFailed(requester: Requester) = TaskFailedEvent(
     clientWaiting = null,
     taskTags = TestFactory.random(),
     taskMeta = TestFactory.random(),
-    executionError = TestFactory.random(),
+    failure = TestFactory.random(),
     deferredError = TestFactory.random(),
 )
 
@@ -367,7 +365,7 @@ private fun getTaskFailedClient(msg: TaskFailedEvent) =
     io.infinitic.common.clients.messages.TaskFailed(
         recipientName = msg.requester.clientName!!,
         taskId = msg.taskId,
-        cause = msg.executionError,
+        cause = msg.failure,
         emitterName = testEmitterName,
     )
 
@@ -382,7 +380,7 @@ private fun getTaskFailedWorkflow(msg: TaskFailedEvent) =
             serviceName = msg.serviceName,
             methodName = msg.methodName,
             taskId = msg.taskId,
-            cause = msg.executionError,
+            lastFailure = msg.failure,
         ),
         deferredError = msg.deferredError,
         emitterName = testEmitterName,

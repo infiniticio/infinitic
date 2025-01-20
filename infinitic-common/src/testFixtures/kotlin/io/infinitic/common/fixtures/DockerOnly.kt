@@ -43,7 +43,7 @@ class DockerOnly : EnabledCondition {
 
   val pulsarServer by lazy {
     when (shouldRun) {
-      true -> PulsarContainer(DockerImageName.parse("apachepulsar/pulsar:$pulsarVersion")).also { it.start() }
+      true -> PulsarContainer(DockerImageName.parse("apachepulsar/pulsar:$pulsarVersion"))
       false -> null
     }
   }

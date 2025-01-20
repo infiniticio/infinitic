@@ -24,6 +24,7 @@ package io.infinitic.workflows.workflowTask
 
 import io.infinitic.common.workflows.data.properties.PropertyName
 import io.infinitic.common.workflows.data.properties.PropertyValue
+import io.infinitic.common.workflows.executors.getProperties
 import io.infinitic.workflows.workflowTask.workflows.WorkflowAImpl
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -39,7 +40,7 @@ internal class PropertiesTests :
           // then
           p.size shouldBe 1
           p.keys.first() shouldBe PropertyName("key2")
-          p.values.first() shouldBe PropertyValue.from(42)
+          p.values.first() shouldBe PropertyValue.from(42, Int::class.java)
         }
       },
   )

@@ -41,4 +41,11 @@ interface WorkflowTagStorage : Flushable {
   suspend fun addWorkflowId(tag: WorkflowTag, workflowName: WorkflowName, workflowId: WorkflowId)
 
   suspend fun removeWorkflowId(tag: WorkflowTag, workflowName: WorkflowName, workflowId: WorkflowId)
+
+  suspend fun getWorkflowIds(tagAndNames: Set<Pair<WorkflowTag, WorkflowName>>): Map<Pair<WorkflowTag, WorkflowName>, Set<WorkflowId>>
+
+  suspend fun updateWorkflowIds(
+    add: Map<Pair<WorkflowTag, WorkflowName>, Set<WorkflowId>>,
+    remove: Map<Pair<WorkflowTag, WorkflowName>, Set<WorkflowId>>
+  )
 }

@@ -26,8 +26,8 @@ import io.infinitic.annotations.Timeout
 import io.infinitic.exceptions.TaskTimedOutException
 import io.infinitic.exceptions.WorkflowTimedOutException
 import io.infinitic.tasks.WithTimeout
-import io.infinitic.tests.utils.After1Second
-import io.infinitic.tests.utils.UtilService
+import io.infinitic.utils.After1Second
+import io.infinitic.utils.UtilService
 import io.infinitic.workflows.Workflow
 
 
@@ -88,10 +88,10 @@ class TimeoutsWorkflowImpl : Workflow(), TimeoutsWorkflow {
 
 interface ITimeoutWorkflow : WithTimeout {
 
-  // the workflow method 'withMethodTimeout' has a 100ms timeout
+  // the workflow method 'withMethodTimeout' has a 1s timeout
   fun withTimeoutOnMethod(duration: Long): Long
 
-  override fun getTimeoutInSeconds(): Double? = 0.4
+  override fun getTimeoutSeconds(): Double? = 1.0
 }
 
 class ITimeoutsWorkflowImpl : Workflow(), ITimeoutWorkflow {

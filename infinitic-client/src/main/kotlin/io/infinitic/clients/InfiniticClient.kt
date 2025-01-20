@@ -22,33 +22,39 @@
  */
 package io.infinitic.clients
 
-import io.infinitic.autoclose.addAutoCloseResource
-import io.infinitic.autoclose.autoClose
-import io.infinitic.clients.config.ClientConfig
-import io.infinitic.clients.config.ClientConfigInterface
+import io.github.oshai.kotlinlogging.KotlinLogging
+import io.infinitic.clients.config.InfiniticClientConfig
+import io.infinitic.clients.config.InfiniticClientConfigInterface
 import io.infinitic.clients.dispatcher.ClientDispatcher
 import io.infinitic.common.clients.messages.ClientMessage
-import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.data.ReturnValue
+import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.proxies.ExistingWorkflowProxyHandler
-import io.infinitic.common.proxies.NewServiceProxyHandler
 import io.infinitic.common.proxies.NewWorkflowProxyHandler
 import io.infinitic.common.proxies.ProxyHandler
 import io.infinitic.common.proxies.RequestByWorkflowId
 import io.infinitic.common.proxies.RequestByWorkflowTag
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
-import io.infinitic.common.tasks.data.TaskMeta
-import io.infinitic.common.transport.InfiniticConsumerAsync
-import io.infinitic.common.transport.InfiniticProducerAsync
-import io.infinitic.common.transport.LoggedInfiniticProducer
+import io.infinitic.common.transport.interfaces.InfiniticProducer
+import io.infinitic.common.transport.interfaces.InfiniticResources
+import io.infinitic.common.transport.logged.LoggedInfiniticProducer
+import io.infinitic.common.transport.logged.LoggerWithCounter
+import io.infinitic.common.utils.annotatedName
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.exceptions.clients.InvalidIdTagSelectionException
 import io.infinitic.exceptions.clients.InvalidStubException
+import io.infinitic.properties.isLazyInitialized
 import io.infinitic.transport.config.TransportConfig
 import io.infinitic.workflows.DeferredStatus
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.job
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.jetbrains.annotations.TestOnly
 import java.lang.reflect.Proxy
 import java.util.concurrent.CompletableFuture
@@ -56,37 +62,77 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 @Suppress("unused")
 class InfiniticClient(
-  consumerAsync: InfiniticConsumerAsync,
-  producerAsync: InfiniticProducerAsync
+  val config: InfiniticClientConfigInterface
 ) : InfiniticClientInterface {
+
+  private val resources: InfiniticResources by lazy { config.transport.resources }
+
+  private val consumerFactory by lazy {
+    // get consumerFactory from transport
+    config.transport.consumerFactory
+  }
+
+  private val producer: InfiniticProducer by lazy {
+    // get producer from transport, apply name if present
+    LoggedInfiniticProducer(
+        logger = logger,
+        producer = config.transport.producerFactory
+            .apply { config.name?.let { setName(it) } }
+            .newProducer(null),
+    )
+  }
+
+  override fun getName() = producer.emitterName.toString()
+
+  private val shutdownGracePeriodSeconds = config.transport.shutdownGracePeriodSeconds
 
   private var isClosed: AtomicBoolean = AtomicBoolean(false)
 
-  private val producer = LoggedInfiniticProducer(this::class.java.name, producerAsync)
+  // Scope used to asynchronously send message, and also to consumes messages
+  internal val clientScope = CoroutineScope(Dispatchers.IO)
 
-  private val dispatcher = ClientDispatcher(this::class.java.name, consumerAsync, producerAsync)
-
-  override val name by lazy { producerAsync.producerName }
+  private val dispatcher by lazy { ClientDispatcher(clientScope, consumerFactory, producer) }
 
   /** Get last Deferred created by the call of a stub */
   override val lastDeferred get() = dispatcher.getLastDeferred()
 
-  /** Close client if interrupted */
-  init {
-    Runtime.getRuntime().addShutdownHook(
-        Thread {
-          close()
-        },
-    )
-  }
-
   override fun close() {
-    if (!isClosed.getAndSet(true)) {
-      dispatcher.close()
-      autoClose()
+    if (isClosed.compareAndSet(false, true)) {
+      logger.info { "Closing client..." }
+      clientScope.cancel()
+      runBlocking {
+        try {
+          withTimeout((shutdownGracePeriodSeconds * 1000).toLong()) {
+            clientScope.coroutineContext.job.join()
+          }
+        } catch (e: TimeoutCancellationException) {
+          logger.warn {
+            "The grace period (${shutdownGracePeriodSeconds}s) allotted when closing the client was insufficient." +
+                "Some ongoing messages may not have been sent properly."
+          }
+        } finally {
+          deleteClientTopic()
+          config.transport.close()
+        }
+      }
+      logger.info { "Client closed." }
     }
   }
 
+  /**
+   * Deletes the topic associated with the client
+   * (Do NOT delete the client DLQ topic to allow manual inspection of failed messages)
+   */
+  private suspend fun deleteClientTopic() {
+    if (::consumerFactory.isLazyInitialized) {
+      val name = getName()
+      resources.deleteTopicForClient(name).getOrElse {
+        logger.warn(it) { "Unable to delete topic for client $name, please delete it manually." }
+      }?.let {
+        logger.info { "Client topic $it deleted." }
+      }
+    }
+  }
 
   /** Create a stub for a new workflow */
   override fun <T : Any> newWorkflow(
@@ -138,7 +184,7 @@ class InfiniticClient(
   ): CompletableFuture<Unit> = dispatcher.completeTaskAsync(
       ServiceName(serviceName),
       TaskId(taskId),
-      ReturnValue.from(result),
+      MethodReturnValue.from(result, null),
   )
 
   /** Retry a workflow task */
@@ -163,19 +209,20 @@ class InfiniticClient(
 
 
   /** get ids of a stub, associated to a specific tag */
-  override fun <T : Any> getIds(stub: T): Set<String> =
-      when (val handler = getProxyHandler(stub)) {
-        is ExistingWorkflowProxyHandler -> when (handler.requestBy) {
-          is RequestByWorkflowTag -> dispatcher.getWorkflowIdsByTag(
-              handler.workflowName,
-              (handler.requestBy as RequestByWorkflowTag).workflowTag,
-          )
+  override fun <T : Any> getIds(stub: T): Set<String> = runBlocking {
+    when (val handler = getProxyHandler(stub)) {
+      is ExistingWorkflowProxyHandler -> when (handler.requestBy) {
+        is RequestByWorkflowTag -> dispatcher.getWorkflowIdsByTag(
+            handler.workflowName,
+            (handler.requestBy as RequestByWorkflowTag).workflowTag,
+        )
 
-          is RequestByWorkflowId -> throw InvalidIdTagSelectionException("$stub")
-        }
-
-        else -> throw InvalidStubException("$stub")
+        is RequestByWorkflowId -> throw InvalidIdTagSelectionException("$stub")
       }
+
+      else -> throw InvalidStubException("$stub")
+    }
+  }
 
   override fun <R> startAsync(invoke: () -> R): CompletableFuture<Deferred<R>> {
     val handler = ProxyHandler.async(invoke) ?: throw InvalidStubException()
@@ -190,8 +237,7 @@ class InfiniticClient(
   }
 
   @TestOnly
-  internal suspend fun handle(message: ClientMessage, publishTime: MillisInstant) =
-      dispatcher.handle(message, publishTime)
+  internal suspend fun handle(message: ClientMessage) = dispatcher.responseFlow.emit(message)
 
   private fun getProxyHandler(stub: Any): ProxyHandler<*> {
     val exception by lazy { InvalidStubException("$stub") }
@@ -216,16 +262,12 @@ class InfiniticClient(
   ): CompletableFuture<Unit> =
       when (val handler = getProxyHandler(stub)) {
         is ExistingWorkflowProxyHandler -> {
-          val taskName =
-              taskClass?.let {
-                // Use NewTaskProxyHandler in case of use of @Name annotation
-                NewServiceProxyHandler(it, setOf(), TaskMeta()) { dispatcher }.serviceName
-              }
+          val taskName = taskClass?.annotatedName
 
           dispatcher.retryTaskAsync(
               workflowName = handler.workflowName,
               requestBy = handler.requestBy,
-              serviceName = taskName,
+              serviceName = taskName?.let { ServiceName(it) },
               taskStatus = taskStatus,
               taskId = taskId?.let { TaskId(it) },
           )
@@ -235,38 +277,50 @@ class InfiniticClient(
       }
 
   companion object {
-    /** Create InfiniticClient from config */
+
+    internal val logger = LoggerWithCounter(KotlinLogging.logger {})
+
     @JvmStatic
-    fun fromConfig(config: ClientConfigInterface): InfiniticClient = with(config) {
-      // Create TransportConfig
-      val transportConfig = TransportConfig(transport, pulsar, shutdownGracePeriodInSeconds)
+    fun builder() = InfiniticClientBuilder()
 
-      // Get Infinitic Consumer
-      val consumerAsync = transportConfig.consumerAsync
+    /** Create InfiniticClient with YAML from resources directory */
+    @JvmStatic
+    fun fromYamlResource(vararg resources: String) =
+        InfiniticClient(InfiniticClientConfig.fromYamlResource(*resources))
 
-      // Get Infinitic  Producer
-      val producerAsync = transportConfig.producerAsync
+    /** Create InfiniticClient with YAML from system file */
+    @JvmStatic
+    fun fromYamlFile(vararg files: String) =
+        InfiniticClient(InfiniticClientConfig.fromYamlFile(*files))
 
-      // apply name if it exists
-      name?.let { producerAsync.producerName = it }
+    /** Create InfiniticClient with YAML from yaml strings */
+    @JvmStatic
+    fun fromYamlString(vararg yamls: String) =
+        InfiniticClient(InfiniticClientConfig.fromYamlString(*yamls))
+  }
 
-      // Create Infinitic Client
-      InfiniticClient(consumerAsync, producerAsync).also {
-        // close consumer with the client
-        it.addAutoCloseResource(consumerAsync)
-      }
+  /**
+   * InfiniticWorker builder
+   */
+  class InfiniticClientBuilder {
+    private var name: String? = null
+    private var transport: TransportConfig? = null
+
+    fun setName(name: String) =
+        apply { this.name = name }
+
+    fun setTransport(transport: TransportConfig) =
+        apply { this.transport = transport }
+
+    fun setTransport(transport: TransportConfig.TransportConfigBuilder) =
+        setTransport(transport.build())
+
+    fun build(): InfiniticClient {
+      require(transport != null) { "transport must not be null" }
+
+      val config = InfiniticClientConfig(name, transport!!)
+
+      return InfiniticClient(config)
     }
-
-
-    /** Create InfiniticClient with config from resources directory */
-    @JvmStatic
-    fun fromConfigResource(vararg resources: String): InfiniticClient =
-        fromConfig(ClientConfig.fromResource(*resources))
-
-
-    /** Create InfiniticClient with config from system file */
-    @JvmStatic
-    fun fromConfigFile(vararg files: String): InfiniticClient =
-        fromConfig(ClientConfig.fromFile(*files))
   }
 }

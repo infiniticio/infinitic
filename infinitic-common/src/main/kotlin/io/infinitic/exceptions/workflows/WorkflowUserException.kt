@@ -39,10 +39,6 @@ data object MultipleCustomIdException : WorkflowUserException(msg = "", help = "
   private fun readResolve(): Any = MultipleCustomIdException
 }
 
-data object OutOfBoundAwaitException : WorkflowUserException(msg = "", help = "") {
-  private fun readResolve(): Any = OutOfBoundAwaitException
-}
-
 class NonIdempotentChannelGetterException(workflow: String, method: String) : WorkflowUserException(
     msg =
     "in workflow $workflow, method $method should return the same object when called multiple times",
@@ -79,5 +75,5 @@ class UnknownWorkflowVersionException(
   workflowVersion: WorkflowVersion?
 ) :
   WorkflowUserException(
-      msg = "Unknown version \"$workflowVersion\" for Workflow \"$workflowName\"", help = "",
+      msg = "Unknown version '$workflowVersion' for Workflow '$workflowName'", help = "",
   )

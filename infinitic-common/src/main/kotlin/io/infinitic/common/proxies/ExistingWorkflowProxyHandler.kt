@@ -24,11 +24,11 @@ package io.infinitic.common.proxies
 
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 
-class ExistingWorkflowProxyHandler<K : Any>(
+data class ExistingWorkflowProxyHandler<K : Any>(
   override val klass: Class<K>,
   val requestBy: RequestBy,
   override val dispatcherFn: () -> ProxyDispatcher
 ) : ProxyHandler<K>(klass, dispatcherFn) {
 
-  val workflowName = WorkflowName(name)
+  val workflowName = WorkflowName(annotatedName)
 }

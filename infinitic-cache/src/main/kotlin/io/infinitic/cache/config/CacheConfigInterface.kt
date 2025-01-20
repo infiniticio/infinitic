@@ -24,5 +24,5 @@ package io.infinitic.cache.config
 
 /** Cache configuration */
 interface CacheConfigInterface {
-  val cache: Cache
+  val cache: CacheConfig?
 }

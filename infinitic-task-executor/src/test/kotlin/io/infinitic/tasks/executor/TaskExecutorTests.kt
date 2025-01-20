@@ -28,13 +28,13 @@ import io.infinitic.clients.InfiniticClientInterface
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.MillisDuration
-import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.data.ReturnValue
 import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.methods.MethodParameterTypes
-import io.infinitic.common.data.methods.MethodParameters
+import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.fixtures.TestFactory
+import io.infinitic.common.fixtures.methodParametersFrom
+import io.infinitic.common.registry.ExecutorRegistryInterface
 import io.infinitic.common.requester.ClientRequester
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.tasks.data.TaskId
@@ -42,7 +42,7 @@ import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskRetryIndex
 import io.infinitic.common.tasks.data.TaskRetrySequence
 import io.infinitic.common.tasks.data.TaskTag
-import io.infinitic.common.tasks.events.messages.ServiceEventMessage
+import io.infinitic.common.tasks.events.messages.ServiceExecutorEventMessage
 import io.infinitic.common.tasks.events.messages.TaskCompletedEvent
 import io.infinitic.common.tasks.events.messages.TaskFailedEvent
 import io.infinitic.common.tasks.events.messages.TaskRetriedEvent
@@ -50,18 +50,18 @@ import io.infinitic.common.tasks.events.messages.TaskStartedEvent
 import io.infinitic.common.tasks.executors.messages.ExecuteTask
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.tasks.tags.messages.RemoveTaskIdFromTag
-import io.infinitic.common.transport.DelayedServiceExecutorTopic
-import io.infinitic.common.transport.InfiniticProducerAsync
-import io.infinitic.common.transport.ServiceEventsTopic
+import io.infinitic.common.transport.ServiceExecutorEventTopic
+import io.infinitic.common.transport.ServiceExecutorRetryTopic
 import io.infinitic.common.transport.ServiceExecutorTopic
-import io.infinitic.common.workers.config.ExponentialBackoffRetryPolicy
+import io.infinitic.common.transport.interfaces.InfiniticProducer
+import io.infinitic.common.workers.config.WithExponentialBackoffRetry
 import io.infinitic.common.workers.data.WorkerName
-import io.infinitic.common.workers.registry.RegisteredServiceExecutor
-import io.infinitic.common.workers.registry.WorkerRegistry
 import io.infinitic.exceptions.tasks.ClassNotFoundException
 import io.infinitic.exceptions.tasks.NoMethodFoundWithParameterCountException
 import io.infinitic.exceptions.tasks.NoMethodFoundWithParameterTypesException
 import io.infinitic.exceptions.tasks.TooManyMethodsFoundWithParameterCountException
+import io.infinitic.tasks.WithRetry
+import io.infinitic.tasks.WithTimeout
 import io.infinitic.tasks.executor.samples.RetryImpl
 import io.infinitic.tasks.executor.samples.ServiceImplService
 import io.infinitic.tasks.executor.samples.ServiceWithBuggyRetryInClass
@@ -81,7 +81,6 @@ import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
-import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.TimeoutException
 
@@ -95,37 +94,38 @@ class TaskExecutorTests :
         // slots
         val afterSlot = slot<MillisDuration>()
         val taskExecutorSlot = slot<ServiceExecutorMessage>()
-        val taskEventSlot = CopyOnWriteArrayList<ServiceEventMessage>()
+        val taskEventSlot = CopyOnWriteArrayList<ServiceExecutorEventMessage>()
 
         // mocks
-        fun completed() = CompletableFuture.completedFuture(Unit)
-        val workerRegistry = mockk<WorkerRegistry>()
+        val registry = mockk<ExecutorRegistryInterface>()
         val client = mockk<InfiniticClientInterface>()
-        val producerAsync = mockk<InfiniticProducerAsync> {
-          every { producerName } returns "$testWorkerName"
+        val producer = mockk<InfiniticProducer> {
+          every { emitterName } returns EmitterName("$testWorkerName")
           coEvery {
-            capture(taskExecutorSlot).sendToAsync(ServiceExecutorTopic)
-          } returns completed()
+            capture(taskExecutorSlot).sendTo(ServiceExecutorTopic)
+          } returns Unit
           coEvery {
-            capture(taskExecutorSlot).sendToAsync(DelayedServiceExecutorTopic, capture(afterSlot))
-          } returns completed()
-          coEvery { capture(taskEventSlot).sendToAsync(ServiceEventsTopic) } returns completed()
+            capture(taskExecutorSlot).sendTo(ServiceExecutorRetryTopic, capture(afterSlot))
+          } returns Unit
+          coEvery {
+            capture(taskEventSlot).sendTo(ServiceExecutorEventTopic)
+          } returns Unit
         }
 
-        var taskExecutor = TaskExecutor(workerRegistry, producerAsync, client)
-
-        val service = RegisteredServiceExecutor(1, { ServiceImplService() }, null, null)
+        var taskExecutor = TaskExecutor(registry, producer, client)
 
         // ensure slots are emptied between each test
-        beforeTest {
-          clearMocks(workerRegistry)
+        beforeEach {
+          clearMocks(registry)
           afterSlot.clear()
           taskExecutorSlot.clear()
           taskEventSlot.clear()
         }
 
         "Task executed should send TaskStarted and TaskCompleted events" {
-          every { workerRegistry.getRegisteredService(testServiceName) } returns service
+          every { registry.getServiceExecutorInstance(testServiceName) } returns ServiceImplService()
+          every { registry.getServiceExecutorWithTimeout(testServiceName) } returns WithTimeout.UNSET
+          every { registry.getServiceExecutorWithRetry(testServiceName) } returns WithRetry.UNSET
           val input = arrayOf(3, 3)
           val types = listOf(Int::class.java.name, Int::class.java.name)
           // with
@@ -134,7 +134,7 @@ class TaskExecutorTests :
               workflowId = null,
           )
           // when
-          taskExecutor.handle(msg, MillisInstant.now())
+          taskExecutor.process(msg)
           // then
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 2
@@ -142,19 +142,21 @@ class TaskExecutorTests :
           taskEventSlot[1] shouldBe getTaskCompleted(
               msg,
               taskEventSlot[1]!!.messageId!!,
-              ServiceImplService().handle(3, 3),
+              MethodReturnValue.from(ServiceImplService().handle(3, 3), Int::class.java),
               msg.taskMeta,
           )
         }
 
         "Should be able to run an explicit method with 2 parameters" {
-          every { workerRegistry.getRegisteredService(testServiceName) } returns service
+          every { registry.getServiceExecutorInstance(testServiceName) } returns ServiceImplService()
+          every { registry.getServiceExecutorWithTimeout(testServiceName) } returns WithTimeout.UNSET
+          every { registry.getServiceExecutorWithRetry(testServiceName) } returns WithRetry.UNSET
           val input = arrayOf(3, "3")
           val types = listOf(Int::class.java.name, String::class.java.name)
           // with
           val msg = getExecuteTask("other", input, types)
           // when
-          taskExecutor.handle(msg, MillisInstant.now())
+          taskExecutor.process(msg)
           // then
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 2
@@ -162,18 +164,20 @@ class TaskExecutorTests :
           taskEventSlot[1] shouldBe getTaskCompleted(
               msg,
               taskEventSlot[1]!!.messageId!!,
-              ServiceImplService().other(3, "3"),
+              MethodReturnValue.from(ServiceImplService().other(3, "3"), String::class.java),
               msg.taskMeta,
           )
         }
 
         "Should be able to run an explicit method with 2 parameters without parameterTypes" {
-          every { workerRegistry.getRegisteredService(testServiceName) } returns service
+          every { registry.getServiceExecutorInstance(testServiceName) } returns ServiceImplService()
+          every { registry.getServiceExecutorWithTimeout(testServiceName) } returns WithTimeout.UNSET
+          every { registry.getServiceExecutorWithRetry(testServiceName) } returns WithRetry.UNSET
           val input = arrayOf(4, "3")
           val types = null
           val msg = getExecuteTask("other", input, types)
           // when
-          taskExecutor.handle(msg, MillisInstant.now())
+          taskExecutor.process(msg)
           // then
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 2
@@ -181,19 +185,21 @@ class TaskExecutorTests :
           taskEventSlot[1] shouldBe getTaskCompleted(
               msg,
               taskEventSlot[1]!!.messageId!!,
-              ServiceImplService().other(4, "3"),
+              MethodReturnValue.from(ServiceImplService().other(4, "3"), String::class.java),
               msg.taskMeta,
           )
         }
 
         "Throwable should not be caught on task" {
-          every { workerRegistry.getRegisteredService(testServiceName) } returns service
+          every { registry.getServiceExecutorInstance(testServiceName) } returns ServiceImplService()
+          every { registry.getServiceExecutorWithTimeout(testServiceName) } returns WithTimeout.UNSET
+          every { registry.getServiceExecutorWithRetry(testServiceName) } returns WithRetry.UNSET
           val input = arrayOf<Any>()
           val types = listOf<String>()
           val msg = getExecuteTask("withThrowable", input, types)
           // when
           val throwable = shouldThrow<Throwable> {
-            taskExecutor.handle(msg, MillisInstant.now())
+            taskExecutor.process(msg)
           }
           // then
           taskExecutorSlot.isCaptured shouldBe false
@@ -204,17 +210,18 @@ class TaskExecutorTests :
           // Note that the Throwable sent (and not caught) during the test has the side effect
           // to cancel the coroutineScope of producerAsync, that's why we recreate it after the test
           // in a real case, the Throwable would kill the worker
-          taskExecutor = TaskExecutor(workerRegistry, producerAsync, client)
+          taskExecutor = TaskExecutor(registry, producer, client)
         }
 
         "Should throw ClassNotFoundException when trying to process an unknown task" {
-          every { workerRegistry.getRegisteredService(testServiceName) } throws
-              ClassNotFoundException("task")
+          every { registry.getServiceExecutorInstance(testServiceName) } throws ClassNotFoundException(
+              "task",
+          )
           val input = arrayOf(2, "3")
           val types = listOf(Int::class.java.name, String::class.java.name)
           val msg = getExecuteTask("unknown", input, types)
           // when
-          taskExecutor.handle(msg, MillisInstant.now())
+          taskExecutor.process(msg)
           // then
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 2
@@ -228,13 +235,15 @@ class TaskExecutorTests :
         }
 
         "Should throw NoMethodFoundWithParameterTypesException when trying to process an unknown method" {
-          every { workerRegistry.getRegisteredService(testServiceName) } returns service
+          every { registry.getServiceExecutorInstance(testServiceName) } returns ServiceImplService()
+          every { registry.getServiceExecutorWithTimeout(testServiceName) } returns WithTimeout.UNSET
+          every { registry.getServiceExecutorWithRetry(testServiceName) } returns WithRetry.UNSET
           val input = arrayOf(2, "3")
           val types = listOf(Int::class.java.name, String::class.java.name)
           // with
           val msg = getExecuteTask("unknown", input, types)
           // when
-          taskExecutor.handle(msg, MillisInstant.now())
+          taskExecutor.process(msg)
           // then
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 2
@@ -248,12 +257,14 @@ class TaskExecutorTests :
         }
 
         "Should throw NoMethodFoundWithParameterCount when trying to process an unknown method without parameterTypes" {
-          every { workerRegistry.getRegisteredService(testServiceName) } returns service
+          every { registry.getServiceExecutorInstance(testServiceName) } returns ServiceImplService()
+          every { registry.getServiceExecutorWithTimeout(testServiceName) } returns WithTimeout.UNSET
+          every { registry.getServiceExecutorWithRetry(testServiceName) } returns WithRetry.UNSET
           val input = arrayOf(2, "3")
           // with
           val msg = getExecuteTask("unknown", input, null)
           // when
-          taskExecutor.handle(msg, MillisInstant.now())
+          taskExecutor.process(msg)
           // then
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 2
@@ -267,12 +278,14 @@ class TaskExecutorTests :
         }
 
         "Should throw TooManyMethodsFoundWithParameterCount when trying to process an unknown method without parameterTypes" {
-          every { workerRegistry.getRegisteredService(testServiceName) } returns service
+          every { registry.getServiceExecutorInstance(testServiceName) } returns ServiceImplService()
+          every { registry.getServiceExecutorWithTimeout(testServiceName) } returns WithTimeout.UNSET
+          every { registry.getServiceExecutorWithRetry(testServiceName) } returns WithRetry.UNSET
           val input = arrayOf(2, "3")
           // with
           val msg = getExecuteTask("handle", input, null)
           // when
-          taskExecutor.handle(msg, MillisInstant.now())
+          taskExecutor.process(msg)
           // then
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 2
@@ -286,12 +299,13 @@ class TaskExecutorTests :
         }
 
         "Should retry with correct exception with Retry interface" {
-          every { workerRegistry.getRegisteredService(testServiceName) } returns
-              service.copy(factory = { SimpleServiceWithRetry() })
+          every { registry.getServiceExecutorInstance(testServiceName) } returns SimpleServiceWithRetry()
+          every { registry.getServiceExecutorWithTimeout(testServiceName) } returns WithTimeout.UNSET
+          every { registry.getServiceExecutorWithRetry(testServiceName) } returns WithRetry.UNSET
           // with
           val msg = getExecuteTask("handle", arrayOf(2, "3"), null)
           // when
-          taskExecutor.handle(msg, MillisInstant.now())
+          taskExecutor.process(msg)
           // then
           afterSlot.captured shouldBe MillisDuration((SimpleServiceWithRetry.DELAY * 1000).toLong())
           (taskExecutorSlot.captured).shouldBeInstanceOf<ExecuteTask>()
@@ -310,12 +324,13 @@ class TaskExecutorTests :
         }
 
         "Should retry with correct exception with Retry annotation on method" {
-          every { workerRegistry.getRegisteredService(testServiceName) } returns
-              service.copy(factory = { ServiceWithRetryInMethod() })
+          every { registry.getServiceExecutorInstance(testServiceName) } returns ServiceWithRetryInMethod()
+          every { registry.getServiceExecutorWithTimeout(testServiceName) } returns WithTimeout.UNSET
+          every { registry.getServiceExecutorWithRetry(testServiceName) } returns WithRetry.UNSET
           // with
           val msg = getExecuteTask("handle", arrayOf(2, "3"), null)
           // when
-          taskExecutor.handle(msg, MillisInstant.now())
+          taskExecutor.process(msg)
           // then
           afterSlot.captured shouldBe MillisDuration((RetryImpl.DELAY * 1000).toLong())
 
@@ -335,12 +350,13 @@ class TaskExecutorTests :
         }
 
         "Should retry with correct exception with Retry annotation on class" {
-          every { workerRegistry.getRegisteredService(testServiceName) } returns
-              service.copy(factory = { ServiceWithRetryInClass() })
+          every { registry.getServiceExecutorInstance(testServiceName) } returns ServiceWithRetryInClass()
+          every { registry.getServiceExecutorWithTimeout(testServiceName) } returns WithTimeout.UNSET
+          every { registry.getServiceExecutorWithRetry(testServiceName) } returns WithRetry.UNSET
           // with
           val msg = getExecuteTask("handle", arrayOf(2, "3"), null)
           // when
-          taskExecutor.handle(msg, MillisInstant.now())
+          taskExecutor.process(msg)
           // then
           afterSlot.captured shouldBe MillisDuration((RetryImpl.DELAY * 1000).toLong())
 
@@ -360,13 +376,13 @@ class TaskExecutorTests :
         }
 
         "Should not retry if error in getSecondsBeforeRetry" {
-          every { workerRegistry.getRegisteredService(testServiceName) } returns service.copy(
-              factory = { ServiceWithBuggyRetryInClass() },
-          )
+          every { registry.getServiceExecutorInstance(testServiceName) } returns ServiceWithBuggyRetryInClass()
+          every { registry.getServiceExecutorWithTimeout(testServiceName) } returns WithTimeout.UNSET
+          every { registry.getServiceExecutorWithRetry(testServiceName) } returns WithRetry.UNSET
           // with
           val msg = getExecuteTask("handle", arrayOf(2, "3"), null)
           // when
-          taskExecutor.handle(msg, MillisInstant.now())
+          taskExecutor.process(msg)
           // then
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 2
@@ -380,13 +396,14 @@ class TaskExecutorTests :
         }
 
         "Should be able to access context from task" {
-          every { workerRegistry.getRegisteredService(testServiceName) } returns
-              service.copy(factory = { ServiceWithContext() })
+          every { registry.getServiceExecutorInstance(testServiceName) } returns ServiceWithContext()
+          every { registry.getServiceExecutorWithTimeout(testServiceName) } returns WithTimeout.UNSET
+          every { registry.getServiceExecutorWithRetry(testServiceName) } returns WithRetry.UNSET
           val input = arrayOf(2, "3")
           // with
           val msg = getExecuteTask("handle", input, null)
           // when
-          taskExecutor.handle(msg, MillisInstant.now())
+          taskExecutor.process(msg)
           // then
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 2
@@ -394,23 +411,24 @@ class TaskExecutorTests :
           taskEventSlot[1] shouldBe getTaskCompleted(
               msg,
               taskEventSlot[1].messageId!!,
-              (6 * msg.taskRetrySequence.toInt()).toString(),
+              MethodReturnValue.from(
+                  (6 * msg.taskRetrySequence.toInt()).toString(),
+                  String::class.java,
+              ),
               msg.taskMeta.map,
           )
         }
 
         "Should throw TimeoutException with timeout from Registry" {
-          every { workerRegistry.getRegisteredService(testServiceName) } returns
-              service.copy(
-                  factory = { ServiceWithRegisteredTimeout() },
-                  withTimeout = { 0.1 },
-                  withRetry = ExponentialBackoffRetryPolicy(maximumRetries = 0),
-              )
+          every { registry.getServiceExecutorInstance(testServiceName) } returns ServiceWithRegisteredTimeout()
+          every { registry.getServiceExecutorWithTimeout(testServiceName) } returns { 0.1 }
+          every { registry.getServiceExecutorWithRetry(testServiceName) } returns
+              WithExponentialBackoffRetry(maximumRetries = 0)
           val types = listOf(Int::class.java.name, String::class.java.name)
           // with
           val msg = getExecuteTask("handle", arrayOf(2, "3"), types)
           // when
-          taskExecutor.handle(msg, MillisInstant.now())
+          taskExecutor.process(msg)
           // then
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 2
@@ -424,17 +442,16 @@ class TaskExecutorTests :
         }
 
         "Should throw TimeoutException with timeout from method Annotation" {
-          every { workerRegistry.getRegisteredService(testServiceName) } returns
-              service.copy(
-                  factory = { ServiceWithTimeoutOnMethod() },
-                  withRetry = ExponentialBackoffRetryPolicy(maximumRetries = 0),
-              )
+          every { registry.getServiceExecutorInstance(testServiceName) } returns ServiceWithTimeoutOnMethod()
+          every { registry.getServiceExecutorWithTimeout(testServiceName) } returns WithTimeout.UNSET
+          every { registry.getServiceExecutorWithRetry(testServiceName) } returns
+              WithExponentialBackoffRetry(maximumRetries = 0)
           val input = arrayOf(2, "3")
           val types = listOf(Int::class.java.name, String::class.java.name)
           // with
           val msg = getExecuteTask("handle", input, types)
           // when
-          taskExecutor.handle(msg, MillisInstant.now())
+          taskExecutor.process(msg)
           // then
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 2
@@ -448,17 +465,17 @@ class TaskExecutorTests :
         }
 
         "Should throw TimeoutException with timeout from class Annotation" {
-          every { workerRegistry.getRegisteredService(testServiceName) } returns
-              service.copy(
-                  factory = { ServiceWithTimeoutOnClass() },
-                  withRetry = ExponentialBackoffRetryPolicy(maximumRetries = 0),
-              )
+          every { registry.getServiceExecutorInstance(testServiceName) } returns ServiceWithTimeoutOnClass()
+          every { registry.getServiceExecutorWithTimeout(testServiceName) } returns WithTimeout.UNSET
+          every { registry.getServiceExecutorWithRetry(testServiceName) } returns WithExponentialBackoffRetry(
+              maximumRetries = 0,
+          )
           val input = arrayOf(2, "3")
           val types = listOf(Int::class.java.name, String::class.java.name)
           // with
           val msg = getExecuteTask("handle", input, types)
           // when
-          taskExecutor.handle(msg, MillisInstant.now())
+          taskExecutor.process(msg)
           // then
           taskExecutorSlot.isCaptured shouldBe false
           taskEventSlot.size shouldBe 2
@@ -476,7 +493,7 @@ class TaskExecutorTests :
 fun ExecuteTask.check(
   msg: ExecuteTask,
   errorName: String,
-  meta: MutableMap<String, ByteArray>
+  meta: Map<String, ByteArray>
 ) {
   serviceName shouldBe msg.serviceName
   taskId shouldBe msg.taskId
@@ -488,14 +505,14 @@ fun ExecuteTask.check(
   methodName shouldBe msg.methodName
   taskMeta shouldBe TaskMeta(meta)
   taskId shouldBe msg.taskId
-  lastError!!.name shouldBe errorName
-  lastError!!.workerName shouldBe WorkerName.from(msg.emitterName)
+  lastFailure!!.exception!!.name shouldBe errorName
+  lastFailure!!.workerName shouldBe msg.emitterName.toString()
 }
 
 fun TaskFailedEvent.check(
   msg: ExecuteTask,
   errorName: String,
-  meta: MutableMap<String, ByteArray>
+  meta: Map<String, ByteArray>
 ) {
   serviceName shouldBe msg.serviceName
   taskId shouldBe msg.taskId
@@ -504,8 +521,8 @@ fun TaskFailedEvent.check(
   taskRetryIndex shouldBe msg.taskRetryIndex
   requester shouldBe msg.requester
   clientWaiting shouldBe msg.clientWaiting
-  executionError.name shouldBe errorName
-  executionError.workerName shouldBe WorkerName.from(msg.emitterName)
+  failure.exception!!.name shouldBe errorName
+  failure.workerName shouldBe msg.emitterName.toString()
   methodName shouldBe msg.methodName
   taskMeta shouldBe TaskMeta(meta)
   taskId shouldBe msg.taskId
@@ -515,19 +532,19 @@ fun TaskRetriedEvent.check(
   msg: ExecuteTask,
   delay: MillisDuration,
   errorName: String,
-  meta: MutableMap<String, ByteArray>
+  meta: Map<String, ByteArray>
 ) {
   serviceName shouldBe msg.serviceName
   taskId shouldBe msg.taskId
   emitterName shouldBe testEmitterName
   taskRetrySequence shouldBe msg.taskRetrySequence
-  taskRetryIndex shouldBe msg.taskRetryIndex + 1
+  taskRetryIndex shouldBe msg.taskRetryIndex
   requester shouldBe msg.requester
   taskTags shouldBe msg.taskTags
   taskMeta shouldBe TaskMeta(meta)
   taskRetryDelay shouldBe delay
-  lastError.name shouldBe errorName
-  lastError.workerName shouldBe WorkerName.from(msg.emitterName)
+  failure.exception!!.name shouldBe errorName
+  failure.workerName shouldBe msg.emitterName.toString()
 }
 
 internal fun getExecuteTask(method: String, input: Array<out Any?>, types: List<String>?) =
@@ -543,8 +560,8 @@ internal fun getExecuteTask(method: String, input: Array<out Any?>, types: List<
         clientWaiting = false,
         methodName = MethodName(method),
         methodParameterTypes = types?.let { MethodParameterTypes(it) },
-        methodParameters = MethodParameters.from(*input),
-        lastError = null,
+        methodArgs = methodParametersFrom(*input),
+        lastFailure = null,
     )
 
 private fun getTaskStarted(msg: ExecuteTask, messageId: MessageId) = TaskStartedEvent(
@@ -564,8 +581,8 @@ private fun getTaskStarted(msg: ExecuteTask, messageId: MessageId) = TaskStarted
 private fun getTaskCompleted(
   msg: ExecuteTask,
   messageId: MessageId,
-  value: Any?,
-  meta: MutableMap<String, ByteArray>
+  value: MethodReturnValue,
+  meta: Map<String, ByteArray>
 ) = TaskCompletedEvent(
     messageId = messageId,
     serviceName = msg.serviceName,
@@ -578,11 +595,11 @@ private fun getTaskCompleted(
     clientWaiting = msg.clientWaiting,
     taskTags = msg.taskTags,
     taskMeta = TaskMeta(meta),
-    returnValue = ReturnValue.from(value),
+    returnValue = value,
     isDelegated = false,
 )
 
-internal fun getRemoveTag(message: ServiceEventMessage, tag: String) = RemoveTaskIdFromTag(
+internal fun getRemoveTag(message: ServiceExecutorEventMessage, tag: String) = RemoveTaskIdFromTag(
     taskId = message.taskId,
     serviceName = message.serviceName,
     taskTag = TaskTag(tag),

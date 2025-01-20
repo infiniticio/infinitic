@@ -22,12 +22,16 @@
  */
 
 dependencies {
+  implementation(project(":infinitic-utils"))
+  implementation(project(":infinitic-common"))
+  implementation(project(":infinitic-transport-inMemory"))
+
+  implementation(Libs.Coroutines.core)
+
   implementation(Libs.Serialization.json)
   implementation(Libs.CloudEvents.json)
   implementation(Libs.Avro4k.core)
   implementation(Libs.Jackson.kotlin)
-
-  implementation(project(":infinitic-common"))
 
   testImplementation(project(":infinitic-worker"))
 

@@ -22,11 +22,10 @@
  */
 package io.infinitic.tests.context
 
+import io.infinitic.Test
 import io.infinitic.common.tasks.data.TaskMeta
+import io.infinitic.common.workers.config.WithExponentialBackoffRetry
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
-import io.infinitic.tasks.executor.TaskExecutor.Companion.DEFAULT_TASK_RETRY
-import io.infinitic.tasks.executor.TaskExecutor.Companion.DEFAULT_TASK_TIMEOUT
-import io.infinitic.tests.Test
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 
@@ -40,15 +39,15 @@ internal class ContextWorkflowTests : StringSpec(
           meta = mutableMapOf("foo" to "bar".toByteArray()),
       )
 
-      "get id from context" {
+      "get id from context (from initialisation)" {
         contextWorkflow.context1() shouldBe client.lastDeferred!!.id
       }
 
-      "get tags from context" {
+      "get tags from context (from initialisation)" {
         contextWorkflow.context2() shouldBe setOf("foo", "bar")
       }
 
-      "get meta from context" {
+      "get meta from context (from initialisation)" {
         contextWorkflow.context3() shouldBe WorkflowMeta(mapOf("foo" to "bar".toByteArray()))
       }
 
@@ -69,11 +68,14 @@ internal class ContextWorkflowTests : StringSpec(
       }
 
       "get task retry from config file" {
-        contextWorkflow.context8() shouldBe DEFAULT_TASK_RETRY.copy(maximumRetries = 1)
+        contextWorkflow.context8() shouldBe WithExponentialBackoffRetry(
+            maximumRetries = 1,
+            randomFactor = 0.0,
+        ).getSecondsBeforeRetry(0, RuntimeException())
       }
 
       "get task timeout from config file" {
-        contextWorkflow.context9() shouldBe DEFAULT_TASK_TIMEOUT
+        contextWorkflow.context9() shouldBe 100.0
       }
     },
 )

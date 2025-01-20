@@ -1,0 +1,1684 @@
+{
+  "type" : "record",
+  "name" : "WorkflowState",
+  "namespace" : "io.infinitic.workflows.engine",
+  "fields" : [ {
+    "name" : "lastMessageId",
+    "type" : "string"
+  }, {
+    "name" : "workflowId",
+    "type" : "string"
+  }, {
+    "name" : "workflowName",
+    "type" : "string"
+  }, {
+    "name" : "workflowVersion",
+    "type" : [ "null", "int" ],
+    "default" : null
+  }, {
+    "name" : "workflowTags",
+    "type" : {
+      "type" : "array",
+      "items" : "string"
+    }
+  }, {
+    "name" : "workflowMeta",
+    "type" : {
+      "type" : "map",
+      "values" : "bytes"
+    }
+  }, {
+    "name" : "runningWorkflowTaskId",
+    "type" : [ "null", "string" ]
+  }, {
+    "name" : "runningMethodRunId",
+    "type" : [ "null", "string" ]
+  }, {
+    "name" : "runningMethodRunPosition",
+    "type" : [ "null", "int" ]
+  }, {
+    "name" : "runningTerminatedCommands",
+    "type" : {
+      "type" : "array",
+      "items" : "string"
+    }
+  }, {
+    "name" : "runningWorkflowTaskInstant",
+    "type" : [ "null", "long" ]
+  }, {
+    "name" : "workflowTaskIndex",
+    "type" : "int"
+  }, {
+    "name" : "methodRuns",
+    "type" : {
+      "type" : "array",
+      "items" : {
+        "type" : "record",
+        "name" : "MethodRun",
+        "namespace" : "io.infinitic.workflows.data",
+        "fields" : [ {
+          "name" : "waitingClients",
+          "type" : {
+            "type" : "array",
+            "items" : "string"
+          }
+        }, {
+          "name" : "methodRunId",
+          "type" : "string"
+        }, {
+          "name" : "requester",
+          "type" : [ "null", {
+            "type" : "record",
+            "name" : "ClientRequester",
+            "namespace" : "io.infinitic.data",
+            "fields" : [ {
+              "name" : "clientName",
+              "type" : "string"
+            } ]
+          }, {
+            "type" : "record",
+            "name" : "WorkflowRequester",
+            "namespace" : "io.infinitic.data",
+            "fields" : [ {
+              "name" : "workflowName",
+              "type" : "string"
+            }, {
+              "name" : "workflowVersion",
+              "type" : [ "null", "int" ]
+            }, {
+              "name" : "workflowId",
+              "type" : "string"
+            }, {
+              "name" : "workflowMethodName",
+              "type" : "string"
+            }, {
+              "name" : "workflowMethodId",
+              "type" : "string"
+            } ]
+          } ],
+          "default" : null
+        }, {
+          "name" : "parentWorkflowId",
+          "type" : [ "null", "string" ]
+        }, {
+          "name" : "parentWorkflowName",
+          "type" : [ "null", "string" ]
+        }, {
+          "name" : "parentWorkflowMethodName",
+          "type" : [ "null", "string" ],
+          "default" : null
+        }, {
+          "name" : "parentMethodRunId",
+          "type" : [ "null", "string" ]
+        }, {
+          "name" : "parentClientName",
+          "type" : [ "null", "string" ],
+          "default" : null
+        }, {
+          "name" : "methodName",
+          "type" : "string"
+        }, {
+          "name" : "methodParameterTypes",
+          "type" : [ "null", {
+            "type" : "array",
+            "items" : "string"
+          } ]
+        }, {
+          "name" : "methodParameters",
+          "type" : {
+            "type" : "array",
+            "items" : {
+              "type" : "record",
+              "name" : "SerializedData",
+              "namespace" : "io.infinitic.data",
+              "fields" : [ {
+                "name" : "bytes",
+                "type" : "bytes"
+              }, {
+                "name" : "type",
+                "type" : {
+                  "type" : "enum",
+                  "name" : "SerializedDataType",
+                  "symbols" : [ "NULL", "AVRO_WITH_SCHEMA", "JSON", "JSON_JACKSON", "JSON_KOTLIN" ]
+                }
+              }, {
+                "name" : "meta",
+                "type" : {
+                  "type" : "map",
+                  "values" : "bytes"
+                }
+              } ]
+            }
+          }
+        }, {
+          "name" : "methodReturnValue",
+          "type" : [ "null", "io.infinitic.data.SerializedData" ]
+        }, {
+          "name" : "workflowTaskIndexAtStart",
+          "type" : "int"
+        }, {
+          "name" : "propertiesNameHashAtStart",
+          "type" : {
+            "type" : "map",
+            "values" : "string"
+          }
+        }, {
+          "name" : "pastCommands",
+          "type" : {
+            "type" : "array",
+            "items" : [ {
+              "type" : "record",
+              "name" : "DispatchMethod",
+              "namespace" : "PastCommand",
+              "fields" : [ {
+                "name" : "commandId",
+                "type" : "string"
+              }, {
+                "name" : "commandPosition",
+                "type" : "int"
+              }, {
+                "name" : "commandSimpleName",
+                "type" : "string"
+              }, {
+                "name" : "commandStatus",
+                "type" : [ {
+                  "type" : "record",
+                  "name" : "Canceled",
+                  "namespace" : "CommandStatus",
+                  "fields" : [ {
+                    "name" : "canceledDeferredError",
+                    "type" : [ {
+                      "type" : "record",
+                      "name" : "CanceledTaskError",
+                      "namespace" : "",
+                      "fields" : [ {
+                        "name" : "taskName",
+                        "type" : "string"
+                      }, {
+                        "name" : "taskId",
+                        "type" : "string"
+                      }, {
+                        "name" : "methodName",
+                        "type" : "string"
+                      } ]
+                    }, {
+                      "type" : "record",
+                      "name" : "CanceledWorkflowError",
+                      "namespace" : "",
+                      "fields" : [ {
+                        "name" : "workflowName",
+                        "type" : "string"
+                      }, {
+                        "name" : "workflowId",
+                        "type" : "string"
+                      }, {
+                        "name" : "workflowMethodName",
+                        "type" : [ "null", "string" ],
+                        "default" : null
+                      }, {
+                        "name" : "methodRunId",
+                        "type" : [ "null", "string" ]
+                      } ]
+                    } ]
+                  }, {
+                    "name" : "cancellationWorkflowTaskIndex",
+                    "type" : "int"
+                  } ]
+                }, {
+                  "type" : "record",
+                  "name" : "Completed",
+                  "namespace" : "CommandStatus",
+                  "fields" : [ {
+                    "name" : "returnIndex",
+                    "type" : "int",
+                    "default" : 0
+                  }, {
+                    "name" : "returnValue",
+                    "type" : "io.infinitic.data.SerializedData"
+                  }, {
+                    "name" : "completionWorkflowTaskIndex",
+                    "type" : "int"
+                  }, {
+                    "name" : "signalId",
+                    "type" : [ "null", "string" ],
+                    "default" : null
+                  } ]
+                }, {
+                  "type" : "record",
+                  "name" : "Failed",
+                  "namespace" : "CommandStatus",
+                  "fields" : [ {
+                    "name" : "failedDeferredError",
+                    "type" : [ {
+                      "type" : "record",
+                      "name" : "FailedTaskError",
+                      "namespace" : "",
+                      "fields" : [ {
+                        "name" : "taskName",
+                        "type" : "string"
+                      }, {
+                        "name" : "methodName",
+                        "type" : "string"
+                      }, {
+                        "name" : "taskId",
+                        "type" : "string"
+                      }, {
+                        "name" : "cause",
+                        "type" : {
+                          "type" : "record",
+                          "name" : "WorkerError",
+                          "namespace" : "io.infinitic.tasks.executor",
+                          "fields" : [ {
+                            "name" : "workerName",
+                            "type" : "string"
+                          }, {
+                            "name" : "name",
+                            "type" : "string"
+                          }, {
+                            "name" : "message",
+                            "type" : [ "null", "string" ]
+                          }, {
+                            "name" : "stackTraceToString",
+                            "type" : "string"
+                          }, {
+                            "name" : "cause",
+                            "type" : [ "null", "WorkerError" ]
+                          } ]
+                        }
+                      } ]
+                    }, {
+                      "type" : "record",
+                      "name" : "FailedWorkflowError",
+                      "namespace" : "",
+                      "fields" : [ {
+                        "name" : "workflowName",
+                        "type" : "string"
+                      }, {
+                        "name" : "workflowId",
+                        "type" : "string"
+                      }, {
+                        "name" : "methodName",
+                        "type" : "string"
+                      }, {
+                        "name" : "methodRunId",
+                        "type" : [ "null", "string" ]
+                      }, {
+                        "name" : "deferredError",
+                        "type" : [ "CanceledTaskError", "CanceledWorkflowError", "FailedTaskError", "FailedWorkflowError", {
+                          "type" : "record",
+                          "name" : "FailedWorkflowTaskError",
+                          "fields" : [ {
+                            "name" : "workflowName",
+                            "type" : "string"
+                          }, {
+                            "name" : "workflowId",
+                            "type" : "string"
+                          }, {
+                            "name" : "workflowTaskId",
+                            "type" : "string"
+                          }, {
+                            "name" : "cause",
+                            "type" : "io.infinitic.tasks.executor.WorkerError"
+                          } ]
+                        }, {
+                          "type" : "record",
+                          "name" : "TimedOutTaskError",
+                          "fields" : [ {
+                            "name" : "taskName",
+                            "type" : "string"
+                          }, {
+                            "name" : "taskId",
+                            "type" : "string"
+                          }, {
+                            "name" : "methodName",
+                            "type" : "string"
+                          } ]
+                        }, {
+                          "type" : "record",
+                          "name" : "TimedOutWorkflowError",
+                          "fields" : [ {
+                            "name" : "workflowName",
+                            "type" : "string"
+                          }, {
+                            "name" : "workflowId",
+                            "type" : "string"
+                          }, {
+                            "name" : "methodName",
+                            "type" : "string"
+                          }, {
+                            "name" : "methodRunId",
+                            "type" : [ "null", "string" ]
+                          } ]
+                        }, {
+                          "type" : "record",
+                          "name" : "UnknownTaskError",
+                          "fields" : [ {
+                            "name" : "taskName",
+                            "type" : "string"
+                          }, {
+                            "name" : "methodName",
+                            "type" : [ "null", "string" ],
+                            "default" : null
+                          }, {
+                            "name" : "taskId",
+                            "type" : "string"
+                          } ]
+                        }, {
+                          "type" : "record",
+                          "name" : "UnknownWorkflowError",
+                          "fields" : [ {
+                            "name" : "workflowName",
+                            "type" : "string"
+                          }, {
+                            "name" : "workflowId",
+                            "type" : "string"
+                          }, {
+                            "name" : "workflowMethodName",
+                            "type" : [ "null", "string" ],
+                            "default" : null
+                          }, {
+                            "name" : "methodRunId",
+                            "type" : [ "null", "string" ]
+                          } ]
+                        } ]
+                      } ]
+                    }, "FailedWorkflowTaskError" ]
+                  }, {
+                    "name" : "failureWorkflowTaskIndex",
+                    "type" : "int"
+                  } ]
+                }, {
+                  "type" : "record",
+                  "name" : "Ongoing",
+                  "namespace" : "CommandStatus",
+                  "fields" : [ ]
+                }, {
+                  "type" : "record",
+                  "name" : "TimedOut",
+                  "namespace" : "CommandStatus",
+                  "fields" : [ {
+                    "name" : "deferredTimedOutError",
+                    "type" : [ "TimedOutTaskError", "TimedOutWorkflowError" ]
+                  }, {
+                    "name" : "timeoutWorkflowTaskIndex",
+                    "type" : "int"
+                  } ]
+                }, {
+                  "type" : "record",
+                  "name" : "Unknown",
+                  "namespace" : "CommandStatus",
+                  "fields" : [ {
+                    "name" : "unknownDeferredError",
+                    "type" : [ "UnknownTaskError", "UnknownWorkflowError" ]
+                  }, {
+                    "name" : "unknowingWorkflowTaskIndex",
+                    "type" : "int"
+                  } ]
+                } ]
+              }, {
+                "name" : "command",
+                "type" : {
+                  "type" : "record",
+                  "name" : "DispatchMethod",
+                  "namespace" : "Command",
+                  "fields" : [ {
+                    "name" : "workflowName",
+                    "type" : "string"
+                  }, {
+                    "name" : "workflowId",
+                    "type" : [ "null", "string" ]
+                  }, {
+                    "name" : "workflowTag",
+                    "type" : [ "null", "string" ]
+                  }, {
+                    "name" : "methodName",
+                    "type" : "string"
+                  }, {
+                    "name" : "methodParameterTypes",
+                    "type" : {
+                      "type" : "array",
+                      "items" : "string"
+                    }
+                  }, {
+                    "name" : "methodParameters",
+                    "type" : {
+                      "type" : "array",
+                      "items" : "io.infinitic.data.SerializedData"
+                    }
+                  }, {
+                    "name" : "methodTimeout",
+                    "type" : [ "null", "long" ],
+                    "default" : null
+                  } ]
+                }
+              } ]
+            }, {
+              "type" : "record",
+              "name" : "DispatchTask",
+              "namespace" : "PastCommand",
+              "fields" : [ {
+                "name" : "commandId",
+                "type" : "string"
+              }, {
+                "name" : "commandPosition",
+                "type" : "int"
+              }, {
+                "name" : "commandSimpleName",
+                "type" : "string"
+              }, {
+                "name" : "commandStatus",
+                "type" : [ "CommandStatus.Canceled", "CommandStatus.Completed", "CommandStatus.Failed", "CommandStatus.Ongoing", "CommandStatus.TimedOut", "CommandStatus.Unknown" ]
+              }, {
+                "name" : "command",
+                "type" : {
+                  "type" : "record",
+                  "name" : "DispatchTask",
+                  "namespace" : "Command",
+                  "fields" : [ {
+                    "name" : "taskName",
+                    "type" : "string"
+                  }, {
+                    "name" : "methodName",
+                    "type" : "string"
+                  }, {
+                    "name" : "methodParameterTypes",
+                    "type" : {
+                      "type" : "array",
+                      "items" : "string"
+                    }
+                  }, {
+                    "name" : "methodParameters",
+                    "type" : {
+                      "type" : "array",
+                      "items" : "io.infinitic.data.SerializedData"
+                    }
+                  }, {
+                    "name" : "methodTimeout",
+                    "type" : [ "null", "long" ],
+                    "default" : null
+                  }, {
+                    "name" : "taskTags",
+                    "type" : {
+                      "type" : "array",
+                      "items" : "string"
+                    }
+                  }, {
+                    "name" : "taskMeta",
+                    "type" : {
+                      "type" : "map",
+                      "values" : "bytes"
+                    }
+                  } ]
+                }
+              }, {
+                "name" : "taskRetrySequence",
+                "type" : "int"
+              } ]
+            }, {
+              "type" : "record",
+              "name" : "DispatchWorkflow",
+              "namespace" : "PastCommand",
+              "fields" : [ {
+                "name" : "commandId",
+                "type" : "string"
+              }, {
+                "name" : "commandPosition",
+                "type" : "int"
+              }, {
+                "name" : "commandSimpleName",
+                "type" : "string"
+              }, {
+                "name" : "commandStatus",
+                "type" : [ "CommandStatus.Canceled", "CommandStatus.Completed", "CommandStatus.Failed", "CommandStatus.Ongoing", "CommandStatus.TimedOut", "CommandStatus.Unknown" ]
+              }, {
+                "name" : "command",
+                "type" : {
+                  "type" : "record",
+                  "name" : "DispatchWorkflow",
+                  "namespace" : "Command",
+                  "fields" : [ {
+                    "name" : "workflowName",
+                    "type" : "string"
+                  }, {
+                    "name" : "methodName",
+                    "type" : "string"
+                  }, {
+                    "name" : "methodParameterTypes",
+                    "type" : {
+                      "type" : "array",
+                      "items" : "string"
+                    }
+                  }, {
+                    "name" : "methodParameters",
+                    "type" : {
+                      "type" : "array",
+                      "items" : "io.infinitic.data.SerializedData"
+                    }
+                  }, {
+                    "name" : "methodTimeout",
+                    "type" : [ "null", "long" ],
+                    "default" : null
+                  }, {
+                    "name" : "workflowTags",
+                    "type" : {
+                      "type" : "array",
+                      "items" : "string"
+                    }
+                  }, {
+                    "name" : "workflowMeta",
+                    "type" : {
+                      "type" : "map",
+                      "values" : "bytes"
+                    }
+                  } ]
+                }
+              } ]
+            }, {
+              "type" : "record",
+              "name" : "InlineTask",
+              "namespace" : "PastCommand",
+              "fields" : [ {
+                "name" : "commandId",
+                "type" : "string"
+              }, {
+                "name" : "commandPosition",
+                "type" : "int"
+              }, {
+                "name" : "commandSimpleName",
+                "type" : "string"
+              }, {
+                "name" : "commandStatus",
+                "type" : [ "CommandStatus.Canceled", "CommandStatus.Completed", "CommandStatus.Failed", "CommandStatus.Ongoing", "CommandStatus.TimedOut", "CommandStatus.Unknown" ]
+              }, {
+                "name" : "command",
+                "type" : {
+                  "type" : "record",
+                  "name" : "InlineTask",
+                  "namespace" : "Command",
+                  "fields" : [ {
+                    "name" : "task",
+                    "type" : "string"
+                  } ]
+                }
+              } ]
+            }, {
+              "type" : "record",
+              "name" : "ReceiveSignal",
+              "namespace" : "PastCommand",
+              "fields" : [ {
+                "name" : "commandId",
+                "type" : "string"
+              }, {
+                "name" : "commandPosition",
+                "type" : "int"
+              }, {
+                "name" : "commandSimpleName",
+                "type" : "string"
+              }, {
+                "name" : "commandStatus",
+                "type" : [ "CommandStatus.Canceled", "CommandStatus.Completed", "CommandStatus.Failed", "CommandStatus.Ongoing", "CommandStatus.TimedOut", "CommandStatus.Unknown" ]
+              }, {
+                "name" : "command",
+                "type" : {
+                  "type" : "record",
+                  "name" : "ReceiveSignal",
+                  "namespace" : "Command",
+                  "fields" : [ {
+                    "name" : "channelName",
+                    "type" : "string"
+                  }, {
+                    "name" : "channelSignalType",
+                    "type" : [ "null", "string" ]
+                  }, {
+                    "name" : "channelEventFilter",
+                    "type" : [ "null", {
+                      "type" : "record",
+                      "name" : "ChannelEventFilter",
+                      "namespace" : "io.infinitic.workflows.data",
+                      "fields" : [ {
+                        "name" : "jsonPath",
+                        "type" : "string"
+                      }, {
+                        "name" : "filter",
+                        "type" : [ "null", "string" ]
+                      } ]
+                    } ]
+                  }, {
+                    "name" : "receivedSignalLimit",
+                    "type" : [ "int", "null" ],
+                    "default" : 1
+                  } ]
+                }
+              }, {
+                "name" : "commandStatuses",
+                "type" : {
+                  "type" : "array",
+                  "items" : [ "CommandStatus.Canceled", "CommandStatus.Completed", "CommandStatus.Failed", "CommandStatus.Ongoing", "CommandStatus.TimedOut", "CommandStatus.Unknown" ]
+                },
+                "default" : [ ]
+              } ]
+            }, {
+              "type" : "record",
+              "name" : "SendSignal",
+              "namespace" : "PastCommand",
+              "fields" : [ {
+                "name" : "commandId",
+                "type" : "string"
+              }, {
+                "name" : "commandPosition",
+                "type" : "int"
+              }, {
+                "name" : "commandSimpleName",
+                "type" : "string"
+              }, {
+                "name" : "commandStatus",
+                "type" : [ "CommandStatus.Canceled", "CommandStatus.Completed", "CommandStatus.Failed", "CommandStatus.Ongoing", "CommandStatus.TimedOut", "CommandStatus.Unknown" ]
+              }, {
+                "name" : "command",
+                "type" : {
+                  "type" : "record",
+                  "name" : "SendSignal",
+                  "namespace" : "Command",
+                  "fields" : [ {
+                    "name" : "workflowName",
+                    "type" : "string"
+                  }, {
+                    "name" : "workflowId",
+                    "type" : [ "null", "string" ]
+                  }, {
+                    "name" : "workflowTag",
+                    "type" : [ "null", "string" ]
+                  }, {
+                    "name" : "channelName",
+                    "type" : "string"
+                  }, {
+                    "name" : "channelSignal",
+                    "type" : "io.infinitic.data.SerializedData"
+                  }, {
+                    "name" : "channelSignalTypes",
+                    "type" : {
+                      "type" : "array",
+                      "items" : "string"
+                    }
+                  } ]
+                }
+              } ]
+            }, {
+              "type" : "record",
+              "name" : "StartDurationTimer",
+              "namespace" : "PastCommand",
+              "fields" : [ {
+                "name" : "commandId",
+                "type" : "string"
+              }, {
+                "name" : "commandPosition",
+                "type" : "int"
+              }, {
+                "name" : "commandSimpleName",
+                "type" : "string"
+              }, {
+                "name" : "commandStatus",
+                "type" : [ "CommandStatus.Canceled", "CommandStatus.Completed", "CommandStatus.Failed", "CommandStatus.Ongoing", "CommandStatus.TimedOut", "CommandStatus.Unknown" ]
+              }, {
+                "name" : "command",
+                "type" : {
+                  "type" : "record",
+                  "name" : "StartDurationTimer",
+                  "namespace" : "Command",
+                  "fields" : [ {
+                    "name" : "duration",
+                    "type" : "long"
+                  } ]
+                }
+              } ]
+            }, {
+              "type" : "record",
+              "name" : "StartInstantTimer",
+              "namespace" : "PastCommand",
+              "fields" : [ {
+                "name" : "commandId",
+                "type" : "string"
+              }, {
+                "name" : "commandPosition",
+                "type" : "int"
+              }, {
+                "name" : "commandSimpleName",
+                "type" : "string"
+              }, {
+                "name" : "commandStatus",
+                "type" : [ "CommandStatus.Canceled", "CommandStatus.Completed", "CommandStatus.Failed", "CommandStatus.Ongoing", "CommandStatus.TimedOut", "CommandStatus.Unknown" ]
+              }, {
+                "name" : "command",
+                "type" : {
+                  "type" : "record",
+                  "name" : "StartInstantTimer",
+                  "namespace" : "Command",
+                  "fields" : [ {
+                    "name" : "instant",
+                    "type" : "long"
+                  } ]
+                }
+              } ]
+            } ]
+          }
+        }, {
+          "name" : "pastSteps",
+          "type" : {
+            "type" : "array",
+            "items" : {
+              "type" : "record",
+              "name" : "PastStep",
+              "fields" : [ {
+                "name" : "stepPosition",
+                "type" : "int"
+              }, {
+                "name" : "step",
+                "type" : [ {
+                  "type" : "record",
+                  "name" : "And",
+                  "namespace" : "Step",
+                  "fields" : [ {
+                    "name" : "steps",
+                    "type" : {
+                      "type" : "array",
+                      "items" : [ "And", {
+                        "type" : "record",
+                        "name" : "Id",
+                        "fields" : [ {
+                          "name" : "commandId",
+                          "type" : "string"
+                        }, {
+                          "name" : "awaitIndex",
+                          "type" : "int",
+                          "default" : 0
+                        }, {
+                          "name" : "commandStatus",
+                          "type" : [ "CommandStatus.Canceled", "CommandStatus.Completed", "CommandStatus.Failed", "CommandStatus.Ongoing", "CommandStatus.TimedOut", "CommandStatus.Unknown" ]
+                        } ]
+                      }, {
+                        "type" : "record",
+                        "name" : "Or",
+                        "fields" : [ {
+                          "name" : "steps",
+                          "type" : {
+                            "type" : "array",
+                            "items" : [ "And", "Id", "Or" ]
+                          }
+                        } ]
+                      } ]
+                    }
+                  } ]
+                }, "Step.Id", "Step.Or" ]
+              }, {
+                "name" : "stepHash",
+                "type" : "string"
+              }, {
+                "name" : "workflowTaskIndexAtStart",
+                "type" : "int"
+              }, {
+                "name" : "propertiesNameHashAtTermination",
+                "type" : [ "null", {
+                  "type" : "map",
+                  "values" : "string"
+                } ]
+              }, {
+                "name" : "workflowTaskIndexAtTermination",
+                "type" : [ "null", "int" ]
+              } ]
+            }
+          }
+        }, {
+          "name" : "currentStep",
+          "type" : [ "null", "PastStep" ]
+        } ]
+      }
+    }
+  }, {
+    "name" : "receivingChannels",
+    "type" : {
+      "type" : "array",
+      "items" : {
+        "type" : "record",
+        "name" : "ReceivingChannel",
+        "namespace" : "io.infinitic.workflows.data",
+        "fields" : [ {
+          "name" : "channelName",
+          "type" : "string"
+        }, {
+          "name" : "channelSignalType",
+          "type" : [ "null", "string" ]
+        }, {
+          "name" : "channelEventFilter",
+          "type" : [ "null", "ChannelEventFilter" ]
+        }, {
+          "name" : "methodRunId",
+          "type" : "string"
+        }, {
+          "name" : "commandId",
+          "type" : "string"
+        }, {
+          "name" : "receivedSignalLimit",
+          "type" : [ "int", "null" ],
+          "default" : 1
+        }, {
+          "name" : "receivedSignalCount",
+          "type" : "int",
+          "default" : 0
+        } ]
+      }
+    }
+  }, {
+    "name" : "currentPropertiesNameHash",
+    "type" : {
+      "type" : "map",
+      "values" : "string"
+    }
+  }, {
+    "name" : "propertiesHashValue",
+    "type" : {
+      "type" : "map",
+      "values" : "io.infinitic.data.SerializedData"
+    }
+  }, {
+    "name" : "messagesBuffer",
+    "type" : {
+      "type" : "array",
+      "items" : [ {
+        "type" : "record",
+        "name" : "CancelWorkflow",
+        "fields" : [ {
+          "name" : "version",
+          "type" : [ "null", "string" ],
+          "default" : null
+        }, {
+          "name" : "messageId",
+          "type" : "string"
+        }, {
+          "name" : "reason",
+          "type" : {
+            "type" : "enum",
+            "name" : "WorkflowCancellationReason",
+            "namespace" : "io.infinitic.workflows.data",
+            "symbols" : [ "CANCELED_BY_CLIENT", "CANCELED_BY_PARENT" ]
+          }
+        }, {
+          "name" : "methodRunId",
+          "type" : [ "null", "string" ]
+        }, {
+          "name" : "workflowName",
+          "type" : "string"
+        }, {
+          "name" : "workflowId",
+          "type" : "string"
+        }, {
+          "name" : "emitterName",
+          "type" : "string"
+        }, {
+          "name" : "emittedAt",
+          "type" : [ "null", "long" ],
+          "default" : null
+        }, {
+          "name" : "requester",
+          "type" : [ "null", "io.infinitic.data.ClientRequester", "io.infinitic.data.WorkflowRequester" ],
+          "default" : null
+        } ]
+      }, {
+        "type" : "record",
+        "name" : "CompleteTimers",
+        "fields" : [ {
+          "name" : "version",
+          "type" : [ "null", "string" ],
+          "default" : null
+        }, {
+          "name" : "messageId",
+          "type" : "string"
+        }, {
+          "name" : "methodRunId",
+          "type" : [ "null", "string" ]
+        }, {
+          "name" : "workflowName",
+          "type" : "string"
+        }, {
+          "name" : "workflowId",
+          "type" : "string"
+        }, {
+          "name" : "emitterName",
+          "type" : "string"
+        }, {
+          "name" : "emittedAt",
+          "type" : [ "null", "long" ],
+          "default" : null
+        }, {
+          "name" : "requester",
+          "type" : [ "null", "io.infinitic.data.ClientRequester", "io.infinitic.data.WorkflowRequester" ],
+          "default" : null
+        } ]
+      }, {
+        "type" : "record",
+        "name" : "CompleteWorkflow",
+        "fields" : [ {
+          "name" : "version",
+          "type" : [ "null", "string" ],
+          "default" : null
+        }, {
+          "name" : "messageId",
+          "type" : "string"
+        }, {
+          "name" : "workflowReturnValue",
+          "type" : "io.infinitic.data.SerializedData"
+        }, {
+          "name" : "workflowName",
+          "type" : "string"
+        }, {
+          "name" : "workflowId",
+          "type" : "string"
+        }, {
+          "name" : "emitterName",
+          "type" : "string"
+        }, {
+          "name" : "emittedAt",
+          "type" : [ "null", "long" ],
+          "default" : null
+        }, {
+          "name" : "requester",
+          "type" : [ "null", "io.infinitic.data.ClientRequester", "io.infinitic.data.WorkflowRequester" ],
+          "default" : null
+        } ]
+      }, {
+        "type" : "record",
+        "name" : "DispatchMethod",
+        "fields" : [ {
+          "name" : "version",
+          "type" : [ "null", "string" ],
+          "default" : null
+        }, {
+          "name" : "messageId",
+          "type" : "string"
+        }, {
+          "name" : "workflowName",
+          "type" : "string"
+        }, {
+          "name" : "workflowId",
+          "type" : "string"
+        }, {
+          "name" : "methodRunId",
+          "type" : "string"
+        }, {
+          "name" : "methodName",
+          "type" : "string"
+        }, {
+          "name" : "methodParameters",
+          "type" : {
+            "type" : "array",
+            "items" : "io.infinitic.data.SerializedData"
+          }
+        }, {
+          "name" : "methodParameterTypes",
+          "type" : [ "null", {
+            "type" : "array",
+            "items" : "string"
+          } ]
+        }, {
+          "name" : "parentWorkflowId",
+          "type" : [ "null", "string" ]
+        }, {
+          "name" : "parentWorkflowName",
+          "type" : [ "null", "string" ]
+        }, {
+          "name" : "parentMethodRunId",
+          "type" : [ "null", "string" ]
+        }, {
+          "name" : "requester",
+          "type" : [ "null", "io.infinitic.data.ClientRequester", "io.infinitic.data.WorkflowRequester" ],
+          "default" : null
+        }, {
+          "name" : "clientWaiting",
+          "type" : "boolean"
+        }, {
+          "name" : "emitterName",
+          "type" : "string"
+        }, {
+          "name" : "emittedAt",
+          "type" : [ "null", "long" ],
+          "default" : null
+        } ]
+      }, {
+        "type" : "record",
+        "name" : "DispatchWorkflow",
+        "fields" : [ {
+          "name" : "version",
+          "type" : [ "null", "string" ],
+          "default" : null
+        }, {
+          "name" : "messageId",
+          "type" : "string"
+        }, {
+          "name" : "workflowName",
+          "type" : "string"
+        }, {
+          "name" : "workflowId",
+          "type" : "string"
+        }, {
+          "name" : "methodName",
+          "type" : "string"
+        }, {
+          "name" : "methodParameters",
+          "type" : {
+            "type" : "array",
+            "items" : "io.infinitic.data.SerializedData"
+          }
+        }, {
+          "name" : "methodParameterTypes",
+          "type" : [ "null", {
+            "type" : "array",
+            "items" : "string"
+          } ]
+        }, {
+          "name" : "workflowTags",
+          "type" : {
+            "type" : "array",
+            "items" : "string"
+          }
+        }, {
+          "name" : "workflowMeta",
+          "type" : {
+            "type" : "map",
+            "values" : "bytes"
+          }
+        }, {
+          "name" : "workflowTaskId",
+          "type" : [ "null", "string" ],
+          "default" : null
+        }, {
+          "name" : "clientWaiting",
+          "type" : "boolean"
+        }, {
+          "name" : "emitterName",
+          "type" : "string"
+        }, {
+          "name" : "parentWorkflowName",
+          "type" : [ "null", "string" ]
+        }, {
+          "name" : "parentWorkflowId",
+          "type" : [ "null", "string" ]
+        }, {
+          "name" : "parentMethodRunId",
+          "type" : [ "null", "string" ]
+        }, {
+          "name" : "requester",
+          "type" : [ "null", "io.infinitic.data.ClientRequester", "io.infinitic.data.WorkflowRequester" ],
+          "default" : null
+        }, {
+          "name" : "emittedAt",
+          "type" : [ "null", "long" ],
+          "default" : null
+        } ]
+      }, {
+        "type" : "record",
+        "name" : "ChildMethodCanceled",
+        "fields" : [ {
+          "name" : "version",
+          "type" : [ "null", "string" ],
+          "default" : null
+        }, {
+          "name" : "messageId",
+          "type" : "string"
+        }, {
+          "name" : "childCanceledWorkflowError",
+          "type" : "CanceledWorkflowError"
+        }, {
+          "name" : "workflowName",
+          "type" : "string"
+        }, {
+          "name" : "workflowId",
+          "type" : "string"
+        }, {
+          "name" : "workflowVersion",
+          "type" : [ "null", "int" ],
+          "default" : null
+        }, {
+          "name" : "workflowMethodName",
+          "type" : [ "null", "string" ],
+          "default" : null
+        }, {
+          "name" : "methodRunId",
+          "type" : "string"
+        }, {
+          "name" : "emitterName",
+          "type" : "string"
+        }, {
+          "name" : "emittedAt",
+          "type" : [ "null", "long" ],
+          "default" : null
+        } ]
+      }, {
+        "type" : "record",
+        "name" : "ChildMethodCompleted",
+        "fields" : [ {
+          "name" : "version",
+          "type" : [ "null", "string" ],
+          "default" : null
+        }, {
+          "name" : "messageId",
+          "type" : "string"
+        }, {
+          "name" : "childWorkflowReturnValue",
+          "type" : {
+            "type" : "record",
+            "name" : "WorkflowReturnValue",
+            "namespace" : "io.infinitic.workflows.data",
+            "fields" : [ {
+              "name" : "workflowId",
+              "type" : "string"
+            }, {
+              "name" : "methodRunId",
+              "type" : "string"
+            }, {
+              "name" : "returnValue",
+              "type" : "io.infinitic.data.SerializedData"
+            } ]
+          }
+        }, {
+          "name" : "workflowName",
+          "type" : "string"
+        }, {
+          "name" : "workflowId",
+          "type" : "string"
+        }, {
+          "name" : "workflowVersion",
+          "type" : [ "null", "int" ],
+          "default" : null
+        }, {
+          "name" : "workflowMethodName",
+          "type" : [ "null", "string" ],
+          "default" : null
+        }, {
+          "name" : "methodRunId",
+          "type" : "string"
+        }, {
+          "name" : "emitterName",
+          "type" : "string"
+        }, {
+          "name" : "emittedAt",
+          "type" : [ "null", "long" ],
+          "default" : null
+        } ]
+      }, {
+        "type" : "record",
+        "name" : "ChildMethodFailed",
+        "fields" : [ {
+          "name" : "version",
+          "type" : [ "null", "string" ],
+          "default" : null
+        }, {
+          "name" : "messageId",
+          "type" : "string"
+        }, {
+          "name" : "childFailedWorkflowError",
+          "type" : "FailedWorkflowError"
+        }, {
+          "name" : "workflowName",
+          "type" : "string"
+        }, {
+          "name" : "workflowId",
+          "type" : "string"
+        }, {
+          "name" : "workflowVersion",
+          "type" : [ "null", "int" ],
+          "default" : null
+        }, {
+          "name" : "workflowMethodName",
+          "type" : [ "null", "string" ],
+          "default" : null
+        }, {
+          "name" : "methodRunId",
+          "type" : "string"
+        }, {
+          "name" : "emitterName",
+          "type" : "string"
+        }, {
+          "name" : "emittedAt",
+          "type" : [ "null", "long" ],
+          "default" : null
+        } ]
+      }, {
+        "type" : "record",
+        "name" : "ChildMethodTimedOut",
+        "fields" : [ {
+          "name" : "version",
+          "type" : [ "null", "string" ],
+          "default" : null
+        }, {
+          "name" : "messageId",
+          "type" : "string"
+        }, {
+          "name" : "childMethodTimedOutError",
+          "type" : "TimedOutWorkflowError"
+        }, {
+          "name" : "workflowName",
+          "type" : "string"
+        }, {
+          "name" : "workflowId",
+          "type" : "string"
+        }, {
+          "name" : "workflowVersion",
+          "type" : [ "null", "int" ],
+          "default" : null
+        }, {
+          "name" : "workflowMethodName",
+          "type" : [ "null", "string" ],
+          "default" : null
+        }, {
+          "name" : "methodRunId",
+          "type" : "string"
+        }, {
+          "name" : "emitterName",
+          "type" : "string"
+        }, {
+          "name" : "emittedAt",
+          "type" : [ "null", "long" ],
+          "default" : null
+        } ]
+      }, {
+        "type" : "record",
+        "name" : "ChildMethodUnknown",
+        "fields" : [ {
+          "name" : "version",
+          "type" : [ "null", "string" ],
+          "default" : null
+        }, {
+          "name" : "messageId",
+          "type" : "string"
+        }, {
+          "name" : "childUnknownWorkflowError",
+          "type" : "UnknownWorkflowError"
+        }, {
+          "name" : "workflowName",
+          "type" : "string"
+        }, {
+          "name" : "workflowId",
+          "type" : "string"
+        }, {
+          "name" : "workflowVersion",
+          "type" : [ "null", "int" ],
+          "default" : null
+        }, {
+          "name" : "workflowMethodName",
+          "type" : [ "null", "string" ],
+          "default" : null
+        }, {
+          "name" : "methodRunId",
+          "type" : "string"
+        }, {
+          "name" : "emitterName",
+          "type" : "string"
+        }, {
+          "name" : "emittedAt",
+          "type" : [ "null", "long" ],
+          "default" : null
+        } ]
+      }, {
+        "type" : "record",
+        "name" : "TaskCanceled",
+        "fields" : [ {
+          "name" : "version",
+          "type" : [ "null", "string" ],
+          "default" : null
+        }, {
+          "name" : "messageId",
+          "type" : "string"
+        }, {
+          "name" : "canceledTaskError",
+          "type" : "CanceledTaskError"
+        }, {
+          "name" : "workflowName",
+          "type" : "string"
+        }, {
+          "name" : "workflowId",
+          "type" : "string"
+        }, {
+          "name" : "workflowVersion",
+          "type" : [ "null", "int" ],
+          "default" : null
+        }, {
+          "name" : "workflowMethodName",
+          "type" : [ "null", "string" ],
+          "default" : null
+        }, {
+          "name" : "methodRunId",
+          "type" : "string"
+        }, {
+          "name" : "emitterName",
+          "type" : "string"
+        }, {
+          "name" : "emittedAt",
+          "type" : [ "null", "long" ],
+          "default" : null
+        } ]
+      }, {
+        "type" : "record",
+        "name" : "TaskCompleted",
+        "fields" : [ {
+          "name" : "version",
+          "type" : [ "null", "string" ],
+          "default" : null
+        }, {
+          "name" : "messageId",
+          "type" : "string"
+        }, {
+          "name" : "taskReturnValue",
+          "type" : {
+            "type" : "record",
+            "name" : "TaskReturnValue",
+            "namespace" : "io.infinitic.tasks.data",
+            "fields" : [ {
+              "name" : "taskId",
+              "type" : "string"
+            }, {
+              "name" : "taskName",
+              "type" : "string"
+            }, {
+              "name" : "methodName",
+              "type" : [ "null", "string" ],
+              "default" : null
+            }, {
+              "name" : "taskMeta",
+              "type" : {
+                "type" : "map",
+                "values" : "bytes"
+              }
+            }, {
+              "name" : "returnValue",
+              "type" : "io.infinitic.data.SerializedData"
+            } ]
+          }
+        }, {
+          "name" : "workflowName",
+          "type" : "string"
+        }, {
+          "name" : "workflowId",
+          "type" : "string"
+        }, {
+          "name" : "workflowVersion",
+          "type" : [ "null", "int" ],
+          "default" : null
+        }, {
+          "name" : "workflowMethodName",
+          "type" : [ "null", "string" ],
+          "default" : null
+        }, {
+          "name" : "methodRunId",
+          "type" : "string"
+        }, {
+          "name" : "emitterName",
+          "type" : "string"
+        }, {
+          "name" : "emittedAt",
+          "type" : [ "null", "long" ],
+          "default" : null
+        } ]
+      }, {
+        "type" : "record",
+        "name" : "TaskFailed",
+        "fields" : [ {
+          "name" : "version",
+          "type" : [ "null", "string" ],
+          "default" : null
+        }, {
+          "name" : "messageId",
+          "type" : "string"
+        }, {
+          "name" : "failedTaskError",
+          "type" : "FailedTaskError"
+        }, {
+          "name" : "deferredError",
+          "type" : [ "null", "CanceledTaskError", "CanceledWorkflowError", "FailedTaskError", "FailedWorkflowError", "FailedWorkflowTaskError", "TimedOutTaskError", "TimedOutWorkflowError", "UnknownTaskError", "UnknownWorkflowError" ]
+        }, {
+          "name" : "workflowName",
+          "type" : "string"
+        }, {
+          "name" : "workflowId",
+          "type" : "string"
+        }, {
+          "name" : "workflowVersion",
+          "type" : [ "null", "int" ],
+          "default" : null
+        }, {
+          "name" : "workflowMethodName",
+          "type" : [ "null", "string" ],
+          "default" : null
+        }, {
+          "name" : "methodRunId",
+          "type" : "string"
+        }, {
+          "name" : "emitterName",
+          "type" : "string"
+        }, {
+          "name" : "emittedAt",
+          "type" : [ "null", "long" ],
+          "default" : null
+        } ]
+      }, {
+        "type" : "record",
+        "name" : "TaskTimedOut",
+        "fields" : [ {
+          "name" : "version",
+          "type" : [ "null", "string" ],
+          "default" : null
+        }, {
+          "name" : "messageId",
+          "type" : "string"
+        }, {
+          "name" : "taskTimedOutError",
+          "type" : "TimedOutTaskError"
+        }, {
+          "name" : "workflowName",
+          "type" : "string"
+        }, {
+          "name" : "workflowId",
+          "type" : "string"
+        }, {
+          "name" : "workflowVersion",
+          "type" : [ "null", "int" ],
+          "default" : null
+        }, {
+          "name" : "workflowMethodName",
+          "type" : [ "null", "string" ],
+          "default" : null
+        }, {
+          "name" : "methodRunId",
+          "type" : "string"
+        }, {
+          "name" : "emitterName",
+          "type" : "string"
+        }, {
+          "name" : "emittedAt",
+          "type" : [ "null", "long" ],
+          "default" : null
+        } ]
+      }, {
+        "type" : "record",
+        "name" : "TimerCompleted",
+        "fields" : [ {
+          "name" : "version",
+          "type" : [ "null", "string" ],
+          "default" : null
+        }, {
+          "name" : "messageId",
+          "type" : "string"
+        }, {
+          "name" : "timerId",
+          "type" : "string"
+        }, {
+          "name" : "workflowName",
+          "type" : "string"
+        }, {
+          "name" : "workflowId",
+          "type" : "string"
+        }, {
+          "name" : "workflowVersion",
+          "type" : [ "null", "int" ],
+          "default" : null
+        }, {
+          "name" : "workflowMethodName",
+          "type" : [ "null", "string" ],
+          "default" : null
+        }, {
+          "name" : "methodRunId",
+          "type" : "string"
+        }, {
+          "name" : "emitterName",
+          "type" : "string"
+        }, {
+          "name" : "emittedAt",
+          "type" : [ "null", "long" ],
+          "default" : null
+        } ]
+      }, {
+        "type" : "record",
+        "name" : "RetryTasks",
+        "fields" : [ {
+          "name" : "version",
+          "type" : [ "null", "string" ],
+          "default" : null
+        }, {
+          "name" : "messageId",
+          "type" : "string"
+        }, {
+          "name" : "taskId",
+          "type" : [ "null", "string" ]
+        }, {
+          "name" : "taskStatus",
+          "type" : [ "null", {
+            "type" : "enum",
+            "name" : "DeferredStatus",
+            "namespace" : "io.infinitic.workflows",
+            "symbols" : [ "ONGOING", "UNKNOWN", "CANCELED", "FAILED", "COMPLETED", "TIMED_OUT" ]
+          } ]
+        }, {
+          "name" : "taskName",
+          "type" : [ "null", "string" ]
+        }, {
+          "name" : "workflowName",
+          "type" : "string"
+        }, {
+          "name" : "workflowId",
+          "type" : "string"
+        }, {
+          "name" : "emitterName",
+          "type" : "string"
+        }, {
+          "name" : "emittedAt",
+          "type" : [ "null", "long" ],
+          "default" : null
+        }, {
+          "name" : "requester",
+          "type" : [ "null", "io.infinitic.data.ClientRequester", "io.infinitic.data.WorkflowRequester" ],
+          "default" : null
+        } ]
+      }, {
+        "type" : "record",
+        "name" : "RetryWorkflowTask",
+        "fields" : [ {
+          "name" : "version",
+          "type" : [ "null", "string" ],
+          "default" : null
+        }, {
+          "name" : "messageId",
+          "type" : "string"
+        }, {
+          "name" : "workflowName",
+          "type" : "string"
+        }, {
+          "name" : "workflowId",
+          "type" : "string"
+        }, {
+          "name" : "emitterName",
+          "type" : "string"
+        }, {
+          "name" : "emittedAt",
+          "type" : [ "null", "long" ],
+          "default" : null
+        }, {
+          "name" : "requester",
+          "type" : [ "null", "io.infinitic.data.ClientRequester", "io.infinitic.data.WorkflowRequester" ],
+          "default" : null
+        } ]
+      }, {
+        "type" : "record",
+        "name" : "SendSignal",
+        "fields" : [ {
+          "name" : "version",
+          "type" : [ "null", "string" ],
+          "default" : null
+        }, {
+          "name" : "messageId",
+          "type" : "string"
+        }, {
+          "name" : "channelName",
+          "type" : "string"
+        }, {
+          "name" : "channelSignalId",
+          "type" : "string"
+        }, {
+          "name" : "channelSignal",
+          "type" : "io.infinitic.data.SerializedData"
+        }, {
+          "name" : "channelSignalTypes",
+          "type" : {
+            "type" : "array",
+            "items" : "string"
+          }
+        }, {
+          "name" : "workflowName",
+          "type" : "string"
+        }, {
+          "name" : "workflowId",
+          "type" : "string"
+        }, {
+          "name" : "emitterName",
+          "type" : "string"
+        }, {
+          "name" : "emittedAt",
+          "type" : [ "null", "long" ],
+          "default" : null
+        }, {
+          "name" : "requester",
+          "type" : [ "null", "io.infinitic.data.ClientRequester", "io.infinitic.data.WorkflowRequester" ],
+          "default" : null
+        } ]
+      }, {
+        "type" : "record",
+        "name" : "WaitWorkflow",
+        "fields" : [ {
+          "name" : "version",
+          "type" : [ "null", "string" ],
+          "default" : null
+        }, {
+          "name" : "messageId",
+          "type" : "string"
+        }, {
+          "name" : "methodRunId",
+          "type" : "string"
+        }, {
+          "name" : "workflowName",
+          "type" : "string"
+        }, {
+          "name" : "workflowId",
+          "type" : "string"
+        }, {
+          "name" : "emitterName",
+          "type" : "string"
+        }, {
+          "name" : "emittedAt",
+          "type" : [ "null", "long" ],
+          "default" : null
+        }, {
+          "name" : "requester",
+          "type" : [ "null", "io.infinitic.data.ClientRequester", "io.infinitic.data.WorkflowRequester" ],
+          "default" : null
+        } ]
+      } ]
+    }
+  } ]
+}

@@ -22,8 +22,8 @@
  */
 package io.infinitic.tests.children
 
-import io.infinitic.tests.utils.UtilService
-import io.infinitic.tests.utils.UtilWorkflow
+import io.infinitic.utils.UtilService
+import io.infinitic.utils.UtilWorkflow
 import io.infinitic.workflows.Workflow
 import java.time.Duration
 

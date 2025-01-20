@@ -24,21 +24,25 @@ package io.infinitic.common.transport
 
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.messages.Message
-import io.infinitic.common.tasks.events.messages.ServiceEventMessage
+import io.infinitic.common.tasks.events.messages.ServiceExecutorEventMessage
 import io.infinitic.common.tasks.executors.messages.ServiceExecutorMessage
 import io.infinitic.common.tasks.tags.messages.ServiceTagMessage
-import io.infinitic.common.workflows.engine.messages.WorkflowCmdMessage
-import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
-import io.infinitic.common.workflows.engine.messages.WorkflowEventMessage
-import io.infinitic.common.workflows.tags.messages.WorkflowTagMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateCmdMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateEventMessage
+import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
 
 
-sealed class Topic<S : Message>
+sealed class Topic<S : Message> {
+  abstract val prefix: String
+}
 
 /**
  * Topic used to get a unique producer name
  */
-data object NamingTopic : Topic<Nothing>()
+data object NamingTopic : Topic<Nothing>() {
+  override val prefix = "namer"
+}
 
 /****************************************************
  *
@@ -46,7 +50,9 @@ data object NamingTopic : Topic<Nothing>()
  *
  ****************************************************/
 
-data object ClientTopic : Topic<ClientMessage>()
+data object ClientTopic : Topic<ClientMessage>() {
+  override val prefix = "response"
+}
 
 /****************************************************
  *
@@ -60,13 +66,22 @@ sealed class ServiceTopic<S : Message> : Topic<S>() {
   }
 }
 
-data object ServiceTagTopic : ServiceTopic<ServiceTagMessage>()
+data object ServiceTagEngineTopic : ServiceTopic<ServiceTagMessage>() {
+  override val prefix = "task-tag"
+}
 
-data object ServiceExecutorTopic : ServiceTopic<ServiceExecutorMessage>()
+data object ServiceExecutorTopic : ServiceTopic<ServiceExecutorMessage>() {
+  override val prefix = "task-executor"
+}
 
-data object DelayedServiceExecutorTopic : ServiceTopic<ServiceExecutorMessage>()
+data object ServiceExecutorRetryTopic : ServiceTopic<ServiceExecutorMessage>() {
+  override val prefix = "task-retry"
+}
 
-data object ServiceEventsTopic : ServiceTopic<ServiceEventMessage>()
+
+data object ServiceExecutorEventTopic : ServiceTopic<ServiceExecutorEventMessage>() {
+  override val prefix = "task-events"
+}
 
 
 /****************************************************
@@ -83,36 +98,46 @@ sealed class WorkflowTopic<S : Message> : Topic<S>() {
 }
 
 
-data object WorkflowTagTopic : WorkflowTopic<WorkflowTagMessage>()
+data object WorkflowTagEngineTopic : WorkflowTopic<WorkflowTagEngineMessage>() {
+  override val prefix = "workflow-tag"
+}
 
-data object WorkflowCmdTopic : WorkflowTopic<WorkflowCmdMessage>()
+data object WorkflowStateCmdTopic : WorkflowTopic<WorkflowStateCmdMessage>() {
+  override val prefix = "workflow-cmd"
+}
 
-data object WorkflowEngineTopic : WorkflowTopic<WorkflowEngineMessage>()
+data object WorkflowStateEngineTopic : WorkflowTopic<WorkflowStateEngineMessage>() {
+  override val prefix = "workflow-engine"
+}
 
-data object DelayedWorkflowEngineTopic : WorkflowTopic<WorkflowEngineMessage>()
+data object WorkflowStateTimerTopic : WorkflowTopic<WorkflowStateEngineMessage>() {
+  override val prefix = "workflow-delay"
+}
 
-data object WorkflowEventsTopic : WorkflowTopic<WorkflowEventMessage>()
+data object WorkflowStateEventTopic : WorkflowTopic<WorkflowStateEventMessage>() {
+  override val prefix = "workflow-events"
+}
 
-data object WorkflowTaskExecutorTopic : WorkflowTopic<ServiceExecutorMessage>()
+data object WorkflowExecutorTopic : WorkflowTopic<ServiceExecutorMessage>() {
+  override val prefix = "workflow-task-executor"
+}
 
-data object DelayedWorkflowTaskExecutorTopic : WorkflowTopic<ServiceExecutorMessage>()
+data object WorkflowExecutorRetryTopic : WorkflowTopic<ServiceExecutorMessage>() {
+  override val prefix = "workflow-task-retry"
+}
 
-data object WorkflowTaskEventsTopic : WorkflowTopic<ServiceEventMessage>()
+data object WorkflowExecutorEventTopic : WorkflowTopic<ServiceExecutorEventMessage>() {
+  override val prefix = "workflow-task-events"
+}
 
 
 /**
- * Property indicating whether a topic type receives delayed message
- * This is used to set up TTLInSeconds which mush be much higher for delayed messages
- *
- * @return `true` if the topic is delayed, `false` otherwise.
+ * Property indicating whether a topic type receives delayed message used for timers or timeout
+ * This is used to set up TTLSeconds which mush be much higher for delayed messages
  */
-val Topic<*>.isDelayed
+val Topic<*>.isTimer
   get() = when (this) {
-    DelayedWorkflowEngineTopic,
-    DelayedWorkflowTaskExecutorTopic,
-    DelayedServiceExecutorTopic
-    -> true
-
+    WorkflowStateTimerTopic -> true
     else -> false
   }
 
@@ -122,11 +147,11 @@ val Topic<*>.isDelayed
  * If the current [Topic] is not a delayed topic, it returns itself.
  */
 @Suppress("UNCHECKED_CAST")
-val <S : Message> Topic<S>.withoutDelay
+val <S : Message> Topic<out S>.withoutDelay
   get() = when (this) {
-    DelayedWorkflowEngineTopic -> WorkflowEngineTopic
-    DelayedWorkflowTaskExecutorTopic -> WorkflowTaskExecutorTopic
-    DelayedServiceExecutorTopic -> ServiceExecutorTopic
+    WorkflowStateTimerTopic -> WorkflowStateEngineTopic
+    WorkflowExecutorRetryTopic -> WorkflowExecutorTopic
+    ServiceExecutorRetryTopic -> ServiceExecutorTopic
     else -> this
   } as Topic<S>
 
@@ -134,10 +159,10 @@ val <S : Message> Topic<S>.withoutDelay
  * @return a [Topic] relative to workflowTask.
  */
 @Suppress("UNCHECKED_CAST")
-val <S : Message> Topic<S>.forWorkflow
+val <S : Message> Topic<out S>.forWorkflow
   get() = when (this) {
-    ServiceExecutorTopic -> WorkflowTaskExecutorTopic
-    DelayedServiceExecutorTopic -> DelayedWorkflowTaskExecutorTopic
-    ServiceEventsTopic -> WorkflowTaskEventsTopic
+    ServiceExecutorTopic -> WorkflowExecutorTopic
+    ServiceExecutorRetryTopic -> WorkflowExecutorRetryTopic
+    ServiceExecutorEventTopic -> WorkflowExecutorEventTopic
     else -> this
   } as Topic<S>

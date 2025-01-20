@@ -29,7 +29,6 @@ import io.infinitic.dashboard.panels.infrastructure.requests.Failed
 import io.infinitic.dashboard.panels.infrastructure.requests.Loading
 import io.infinitic.dashboard.panels.infrastructure.requests.Request
 import io.infinitic.dashboard.slideovers.Slideover
-import io.infinitic.pulsar.resources.prefix
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kweb.Element
@@ -113,7 +112,7 @@ internal fun ElementCreator<Element>.displayJobStatsTable(
                             row.classes("bg-white").new {
                               td()
                                   .classes("px-6 py-4 text-sm font-medium text-gray-900")
-                                  .text(topic.prefix())
+                                  .text(topic.prefix)
                               td().classes("px-6 py-4 text-sm text-gray-500").text("loading...")
                               td().classes("px-6 py-4 text-sm text-gray-500").text("loading...")
                               td().classes("px-6 py-4 text-sm text-gray-500").text("loading...")
@@ -124,7 +123,7 @@ internal fun ElementCreator<Element>.displayJobStatsTable(
                             row.classes("bg-white cursor-pointer hover:bg-gray-50").new {
                               td()
                                   .classes("px-6 py-4 text-sm font-medium text-gray-900")
-                                  .text(topic.prefix())
+                                  .text(topic.prefix)
                               td()
                                   .classes("px-6 py-4 text-sm text-gray-500 text-center italic")
                                   .set("colspan", 3)
@@ -137,7 +136,7 @@ internal fun ElementCreator<Element>.displayJobStatsTable(
                               row.classes("bg-white cursor-pointer hover:bg-gray-50").new {
                                 td()
                                     .classes("px-6 py-4 text-sm font-medium text-gray-900")
-                                    .text(topic.prefix())
+                                    .text(topic.prefix)
                                 td()
                                     .classes("px-6 py-4 text-sm text-gray-500")
                                     .text(entry.value.consumers.size.toString())

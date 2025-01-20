@@ -73,7 +73,7 @@ abstract class AllJobsState(
 
   abstract fun create(names: JobNames = this.names, stats: JobStats = this.stats): AllJobsState
 
-  abstract suspend fun getNames(): Set<String>
+  abstract suspend fun getNames(): Result<Set<String>>
 
   abstract suspend fun getPartitionedStats(name: String): Result<PartitionedTopicStats?>
 }
@@ -90,7 +90,7 @@ fun <T : AllJobsState> CoroutineScope.update(kvar: KVar<T>) = launch {
         // loading indicator
         value = value.namesLoading() as T
         // request Pulsar
-        val names = value.getNames()
+        val names = value.getNames().getOrThrow()
         value = value.create(
             names = Completed(names),
             stats = names.associateWith { value.stats.getOrDefault(it, Loading()) },

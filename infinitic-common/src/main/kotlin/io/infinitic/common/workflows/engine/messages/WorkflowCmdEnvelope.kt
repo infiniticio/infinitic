@@ -33,7 +33,7 @@ import org.apache.avro.Schema
 @AvroNamespace("io.infinitic.workflows.engine")
 data class WorkflowCmdEnvelope(
   private val workflowId: WorkflowId,
-  private val type: WorkflowCmdMessageType,
+  private val type: WorkflowStateCmdMessageType,
   private val dispatchWorkflow: DispatchWorkflow? = null,
   private val dispatchMethod: DispatchMethod? = null,
   private val waitWorkflow: WaitWorkflow? = null,
@@ -43,7 +43,7 @@ data class WorkflowCmdEnvelope(
   private val completeTimers: CompleteTimers? = null,
   private val completeWorkflow: CompleteWorkflow? = null,
   private val sendSignal: SendSignal? = null,
-) : Envelope<WorkflowCmdMessage> {
+) : Envelope<WorkflowStateCmdMessage> {
   init {
     val noNull = listOfNotNull(
         dispatchWorkflow,
@@ -63,59 +63,59 @@ data class WorkflowCmdEnvelope(
   }
 
   companion object {
-    fun from(msg: WorkflowCmdMessage) = when (msg) {
+    fun from(msg: WorkflowStateCmdMessage) = when (msg) {
 
       is DispatchWorkflow -> WorkflowCmdEnvelope(
           workflowId = msg.workflowId,
-          type = WorkflowCmdMessageType.DISPATCH_WORKFLOW,
+          type = WorkflowStateCmdMessageType.DISPATCH_WORKFLOW,
           dispatchWorkflow = msg,
       )
 
       is DispatchMethod -> WorkflowCmdEnvelope(
           workflowId = msg.workflowId,
-          type = WorkflowCmdMessageType.DISPATCH_METHOD,
+          type = WorkflowStateCmdMessageType.DISPATCH_METHOD,
           dispatchMethod = msg,
       )
 
       is WaitWorkflow -> WorkflowCmdEnvelope(
           workflowId = msg.workflowId,
-          type = WorkflowCmdMessageType.WAIT_WORKFLOW,
+          type = WorkflowStateCmdMessageType.WAIT_WORKFLOW,
           waitWorkflow = msg,
       )
 
       is CancelWorkflow -> WorkflowCmdEnvelope(
           workflowId = msg.workflowId,
-          type = WorkflowCmdMessageType.CANCEL_WORKFLOW,
+          type = WorkflowStateCmdMessageType.CANCEL_WORKFLOW,
           cancelWorkflow = msg,
       )
 
       is RetryWorkflowTask -> WorkflowCmdEnvelope(
           workflowId = msg.workflowId,
-          type = WorkflowCmdMessageType.RETRY_WORKFLOW_TASK,
+          type = WorkflowStateCmdMessageType.RETRY_WORKFLOW_TASK,
           retryWorkflowTask = msg,
       )
 
       is RetryTasks -> WorkflowCmdEnvelope(
           workflowId = msg.workflowId,
-          type = WorkflowCmdMessageType.RETRY_TASKS,
+          type = WorkflowStateCmdMessageType.RETRY_TASKS,
           retryTasks = msg,
       )
 
       is CompleteTimers -> WorkflowCmdEnvelope(
           workflowId = msg.workflowId,
-          type = WorkflowCmdMessageType.COMPLETE_TIMERS,
+          type = WorkflowStateCmdMessageType.COMPLETE_TIMERS,
           completeTimers = msg,
       )
 
       is CompleteWorkflow -> WorkflowCmdEnvelope(
           workflowId = msg.workflowId,
-          type = WorkflowCmdMessageType.COMPLETE_WORKFLOW,
+          type = WorkflowStateCmdMessageType.COMPLETE_WORKFLOW,
           completeWorkflow = msg,
       )
 
       is SendSignal -> WorkflowCmdEnvelope(
           workflowId = msg.workflowId,
-          type = WorkflowCmdMessageType.SEND_SIGNAL,
+          type = WorkflowStateCmdMessageType.SEND_SIGNAL,
           sendSignal = msg,
       )
     }
@@ -128,16 +128,16 @@ data class WorkflowCmdEnvelope(
     val writerSchema = AvroSerDe.currentSchema(serializer())
   }
 
-  override fun message(): WorkflowCmdMessage = when (type) {
-    WorkflowCmdMessageType.DISPATCH_WORKFLOW -> dispatchWorkflow
-    WorkflowCmdMessageType.DISPATCH_METHOD -> dispatchMethod
-    WorkflowCmdMessageType.WAIT_WORKFLOW -> waitWorkflow
-    WorkflowCmdMessageType.CANCEL_WORKFLOW -> cancelWorkflow
-    WorkflowCmdMessageType.RETRY_WORKFLOW_TASK -> retryWorkflowTask
-    WorkflowCmdMessageType.RETRY_TASKS -> retryTasks
-    WorkflowCmdMessageType.COMPLETE_TIMERS -> completeTimers
-    WorkflowCmdMessageType.COMPLETE_WORKFLOW -> completeWorkflow
-    WorkflowCmdMessageType.SEND_SIGNAL -> sendSignal
+  override fun message(): WorkflowStateCmdMessage = when (type) {
+    WorkflowStateCmdMessageType.DISPATCH_WORKFLOW -> dispatchWorkflow
+    WorkflowStateCmdMessageType.DISPATCH_METHOD -> dispatchMethod
+    WorkflowStateCmdMessageType.WAIT_WORKFLOW -> waitWorkflow
+    WorkflowStateCmdMessageType.CANCEL_WORKFLOW -> cancelWorkflow
+    WorkflowStateCmdMessageType.RETRY_WORKFLOW_TASK -> retryWorkflowTask
+    WorkflowStateCmdMessageType.RETRY_TASKS -> retryTasks
+    WorkflowStateCmdMessageType.COMPLETE_TIMERS -> completeTimers
+    WorkflowStateCmdMessageType.COMPLETE_WORKFLOW -> completeWorkflow
+    WorkflowStateCmdMessageType.SEND_SIGNAL -> sendSignal
   }!!
 
   fun toByteArray() = AvroSerDe.writeBinary(this, serializer())

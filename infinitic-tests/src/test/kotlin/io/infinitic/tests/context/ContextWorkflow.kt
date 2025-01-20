@@ -24,9 +24,7 @@ package io.infinitic.tests.context
 
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
-import io.infinitic.tasks.WithRetry
-import io.infinitic.tasks.WithTimeout
-import io.infinitic.tests.utils.UtilService
+import io.infinitic.utils.UtilService
 import io.infinitic.workflows.Workflow
 
 interface ContextWorkflow {
@@ -44,26 +42,29 @@ interface ContextWorkflow {
 
   fun context7(): TaskMeta
 
-  fun context8(): WithRetry?
+  fun context8(): Double?
 
-  fun context9(): WithTimeout?
+  fun context9(): Double?
 }
 
 @Suppress("unused")
 class ContextWorkflowImpl : Workflow(), ContextWorkflow {
 
-  private val utilService =
-      newService(
-          UtilService::class.java,
-          tags = setOf("foo", "bar"),
-          meta = mutableMapOf("foo" to "bar".toByteArray()),
-      )
+  private val _workflowId = workflowId
+  private val _tags = tags
+  private val _meta = meta
 
-  override fun context1(): String = workflowId
+  private val utilService = newService(
+      UtilService::class.java,
+      tags = setOf("foo", "bar"),
+      meta = mutableMapOf("foo" to "bar".toByteArray()),
+  )
 
-  override fun context2(): Set<String> = tags
+  override fun context1(): String = _workflowId
 
-  override fun context3() = WorkflowMeta(meta)
+  override fun context2(): Set<String> = _tags
+
+  override fun context3() = WorkflowMeta(_meta)
 
   override fun context4() = utilService.workflowId()
 
@@ -73,7 +74,7 @@ class ContextWorkflowImpl : Workflow(), ContextWorkflow {
 
   override fun context7() = utilService.meta()
 
-  override fun context8(): WithRetry? = utilService.getRetry()
+  override fun context8(): Double? = utilService.getRetry()
 
-  override fun context9(): WithTimeout? = utilService.getTimeout()
+  override fun context9(): Double? = utilService.getTimeout()
 }

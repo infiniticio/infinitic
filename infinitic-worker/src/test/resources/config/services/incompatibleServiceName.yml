@@ -21,16 +21,17 @@
 #
 # Licensor: infinitic.io
 
-transport: inMemory
 storage: inMemory
 
-pulsar:
-  brokerServiceUrl: pulsar://localhost:6650
-  webServiceUrl: http://localhost:8080
-  tenant: infinitic
-  namespace: dev
+transport:
+  pulsar:
+    brokerServiceUrl: pulsar://localhost:6650
+    webServiceUrl: http://localhost:8080
+    tenant: infinitic
+    namespace: dev
 
 services:
   - name: UnknownService
-    class: io.infinitic.workers.samples.ServiceAImpl
+    executor:
+      class: io.infinitic.workers.samples.ServiceAImpl
 

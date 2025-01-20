@@ -40,7 +40,7 @@ data class ServiceEventEnvelope(
   private val taskRetried: TaskRetriedEvent? = null,
   private val taskFailedEvent: TaskFailedEvent? = null,
   private val taskCompletedEvent: TaskCompletedEvent? = null,
-) : Envelope<ServiceEventMessage> {
+) : Envelope<ServiceExecutorEventMessage> {
   init {
     val noNull = listOfNotNull(
         taskStartedEvent,
@@ -55,7 +55,7 @@ data class ServiceEventEnvelope(
   }
 
   companion object {
-    fun from(msg: ServiceEventMessage) = when (msg) {
+    fun from(msg: ServiceExecutorEventMessage) = when (msg) {
       is TaskStartedEvent -> ServiceEventEnvelope(
           serviceName = msg.serviceName,
           type = ServiceEventMessageType.TASK_STARTED,
@@ -89,7 +89,7 @@ data class ServiceEventEnvelope(
     val writerSchema = AvroSerDe.currentSchema(serializer())
   }
 
-  override fun message(): ServiceEventMessage =
+  override fun message(): ServiceExecutorEventMessage =
       when (type) {
         ServiceEventMessageType.TASK_STARTED -> taskStartedEvent
         ServiceEventMessageType.TASK_RETRIED -> taskRetried

@@ -22,7 +22,6 @@
  */
 package io.infinitic.dashboard.panels.infrastructure.jobs
 
-import io.infinitic.common.serDe.json.Json
 import io.infinitic.common.transport.Topic
 import io.infinitic.dashboard.panels.infrastructure.lastUpdated
 import io.infinitic.dashboard.panels.infrastructure.requests.Completed
@@ -30,7 +29,7 @@ import io.infinitic.dashboard.panels.infrastructure.requests.Failed
 import io.infinitic.dashboard.panels.infrastructure.requests.Loading
 import io.infinitic.dashboard.panels.infrastructure.requests.Request
 import io.infinitic.dashboard.slideovers.Slideover
-import io.infinitic.pulsar.resources.prefix
+import io.infinitic.serDe.java.Json
 import kweb.a
 import kweb.new
 import kweb.p
@@ -44,7 +43,7 @@ internal fun selectionSlide(
 ) =
     Slideover(
         selectionType.map {
-          "${it.prefix()} stats".replaceFirstChar { c -> c.uppercase() }
+          "${it.prefix} stats".replaceFirstChar { c -> c.uppercase() }
         },
         selectionStats,
     ) { kvar ->
@@ -65,7 +64,7 @@ internal fun selectionSlide(
                 when (val request = kvar.value) {
                   is Loading -> "Loading..."
                   is Failed -> request.error.stackTraceToString()
-                  is Completed -> Json.stringify(request.result, true)
+                  is Completed -> Json.mapper.writeValueAsString(request.result)
                 },
             )
       }

@@ -22,37 +22,42 @@
  */
 package io.infinitic.workflows.engine.storage
 
-import io.github.oshai.kotlinlogging.KotlinLogging
+import io.github.oshai.kotlinlogging.KLogger
+import io.infinitic.common.transport.logged.formatLog
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.common.workflows.engine.storage.WorkflowStateStorage
 import org.jetbrains.annotations.TestOnly
 
 class LoggedWorkflowStateStorage(
-  logName: String,
+  private val logger: KLogger,
   private val storage: WorkflowStateStorage,
 ) : WorkflowStateStorage {
 
-  private val logger = KotlinLogging.logger(logName)
-
   override suspend fun getState(workflowId: WorkflowId): WorkflowState? {
-    logger.trace { "Id $workflowId - Getting State" }
+    logger.trace { formatLog(workflowId, "Getting State...") }
     val workflowState = storage.getState(workflowId)
-    logger.debug { "Id $workflowId - Get state $workflowState" }
-
+    logger.debug { formatLog(workflowId, "Get state:", workflowState) }
     return workflowState
   }
 
-  override suspend fun putState(workflowId: WorkflowId, workflowState: WorkflowState) {
-    logger.trace { "Id $workflowId - Putting State" }
+  override suspend fun putState(workflowId: WorkflowId, workflowState: WorkflowState?) {
+    logger.trace { formatLog(workflowId, "Putting State...") }
     storage.putState(workflowId, workflowState)
-    logger.debug { "Id $workflowId - Put state $workflowState" }
+    logger.debug { formatLog(workflowId, "Put state:", workflowState) }
   }
 
-  override suspend fun delState(workflowId: WorkflowId) {
-    logger.trace { "Id $workflowId - Deleting State" }
-    storage.delState(workflowId)
-    logger.debug { "Id $workflowId - Del State" }
+  override suspend fun getStates(workflowIds: List<WorkflowId>): Map<WorkflowId, WorkflowState?> {
+    workflowIds.forEach { logger.trace { formatLog(it, "Getting State...") } }
+    val workflowStates = storage.getStates(workflowIds)
+    workflowIds.forEach { logger.debug { formatLog(it, "Get state:", workflowStates[it]) } }
+    return workflowStates
+  }
+
+  override suspend fun putStates(workflowStates: Map<WorkflowId, WorkflowState?>) {
+    workflowStates.forEach { logger.trace { formatLog(it.key, "Putting State...") } }
+    storage.putStates(workflowStates)
+    workflowStates.forEach { logger.debug { formatLog(it.key, "Put state:", it.value) } }
   }
 
   @TestOnly
@@ -60,4 +65,5 @@ class LoggedWorkflowStateStorage(
     logger.warn { "Flushing workflowStateStorage" }
     storage.flush()
   }
+
 }

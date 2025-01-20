@@ -22,12 +22,13 @@
  */
 package io.infinitic.common.tasks.events
 
+import io.infinitic.common.exceptions.ShouldNotHappenException
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.fixtures.checkBackwardCompatibility
 import io.infinitic.common.fixtures.checkOrCreateCurrentFile
 import io.infinitic.common.serDe.avro.AvroSerDe
 import io.infinitic.common.tasks.events.messages.ServiceEventEnvelope
-import io.infinitic.common.tasks.events.messages.ServiceEventMessage
+import io.infinitic.common.tasks.events.messages.ServiceExecutorEventMessage
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.assertions.throwables.shouldThrowAny
 import io.kotest.core.spec.style.StringSpec
@@ -37,7 +38,7 @@ import io.kotest.matchers.shouldBe
 class ServiceEventEnvelopeTests :
   StringSpec(
       {
-        ServiceEventMessage::class.sealedSubclasses.map {
+        ServiceExecutorEventMessage::class.sealedSubclasses.map {
           val msg = TestFactory.random(it)
 
           "ServiceEventMessage(${msg::class.simpleName}) should be avro-convertible" {
@@ -71,7 +72,11 @@ class ServiceEventEnvelopeTests :
           "We should be able to read binary from previous version $version" {
             val bytes = AvroSerDe.getRandomBinary(schema)
             val e = shouldThrowAny { ServiceEventEnvelope.fromByteArray(bytes, schema) }
+
+            println(e)
             e::class shouldBeOneOf listOf(
+                // ShouldNotHappenException can be thrown when deserializing ExceptionDetails
+                ShouldNotHappenException::class,
                 // IllegalArgumentException is thrown because we have more than 1 message in the envelope
                 IllegalArgumentException::class,
                 // NullPointerException is thrown because message() can be null

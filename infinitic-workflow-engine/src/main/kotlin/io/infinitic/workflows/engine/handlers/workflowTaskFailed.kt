@@ -24,8 +24,10 @@ package io.infinitic.workflows.engine.handlers
 
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.common.transport.InfiniticProducer
-import io.infinitic.common.transport.WorkflowEventsTopic
+import io.infinitic.common.tasks.executors.errors.DeferredError
+import io.infinitic.common.tasks.executors.errors.WorkflowExecutorError
+import io.infinitic.common.transport.WorkflowStateEventTopic
+import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.workflows.data.workflowMethods.awaitingRequesters
 import io.infinitic.common.workflows.engine.messages.MethodFailedEvent
 import io.infinitic.common.workflows.engine.messages.RemoteTaskFailed
@@ -38,14 +40,20 @@ internal fun CoroutineScope.workflowTaskFailed(
   state: WorkflowState,
   message: RemoteTaskFailed
 ) {
-  val emitterName = EmitterName(producer.name)
   val emittedAt = state.runningWorkflowTaskInstant ?: thisShouldNotHappen()
 
   val workflowMethod = state.getRunningWorkflowMethod()
 
-  val deferredError = when (val error = message.deferredError) {
-    null -> message.taskFailedError
-    else -> error
+  val deferredError: DeferredError = when (val deferredError = message.deferredError) {
+    // an Exception has thrown in the workflow task
+    null -> WorkflowExecutorError(
+        workflowName = message.workflowName,
+        workflowId = message.workflowId,
+        workflowTaskId = message.taskId(),
+        lastFailure = message.taskFailedError.lastFailure,
+    )
+    // a deferred Exception has thrown in the workflow task
+    else -> deferredError
   }
 
   val methodFailedEvent = MethodFailedEvent(
@@ -55,13 +63,19 @@ internal fun CoroutineScope.workflowTaskFailed(
       workflowMethodId = workflowMethod.workflowMethodId,
       workflowMethodName = workflowMethod.methodName,
       awaitingRequesters = workflowMethod.awaitingRequesters,
-      emitterName = emitterName,
+      emitterName = EmitterName.BUFFERED,
       deferredError = deferredError,
   )
-  launch { with(producer) { methodFailedEvent.sendTo(WorkflowEventsTopic) } }
+  launch {
+    with(producer) {
+      methodFailedEvent.copy(emitterName = producer.emitterName)
+          .sendTo(WorkflowStateEventTopic)
+    }
+  }
 
   // send info to itself by adding a fake message on messageBuffer
-  methodFailedEvent.getEventForAwaitingWorkflows(emitterName, emittedAt)
+  methodFailedEvent.getEventForAwaitingWorkflows(EmitterName.BUFFERED, emittedAt)
       .firstOrNull { it.workflowId == message.workflowId }
       ?.let { state.messagesBuffer.add(0, it) }
 }
+

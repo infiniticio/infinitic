@@ -24,7 +24,7 @@ package io.infinitic.workflows.engine.helpers
 
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.exceptions.thisShouldNotHappen
-import io.infinitic.common.transport.InfiniticProducer
+import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.workflows.data.commands.CommandId
 import io.infinitic.common.workflows.data.commands.CommandStatus
 import io.infinitic.common.workflows.data.commands.PastCommand
@@ -52,7 +52,6 @@ internal fun CoroutineScope.commandTerminated(
   // If workflow engine is shutdown when handling a workflow task,
   // it's possible that the engine already dispatched some commands before the shutdown
   // After 0.13.0, the Ids of those commands are deterministic, so this should not happen anymore
-  @Deprecated("This should be unnecessary after 0.13.0")
   if (pastCommand == null) return
 
   // Idempotency: do nothing if this command is already terminated

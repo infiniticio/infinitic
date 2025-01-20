@@ -33,22 +33,20 @@ import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.JsonPrimitive
 
 @Serializable(with = MillisDurationSerializer::class)
-data class MillisDuration(val long: Long) : Comparable<Long>, JsonAble {
-  override fun toString() = "$long ms"
-  
-  override fun toJson() = JsonPrimitive(long)
+data class MillisDuration(val millis: Long) : Comparable<Long>, JsonAble {
+  override fun toString() = String.format("%.3fs", millis / 1000.0)
 
-  override operator fun compareTo(other: Long): Int = this.long.compareTo(other)
+  override fun toJson() = JsonPrimitive(millis)
 
-  operator fun plus(other: MillisDuration) = MillisDuration(this.long + other.long)
+  override operator fun compareTo(other: Long): Int = this.millis.compareTo(other)
 
-  operator fun minus(other: MillisDuration) = MillisDuration(this.long - other.long)
+  operator fun plus(other: MillisDuration) = MillisDuration(this.millis + other.millis)
 
-  operator fun plus(other: MillisInstant) = MillisInstant(this.long + other.long)
+  operator fun minus(other: MillisDuration) = MillisDuration(this.millis - other.millis)
 
-  companion object {
-    val ZERO = MillisDuration(0)
-  }
+  operator fun plus(other: MillisInstant) = MillisInstant(this.millis + other.long)
+
+  fun toSeconds(): Double = millis / 1000.0
 }
 
 object MillisDurationSerializer : KSerializer<MillisDuration> {
@@ -56,7 +54,7 @@ object MillisDurationSerializer : KSerializer<MillisDuration> {
       PrimitiveSerialDescriptor("MillisDuration", PrimitiveKind.LONG)
 
   override fun serialize(encoder: Encoder, value: MillisDuration) {
-    encoder.encodeLong(value.long)
+    encoder.encodeLong(value.millis)
   }
 
   override fun deserialize(decoder: Decoder) = MillisDuration(decoder.decodeLong())

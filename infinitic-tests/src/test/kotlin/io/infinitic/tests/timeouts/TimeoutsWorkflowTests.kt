@@ -22,17 +22,18 @@
  */
 package io.infinitic.tests.timeouts
 
+import io.infinitic.Test
 import io.infinitic.exceptions.TaskTimedOutException
 import io.infinitic.exceptions.WorkflowFailedException
 import io.infinitic.exceptions.WorkflowTimedOutException
-import io.infinitic.tests.Test
-import io.infinitic.tests.utils.UtilService
+import io.infinitic.utils.UtilService
 import io.infinitic.workflows.DeferredStatus
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import kotlin.time.Duration.Companion.seconds
 
 internal class TimeoutsWorkflowTests :
   StringSpec(
@@ -42,21 +43,23 @@ internal class TimeoutsWorkflowTests :
         val timeoutsWorkflow = client.newWorkflow(TimeoutsWorkflow::class.java)
         val iTimeoutsWorkflow = client.newWorkflow(ITimeoutWorkflow::class.java)
 
-        "Synchronous call of a workflow running for more than its timeout should throw" {
-          shouldThrow<WorkflowTimedOutException> { timeoutsWorkflow.withTimeoutOnMethod(2000) }
-        }
-
-        "Synchronous call of a workflow running for less than its timeout should NOT throw" {
-          shouldNotThrowAny { timeoutsWorkflow.withTimeoutOnMethod(10) shouldBe 10 }
-        }
-
-        "Synchronous call of a child-workflow running for more than its timeout should throw" {
+        "Synchronous call of a child-workflow running for more than its timeout should throw".config(
+            timeout = 30.seconds,
+        ) {
           val e = shouldThrow<WorkflowFailedException> { timeoutsWorkflow.withTimeoutOnChild(2000) }
 
           e.deferredException.shouldBeInstanceOf<WorkflowTimedOutException>()
           val cause = e.deferredException as WorkflowTimedOutException
           cause.workflowName shouldBe TimeoutsWorkflow::class.java.name
           cause.workflowMethodName shouldBe "withTimeoutOnMethod"
+        }
+
+        "Synchronous call of a workflow running for more than its timeout should throw" {
+          shouldThrow<WorkflowTimedOutException> { timeoutsWorkflow.withTimeoutOnMethod(3000) }
+        }
+
+        "Synchronous call of a workflow running for less than its timeout should NOT throw" {
+          shouldNotThrowAny { timeoutsWorkflow.withTimeoutOnMethod(10) shouldBe 10 }
         }
 
         "Synchronous call of a child-workflow running for less than its timeout should NOT throw" {
@@ -76,8 +79,9 @@ internal class TimeoutsWorkflowTests :
         }
 
         "timeout triggered in a synchronous task should throw" {
-          val e =
-              shouldThrow<WorkflowFailedException> { timeoutsWorkflow.withTimeoutOnTask(2000) }
+          val e = shouldThrow<WorkflowFailedException> {
+            timeoutsWorkflow.withTimeoutOnTask(2000)
+          }
 
           e.deferredException.shouldBeInstanceOf<TaskTimedOutException>()
           val cause = e.deferredException as TaskTimedOutException

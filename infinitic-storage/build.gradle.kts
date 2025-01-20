@@ -21,21 +21,30 @@
  * Licensor: infinitic.io
  */
 dependencies {
+  // Cache
+  implementation(project(":infinitic-cache"))
+  implementation(project(":infinitic-utils"))
+
   implementation(Libs.Hoplite.core)
+  implementation(Libs.Coroutines.core)
+  implementation("com.zaxxer:HikariCP:5.0.1")
 
   // Compressor
   implementation(Libs.Compress.commons)
 
   // Redis
   implementation("redis.clients:jedis:5.0.2")
-  testImplementation(Libs.TestContainers.testcontainers)
 
   // MySql
-  implementation("com.zaxxer:HikariCP:5.0.1")
-  implementation("com.mysql:mysql-connector-j:8.2.0")
-  testImplementation(Libs.TestContainers.mysql)
+  implementation("com.mysql:mysql-connector-j:9.1.0")
 
-  testImplementation(Libs.Hoplite.yaml)
+  //Postgres
+  implementation("org.postgresql:postgresql:42.7.3")
+
+  // Tests
+  testImplementation(Libs.TestContainers.testcontainers)
+  testImplementation(Libs.TestContainers.mysql)
+  testImplementation(Libs.TestContainers.postgresql)
 }
 
 apply("../publish.gradle.kts")

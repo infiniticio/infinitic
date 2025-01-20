@@ -22,7 +22,7 @@
  */
 package io.infinitic.tests.deferred
 
-import io.infinitic.tests.utils.UtilService
+import io.infinitic.utils.UtilService
 import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.DeferredStatus
 import io.infinitic.workflows.Workflow
@@ -66,7 +66,8 @@ class DeferredWorkflowImpl : Workflow(), DeferredWorkflow {
       newService(
           klass = UtilService::class.java,
           tags = setOf("foo", "bar"),
-          meta = mutableMapOf("foo" to "bar".toByteArray()))
+          meta = mutableMapOf("foo" to "bar".toByteArray()),
+      )
   private val workflowDeferred = newWorkflow(DeferredWorkflow::class.java)
 
   private var p1 = ""

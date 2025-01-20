@@ -22,6 +22,7 @@
  */
 package io.infinitic.common.clients.messages
 
+import io.infinitic.common.exceptions.ShouldNotHappenException
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.fixtures.checkBackwardCompatibility
 import io.infinitic.common.fixtures.checkOrCreateCurrentFile
@@ -31,6 +32,7 @@ import io.kotest.assertions.throwables.shouldThrowAny
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldBeOneOf
 import io.kotest.matchers.shouldBe
+import kotlinx.serialization.SerializationException
 
 class ClientEnvelopeTests :
   StringSpec(
@@ -60,7 +62,12 @@ class ClientEnvelopeTests :
             val bytes = AvroSerDe.getRandomBinary(schema)
             // IllegalArgumentException is thrown because we have more than 1 message in the envelope
             val e = shouldThrowAny { ClientEnvelope.fromByteArray(bytes, schema) }
+            if (e is SerializationException) {
+              println(e.stackTraceToString())
+            }
             e::class shouldBeOneOf listOf(
+                // ShouldNotHappenException can be thrown when deserializing ExceptionDetails
+                ShouldNotHappenException::class,
                 // IllegalArgumentException is thrown because we have more than 1 message in the envelope
                 IllegalArgumentException::class,
                 // NullPointerException is thrown because message() can be null

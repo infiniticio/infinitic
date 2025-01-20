@@ -1,0 +1,56 @@
+/**
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the License, as defined below, subject to
+ * the following condition.
+ *
+ * Without limiting other conditions in the License, the grant of rights under the License will not
+ * include, and the License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, “Sell” means practicing any or all of the rights granted to you
+ * under the License to provide to third parties, for a fee or other consideration (including
+ * without limitation fees for hosting or consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially, from the functionality of the
+ * Software. Any license notice or attribution required by the License must also include this
+ * Commons Clause License Condition notice.
+ *
+ * Software: Infinitic
+ *
+ * License: MIT License (https://opensource.org/licenses/MIT)
+ *
+ * Licensor: infinitic.io
+ */
+
+package io.infinitic.utils
+
+import com.fasterxml.jackson.databind.ObjectMapper
+import io.cloudevents.CloudEvent
+import io.cloudevents.jackson.JsonFormat
+import io.infinitic.cloudEvents.CloudEventListener
+import java.util.concurrent.ConcurrentHashMap
+
+class Listener : CloudEventListener {
+  override fun onEvents(cloudEvents: List<CloudEvent>) {
+    cloudEvents.forEach { events.add(it) }
+  }
+
+  companion object {
+    private val objectMapper = ObjectMapper()
+
+    private val events = ConcurrentHashMap.newKeySet<CloudEvent>()
+
+    fun clear() {
+      events.clear()
+    }
+
+    fun print() {
+      events
+          .sortedBy { it.time }
+          .filter { it.type.startsWith("infinitic.workflow") }
+          .forEach {
+            val jsonNode = objectMapper.readTree(String(JsonFormat().serialize(it)))
+            println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonNode))
+          }
+    }
+  }
+}

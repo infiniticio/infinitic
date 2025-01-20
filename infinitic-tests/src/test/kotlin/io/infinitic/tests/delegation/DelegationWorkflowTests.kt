@@ -22,9 +22,9 @@
  */
 package io.infinitic.tests.delegation
 
+import io.infinitic.Test
 import io.infinitic.common.fixtures.later
-import io.infinitic.tests.Test
-import io.infinitic.tests.utils.UtilServiceImpl
+import io.infinitic.utils.UtilServiceImpl
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 

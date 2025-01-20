@@ -23,12 +23,11 @@
 package io.infinitic.tasks.executor.events
 
 import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.requester.WorkflowRequester
 import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskRetrySequence
-import io.infinitic.common.transport.InfiniticProducer
-import io.infinitic.common.transport.WorkflowEventsTopic
+import io.infinitic.common.transport.WorkflowStateEventTopic
+import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.workflows.data.commands.DispatchTaskPastCommand
 import io.infinitic.common.workflows.engine.commands.dispatchTask
 import io.infinitic.common.workflows.engine.messages.TaskDispatchedEvent
@@ -42,7 +41,7 @@ internal fun CoroutineScope.dispatchTaskCmd(
   workflowTaskInstant: MillisInstant,
   producer: InfiniticProducer
 ) = launch {
-  val emitterName = EmitterName(producer.name)
+  val emitterName = producer.emitterName
   val dispatchTaskCommand = pastCommand.command
 
   // Description of the dispatched task
@@ -73,5 +72,5 @@ internal fun CoroutineScope.dispatchTaskCmd(
       emitterName = emitterName,
   )
   // Dispatching the workflow event
-  with(producer) { taskDispatchedEvent.sendTo(WorkflowEventsTopic) }
+  with(producer) { taskDispatchedEvent.sendTo(WorkflowStateEventTopic) }
 }

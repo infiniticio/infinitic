@@ -23,26 +23,28 @@
 package io.infinitic.tests.channels
 
 import com.jayway.jsonpath.Criteria.where
-import io.infinitic.tests.utils.Obj
-import io.infinitic.tests.utils.Obj1
-import io.infinitic.tests.utils.Obj2
-import io.infinitic.tests.utils.UtilService
+import io.infinitic.common.exceptions.thisShouldNotHappen
+import io.infinitic.utils.Obj
+import io.infinitic.utils.Obj1
+import io.infinitic.utils.Obj2
+import io.infinitic.utils.UtilService
 import io.infinitic.workflows.Deferred
 import io.infinitic.workflows.SendChannel
 import io.infinitic.workflows.Workflow
 import io.infinitic.workflows.or
 import java.time.Duration
+import java.time.Instant
 
 interface ChannelsWorkflow {
   val channelObj: SendChannel<Obj>
-  val channelA: SendChannel<String>
-  val channelB: SendChannel<String>
+  val channelStrA: SendChannel<String>
+  val channelStrB: SendChannel<String>
 
   fun channel1(): String
 
-  fun channel2(): Any
+  fun channel2(): String
 
-  fun channel3(): Any
+  fun channel3(): String
 
   fun channel4(): Obj
 
@@ -65,6 +67,8 @@ interface ChannelsWorkflow {
   fun channel7(count: Int, max: Int? = null): String
 
   fun channel8(): String
+
+  fun channel9(): String
 }
 
 @Suppress("unused")
@@ -73,8 +77,8 @@ class ChannelsWorkflowImpl : Workflow(), ChannelsWorkflow {
   lateinit var deferred: Deferred<String>
 
   override val channelObj = channel<Obj>()
-  override val channelA = channel<String>()
-  override val channelB = channel<String>()
+  override val channelStrA = channel<String>()
+  override val channelStrB = channel<String>()
 
   private val utilService =
       newService(
@@ -87,25 +91,33 @@ class ChannelsWorkflowImpl : Workflow(), ChannelsWorkflow {
   private var p1 = ""
 
   override fun channel1(): String {
-    val deferred: Deferred<String> = channelA.receive()
+    val deferred: Deferred<String> = channelStrA.receive()
 
     return deferred.await()
   }
 
-  override fun channel2(): Any {
-    val deferredChannel = channelA.receive()
+  override fun channel2(): String {
+    val deferredSignal = channelStrA.receive()
 
-    val deferredTimer = timer(Duration.ofMillis(1000))
+    val deferredInstant = timer(Duration.ofMillis(1000))
 
-    return (deferredChannel or deferredTimer).await()
+    return when (val r = (deferredSignal or deferredInstant).await()) {
+      is String -> r
+      is Instant -> "Instant"
+      else -> thisShouldNotHappen()
+    }
   }
 
-  override fun channel3(): Any {
+  override fun channel3(): String {
     timer(Duration.ofMillis(1000)).await()
-    val deferredChannel = channelA.receive()
-    val deferredTimer = timer(Duration.ofMillis(100))
+    val deferredSignal = channelStrA.receive()
+    val deferredInstant = timer(Duration.ofMillis(100))
 
-    return (deferredChannel or deferredTimer).await()
+    return when (val r = (deferredSignal or deferredInstant).await()) {
+      is String -> r
+      is Instant -> "Instant"
+      else -> thisShouldNotHappen()
+    }
   }
 
   override fun channel4(): Obj {
@@ -179,7 +191,7 @@ class ChannelsWorkflowImpl : Workflow(), ChannelsWorkflow {
   }
 
   override fun channel7(count: Int, max: Int?): String {
-    val deferred: Deferred<String> = channelA.receive(max)
+    val deferred: Deferred<String> = channelStrA.receive(max)
 
     var signal = ""
 
@@ -193,7 +205,7 @@ class ChannelsWorkflowImpl : Workflow(), ChannelsWorkflow {
   }
 
   override fun channel8(): String {
-    val deferred: Deferred<String> = channelA.receive()
+    val deferred: Deferred<String> = channelStrA.receive()
 
     var out = deferred.isCompleted().toString()
 
@@ -206,5 +218,20 @@ class ChannelsWorkflowImpl : Workflow(), ChannelsWorkflow {
     out += deferred.isCompleted().toString()
 
     return out
+  }
+
+  override fun channel9(): String {
+    val deferred: Deferred<String> = channelStrA.receive(1)
+
+    repeat(2) {
+      val timer = timer(Duration.ofMillis(10))
+
+      or(deferred, timer).await()
+
+      if (deferred.isCompleted()) {
+        return "nok"
+      }
+    }
+    return "ok"
   }
 }

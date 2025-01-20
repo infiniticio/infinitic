@@ -22,6 +22,7 @@
  */
 package io.infinitic.common.workflows.engine.messages
 
+import io.infinitic.common.exceptions.ShouldNotHappenException
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.fixtures.checkBackwardCompatibility
 import io.infinitic.common.fixtures.checkOrCreateCurrentFile
@@ -35,7 +36,7 @@ import io.kotest.matchers.shouldBe
 class WorkflowEventEnvelopeTests :
   StringSpec(
       {
-        WorkflowEventMessage::class.sealedSubclasses.map {
+        WorkflowStateEventMessage::class.sealedSubclasses.map {
           val msg = TestFactory.random(it)
 
           "WorkflowEventEnvelope: ${msg::class.simpleName} should be avro-convertible" {
@@ -69,6 +70,8 @@ class WorkflowEventEnvelopeTests :
             val bytes = AvroSerDe.getRandomBinary(schema)
             val e = shouldThrowAny { WorkflowEventEnvelope.fromByteArray(bytes, schema) }
             e::class shouldBeOneOf listOf(
+                // ShouldNotHappenException can be thrown when deserializing ExceptionDetails
+                ShouldNotHappenException::class,
                 // IllegalArgumentException is thrown because we have more than 1 message in the envelope
                 IllegalArgumentException::class,
                 // NullPointerException is thrown because message() can be null

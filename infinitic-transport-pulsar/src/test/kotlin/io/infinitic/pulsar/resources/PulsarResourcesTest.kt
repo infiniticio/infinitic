@@ -25,75 +25,82 @@ package io.infinitic.pulsar.resources
 
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.transport.ClientTopic
-import io.infinitic.common.transport.DelayedServiceExecutorTopic
-import io.infinitic.common.transport.DelayedWorkflowEngineTopic
-import io.infinitic.common.transport.DelayedWorkflowTaskExecutorTopic
-import io.infinitic.common.transport.ServiceEventsTopic
+import io.infinitic.common.transport.ServiceExecutorEventTopic
+import io.infinitic.common.transport.ServiceExecutorRetryTopic
 import io.infinitic.common.transport.ServiceExecutorTopic
-import io.infinitic.common.transport.ServiceTagTopic
+import io.infinitic.common.transport.ServiceTagEngineTopic
 import io.infinitic.common.transport.ServiceTopic
-import io.infinitic.common.transport.WorkflowCmdTopic
-import io.infinitic.common.transport.WorkflowEngineTopic
-import io.infinitic.common.transport.WorkflowEventsTopic
-import io.infinitic.common.transport.WorkflowTagTopic
-import io.infinitic.common.transport.WorkflowTaskEventsTopic
-import io.infinitic.common.transport.WorkflowTaskExecutorTopic
+import io.infinitic.common.transport.WorkflowExecutorEventTopic
+import io.infinitic.common.transport.WorkflowExecutorRetryTopic
+import io.infinitic.common.transport.WorkflowExecutorTopic
+import io.infinitic.common.transport.WorkflowStateCmdTopic
+import io.infinitic.common.transport.WorkflowStateEngineTopic
+import io.infinitic.common.transport.WorkflowStateEventTopic
+import io.infinitic.common.transport.WorkflowStateTimerTopic
+import io.infinitic.common.transport.WorkflowTagEngineTopic
 import io.infinitic.common.transport.WorkflowTopic
-import io.infinitic.pulsar.admin.PulsarInfiniticAdmin
-import io.infinitic.pulsar.config.policies.Policies
+import io.infinitic.pulsar.admin.InfiniticPulsarAdmin
+import io.infinitic.pulsar.config.PulsarConfig
+import io.infinitic.pulsar.config.policies.PoliciesConfig
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.clearMocks
 import io.mockk.coEvery
 import io.mockk.coVerifyAll
+import io.mockk.every
 import io.mockk.mockk
 import io.mockk.spyk
 import net.bytebuddy.utility.RandomString
 
 class PulsarResourcesTest : StringSpec(
     {
-      val pulsarInfiniticAdmin = mockk<PulsarInfiniticAdmin>()
+      val mockedAdmin = mockk<InfiniticPulsarAdmin>()
+
       val allowedClusters = setOf("foo", "bar")
       val adminRoles = setOf("baz")
-      val policies = Policies()
+      val policiesConfig = PoliciesConfig()
       val tenant = "tenantTest"
       val namespace = "namespaceTest"
 
-      val pulsarResources = PulsarResources(
-          pulsarInfiniticAdmin,
+      val pulsarConfig = PulsarConfig(
+          brokerServiceUrl = "pulsar://localhost:6650",
+          webServiceUrl = "http://localhost:8080",
           tenant = tenant,
-          allowedClusters,
           namespace = namespace,
-          adminRoles,
-          policies,
+          allowedClusters = allowedClusters,
+          adminRoles = adminRoles,
+          policies = policiesConfig,
       )
 
+      val pulsarResources = spyk(PulsarResources(pulsarConfig)) {
+        every { admin } returns mockedAdmin
+      }
+
       beforeEach {
-        clearMocks(pulsarInfiniticAdmin)
+        clearMocks(mockedAdmin)
       }
 
       "should delete topic" {
-        coEvery { pulsarInfiniticAdmin.deleteTopic(any()) } returns Result.success(Unit)
-
+        coEvery { mockedAdmin.deleteTopic(any()) } returns Result.success(Unit)
         val topic = TestFactory.random<String>()
         pulsarResources.deleteTopic(topic)
 
         coVerifyAll {
-          pulsarInfiniticAdmin.deleteTopic(topic)
+          mockedAdmin.deleteTopic(topic)
         }
       }
 
       "should be able to init delayed topic even if I can not check tenant and namespace" {
         coEvery {
-          pulsarInfiniticAdmin.initTenantOnce(any(), any(), any())
+          mockedAdmin.syncInitTenantOnce(any(), any(), any())
         } returns Result.failure(mockk())
 
         coEvery {
-          pulsarInfiniticAdmin.initNamespaceOnce(any(), any())
+          mockedAdmin.syncInitNamespaceOnce(any(), any())
         } returns Result.failure(mockk())
 
         coEvery {
-          pulsarInfiniticAdmin.initTopicOnce(any(), any(), any(), any())
+          mockedAdmin.syncInitTopicOnce(any(), any(), any())
         } returns Result.success(mockk())
 
         val topic = TestFactory.random<String>()
@@ -101,13 +108,13 @@ class PulsarResourcesTest : StringSpec(
         pulsarResources.initTopicOnce(
             topic,
             isPartitioned = true,
-            isDelayed = true,
+            isTimer = true,
         ).isSuccess shouldBe true
 
         coVerifyAll {
-          pulsarInfiniticAdmin.initTenantOnce("tenantTest", allowedClusters, adminRoles)
-          pulsarInfiniticAdmin.initNamespaceOnce("tenantTest/namespaceTest", policies)
-          pulsarInfiniticAdmin.initTopicOnce(topic, true, policies.delayedTTLInSeconds)
+          mockedAdmin.syncInitTenantOnce("tenantTest", allowedClusters, adminRoles)
+          mockedAdmin.syncInitNamespaceOnce("tenantTest/namespaceTest", policiesConfig)
+          mockedAdmin.syncInitTopicOnce(topic, true, policiesConfig.timerTTLSeconds)
         }
       }
 
@@ -117,10 +124,10 @@ class PulsarResourcesTest : StringSpec(
         for (workflowTopic in WorkflowTopic.entries) {
           val topic = with(pulsarResources) { workflowTopic.fullName(workflowName) }
           val mockResources = spyk(pulsarResources) {
-            coEvery { getTopicsFullName() } returns setOf(topic)
+            coEvery { getTopicsFullName() } returns Result.success(setOf(topic))
           }
 
-          mockResources.getWorkflowsName() shouldBe setOf(workflowName)
+          mockResources.getWorkflowNames().getOrThrow() shouldBe setOf(workflowName)
         }
       }
 
@@ -130,31 +137,31 @@ class PulsarResourcesTest : StringSpec(
         for (serviceTopic in ServiceTopic.entries) {
           val topic = with(pulsarResources) { serviceTopic.fullName(serviceName) }
           val mockResources = spyk(pulsarResources) {
-            coEvery { getTopicsFullName() } returns setOf(topic)
+            coEvery { getTopicsFullName() } returns Result.success(setOf(topic))
           }
 
-          mockResources.getServicesName() shouldBe setOf(serviceName)
+          mockResources.getServiceNames().getOrThrow() shouldBe setOf(serviceName)
         }
       }
 
       "topics name MUST not change" {
         val entity = RandomString(10).nextString()
-        val prefix = "persistent://$tenant/$namespace"
+        val domain = "persistent://$tenant/$namespace"
 
         with(pulsarResources) {
-          ClientTopic.fullName(entity) shouldBe "$prefix/response:$entity"
-          WorkflowTagTopic.fullName(entity) shouldBe "$prefix/workflow-tag:$entity"
-          WorkflowCmdTopic.fullName(entity) shouldBe "$prefix/workflow-cmd:$entity"
-          WorkflowEngineTopic.fullName(entity) shouldBe "$prefix/workflow-engine:$entity"
-          DelayedWorkflowEngineTopic.fullName(entity) shouldBe "$prefix/workflow-delay:$entity"
-          WorkflowEventsTopic.fullName(entity) shouldBe "$prefix/workflow-events:$entity"
-          WorkflowTaskExecutorTopic.fullName(entity) shouldBe "$prefix/workflow-task-executor:$entity"
-          DelayedWorkflowTaskExecutorTopic.fullName(entity) shouldBe "$prefix/workflow-task-executor:$entity"
-          WorkflowTaskEventsTopic.fullName(entity) shouldBe "$prefix/workflow-task-events:$entity"
-          ServiceTagTopic.fullName(entity) shouldBe "$prefix/task-tag:$entity"
-          ServiceExecutorTopic.fullName(entity) shouldBe "$prefix/task-executor:$entity"
-          DelayedServiceExecutorTopic.fullName(entity) shouldBe "$prefix/task-executor:$entity"
-          ServiceEventsTopic.fullName(entity) shouldBe "$prefix/task-events:$entity"
+          ClientTopic.fullName(entity) shouldBe "$domain/response:$entity"
+          WorkflowTagEngineTopic.fullName(entity) shouldBe "$domain/workflow-tag:$entity"
+          WorkflowStateCmdTopic.fullName(entity) shouldBe "$domain/workflow-cmd:$entity"
+          WorkflowStateEngineTopic.fullName(entity) shouldBe "$domain/workflow-engine:$entity"
+          WorkflowStateTimerTopic.fullName(entity) shouldBe "$domain/workflow-delay:$entity"
+          WorkflowStateEventTopic.fullName(entity) shouldBe "$domain/workflow-events:$entity"
+          WorkflowExecutorTopic.fullName(entity) shouldBe "$domain/workflow-task-executor:$entity"
+          WorkflowExecutorRetryTopic.fullName(entity) shouldBe "$domain/workflow-task-retry:$entity"
+          WorkflowExecutorEventTopic.fullName(entity) shouldBe "$domain/workflow-task-events:$entity"
+          ServiceTagEngineTopic.fullName(entity) shouldBe "$domain/task-tag:$entity"
+          ServiceExecutorTopic.fullName(entity) shouldBe "$domain/task-executor:$entity"
+          ServiceExecutorRetryTopic.fullName(entity) shouldBe "$domain/task-retry:$entity"
+          ServiceExecutorEventTopic.fullName(entity) shouldBe "$domain/task-events:$entity"
         }
       }
     },

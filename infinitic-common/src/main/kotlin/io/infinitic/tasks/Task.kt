@@ -23,12 +23,31 @@
 package io.infinitic.tasks
 
 import io.infinitic.clients.InfiniticClientInterface
-import io.infinitic.common.tasks.executors.errors.ExecutionError
+import org.jetbrains.annotations.TestOnly
 
 object Task {
   private val context: ThreadLocal<TaskContext> = ThreadLocal.withInitial { null }
 
-  fun set(c: TaskContext) {
+  private val _batchContext: ThreadLocal<Map<String, TaskContext>> =
+      ThreadLocal.withInitial { mapOf() }
+
+  @JvmStatic
+  fun getContext(taskId: String): TaskContext? = _batchContext.get()[taskId]
+
+  @TestOnly
+  @JvmStatic
+  fun setContext(taskId: String, taskContext: TaskContext) {
+    val batchContext = _batchContext.get().toMutableMap()
+    batchContext[taskId] = taskContext
+    _batchContext.set(batchContext)
+  }
+
+  @JvmStatic
+  fun getContext(): TaskContext? = context.get()
+
+  @TestOnly
+  @JvmStatic
+  fun setContext(c: TaskContext) {
     context.set(c)
   }
 
@@ -61,7 +80,7 @@ object Task {
     get() = context.get().workflowVersion?.toInt()
 
   @JvmStatic
-  val lastError: ExecutionError?
+  val lastError: TaskFailure?
     get() = context.get().lastError
 
   @JvmStatic
@@ -73,13 +92,16 @@ object Task {
     get() = context.get().retryIndex.toInt()
 
   @JvmStatic
+  val batchKey: String?
+    get() = context.get().batchKey
+
+  @JvmStatic
   val tags: Set<String>
     get() = context.get().tags
 
   @JvmStatic
   val meta: MutableMap<String, ByteArray>
     get() = context.get().meta
-
 
   @JvmStatic
   val withTimeout: WithTimeout?

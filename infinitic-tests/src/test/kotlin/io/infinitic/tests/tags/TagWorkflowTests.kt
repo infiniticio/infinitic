@@ -22,7 +22,7 @@
  */
 package io.infinitic.tests.tags
 
-import io.infinitic.tests.Test
+import io.infinitic.Test
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.delay
@@ -58,6 +58,7 @@ internal class TagWorkflowTests : StringSpec(
 
         client.dispatch(tagWorkflow::await)
         client.dispatch(tagWorkflow::await)
+        delay(100)
 
         val w = client.getWorkflowByTag(TagWorkflow::class.java, "foo")
         client.getIds(w).size shouldBe 1

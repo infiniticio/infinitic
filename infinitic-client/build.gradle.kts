@@ -21,13 +21,15 @@
  * Licensor: infinitic.io
  */
 dependencies {
+  api(project(":infinitic-common"))
+  api(project(":infinitic-transport"))
+  implementation(project(":infinitic-utils"))
+
   implementation(Libs.Coroutines.core)
   implementation(Libs.Coroutines.jdk8)
 
-  implementation(project(":infinitic-autoclose"))
-
-  api(project(":infinitic-common"))
-  api(project(":infinitic-transport"))
+  testImplementation(project(":infinitic-transport-inMemory"))
+  testImplementation(Libs.Serialization.json)
 }
 
 apply("../publish.gradle.kts")

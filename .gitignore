@@ -1,3 +1,4 @@
+.kotlin/
 .idea/
 .fleet/
 .gradle/
@@ -5,3 +6,4 @@ build/
 out/
 *.log
 .DS_Store
+gradle.properties

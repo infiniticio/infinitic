@@ -23,7 +23,6 @@
 package io.infinitic.workflows
 
 import io.infinitic.annotations.Ignore
-import io.infinitic.annotations.Name
 import io.infinitic.common.proxies.ExistingWorkflowProxyHandler
 import io.infinitic.common.proxies.NewServiceProxyHandler
 import io.infinitic.common.proxies.NewWorkflowProxyHandler
@@ -32,51 +31,70 @@ import io.infinitic.common.proxies.RequestByWorkflowId
 import io.infinitic.common.proxies.RequestByWorkflowTag
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskTag
+import io.infinitic.common.workflows.Consumer0
+import io.infinitic.common.workflows.Consumer1
+import io.infinitic.common.workflows.Consumer2
+import io.infinitic.common.workflows.Consumer3
+import io.infinitic.common.workflows.Consumer4
+import io.infinitic.common.workflows.Consumer5
+import io.infinitic.common.workflows.Consumer6
+import io.infinitic.common.workflows.Consumer7
+import io.infinitic.common.workflows.Consumer8
+import io.infinitic.common.workflows.Consumer9
+import io.infinitic.common.workflows.WorkflowContext
+import io.infinitic.common.workflows.WorkflowDispatcher
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.exceptions.clients.InvalidStubException
 import io.infinitic.exceptions.workflows.MultipleGettersForSameChannelException
 import io.infinitic.exceptions.workflows.NonIdempotentChannelGetterException
+import java.lang.reflect.ParameterizedType
 import java.time.Duration
 import java.time.Instant
 
 @Suppress("unused")
 abstract class Workflow {
   @Ignore
-  lateinit var workflowName: String
-
-  @Ignore
-  lateinit var workflowId: String
-
-  @Ignore
-  lateinit var methodName: String
-
-  @Ignore
-  lateinit var methodId: String
-
-  @Ignore
-  lateinit var tags: Set<String>
-
-  @Ignore
-  lateinit var meta: Map<String, ByteArray>
-
-  @Ignore
   lateinit var dispatcher: WorkflowDispatcher
+
+  companion object {
+    val context: ThreadLocal<WorkflowContext> = ThreadLocal.withInitial { null }
+
+    @JvmStatic
+    fun setContext(c: WorkflowContext) {
+      context.set(c)
+    }
+
+    @JvmStatic
+    val workflowName get() = context.get().workflowName
+
+    @JvmStatic
+    val workflowId get() = context.get().workflowId
+
+    @JvmStatic
+    val methodName get() = context.get().methodName
+
+    @JvmStatic
+    val methodId get() = context.get().methodId
+
+    @JvmStatic
+    val tags get() = context.get().tags
+
+    @JvmStatic
+    val meta get() = context.get().meta
+  }
 
   /** Create a stub for a task */
   @JvmOverloads
   protected fun <T : Any> newService(
     klass: Class<out T>,
     tags: Set<String>? = null,
-    meta: MutableMap<String, ByteArray>? = null
+    meta: Map<String, ByteArray>? = null
   ): T = NewServiceProxyHandler(
       klass = klass,
       taskTags = tags?.map { TaskTag(it) }?.toSet() ?: setOf(),
-      taskMeta = TaskMeta(meta ?: mutableMapOf()),
-  ) {
-    dispatcher
-  }
-      .stub()
+      taskMeta = TaskMeta(meta ?: mapOf()),
+  ) { dispatcher }.stub()
 
   /** Create a stub for a workflow */
   @JvmOverloads
@@ -84,15 +102,11 @@ abstract class Workflow {
     klass: Class<out T>,
     tags: Set<String>? = null,
     meta: Map<String, ByteArray>? = null
-  ): T =
-      NewWorkflowProxyHandler(
-          klass = klass,
-          workflowTags = tags?.map { WorkflowTag(it) }?.toSet() ?: setOf(),
-          workflowMeta = WorkflowMeta(meta ?: mapOf()),
-      ) {
-        dispatcher
-      }
-          .stub()
+  ): T = NewWorkflowProxyHandler(
+      klass = klass,
+      workflowTags = tags?.map { WorkflowTag(it) }?.toSet() ?: setOf(),
+      workflowMeta = WorkflowMeta(meta ?: mapOf()),
+  ) { dispatcher }.stub()
 
   /** Create a stub for an existing workflow targeted by id */
   protected fun <T : Any> getWorkflowById(klass: Class<out T>, id: String): T =
@@ -311,51 +325,17 @@ abstract class Workflow {
 
     return dispatcher.dispatch(handler, false)
   }
-
-  // from klass for the given workflow name
-  private fun findClassPerWorkflowName() =
-      try {
-        Class.forName(workflowName)
-      } catch (e: ClassNotFoundException) {
-        findClassPerAnnotationName()
-      }
-
-  // from klass, search for a given @Name annotation
-  private fun findClassPerAnnotationName(
-    klass: Class<*> = this::class.java,
-    name: String = this.workflowName
-  ): Class<*>? {
-    var clazz = klass
-
-    do {
-      // has current clazz the right @Name annotation?
-      if (clazz.getAnnotation(Name::class.java)?.name == name) return clazz
-
-      // has any of the interfaces the right @Name annotation?
-      clazz.interfaces.forEach { interfaze ->
-        findClassPerAnnotationName(interfaze, name)?.also {
-          return it
-        }
-      }
-
-      // if not, inspect the superclass
-      clazz = clazz.superclass ?: break
-    } while (Object::class.java.name != clazz.canonicalName)
-
-    return null
-  }
 }
 
 /** Set names of all channels in this workflow */
 fun Workflow.setChannelNames() {
-  this::class
-      .java
-      .declaredMethods
+  this::class.java.declaredMethods
       .filter { it.returnType.name == Channel::class.java.name && it.parameterCount == 0 }
       .map {
         // channel must be created only once per method
         it.isAccessible = true
         val channel = it.invoke(this)
+        // checking getter idempotency
         if (channel !== it.invoke(this)) {
           throw NonIdempotentChannelGetterException(this::class.java.name, it.name)
         }
@@ -366,5 +346,18 @@ fun Workflow.setChannelNames() {
         }
         // set channel name
         channel.setName(it.name)
+      }
+}
+
+/** Set types of all channels in this workflow */
+fun Workflow.setChannelTypes() {
+  this::class.java.declaredFields
+      .filter { it.type.name == Channel::class.java.name }
+      .map {
+        // get Channel object
+        it.isAccessible = true
+        val channel = it.get(this) as Channel<*>
+        // set channel type
+        channel.type = (it.genericType as ParameterizedType).actualTypeArguments[0]
       }
 }

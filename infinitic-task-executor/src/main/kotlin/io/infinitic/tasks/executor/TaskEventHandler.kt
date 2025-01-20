@@ -24,19 +24,18 @@ package io.infinitic.tasks.executor
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.data.MillisInstant
-import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.requester.WorkflowRequester
-import io.infinitic.common.tasks.events.messages.ServiceEventMessage
+import io.infinitic.common.tasks.events.messages.ServiceExecutorEventMessage
 import io.infinitic.common.tasks.events.messages.TaskCompletedEvent
 import io.infinitic.common.tasks.events.messages.TaskFailedEvent
 import io.infinitic.common.tasks.events.messages.TaskRetriedEvent
 import io.infinitic.common.tasks.events.messages.TaskStartedEvent
 import io.infinitic.common.tasks.tags.messages.SetDelegatedTaskData
 import io.infinitic.common.transport.ClientTopic
-import io.infinitic.common.transport.InfiniticProducerAsync
-import io.infinitic.common.transport.LoggedInfiniticProducer
-import io.infinitic.common.transport.ServiceTagTopic
-import io.infinitic.common.transport.WorkflowEngineTopic
+import io.infinitic.common.transport.ServiceTagEngineTopic
+import io.infinitic.common.transport.WorkflowStateEngineTopic
+import io.infinitic.common.transport.interfaces.InfiniticProducer
+import io.infinitic.common.transport.logged.LoggerWithCounter
 import io.infinitic.common.workflows.data.commands.DispatchNewMethodPastCommand
 import io.infinitic.common.workflows.data.commands.DispatchNewWorkflowPastCommand
 import io.infinitic.common.workflows.data.commands.DispatchTaskPastCommand
@@ -55,40 +54,30 @@ import io.infinitic.tasks.executor.events.dispatchTaskCmd
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
-class TaskEventHandler(producerAsync: InfiniticProducerAsync) {
+class TaskEventHandler(val producer: InfiniticProducer) {
 
-  private val logger = KotlinLogging.logger(TaskExecutor::class.java.name)
-
-  val producer = LoggedInfiniticProducer(TaskExecutor::class.java.name, producerAsync)
-
-  private val emitterName by lazy { EmitterName(producerAsync.producerName) }
-
-  suspend fun handle(msg: ServiceEventMessage, publishTime: MillisInstant) {
-    msg.logDebug { "received $msg" }
-
+  suspend fun process(msg: ServiceExecutorEventMessage, publishedAt: MillisInstant) {
     when (msg) {
-      is TaskCompletedEvent -> sendTaskCompleted(msg, publishTime)
-      is TaskFailedEvent -> sendTaskFailed(msg, publishTime)
+      is TaskCompletedEvent -> sendTaskCompleted(msg, publishedAt)
+      is TaskFailedEvent -> sendTaskFailed(msg, publishedAt)
       is TaskRetriedEvent,
       is TaskStartedEvent -> Unit
     }
-
-    msg.logTrace { "processed $msg" }
   }
 
-  private suspend fun sendTaskFailed(msg: TaskFailedEvent, publishTime: MillisInstant): Unit =
+  private suspend fun sendTaskFailed(msg: TaskFailedEvent, publishedAt: MillisInstant): Unit =
       coroutineScope {
         // send to parent client
-        msg.getEventForClient(emitterName)?.let {
+        msg.getEventForClient(producer.emitterName)?.let {
           launch { with(producer) { it.sendTo(ClientTopic) } }
         }
         // send to parent workflow
-        msg.getEventForWorkflow(emitterName, publishTime)?.let {
-          launch { with(producer) { it.sendTo(WorkflowEngineTopic) } }
+        msg.getEventForWorkflow(producer.emitterName, publishedAt)?.let {
+          launch { with(producer) { it.sendTo(WorkflowStateEngineTopic) } }
         }
       }
 
-  private suspend fun sendTaskCompleted(msg: TaskCompletedEvent, publishTime: MillisInstant) {
+  private suspend fun sendTaskCompleted(msg: TaskCompletedEvent, publishedAt: MillisInstant) {
     coroutineScope {
       when (msg.isDelegated) {
         // if this task is marked as asynchronous, we do not forward the result, add a tag.
@@ -100,23 +89,23 @@ class TaskEventHandler(producerAsync: InfiniticProducerAsync) {
               serviceName = msg.serviceName,
               delegatedTaskData = msg.getDelegatedTaskData(),
               taskId = msg.taskId,
-              emitterName = emitterName,
+              emitterName = producer.emitterName,
           )
-          with(producer) { addTaskToTag.sendTo(ServiceTagTopic) }
+          with(producer) { addTaskToTag.sendTo(ServiceTagEngineTopic) }
         }
 
         false -> {
           // send to parent client
-          msg.getEventForClient(emitterName)?.let {
+          msg.getEventForClient(producer.emitterName)?.let {
             launch { with(producer) { it.sendTo(ClientTopic) } }
           }
           // send to parent workflow
-          msg.getEventForWorkflow(emitterName, publishTime)?.let {
-            launch { with(producer) { it.sendTo(WorkflowEngineTopic) } }
+          msg.getEventForWorkflow(producer.emitterName, publishedAt)?.let {
+            launch { with(producer) { it.sendTo(WorkflowStateEngineTopic) } }
           }
           // remove tags
-          msg.getEventsForTag(emitterName).forEach {
-            launch { with(producer) { it.sendTo(ServiceTagTopic) } }
+          msg.getEventsForTag(producer.emitterName).forEach {
+            launch { with(producer) { it.sendTo(ServiceTagEngineTopic) } }
           }
         }
       }
@@ -125,16 +114,19 @@ class TaskEventHandler(producerAsync: InfiniticProducerAsync) {
     // the workflow task's completion is forwarded to the engine. This is a safeguard against potential
     // race conditions that may arise if the engine receives the outcomes of the dispatched tasks earlier
     // than the result of the workflowTask.
-    if (msg.isWorkflowTask()) completeWorkflowTask(msg, publishTime)
+    if (msg.isWorkflowTask()) completeWorkflowTask(msg, publishedAt)
   }
 
-  private suspend fun completeWorkflowTask(msg: TaskCompletedEvent, publishTime: MillisInstant) =
+  private suspend fun completeWorkflowTask(msg: TaskCompletedEvent, publishedAt: MillisInstant) =
       coroutineScope {
 
-        val result = msg.returnValue.value() as WorkflowTaskReturnValue
+        val result = msg.returnValue.deserialize(
+            type = WorkflowTaskReturnValue::class.java,
+            jsonViewClass = null,
+        ) as WorkflowTaskReturnValue
 
-        // TODO After 0.13.0, workflowTaskInstant should not be null anymore
-        val workflowTaskInstant = result.workflowTaskInstant ?: publishTime
+        // Note: After 0.13.0, workflowTaskInstant should not be null anymore
+        val workflowTaskInstant = result.workflowTaskInstant ?: publishedAt
 
         // from there, workflowVersion is defined
         val current =
@@ -166,11 +158,7 @@ class TaskEventHandler(producerAsync: InfiniticProducerAsync) {
         }
       }
 
-  private fun ServiceEventMessage.logDebug(description: () -> String) {
-    logger.debug { "$serviceName (${taskId}): ${description()}" }
-  }
-
-  private fun ServiceEventMessage.logTrace(description: () -> String) {
-    logger.trace { "$serviceName (${taskId}): ${description()}" }
+  companion object {
+    val logger = LoggerWithCounter(KotlinLogging.logger {})
   }
 }

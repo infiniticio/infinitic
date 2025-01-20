@@ -25,8 +25,8 @@ package io.infinitic.workflows.engine.handlers
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.requester.WorkflowRequester
-import io.infinitic.common.transport.InfiniticProducer
-import io.infinitic.common.transport.WorkflowEventsTopic
+import io.infinitic.common.transport.WorkflowStateEventTopic
+import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.workflows.data.channels.ReceivingChannel
 import io.infinitic.common.workflows.data.channels.SignalId
 import io.infinitic.common.workflows.data.commands.DispatchNewMethodCommand
@@ -53,7 +53,7 @@ import io.infinitic.common.workflows.engine.messages.DispatchMethod
 import io.infinitic.common.workflows.engine.messages.MethodCompletedEvent
 import io.infinitic.common.workflows.engine.messages.RemoteTaskCompleted
 import io.infinitic.common.workflows.engine.messages.SendSignal
-import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
 import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.engine.helpers.stepTerminated
 import kotlinx.coroutines.CoroutineScope
@@ -64,11 +64,12 @@ internal fun CoroutineScope.workflowTaskCompleted(
   state: WorkflowState,
   message: RemoteTaskCompleted
 ) {
-  val emitterName = EmitterName(producer.name)
   val emittedAt = state.runningWorkflowTaskInstant ?: thisShouldNotHappen()
 
-  val workflowTaskReturnValue =
-      message.taskReturnValue.returnValue.value() as WorkflowTaskReturnValue
+  val workflowTaskReturnValue = message.taskReturnValue.returnValue.deserialize(
+      type = WorkflowTaskReturnValue::class.java,
+      null,
+  ) as WorkflowTaskReturnValue
 
   // set workflowVersion
   when (state.workflowVersion) {
@@ -114,16 +115,16 @@ internal fun CoroutineScope.workflowTaskCompleted(
     }
   }
 
-  val bufferedMessages = mutableListOf<WorkflowEngineMessage>()
+  val bufferedMessages = mutableListOf<WorkflowStateEngineMessage>()
 
   // add new commands to past commands
   workflowTaskReturnValue.newCommands.forEach {
     when (it) {
       is DispatchNewMethodPastCommand ->
-        dispatchMethodOnRunningWorkflowCmd(it, state, workflowMethod, producer, bufferedMessages)
+        dispatchMethodOnRunningWorkflowCmd(it, state, workflowMethod, bufferedMessages)
 
       is SendSignalPastCommand ->
-        sendSignalCmd(it, state, workflowMethod, producer, bufferedMessages)
+        sendSignalCmd(it, state, workflowMethod, bufferedMessages)
 
       is ReceiveSignalPastCommand ->
         receiveSignalCmd(it, state)
@@ -146,7 +147,6 @@ internal fun CoroutineScope.workflowTaskCompleted(
         stepPosition = it.stepPosition,
         step = it.step,
         stepHash = it.stepHash,
-        stepStatus = it.step.status(),
         workflowTaskIndexAtStart = state.workflowTaskIndex,
     )
   }
@@ -164,12 +164,17 @@ internal fun CoroutineScope.workflowTaskCompleted(
         workflowMethodId = workflowMethod.workflowMethodId,
         awaitingRequesters = workflowMethod.awaitingRequesters,
         returnValue = workflowMethod.methodReturnValue!!,
-        emitterName = emitterName,
+        emitterName = EmitterName.BUFFERED,
     )
-    launch { with(producer) { methodCompletedEvent.sendTo(WorkflowEventsTopic) } }
+    launch {
+      with(producer) {
+        methodCompletedEvent.copy(emitterName = producer.emitterName)
+            .sendTo(WorkflowStateEventTopic)
+      }
+    }
 
     // tell itself if needed
-    methodCompletedEvent.getEventForAwaitingWorkflows(emitterName, emittedAt)
+    methodCompletedEvent.getEventForAwaitingWorkflows(EmitterName.BUFFERED, emittedAt)
         .firstOrNull { it.workflowId == message.workflowId }?.let {
           bufferedMessages.add(it)
         }
@@ -196,11 +201,11 @@ internal fun dispatchMethodOnRunningWorkflowCmd(
   pastCommand: DispatchNewMethodPastCommand,
   state: WorkflowState,
   workflowMethod: WorkflowMethod,
-  producer: InfiniticProducer,
-  bufferedMessages: MutableList<WorkflowEngineMessage>
+  bufferedMessages: MutableList<WorkflowStateEngineMessage>
 ) {
   val command: DispatchNewMethodCommand = pastCommand.command
 
+  // for workflows other than the current one, the dispatch has already been done post workflow executor
   if (
     (command.workflowId != null && state.workflowId == command.workflowId) ||
     (command.workflowTag != null && state.workflowTags.contains(command.workflowTag))
@@ -220,7 +225,7 @@ internal fun dispatchMethodOnRunningWorkflowCmd(
             workflowMethodId = workflowMethod.workflowMethodId,
         ),
         clientWaiting = false,
-        emitterName = EmitterName(producer.name),
+        emitterName = EmitterName.BUFFERED,
         emittedAt = state.runningWorkflowTaskInstant,
     )
     bufferedMessages.add(dispatchMethod)
@@ -249,11 +254,11 @@ internal fun sendSignalCmd(
   pastCommand: SendSignalPastCommand,
   state: WorkflowState,
   workflowMethod: WorkflowMethod,
-  producer: InfiniticProducer,
-  bufferedMessages: MutableList<WorkflowEngineMessage>
+  bufferedMessages: MutableList<WorkflowStateEngineMessage>
 ) {
   val command: SendSignalCommand = pastCommand.command
 
+  // for workflows other than the current one, the dispatch has already been done post workflow executor
   if (
     (command.workflowId != null && state.workflowId == command.workflowId) ||
     (command.workflowTag != null && state.workflowTags.contains(command.workflowTag))
@@ -265,7 +270,7 @@ internal fun sendSignalCmd(
         channelTypes = command.channelTypes,
         workflowName = command.workflowName,
         workflowId = command.workflowId!!,
-        emitterName = EmitterName(producer.name),
+        emitterName = EmitterName.BUFFERED,
         emittedAt = state.runningWorkflowTaskInstant,
         requester = WorkflowRequester(
             workflowId = state.workflowId,

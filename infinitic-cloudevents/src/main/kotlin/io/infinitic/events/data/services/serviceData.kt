@@ -23,10 +23,10 @@
 
 package io.infinitic.events.data.services
 
-import io.infinitic.cloudEvents.ERROR
+import io.infinitic.cloudEvents.FAILURE
 import io.infinitic.cloudEvents.INFINITIC_VERSION
+import io.infinitic.cloudEvents.OUTPUT
 import io.infinitic.cloudEvents.REQUESTER
-import io.infinitic.cloudEvents.RESULT
 import io.infinitic.cloudEvents.SERVICE_NAME
 import io.infinitic.cloudEvents.TASK_ARGS
 import io.infinitic.cloudEvents.TASK_META
@@ -36,7 +36,7 @@ import io.infinitic.cloudEvents.TASK_RETRY_INDEX
 import io.infinitic.cloudEvents.TASK_RETRY_SEQUENCE
 import io.infinitic.cloudEvents.TASK_TAGS
 import io.infinitic.cloudEvents.WORKER_NAME
-import io.infinitic.common.tasks.events.messages.ServiceEventMessage
+import io.infinitic.common.tasks.events.messages.ServiceExecutorEventMessage
 import io.infinitic.common.tasks.events.messages.TaskCompletedEvent
 import io.infinitic.common.tasks.events.messages.TaskFailedEvent
 import io.infinitic.common.tasks.events.messages.TaskRetriedEvent
@@ -49,7 +49,7 @@ import kotlinx.serialization.json.JsonObject
 fun ServiceExecutorMessage.toJson() = when (this) {
   is ExecuteTask -> JsonObject(
       mapOf(
-          TASK_ARGS to methodParameters.toJson(),
+          TASK_ARGS to methodArgs.toJson(),
           TASK_RETRY_SEQUENCE to taskRetrySequence.toJson(),
           TASK_RETRY_INDEX to taskRetryIndex.toJson(),
           SERVICE_NAME to serviceName.toJson(),
@@ -62,7 +62,7 @@ fun ServiceExecutorMessage.toJson() = when (this) {
   )
 }
 
-fun ServiceEventMessage.toJson(): JsonObject = when (this) {
+fun ServiceExecutorEventMessage.toJson(): JsonObject = when (this) {
 
   is TaskStartedEvent -> JsonObject(
       mapOf(
@@ -79,7 +79,7 @@ fun ServiceEventMessage.toJson(): JsonObject = when (this) {
 
   is TaskRetriedEvent -> JsonObject(
       mapOf(
-          ERROR to lastError.toJson(),
+          FAILURE to failure.toJsonWithoutAttemptDetails(),
           TASK_RETRY_DELAY to taskRetryDelay.toJson(),
           TASK_RETRY_SEQUENCE to taskRetrySequence.toJson(),
           TASK_RETRY_INDEX to taskRetryIndex.toJson(),
@@ -94,7 +94,7 @@ fun ServiceEventMessage.toJson(): JsonObject = when (this) {
 
   is TaskFailedEvent -> JsonObject(
       mapOf(
-          ERROR to executionError.toJson(),
+          FAILURE to failure.toJsonWithoutAttemptDetails(),
           TASK_RETRY_SEQUENCE to taskRetrySequence.toJson(),
           TASK_RETRY_INDEX to taskRetryIndex.toJson(),
           SERVICE_NAME to serviceName.toJson(),
@@ -108,7 +108,7 @@ fun ServiceEventMessage.toJson(): JsonObject = when (this) {
 
   is TaskCompletedEvent -> JsonObject(
       mapOf(
-          RESULT to returnValue.toJson(),
+          OUTPUT to returnValue.toJson(),
           TASK_RETRY_SEQUENCE to taskRetrySequence.toJson(),
           TASK_RETRY_INDEX to taskRetryIndex.toJson(),
           SERVICE_NAME to serviceName.toJson(),

@@ -35,86 +35,85 @@ import io.infinitic.common.tasks.executors.errors.TaskCanceledError
 import io.infinitic.common.tasks.executors.errors.TaskFailedError
 import io.infinitic.common.tasks.executors.errors.TaskTimedOutError
 import io.infinitic.common.tasks.executors.errors.TaskUnknownError
-import io.infinitic.common.tasks.executors.errors.WorkflowTaskFailedError
+import io.infinitic.common.tasks.executors.errors.WorkflowExecutorError
+import io.infinitic.tasks.TaskFailure
 import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
 
 /**
  * DeferredException are use-facing exceptions.
  *
  * They can be thrown when an exception occurs while synchronously waiting for a deferred.
  */
-
-
-@Serializable
 sealed class DeferredException : kotlin.RuntimeException() {
+  abstract val description: String
+
   companion object {
-    fun from(error: DeferredError) =
-        when (error) {
-          is DeferredUnknownError -> DeferredUnknownException.from(error)
-          is DeferredTimedOutError -> DeferredTimedOutException.from(error)
-          is DeferredCanceledError -> DeferredCanceledException.from(error)
-          is DeferredFailedError -> DeferredFailedException.from(error)
-        }
+    fun from(error: DeferredError) = when (error) {
+      is DeferredUnknownError -> DeferredUnknownException.from(error)
+      is DeferredTimedOutError -> DeferredTimedOutException.from(error)
+      is DeferredCanceledError -> DeferredCanceledException.from(error)
+      is DeferredFailedError -> DeferredFailedException.from(error)
+    }
+
+    internal const val REMOTE_TASK_ERROR = "Unable to get the result of a remote task. "
+    internal const val REMOTE_WORKFLOW_ERROR = "Unable to get the result of a remote workflow. "
   }
+
 }
 
-@Serializable
 sealed class DeferredUnknownException : DeferredException() {
   companion object {
-    fun from(error: DeferredUnknownError) =
-        when (error) {
-          is TaskUnknownError -> TaskUnknownException.from(error)
-          is MethodUnknownError -> WorkflowUnknownException.from(error)
-        }
+    fun from(error: DeferredUnknownError) = when (error) {
+      is TaskUnknownError -> TaskUnknownException.from(error)
+      is MethodUnknownError -> WorkflowUnknownException.from(error)
+    }
   }
 }
 
-@Serializable
 sealed class DeferredTimedOutException : DeferredException() {
   companion object {
-    fun from(error: DeferredTimedOutError) =
-        when (error) {
-          is TaskTimedOutError -> TaskTimedOutException.from(error)
-          is MethodTimedOutError -> WorkflowTimedOutException.from(error)
-        }
+    fun from(error: DeferredTimedOutError) = when (error) {
+      is TaskTimedOutError -> TaskTimedOutException.from(error)
+      is MethodTimedOutError -> WorkflowTimedOutException.from(error)
+    }
   }
 }
 
-@Serializable
 sealed class DeferredCanceledException : DeferredException() {
   companion object {
-    fun from(error: DeferredCanceledError) =
-        when (error) {
-          is TaskCanceledError -> TaskCanceledException.from(error)
-          is MethodCanceledError -> WorkflowCanceledException.from(error)
-        }
+    fun from(error: DeferredCanceledError) = when (error) {
+      is TaskCanceledError -> TaskCanceledException.from(error)
+      is MethodCanceledError -> WorkflowCanceledException.from(error)
+    }
   }
 }
 
-@Serializable
 sealed class DeferredFailedException : DeferredException() {
   companion object {
-    fun from(error: DeferredFailedError) =
-        when (error) {
-          is TaskFailedError -> TaskFailedException.from(error)
-          is MethodFailedError -> WorkflowFailedException.from(error)
-          is WorkflowTaskFailedError -> WorkflowTaskFailedException.from(error)
-        }
+    fun from(error: DeferredFailedError) = when (error) {
+      is TaskFailedError -> TaskFailedException.from(error)
+      is MethodFailedError -> WorkflowFailedException.from(error)
+      is WorkflowExecutorError -> WorkflowExecutorException.from(error)
+    }
   }
 }
 
 /** Exception occurring when waiting for an unknown task */
-@Serializable
 data class TaskUnknownException(
   /** Name of the canceled task */
   @SerialName("taskName") val serviceName: String,
 
   val methodName: String? = null,
 
-  /** Id of the canceled task */
+  /** ID of the canceled task */
   val taskId: String
 ) : DeferredUnknownException() {
+  override val description = REMOTE_TASK_ERROR +
+      "It appears this task has either already terminated or is not recognized " +
+      "(serviceName: $serviceName, " +
+      (methodName?.let { "methodName: $methodName, " } ?: "") +
+      "taskId: $taskId)."
+
   companion object {
     fun from(error: TaskUnknownError): TaskUnknownException =
         TaskUnknownException(
@@ -126,12 +125,11 @@ data class TaskUnknownException(
 }
 
 /** Exception occurring when waiting for an unknown workflow */
-@Serializable
 data class WorkflowUnknownException(
   /** Name of the canceled child workflow */
   val workflowName: String,
 
-  /** Id of the canceled child workflow */
+  /** ID of the canceled child workflow */
   val workflowId: String,
 
   val workflowMethodName: String?,
@@ -139,6 +137,13 @@ data class WorkflowUnknownException(
   /** Id of the methodRun */
   val workflowMethodId: String?
 ) : DeferredUnknownException() {
+  override val description = REMOTE_WORKFLOW_ERROR +
+      "It appears this workflow has either already terminated or is not recognized " +
+      "(workflowName: $workflowName, workflowId: $workflowId" +
+      (workflowMethodName?.let { ", methodName: $it" } ?: "") +
+      (workflowMethodId?.let { ", methodId: $it" } ?: "") +
+      ".)"
+
   companion object {
     fun from(error: MethodUnknownError): WorkflowUnknownException =
         WorkflowUnknownException(
@@ -151,17 +156,20 @@ data class WorkflowUnknownException(
 }
 
 /** Exception occurring when waiting for a timed-out task */
-@Serializable
 data class TaskTimedOutException(
   /** Name of the canceled task */
-  @SerialName("taskName") val serviceName: String,
+  val serviceName: String,
 
-  /** Id of the canceled task */
+  /** ID of the canceled task */
   val taskId: String,
 
   /** Method called */
   val methodName: String
 ) : DeferredTimedOutException() {
+  override val description = REMOTE_TASK_ERROR +
+      "The time allotted for this task has expired. " +
+      "(Service Name: $serviceName, Method Name: $methodName, Task ID: $taskId)"
+
   companion object {
     fun from(error: TaskTimedOutError): TaskTimedOutException =
         TaskTimedOutException(
@@ -172,13 +180,12 @@ data class TaskTimedOutException(
   }
 }
 
-/** Error occurring when waiting for an timed-out workflow */
-@Serializable
+/** Error occurring when waiting for a timed-out workflow */
 data class WorkflowTimedOutException(
   /** Name of the canceled child workflow */
   val workflowName: String,
 
-  /** Id of the canceled child workflow */
+  /** ID of the canceled child workflow */
   val workflowId: String,
 
   val workflowMethodName: String,
@@ -186,6 +193,12 @@ data class WorkflowTimedOutException(
   /** Id of the methodRun */
   val workflowMethodId: String?
 ) : DeferredTimedOutException() {
+  override val description = REMOTE_WORKFLOW_ERROR +
+      "The time allotted for this workflow has expired. " +
+      "(Workflow Name: $workflowName, Workflow ID: $workflowId, Method Name: $workflowMethodName" +
+      (workflowMethodId?.let { ", Method ID: $it" } ?: "") +
+      ")."
+
   companion object {
     fun from(error: MethodTimedOutError): WorkflowTimedOutException =
         WorkflowTimedOutException(
@@ -198,17 +211,20 @@ data class WorkflowTimedOutException(
 }
 
 /** Exception occurring when waiting for a canceled task */
-@Serializable
 data class TaskCanceledException(
   /** Name of the canceled task */
-  @SerialName("taskName") val serviceName: String,
+  val serviceName: String,
 
-  /** Id of the canceled task */
+  /** ID of the canceled task */
   val taskId: String,
 
   /** Method called */
   val methodName: String
 ) : DeferredCanceledException() {
+  override val description = REMOTE_TASK_ERROR +
+      "It appears this task has been canceled " +
+      "(Service Name: $serviceName, Method Name: $methodName, Task ID: $taskId)"
+
   companion object {
     fun from(error: TaskCanceledError): TaskCanceledException =
         TaskCanceledException(
@@ -220,19 +236,25 @@ data class TaskCanceledException(
 }
 
 /** Exception occurring when waiting for a canceled workflow */
-@Serializable
 data class WorkflowCanceledException(
   /** Name of the canceled child workflow */
   val workflowName: String,
 
-  /** Id of the canceled child workflow */
+  /** ID of the canceled child workflow */
   val workflowId: String,
 
   val workflowMethodName: String?,
 
-  /** Id of the methodRun */
+  /** ID of the method execution */
   val workflowMethodId: String?
 ) : DeferredCanceledException() {
+  override val description = REMOTE_WORKFLOW_ERROR +
+      "It appears this workflow has been canceled " +
+      "(Workflow Name: $workflowName, Workflow ID: $workflowId" +
+      (workflowMethodName?.let { ", Method Name: $it" } ?: "") +
+      (workflowMethodId?.let { ", Method ID: $it" } ?: "") +
+      ")."
+
   companion object {
     fun from(error: MethodCanceledError): WorkflowCanceledException =
         WorkflowCanceledException(
@@ -245,83 +267,93 @@ data class WorkflowCanceledException(
 }
 
 /** Exception occurring when waiting fora failed task */
-@Serializable
 data class TaskFailedException(
   /** Name of the task where the error occurred */
-  @SerialName("taskName") val serviceName: String,
+  val serviceName: String,
 
-  /** Id of the task where the error occurred */
+  /** ID of the task where the error occurred */
   val taskId: String,
 
   /** Method called where the error occurred */
   val methodName: String,
 
-  /** cause of the error */
-  val workerException: WorkerException
+  /** Description of the last failure **/
+  val lastFailure: TaskFailure
 ) : DeferredFailedException() {
+
+  override val description = REMOTE_TASK_ERROR +
+      "It appears this task has failed " +
+      "(Service Name: $serviceName, Method Name: $methodName, Task ID: $taskId)"
+
   companion object {
-    fun from(error: TaskFailedError): TaskFailedException =
-        TaskFailedException(
-            serviceName = error.serviceName.toString(),
-            taskId = error.taskId.toString(),
-            methodName = error.methodName.toString(),
-            workerException = WorkerException.from(error.cause),
-        )
+    fun from(error: TaskFailedError) = TaskFailedException(
+        serviceName = error.serviceName.toString(),
+        taskId = error.taskId.toString(),
+        methodName = error.methodName.toString(),
+        lastFailure = error.lastFailure,
+    )
   }
 }
 
 /** Exception occurring when waiting fora failed task */
-@Serializable
 data class WorkflowFailedException(
   /** Name of the workflow where the error occurred */
   val workflowName: String,
 
-  /** Id of the workflow where the error occurred */
+  /** ID of the workflow where the error occurred */
   val workflowId: String,
 
   /** Method called where the error occurred */
   val workflowMethodName: String,
 
   /** Id of the methodRun */
-  val workflowMethodId: String?,
+  val workflowMethodId: String,
 
   /** cause of the error */
   val deferredException: DeferredException
 ) : DeferredFailedException() {
+  override val description = REMOTE_WORKFLOW_ERROR +
+      "It appears this workflow has failed " +
+      "(Workflow Name: $workflowName, Workflow ID: $workflowId, Method Name: $workflowMethodName" +
+      workflowMethodId.let { ", Method ID: $it" } +
+      ")."
+
   companion object {
     fun from(error: MethodFailedError): WorkflowFailedException =
         WorkflowFailedException(
             workflowName = error.workflowName.toString(),
             workflowId = error.workflowId.toString(),
             workflowMethodName = error.workflowMethodName.toString(),
-            workflowMethodId = error.workflowMethodId.toString(),
+            workflowMethodId = (error.workflowMethodId ?: error.workflowId).toString(),
             deferredException = from(error.deferredError),
         )
   }
 }
 
 /** Exception occurred during a workflow task */
-@Serializable
-data class WorkflowTaskFailedException(
+data class WorkflowExecutorException(
   /** Name of the workflow for which the error occurred */
   val workflowName: String,
 
-  /** Id of the workflow for which the error occurred */
+  /** ID of the workflow for which the error occurred */
   val workflowId: String,
 
-  /** Id of the workflow task for which the error occurred */
+  /** ID of the workflow task for which the error occurred */
   val workflowTaskId: String,
 
-  /** cause of the error */
-  val workerException: WorkerException
+  /** Description of the last lastFailure **/
+  val lastFailure: TaskFailure
 ) : DeferredFailedException() {
+  override val description =
+      "Unable to continue the execution of this workflow. An exception has raised."
+
   companion object {
-    fun from(error: WorkflowTaskFailedError): WorkflowTaskFailedException =
-        WorkflowTaskFailedException(
+    fun from(error: WorkflowExecutorError): WorkflowExecutorException =
+        WorkflowExecutorException(
             workflowName = error.workflowName.toString(),
             workflowId = error.workflowId.toString(),
             workflowTaskId = error.workflowTaskId.toString(),
-            workerException = WorkerException.from(error.cause),
+            lastFailure = error.lastFailure,
         )
   }
 }

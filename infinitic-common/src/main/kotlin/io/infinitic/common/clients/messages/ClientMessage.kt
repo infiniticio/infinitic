@@ -27,7 +27,7 @@ import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.interfaces.MethodMessage
 import io.infinitic.common.clients.messages.interfaces.TaskMessage
 import io.infinitic.common.data.MessageId
-import io.infinitic.common.data.ReturnValue
+import io.infinitic.common.data.methods.MethodReturnValue
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.messages.Message
 import io.infinitic.common.requester.ClientRequester
@@ -37,11 +37,11 @@ import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.tasks.data.TaskTag
 import io.infinitic.common.tasks.executors.errors.DeferredError
-import io.infinitic.common.tasks.executors.errors.ExecutionError
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
+import io.infinitic.tasks.TaskFailure
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -61,11 +61,11 @@ data class TaskCompleted(
   override val emitterName: EmitterName,
   override val recipientName: ClientName,
   override val taskId: TaskId,
-  @AvroName("taskReturnValue") val returnValue: ReturnValue,
+  @AvroName("taskReturnValue") val returnValue: MethodReturnValue,
   val taskMeta: TaskMeta
 ) : ClientMessage(), TaskMessage {
   companion object {
-    fun from(data: DelegatedTaskData, returnValue: ReturnValue, emitterName: EmitterName) =
+    fun from(data: DelegatedTaskData, returnValue: MethodReturnValue, emitterName: EmitterName) =
         when (data.requester is ClientRequester && data.clientWaiting == true) {
           true -> TaskCompleted(
               recipientName = data.requester.clientName,
@@ -84,7 +84,7 @@ data class TaskCompleted(
 data class TaskFailed(
   override val recipientName: ClientName,
   override val taskId: TaskId,
-  val cause: ExecutionError,
+  val cause: TaskFailure,
   override val emitterName: EmitterName
 ) : ClientMessage(), TaskMessage
 
@@ -109,7 +109,7 @@ data class MethodCompleted(
   override val recipientName: ClientName,
   override val workflowId: WorkflowId,
   @SerialName("methodRunId") override val workflowMethodId: WorkflowMethodId,
-  val methodReturnValue: ReturnValue,
+  val methodReturnValue: MethodReturnValue,
   override val emitterName: EmitterName
 ) : ClientMessage(), MethodMessage
 

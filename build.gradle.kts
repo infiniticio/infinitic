@@ -21,7 +21,6 @@
  * Licensor: infinitic.io
  */
 import com.adarshr.gradle.testlogger.theme.ThemeType
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 buildscript {
   repositories {
@@ -43,9 +42,9 @@ spotless {
   kotlinGradle { ktfmt() }
 }
 
-kotlin { jvmToolchain(17) }
-
 repositories { mavenCentral() }
+
+println("version = ${Ci.version}")
 
 subprojects {
   apply(plugin = Plugins.Kotlin.id)
@@ -59,7 +58,7 @@ subprojects {
   repositories { mavenCentral() }
 
   dependencies {
-    implementation(platform("org.jetbrains.kotlin:kotlin-bom"))
+    implementation(platform("org.jetbrains.kotlin:kotlin-bom:$kotlinVersion"))
     implementation(Libs.Logging.jvm)
 
     testImplementation(Libs.Slf4j.simple)
@@ -83,17 +82,15 @@ subprojects {
     }
   }
 
-  tasks.withType<KotlinCompile> {
-    kotlinOptions {
-      freeCompilerArgs += "-opt-in=kotlin.RequiresOptIn"
-      freeCompilerArgs += "-Xjvm-default=all"
-      jvmTarget = JavaVersion.VERSION_11.toString()
-    }
+  kotlin {
+    jvmToolchain(17)
+    compilerOptions { freeCompilerArgs.set(listOf("-Xjvm-default=all", "-Xcontext-receivers")) }
+    sourceSets.all { languageSettings { optIn("kotlin.ExperimentalStdlibApi") } }
   }
 
   // Keep this to tell compatibility to applications
   tasks.withType<JavaCompile> {
-    sourceCompatibility = JavaVersion.VERSION_11.toString()
-    targetCompatibility = JavaVersion.VERSION_11.toString()
+    sourceCompatibility = JavaVersion.VERSION_17.toString()
+    targetCompatibility = JavaVersion.VERSION_17.toString()
   }
 }

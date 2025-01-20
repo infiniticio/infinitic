@@ -49,11 +49,11 @@ import io.infinitic.common.tasks.tags.messages.RemoveTaskIdFromTag
 import io.infinitic.common.tasks.tags.messages.SetDelegatedTaskData
 import io.infinitic.common.tasks.tags.storage.TaskTagStorage
 import io.infinitic.common.transport.ClientTopic
-import io.infinitic.common.transport.InfiniticProducerAsync
-import io.infinitic.common.transport.WorkflowEngineTopic
+import io.infinitic.common.transport.WorkflowStateEngineTopic
+import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.workers.data.WorkerName
 import io.infinitic.common.workflows.engine.messages.RemoteTaskCompleted
-import io.infinitic.common.workflows.engine.messages.WorkflowEngineMessage
+import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
 import io.infinitic.tasks.tag.TaskTagEngine
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -66,7 +66,6 @@ import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.slot
-import java.util.concurrent.CompletableFuture
 
 private fun <T : Any> captured(slot: CapturingSlot<T>) =
     if (slot.isCaptured) slot.captured else null
@@ -76,17 +75,15 @@ private val taskTag = slot<TaskTag>()
 private val serviceName = slot<ServiceName>()
 private val taskId = slot<TaskId>()
 private val clientMessage = slot<ClientMessage>()
-private val workflowEngineMessage = slot<WorkflowEngineMessage>()
-private var delegatedTaskData = slot<DelegatedTaskData>()
+private val workflowStateEngineMessage = slot<WorkflowStateEngineMessage>()
+private val delegatedTaskData = slot<DelegatedTaskData>()
 
 private lateinit var tagStateStorage: TaskTagStorage
 
-private fun completed() = CompletableFuture.completedFuture(Unit)
-
-private val producerMock = mockk<InfiniticProducerAsync> {
-  every { producerName } returns "$workerName"
-  coEvery { capture(clientMessage).sendToAsync(ClientTopic) } returns completed()
-  coEvery { capture(workflowEngineMessage).sendToAsync(WorkflowEngineTopic) } returns completed()
+private val producerMock = mockk<InfiniticProducer> {
+  every { emitterName } returns EmitterName("$workerName")
+  coEvery { capture(clientMessage).sendTo(ClientTopic) } returns Unit
+  coEvery { capture(workflowStateEngineMessage).sendTo(WorkflowStateEngineTopic) } returns Unit
 }
 
 private inline fun <reified T : Any> random(values: Map<String, Any?>? = null) =
@@ -97,20 +94,20 @@ private fun mockTagStateStorage(
 ): TaskTagStorage {
   val tagStateStorage = mockk<TaskTagStorage>()
   coEvery {
-    tagStateStorage.getTaskIdsForTag(
+    tagStateStorage.getTaskIds(
         capture(taskTag),
         capture(serviceName),
     )
   } returns taskIds
   coEvery {
-    tagStateStorage.addTaskIdToTag(
+    tagStateStorage.addTaskId(
         capture(taskTag),
         capture(serviceName),
         capture(taskId),
     )
   } just Runs
   coEvery {
-    tagStateStorage.removeTaskIdFromTag(
+    tagStateStorage.removeTaskId(
         capture(taskTag),
         capture(serviceName),
         capture(taskId),
@@ -120,16 +117,23 @@ private fun mockTagStateStorage(
   return tagStateStorage
 }
 
-private fun mockDelegatedTaskDataStorage(delegatedTaskData: DelegatedTaskData? = null): TaskTagStorage {
+private fun mockDelegatedTaskDataStorage(data: DelegatedTaskData? = null): TaskTagStorage {
   val tagStateStorage = mockk<TaskTagStorage>()
   coEvery {
-    tagStateStorage.setDelegatedTaskData(
+    tagStateStorage.updateDelegatedTaskData(
         capture(taskId),
-        capture(io.infinitic.services.tag.delegatedTaskData),
+        capture(delegatedTaskData),
     )
   } just Runs
-  coEvery { tagStateStorage.delDelegatedTaskData(capture(taskId)) } just Runs
-  coEvery { tagStateStorage.getDelegatedTaskData(capture(taskId)) } returns delegatedTaskData
+
+  coEvery {
+    tagStateStorage.updateDelegatedTaskData(
+        capture(taskId),
+        null,
+    )
+  } just Runs
+
+  coEvery { tagStateStorage.getDelegatedTaskData(capture(taskId)) } returns data
 
   return tagStateStorage
 }
@@ -154,7 +158,7 @@ internal class TaskTagEngineTests :
           serviceName.clear()
           taskId.clear()
           clientMessage.clear()
-          workflowEngineMessage.clear()
+          workflowStateEngineMessage.clear()
           delegatedTaskData.clear()
           clearAllMocks(answers = false)
         }
@@ -165,15 +169,15 @@ internal class TaskTagEngineTests :
           val taskId1 = TaskId()
           val taskId2 = TaskId()
           // when
-          getTagEngine(taskIds = setOf(taskId1, taskId2)).handle(
+          getTagEngine(taskIds = setOf(taskId1, taskId2)).process(
               msgIn,
               MillisInstant.now(),
           )
           // then
           coVerifySequence {
-            tagStateStorage.getTaskIdsForTag(msgIn.taskTag, msgIn.serviceName)
-            producerMock.producerName
-            with(producerMock) { capture(clientMessage).sendToAsync(ClientTopic) }
+            producerMock.emitterName
+            tagStateStorage.getTaskIds(msgIn.taskTag, msgIn.serviceName)
+            with(producerMock) { capture(clientMessage).sendTo(ClientTopic) }
           }
           captured(taskTag) shouldBe msgIn.taskTag
           captured(serviceName) shouldBe msgIn.serviceName
@@ -191,10 +195,10 @@ internal class TaskTagEngineTests :
           // given
           val msgIn = random<AddTaskIdToTag>()
           // when
-          getTagEngine().handle(msgIn, MillisInstant.now())
+          getTagEngine().process(msgIn, MillisInstant.now())
           // then
           coVerifySequence {
-            tagStateStorage.addTaskIdToTag(msgIn.taskTag, msgIn.serviceName, msgIn.taskId)
+            tagStateStorage.addTaskId(msgIn.taskTag, msgIn.serviceName, msgIn.taskId)
           }
           captured(taskTag) shouldBe msgIn.taskTag
           captured(serviceName) shouldBe msgIn.serviceName
@@ -204,10 +208,10 @@ internal class TaskTagEngineTests :
           // given
           val msgIn = random<RemoveTaskIdFromTag>()
           // when
-          getTagEngine(setOf(msgIn.taskId)).handle(msgIn, MillisInstant.now())
+          getTagEngine(setOf(msgIn.taskId)).process(msgIn, MillisInstant.now())
           // then
           coVerifySequence {
-            tagStateStorage.removeTaskIdFromTag(msgIn.taskTag, msgIn.serviceName, msgIn.taskId)
+            tagStateStorage.removeTaskId(msgIn.taskTag, msgIn.serviceName, msgIn.taskId)
           }
           captured(taskTag) shouldBe msgIn.taskTag
           captured(serviceName) shouldBe msgIn.serviceName
@@ -218,16 +222,16 @@ internal class TaskTagEngineTests :
           // given
           val msgIn = random<SetDelegatedTaskData>()
           // when
-          getTaskEngine().handle(msgIn, MillisInstant.now())
+          getTaskEngine().process(msgIn, MillisInstant.now())
           // then
           coVerifySequence {
-            tagStateStorage.setDelegatedTaskData(msgIn.taskId, msgIn.delegatedTaskData)
+            tagStateStorage.updateDelegatedTaskData(msgIn.taskId, msgIn.delegatedTaskData)
           }
           taskId.captured shouldBe msgIn.taskId
           delegatedTaskData.captured shouldBe msgIn.delegatedTaskData
         }
 
-        "CompleteAsyncTask should send RemoteTaskCompleted to parent workflow" {
+        "CompleteDelegatedTask should send RemoteTaskCompleted to parent workflow" {
           // given
           val requester = random<WorkflowRequester>()
           val msgIn = random<CompleteDelegatedTask>()
@@ -235,17 +239,21 @@ internal class TaskTagEngineTests :
 
           // when
           val emittedAt = MillisInstant.now()
-          getTaskEngine(delegatedTaskData).handle(msgIn, emittedAt)
+          getTaskEngine(delegatedTaskData).process(msgIn, emittedAt)
           // then
           coVerifySequence {
+            producerMock.emitterName
             tagStateStorage.getDelegatedTaskData(msgIn.taskId)
-            producerMock.producerName
-            with(producerMock) { capture(workflowEngineMessage).sendToAsync(WorkflowEngineTopic) }
-            tagStateStorage.delDelegatedTaskData(msgIn.taskId)
+            with(producerMock) {
+              capture(workflowStateEngineMessage).sendTo(
+                  WorkflowStateEngineTopic,
+              )
+            }
+            tagStateStorage.updateDelegatedTaskData(msgIn.taskId, null)
           }
           taskId.captured shouldBe msgIn.taskId
 
-          workflowEngineMessage.captured shouldBe RemoteTaskCompleted(
+          workflowStateEngineMessage.captured shouldBe RemoteTaskCompleted(
               taskReturnValue = TaskReturnValue(
                   taskId = delegatedTaskData.taskId,
                   serviceName = delegatedTaskData.serviceName,
@@ -271,13 +279,13 @@ internal class TaskTagEngineTests :
 
           // when
           val emittedAt = MillisInstant.now()
-          getTaskEngine(delegatedTaskData).handle(msgIn, emittedAt)
+          getTaskEngine(delegatedTaskData).process(msgIn, emittedAt)
           // then
           coVerifySequence {
+            producerMock.emitterName
             tagStateStorage.getDelegatedTaskData(msgIn.taskId)
-            producerMock.producerName
-            with(producerMock) { capture(clientMessage).sendToAsync(ClientTopic) }
-            tagStateStorage.delDelegatedTaskData(msgIn.taskId)
+            with(producerMock) { capture(clientMessage).sendTo(ClientTopic) }
+            tagStateStorage.updateDelegatedTaskData(msgIn.taskId, null)
           }
           taskId.captured shouldBe msgIn.taskId
 

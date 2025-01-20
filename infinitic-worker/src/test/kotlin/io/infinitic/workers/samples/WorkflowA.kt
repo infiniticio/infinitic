@@ -27,8 +27,10 @@ import io.infinitic.workflows.Workflow
 internal interface WorkflowA
 
 internal class WorkflowAImpl : Workflow(), WorkflowA
+internal class WorkflowA2Impl : Workflow(), WorkflowA
+internal class WorkflowAImpl_1 : Workflow(), WorkflowA
 
-internal class WorkflowAImpl2 : Workflow()
+internal class WorkflowNotAImpl : Workflow()
 
 internal class NotAWorkflow : WorkflowA
 
