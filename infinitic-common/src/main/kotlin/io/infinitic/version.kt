@@ -26,7 +26,7 @@ import io.infinitic.common.serDe.avro.AvroSerDe
 
 /** Current version (release or snapshot) */
 val currentVersion: String =
-    AvroSerDe::class.java.getResource("/currentVersion")!!.readText()
+    AvroSerDe::class.java.getResource("/currentVersion")!!.readText().trim()
 
 /** List of all release versions used for schema backward compatibility */
 val versions: List<String> =

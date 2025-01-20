@@ -37,14 +37,15 @@ import kotlin.reflect.KClass
 
 const val STEPS_FOLDER = "steps"
 
-private fun getHashFolder() = Step::class.java.getResource("/$STEPS_FOLDER/")!!.path
+private fun getHashFolder() = Step::class.java.getResource("/")!!.path
     .replace("build/resources/main", "src/main/resources")
+    .replace("build/classes/java/test", "src/main/resources")
 
-private fun <T : Step> getJsonFile(klass: KClass<T>, version: String) =
-    File("${getHashFolder()}/step-${klass.simpleName}-$version.json")
+private fun <T : Step> getJsonPath(klass: KClass<T>, version: String) =
+    "/$STEPS_FOLDER/step-${klass.simpleName}-$version.json"
 
-private fun <T : Step> getHashFile(klass: KClass<T>, version: String) =
-    File("${getHashFolder()}/step-${klass.simpleName}-$version.hash")
+private fun <T : Step> getHashPath(klass: KClass<T>, version: String) =
+    "/$STEPS_FOLDER/step-${klass.simpleName}-$version.hash"
 
 @Suppress("UNCHECKED_CAST")
 private fun <T : Step> getRandomStep(klass: KClass<T>): T = when (klass) {
@@ -58,23 +59,23 @@ private fun <T : Step> getRandomStep(klass: KClass<T>): T = when (klass) {
 internal fun <T : Step> checkOrCreateCurrentStepFiles(klass: KClass<T>) {
   // Non-release version are not saved to the sources
   if (isRelease) {
-    val jsonFile = getJsonFile(klass, currentVersion.trim())
-    val hashFile = getHashFile(klass, currentVersion.trim())
+    val jsonPath = getJsonPath(klass, currentVersion)
+    val hashPath = getHashPath(klass, currentVersion)
 
-    when (jsonFile.exists()) {
+    when (Step::class.java.getResource(jsonPath) == null) {
       // create files for the current version
-      false -> {
+      true -> {
         val step = getRandomStep(klass)
         val json = Json.encodeToString(klass.serializer(), step)
-        jsonFile.writeText(json)
-        hashFile.writeText(step.hash().toString())
+        File(getHashFolder() + jsonPath).writeText(json)
+        File(getHashFolder() + hashPath).writeText(step.hash().toString())
       }
 
-      // check that hash were not modified
-      true -> {
-        val json = jsonFile.readText()
+      // check that hashes were not modified
+      false -> {
+        val json = Step::class.java.getResource(jsonPath)!!.readText()
         val step = Json.decodeFromString(klass.serializer(), json)
-        step.hash().toString() shouldBe hashFile.readText()
+        step.hash().toString() shouldBe Step::class.java.getResource(hashPath)!!.readText()
       }
     }
   }
@@ -84,14 +85,15 @@ internal fun <T : Step> checkOrCreateCurrentStepFiles(klass: KClass<T>) {
 internal fun checkStepHashForAllVersions(klass: KClass<out Step>) {
   // for all versions
   versions.mapNotNull { version ->
-    val jsonFileUrl = "/$STEPS_FOLDER/${getJsonFile(klass, version).name}"
-    val hashFileUrl = "/$STEPS_FOLDER/${getHashFile(klass, version).name}"
-    Step::class.java.getResource(jsonFileUrl)?.let {
-      val json = it.readText()
+    val jsonFileUrl = getJsonPath(klass, version)
+    val hashFileUrl = getHashPath(klass, version)
+    Step::class.java.getResource(jsonFileUrl)?.let { jsonFile ->
+      val json = jsonFile.readText()
       val step = Json.decodeFromString(klass.serializer(), json)
       // hash calculated by previous version should be the same as for this version
-      Step::class.java.getResource(hashFileUrl)?.readText() shouldBe (step.hash().toString())
+      val previousHash = StepHash(Step::class.java.getResource(hashFileUrl)?.readText()!!)
+      step.hasHash(previousHash) shouldBe true
     }
-  }.size shouldBeGreaterThan 0 // checking we did not break something silently
+  }.size shouldBeGreaterThan 1 // checking we did not break something silently
 }
 

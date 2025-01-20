@@ -177,7 +177,7 @@ internal class WorkflowDispatcherImpl(
 
     // create a new step
     val newStep = NewStep(step = deferred.step, stepPosition = positionInMethod)
-    
+
     val result = when (val pastStep = getSimilarPastStep(newStep)) {
       // this step is not found in the history
       null -> {
@@ -518,7 +518,7 @@ internal class WorkflowDispatcherImpl(
     }
 
     // if it exists, check it has not changed
-    if (pastStep != null && !pastStep.isSameThan(newStep)) {
+    if (pastStep != null && !newStep.step.hasHash(pastStep.stepHash)) {
       val e = WorkflowChangedException(
           "${workflowTaskParameters.workflowName}",
           "${workflowTaskParameters.workflowMethod.methodName}",
