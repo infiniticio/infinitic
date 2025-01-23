@@ -29,6 +29,8 @@ import io.infinitic.annotations.Retry
 import io.infinitic.annotations.Timeout
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.tasks.Task
+import io.infinitic.tests.syntax.Child1
+import io.infinitic.tests.syntax.Parent
 import io.infinitic.workflows.DeferredStatus
 
 internal interface ParentInterface {
@@ -57,6 +59,8 @@ internal interface UtilService : ParentInterface {
   fun failingWithNestedCustomException()
 
   fun failingWithThrowable()
+
+  fun polymorphism(): Parent
 
   fun successAtRetry(): String
 
@@ -114,6 +118,8 @@ internal class UtilServiceImpl : UtilService {
   override fun failingWithNestedCustomException() = throw Exception(CustomException())
 
   override fun failingWithThrowable() = throw Throwable("really sorry")
+
+  override fun polymorphism(): Child1 = Child1("child1")
 
   @Retry(NoRetry::class)
   override fun successAtRetry() = when (Task.retrySequence) {

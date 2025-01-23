@@ -41,25 +41,14 @@ internal class SyntaxWorkflowTests :
 
         "run childWorkflow from parent interface" { syntaxWorkflow.wparent() shouldBe "ok" }
 
-        //    "Tag should be added then deleted after completion" {
-        //        val deferred = client.dispatch(workflowATagged::channel1)
-        //
-        //        val w = client.getWorkflowByTag(WorkflowA::class.java, "foo")
-        //        client.getIds(w).contains(deferred.id) shouldBe true
-        //
-        //        // complete workflow
-        //        w.channelA.send("")
-        //
-        //        // delay is necessary to be sure that tag engine has processed
-        //        delay(500)
-        //
-        //        client.getIds(w).contains(deferred.id) shouldBe false
-        //    }
-
         "Annotated Workflow" {
           val result = annotatedWorkflow.concatABC("")
 
           result shouldBe "abc"
+        }
+
+        "polymorphism in return value" {
+          syntaxWorkflow.polymorphism() shouldBe Child1("child1")
         }
       },
   )

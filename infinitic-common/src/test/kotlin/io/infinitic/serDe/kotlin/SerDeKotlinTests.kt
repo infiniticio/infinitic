@@ -217,15 +217,6 @@ class SerDeTests : StringSpec(
         val2 shouldBe val1
       }
 
-//      "List Of primitives should be serializable / deserializable" {
-//        val val1 = listOf(42F, true, "!@#%")
-//
-//        val val2 = SerializedData.encode(val1, null, null)
-//            .decode(null, null)
-//
-//        val2 shouldBe val1
-//      }
-
       "Null (Obj) should be serializable / deserializable" {
         val obj1: Obj1? = null
         val obj2 = SerializedData.encode(obj1, Obj1::class.java, null)
