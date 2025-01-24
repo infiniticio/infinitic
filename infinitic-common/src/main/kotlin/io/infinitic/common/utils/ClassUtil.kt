@@ -54,6 +54,7 @@ import kotlin.reflect.jvm.javaMethod
 
 private val cachesList
   get() = listOf(
+      interfaceCache,
       batchMethodCache,
       methodsCache,
       methodNameCache,
@@ -71,6 +72,49 @@ private val cachesList
 
 @get:TestOnly
 val maxCachesSize get() = cachesList.maxOf { it.keys.size }
+
+@TestOnly
+fun classUtilsClearCaches() {
+  cachesList.forEach { it.clear() }
+}
+
+/**
+ * Get interface from a class by name
+ */
+
+internal val interfaceCache = ConcurrentHashMap<String, Class<*>>()
+
+fun Class<*>.getInterface(n: String): Class<*> = interfaceCache.getOrPut(n) {
+  findInterface(n)
+    ?: throw IllegalStateException("Interface with name '$n' not found in class '$this' ")
+}
+
+// search for an interface by its name or @Name annotation
+private fun Class<*>.findInterface(
+  name: String,
+  visited: MutableSet<Class<*>> = mutableSetOf()
+): Class<*>? {
+  var klass: Class<*>? = this
+  while (klass != null) {
+    klass.interfaces.forEach { i ->
+      if (i !in visited) {
+        visited.add(i)
+        if (i.name == name || i.getAnnotation(Name::class.java)?.name == name) {
+          return i
+        } else {
+          // Recursively check parent interfaces
+          i.findInterface(name, visited)?.let { return it }
+        }
+      }
+    }
+    klass = klass.superclass
+  }
+  return null
+}
+
+/**
+ * Get method from a class by name and parameters
+ */
 
 internal val methodsCache = ConcurrentHashMap<String, Method>()
 
@@ -124,16 +168,15 @@ fun String.getClass(
  * This is used as a health check when registering a service or workflow in workers
  */
 fun Class<*>.isImplementationOf(name: String): Boolean {
-  var klass = this
+  var klass: Class<*>? = this
 
-  do {
+  while (klass != null) {
     klass.interfaces.forEach {
       if (name == it.annotatedName) return true
     }
     // Look for the name on the superclass
-    klass = klass.superclass ?: break
-
-  } while (true)
+    klass = klass.superclass
+  }
 
   return false
 }

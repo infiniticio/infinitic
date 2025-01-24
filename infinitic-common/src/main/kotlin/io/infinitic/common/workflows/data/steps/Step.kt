@@ -42,6 +42,8 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import java.lang.reflect.Type
+import java.math.BigInteger
+import java.security.MessageDigest
 import kotlin.Int.Companion.MAX_VALUE
 import kotlin.reflect.jvm.javaType
 import kotlin.reflect.typeOf
@@ -63,8 +65,25 @@ sealed class Step {
   // increase wait index and update current status
   abstract fun nextAwaitIndex()
 
-  /** hash provides a unique hash linked to the structure of the step (excluding commandStatus) */
+  // hash provides a unique hash linked to the structure of the step (excluding commandStatus)
   abstract fun hash(): StepHash
+
+  // hash as calculated before version <=0.13.2
+  internal abstract fun hash0132(): StepHash
+
+  // hash as calculated before version <=0.17.0
+  internal abstract fun hash0170(): StepHash
+
+  fun hasHash(hash: StepHash): Boolean {
+    // current hash function
+    if (hash == hash()) return true
+    // backward compatibility version <= 0.17.0
+    if (hash == hash0170()) return true
+    // backward compatibility version <= 0.13.2
+    if (hash == hash0132()) return true
+
+    return false
+  }
 
   /**
    * Function providing the value when completed. This should be used only in workflow task
@@ -121,7 +140,13 @@ sealed class Step {
     }
 
     override fun hash() =
+        StepHash(commandId.toString().hash())
+
+    override fun hash0170() =
         StepHash(SerializedData.encode(commandId, CommandId::class.java, null).hash())
+
+    override fun hash0132() =
+        StepHash(SerializedData.encode(commandId, null, null).hash())
 
     override fun isTerminatedAt(index: WorkflowTaskIndex) =
         when (statusAt(index)) {
@@ -215,9 +240,23 @@ sealed class Step {
   data class And(var steps: List<Step>) : Step() {
 
     override fun hash() = StepHash(
+        steps.map { it.hash().toString() }
+            .sorted() // order of steps does not matter
+            .joinToString(prefix = "and(", postfix = ")").hash(),
+    )
+
+    override fun hash0170() = StepHash(
         SerializedData.encode(
-            steps.map { it.hash() },
+            steps.map { it.hash0170() },
             typeOf<List<StepHash>>().javaType,
+            null,
+        ).hash(),
+    )
+
+    override fun hash0132() = StepHash(
+        SerializedData.encode(
+            steps.map { it.hash0132() },
+            null,
             null,
         ).hash(),
     )
@@ -276,9 +315,23 @@ sealed class Step {
   data class Or(var steps: List<Step>) : Step() {
 
     override fun hash() = StepHash(
+        steps.map { it.hash().toString() }
+            .sorted() // order of steps does not matter
+            .joinToString(prefix = "or(", postfix = ")").hash(),
+    )
+
+    override fun hash0170() = StepHash(
         SerializedData.encode(
-            steps.map { it.hash() },
+            steps.map { it.hash0170() },
             typeOf<List<StepHash>>().javaType,
+            null,
+        ).hash(),
+    )
+
+    override fun hash0132() = StepHash(
+        SerializedData.encode(
+            steps.map { it.hash0132() },
+            null,
             null,
         ).hash(),
     )
@@ -400,4 +453,10 @@ sealed class Step {
     }
     return this
   }
+}
+
+// MD5 implementation, enough to avoid collision in practical cases
+private fun String.hash(): String {
+  val md = MessageDigest.getInstance("MD5")
+  return BigInteger(1, md.digest(toByteArray())).toString(16).padStart(32, '0')
 }

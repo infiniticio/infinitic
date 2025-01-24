@@ -39,6 +39,7 @@ import io.infinitic.workflows.setChannelNames
 import io.infinitic.workflows.setChannelTypes
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
+import java.lang.reflect.Type
 
 class WorkflowTaskImpl : WorkflowTask {
 
@@ -46,6 +47,7 @@ class WorkflowTaskImpl : WorkflowTask {
   lateinit var checkMode: WorkflowCheckMode
   lateinit var instance: Workflow
   lateinit var method: Method
+  lateinit var returnType: Type
 
   override fun handle(workflowTaskParameters: WorkflowTaskParameters): WorkflowTaskReturnValue {
     // get method
@@ -80,7 +82,7 @@ class WorkflowTaskImpl : WorkflowTask {
     // run method and get return value (null if end not reached)
     val methodReturnValue = try {
       // method is the workflow method currently processed
-      method.encodeReturnValue(method.invoke(instance, *parameters.toTypedArray()))
+      method.encodeReturnValue(method.invoke(instance, *parameters.toTypedArray()), returnType)
     } catch (e: InvocationTargetException) {
       when (val cause = e.cause ?: e) {
         // we reach an uncompleted step

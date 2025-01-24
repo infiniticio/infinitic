@@ -20,35 +20,24 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.tests.syntax
+package io.infinitic.common.workflows.data.steps
 
-import io.infinitic.Test
-import io.infinitic.utils.AnnotatedWorkflow
 import io.kotest.core.spec.style.StringSpec
-import io.kotest.matchers.shouldBe
 
-internal class SyntaxWorkflowTests :
+
+class StepHashTests :
   StringSpec(
       {
-        val client = Test.client
-
-        val syntaxWorkflow = client.newWorkflow(SyntaxWorkflow::class.java)
-        val annotatedWorkflow = client.newWorkflow(AnnotatedWorkflow::class.java)
-
-        "empty Workflow" { syntaxWorkflow.empty() shouldBe "void" }
-
-        "run task from parent interface" { syntaxWorkflow.parent() shouldBe "ok" }
-
-        "run childWorkflow from parent interface" { syntaxWorkflow.wparent() shouldBe "ok" }
-
-        "Annotated Workflow" {
-          val result = annotatedWorkflow.concatABC("")
-
-          result shouldBe "abc"
+        "Create Current step files" {
+          Step::class.sealedSubclasses.forEach {
+            checkOrCreateCurrentStepFiles(it)
+          }
         }
 
-        "polymorphism in return value" {
-          syntaxWorkflow.polymorphism() shouldBe Child1("child1")
+        "Check hash for all versions" {
+          Step::class.sealedSubclasses.forEach {
+            checkStepHashForAllVersions(it)
+          }
         }
       },
   )

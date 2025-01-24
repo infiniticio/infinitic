@@ -25,6 +25,7 @@ package io.infinitic.tests.syntax
 import io.infinitic.utils.ParentInterface
 import io.infinitic.utils.UtilService
 import io.infinitic.workflows.Workflow
+import kotlinx.serialization.Serializable
 
 internal interface SyntaxWorkflow : ParentInterface {
   fun empty(): String
@@ -32,10 +33,12 @@ internal interface SyntaxWorkflow : ParentInterface {
   fun await(duration: Long): Long
 
   fun wparent(): String
+
+  fun polymorphism(): Parent
 }
 
 @Suppress("unused")
-class SyntaxWorkflowImpl : Workflow(), SyntaxWorkflow {
+internal class SyntaxWorkflowImpl : Workflow(), SyntaxWorkflow {
 
   private val utilService =
       newService(
@@ -54,4 +57,17 @@ class SyntaxWorkflowImpl : Workflow(), SyntaxWorkflow {
   override fun parent() = utilService.parent()
 
   override fun wparent(): String = syntaxWorkflow.parent()
+
+  override fun polymorphism() = utilService.polymorphism()
 }
+
+@Serializable
+internal sealed class Parent {
+  abstract val type: String
+}
+
+@Serializable
+internal data class Child1(val child: String, override val type: String = "Child1") : Parent()
+
+@Serializable
+internal data class Child2(val child: String, override val type: String = "Child2") : Parent()

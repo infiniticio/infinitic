@@ -54,6 +54,7 @@ import io.infinitic.common.transport.ServiceExecutorEventTopic
 import io.infinitic.common.transport.ServiceExecutorRetryTopic
 import io.infinitic.common.transport.ServiceExecutorTopic
 import io.infinitic.common.transport.interfaces.InfiniticProducer
+import io.infinitic.common.utils.classUtilsClearCaches
 import io.infinitic.common.workers.config.WithExponentialBackoffRetry
 import io.infinitic.common.workers.data.WorkerName
 import io.infinitic.exceptions.tasks.ClassNotFoundException
@@ -84,7 +85,7 @@ import io.mockk.slot
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.TimeoutException
 
-private val testServiceName = ServiceName("serviceTest")
+private val testServiceName = ServiceName("SimpleService")
 private val testEmitterName = EmitterName("emitterTest")
 private val testWorkerName = WorkerName.from(testEmitterName)
 
@@ -116,6 +117,7 @@ class TaskExecutorTests :
 
         // ensure slots are emptied between each test
         beforeEach {
+          classUtilsClearCaches()
           clearMocks(registry)
           afterSlot.clear()
           taskExecutorSlot.clear()

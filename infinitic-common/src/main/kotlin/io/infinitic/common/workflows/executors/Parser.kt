@@ -56,24 +56,36 @@ fun Workflow.setProperties(
   setProperties(properties)
 }
 
-fun Workflow.getProperties() = filterProperties {
-  // excludes Channels
-  !it.first.returnType.isSubtypeOf(Channel::class.starProjectedType) &&
-      // excludes Proxies (tasks and workflows) and null
-      !(it.second?.let { Proxy.isProxyClass(it::class.java) } ?: true) &&
-      // exclude SLF4J loggers
-      !it.first.returnType.isSubtypeOf(Logger::class.createType()) &&
-      // exclude KotlinLogging loggers
-      !it.first.returnType.isSubtypeOf(KLogger::class.createType()) &&
-      // exclude Ignore annotation
-      !it.first.hasAnnotation<Ignore>()
-}
+private fun isStorableProperty(prop: KProperty1<out Workflow, *>, value: Any?): Boolean =
+    !(  // exclude channels
+        prop.returnType.isSubtypeOf(Channel::class.starProjectedType) ||
+            // exclude SLF4J loggers
+            prop.returnType.isSubtypeOf(Logger::class.createType()) ||
+            // exclude KotlinLogging loggers
+            prop.returnType.isSubtypeOf(KLogger::class.createType()) ||
+            // exclude Ignore annotation
+            prop.hasAnnotation<Ignore>() ||
+            // excludes Proxies (tasks and workflows) and null
+            (value?.let { Proxy.isProxyClass(it::class.java) } ?: true))
+
+fun Workflow.getProperties() = this::class.memberProperties
+    .map { p: KProperty1<out Workflow, *> -> p to getProperty(p) }
+    .filter { isStorableProperty(it.first, it.second) }
+    .associateBy(
+        { PropertyName(it.first.name) },
+        { PropertyValue.from(it.second, it.first.javaField!!.genericType) },
+    )
 
 context(KLogger)
 private fun Workflow.setProperties(values: Map<PropertyName, PropertyValue>) {
   val properties = this::class.memberProperties
   values.forEach { (name, value) ->
-    properties.find { it.name == name.name }?.let { setProperty(this, it, value) }
+    properties.find { it.name == name.name }
+        ?.let {
+          // here `value` is a PropertyValue, not the deserialized value
+          // so `isStorableProperty` will only check correctly the type of the property
+          if (isStorableProperty(it, value)) setProperty(it, value)
+        }
       ?: warn {
         "The property '${name.name}' present in the workflow history for class " +
             "'${this::class.java.name} is not recognized and will be ignored."
@@ -81,21 +93,38 @@ private fun Workflow.setProperties(values: Map<PropertyName, PropertyValue>) {
   }
 }
 
-private fun Workflow.filterProperties(
-  filter: (p: Pair<KProperty1<out Workflow, *>, Any?>) -> Boolean = { true }
-): Map<PropertyName, PropertyValue> =
-    this::class.memberProperties
-        .map { p: KProperty1<out Workflow, *> -> Pair(p, getProperty(this, p)) }
-        .filter { filter(it) }
-        .associateBy(
-            { PropertyName(it.first.name) },
-            {
-              PropertyValue.from(
-                  it.second,
-                  it.first.javaField!!.genericType,
-              )
-            },
+private fun <T : Workflow> T.getProperty(prop: KProperty1<out T, *>): Any? =
+    prop.javaField?.let {
+      try {
+        it.isAccessible = true
+      } catch (e: SecurityException) {
+        throw RuntimeException(
+            "Property ${this::class.java.name}:${it.name} is not readable (can not set accessible)",
+            e,
         )
+      }
+
+      it.get(this@getProperty)
+    }
+
+private fun <T : Workflow> T.setProperty(
+  prop: KProperty1<out T, *>,
+  propertyValue: PropertyValue
+) {
+  prop.javaField?.apply {
+    try {
+      isAccessible = true
+    } catch (e: SecurityException) {
+      throw RuntimeException(
+          "Property ${this@setProperty::class.java.name}:$name can not be set (not accessible)",
+          e,
+      )
+    }
+    val value = propertyValue.value(genericType, prop.jsonViewClass)
+
+    set(this@setProperty, value)
+  }
+}
 
 private val KProperty1<*, *>.jsonViewClass
   get(): Class<*>? {
@@ -108,39 +137,7 @@ private val KProperty1<*, *>.jsonViewClass
     return jsonViewAnnotation?.value
         ?.also {
           if (it.size != 1)
-            throw InvalidParameterException("The annotation @JsonView on property '$name' must have one parameter")
+            throw InvalidParameterException("The annotation @JsonView on property '$name' must have exactly one parameter")
         }
         ?.firstOrNull()?.java
   }
-
-private fun <T : Any> getProperty(obj: T, kProperty: KProperty1<out T, *>): Any? =
-    kProperty.javaField?.let {
-      val errorMsg = "Property ${obj::class.java.name}:${it.name} is not readable"
-
-      try {
-        it.isAccessible = true
-      } catch (e: SecurityException) {
-        throw RuntimeException("$errorMsg (can not set accessible)")
-      }
-
-      it.get(obj)
-    }
-
-private fun <T : Any> setProperty(
-  obj: T,
-  kProperty: KProperty1<out T, *>,
-  propertyValue: PropertyValue
-) {
-  kProperty.javaField?.apply {
-    val errorMsg = "Property ${obj::class.java.name}:$name can not be set"
-
-    try {
-      isAccessible = true
-    } catch (e: SecurityException) {
-      throw RuntimeException("$errorMsg (not accessible)", e)
-    }
-    val value = propertyValue.value(genericType, kProperty.jsonViewClass)
-
-    set(obj, value)
-  }
-}

@@ -94,6 +94,4 @@ data class PastStep(
           || ((stepStatus is CurrentlyFailed || stepStatus is CurrentlyTimedOut) && wasWaiting)
     }
   }
-
-  fun isSameThan(newStep: NewStep) = newStep.stepHash == stepHash
 }
