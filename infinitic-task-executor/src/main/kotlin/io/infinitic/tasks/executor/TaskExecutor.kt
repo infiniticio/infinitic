@@ -50,6 +50,7 @@ import io.infinitic.common.transport.logged.LoggerWithCounter
 import io.infinitic.common.utils.BatchMethod
 import io.infinitic.common.utils.checkMode
 import io.infinitic.common.utils.getBatchMethod
+import io.infinitic.common.utils.getInterface
 import io.infinitic.common.utils.getMethodPerNameAndParameters
 import io.infinitic.common.utils.isDelegated
 import io.infinitic.common.utils.withRetry
@@ -137,7 +138,7 @@ class TaskExecutor(
           true -> executeTasks.forEach { launch { it.process() } }
           // for services, we use the batched method
           false -> {
-            val (_, serviceMethod) = executeTasks.first().getInstanceAndMethod()
+            val (_, serviceMethod, _) = executeTasks.first().getInstanceMethodAndReturnType()
             when (serviceMethod.getBatchMethod()) {
               // there is no batch method, we just proceed with the task one by one
               null -> executeTasks.forEach { launch { it.process() } }
@@ -167,6 +168,7 @@ class TaskExecutor(
   private data class TaskData(
     val instance: Any,
     val method: Method,
+    val returnType: Type,
     val withTimeout: WithTimeout?,
     val withRetry: WithRetry?,
     val isDelegated: Boolean,
@@ -177,6 +179,7 @@ class TaskExecutor(
   private data class BatchedTaskData(
     val instance: Any,
     val batchMethod: BatchMethod,
+    val returnType: Type,
     val withTimeout: WithTimeout?,
     val withRetry: WithRetry?,
     val isDelegated: Boolean,
@@ -529,7 +532,7 @@ class TaskExecutor(
     isDelegated: Boolean,
     method: Method,
     meta: Map<String, ByteArray>,
-    returnType: Type? = null
+    returnType: Type
   ) {
     if (isDelegated && output != null) logDebug {
       "Method '${method}' has an '${Delegated::class.java.name}' annotation, so its result is ignored"
@@ -558,7 +561,13 @@ class TaskExecutor(
   }
 
   private suspend fun ExecuteTask.sendTaskCompleted(output: Any?, taskData: TaskData) =
-      sendTaskCompleted(output, taskData.isDelegated, taskData.method, taskData.context.meta)
+      sendTaskCompleted(
+          output,
+          taskData.isDelegated,
+          taskData.method,
+          taskData.context.meta,
+          taskData.returnType,
+      )
 
   private suspend fun List<ExecuteTask>.sendTaskCompleted(
     output: Map<String, Any?>,
@@ -571,22 +580,35 @@ class TaskExecutor(
             batchData.isDelegated,
             batchData.batchMethod.single,
             batchData.contextMap[executeTask.taskId]!!.meta,
-            batchData.batchMethod.componentReturnType,
+            batchData.returnType,
         )
       }
     }
   }
 
-  private fun ExecuteTask.getInstanceAndMethod(): Pair<Any, Method> {
+  private fun ExecuteTask.getInstanceMethodAndReturnType(): Triple<Any, Method, Type> {
     // Obtain the service instance from the registry
-    val instance = registry.getServiceExecutorInstance(serviceName)
+    val serviceInstance = registry.getServiceExecutorInstance(serviceName)
 
-    // Return the class and method corresponding to the specified name and parameter types
-    return instance to instance::class.java.getMethodPerNameAndParameters(
+    // Interface defining the Service contract
+    val serviceInterface = serviceInstance::class.java.getInterface(serviceName.toString())
+
+    // Return type of the method (from the contract, not the implementation)
+    val returnType = serviceInterface.getMethodPerNameAndParameters(
+        "$methodName",
+        methodParameterTypes?.types,
+        methodArgs.size,
+    ).genericReturnType
+
+    // Method from the Service implementation
+    val serviceMethod = serviceInstance::class.java.getMethodPerNameAndParameters(
         "$methodName",
         methodParameterTypes?.types,
         methodArgs.size,
     )
+
+    // Return the class and method corresponding to the specified name and parameter types
+    return Triple(serviceInstance, serviceMethod, returnType)
   }
 
   private fun ExecuteTask.getContext(
@@ -611,7 +633,7 @@ class TaskExecutor(
   )
 
   private fun ExecuteTask.parseBatch(): TaskData {
-    val (serviceInstance, serviceMethod) = getInstanceAndMethod()
+    val (serviceInstance, serviceMethod, returnType) = getInstanceMethodAndReturnType()
 
     val batchMethod = serviceMethod.getBatchMethod() ?: thisShouldNotHappen()
 
@@ -626,6 +648,7 @@ class TaskExecutor(
     return TaskData(
         serviceInstance,
         serviceMethod,
+        returnType,
         withTimeout,
         withRetry,
         isDelegated,
@@ -661,6 +684,7 @@ class TaskExecutor(
     return BatchedTaskData(
         instance = taskData.instance,
         batchMethod = taskData.method.getBatchMethod() ?: thisShouldNotHappen(),
+        returnType = taskData.returnType,
         withTimeout = taskData.withTimeout,
         withRetry = taskData.withRetry,
         isDelegated = taskData.isDelegated,
@@ -670,13 +694,9 @@ class TaskExecutor(
   }
 
   private fun ExecuteTask.parseTask(): TaskData {
-    val serviceInstance = registry.getServiceExecutorInstance(serviceName)
 
-    val serviceMethod = serviceInstance::class.java.getMethodPerNameAndParameters(
-        "$methodName",
-        methodParameterTypes?.types,
-        methodArgs.size,
-    )
+    val (serviceInstance, serviceMethod, returnType) = getInstanceMethodAndReturnType()
+
     val serviceArgs = serviceMethod.deserializeArgs(methodArgs)
 
     val withTimeout = getWithTimeout(serviceName, serviceMethod)
@@ -691,6 +711,7 @@ class TaskExecutor(
     return TaskData(
         serviceInstance,
         serviceMethod,
+        returnType,
         withTimeout,
         withRetry,
         isDelegated,
@@ -705,18 +726,30 @@ class TaskExecutor(
     val serviceArgs = serviceMethod.deserializeArgs(methodArgs)
 
     val workflowTaskParameters = serviceArgs[0] as WorkflowTaskParameters
+    val methodName = workflowTaskParameters.workflowMethod.methodName.toString()
+    val methodParametersType = workflowTaskParameters.workflowMethod.methodParameterTypes?.types
+    val methodParametersSize = workflowTaskParameters.workflowMethod.methodParameters.size
 
     // workflow instance
     val workflowInstance = registry.getWorkflowExecutorInstance(workflowTaskParameters)
 
     // method of the workflow instance
-    val workflowMethod = with(workflowTaskParameters) {
-      workflowInstance::class.java.getMethodPerNameAndParameters(
-          "${workflowMethod.methodName}",
-          workflowMethod.methodParameterTypes?.types,
-          workflowMethod.methodParameters.size,
-      )
-    }
+    val workflowMethod = workflowInstance::class.java.getMethodPerNameAndParameters(
+        methodName,
+        methodParametersType,
+        methodParametersSize,
+    )
+
+    // Interface defining the workflow contract
+    val workflowInterface =
+        workflowInstance::class.java.getInterface(workflowTaskParameters.workflowName.toString())
+
+    // Return type of the method (from the contract, not the implementation)
+    val returnType = workflowInterface.getMethodPerNameAndParameters(
+        methodName,
+        methodParametersType,
+        methodParametersSize,
+    ).genericReturnType
 
     val workflowName = (requester as WorkflowRequester).workflowName
     // get checkMode from registry
@@ -731,6 +764,7 @@ class TaskExecutor(
       this.checkMode = checkMode
       this.instance = workflowInstance
       this.method = workflowMethod
+      this.returnType = returnType
     }
 
     val withTimeout = getWithTimeout(workflowName)
@@ -742,6 +776,7 @@ class TaskExecutor(
     return TaskData(
         serviceInstance,
         serviceMethod,
+        serviceMethod.genericReturnType,
         withTimeout,
         withRetry,
         false,
