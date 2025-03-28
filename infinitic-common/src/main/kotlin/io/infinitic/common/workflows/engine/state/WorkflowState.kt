@@ -114,6 +114,7 @@ data class WorkflowState(
    */
   val messagesBuffer: MutableList<WorkflowStateEngineMessage> = mutableListOf()
 ) {
+
   companion object {
     fun fromByteArray(bytes: ByteArray) =
         AvroSerDe.readBinaryWithSchemaFingerprint(bytes, WorkflowState::class)

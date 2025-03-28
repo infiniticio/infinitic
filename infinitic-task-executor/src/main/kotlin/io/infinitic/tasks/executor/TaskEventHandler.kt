@@ -45,6 +45,7 @@ import io.infinitic.common.workflows.data.commands.SendSignalPastCommand
 import io.infinitic.common.workflows.data.commands.StartDurationTimerPastCommand
 import io.infinitic.common.workflows.data.commands.StartInstantTimerPastCommand
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskReturnValue
+import io.infinitic.common.workflows.engine.messages.RemoteTaskCompleted
 import io.infinitic.tasks.executor.events.dispatchDurationTimerCmd
 import io.infinitic.tasks.executor.events.dispatchInstantTimerCmd
 import io.infinitic.tasks.executor.events.dispatchRemoteMethodCmd
@@ -78,6 +79,8 @@ class TaskEventHandler(val producer: InfiniticProducer) {
       }
 
   private suspend fun sendTaskCompleted(msg: TaskCompletedEvent, publishedAt: MillisInstant) {
+    var remoteTaskCompleted: RemoteTaskCompleted? = null
+
     coroutineScope {
       when (msg.isDelegated) {
         // if this task is marked as asynchronous, we do not forward the result, add a tag.
@@ -101,6 +104,7 @@ class TaskEventHandler(val producer: InfiniticProducer) {
           }
           // send to parent workflow
           msg.getEventForWorkflow(producer.emitterName, publishedAt)?.let {
+            remoteTaskCompleted = it
             launch { with(producer) { it.sendTo(WorkflowStateEngineTopic) } }
           }
           // remove tags

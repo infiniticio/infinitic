@@ -23,7 +23,7 @@
 
 services:
   pulsar:
-    image: apachepulsar/pulsar:3.0.7
+    image: apachepulsar/pulsar:3.1.2
     command: sh -c "bin/apply-config-from-env.py conf/standalone.conf && bin/pulsar standalone"
     hostname: pulsar
     ports:
@@ -37,13 +37,9 @@ services:
       interval: 5s
       timeout: 10s
       retries: 10
-    environment:
-      - 'PULSAR_PREFIX_advertisedAddress=pulsar'
-      - 'PULSAR_PREFIX_advertisedListeners=internal:pulsar://pulsar:6650,external:pulsar://127.0.0.1:6650'
-      - 'PULSAR_STANDALONE_USE_ZOOKEEPER=1'
 
   streamvisor:
-    image: ghcr.io/streamvisor/streamvisor:3.1.1
+    image: ghcr.io/streamvisor/streamvisor:3.2.0
     ports:
       - '8888:8888'
       - '7750:7750'

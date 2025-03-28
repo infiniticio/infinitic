@@ -29,6 +29,8 @@ import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.requester.ClientRequester
 import io.infinitic.common.requester.WorkflowRequester
+import io.infinitic.common.serDe.avro.AvroSerDe
+import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.executors.errors.MethodUnknownError
 import io.infinitic.common.transport.ClientTopic
 import io.infinitic.common.transport.WorkflowStateEngineTopic
@@ -39,6 +41,7 @@ import io.infinitic.common.transport.logged.LoggerWithCounter
 import io.infinitic.common.transport.logged.formatLog
 import io.infinitic.common.transport.producers.BufferedInfiniticProducer
 import io.infinitic.common.workflows.data.workflows.WorkflowId
+import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.CompleteTimers
 import io.infinitic.common.workflows.engine.messages.CompleteWorkflow
@@ -61,6 +64,7 @@ import io.infinitic.common.workflows.engine.messages.RetryWorkflowTask
 import io.infinitic.common.workflows.engine.messages.SendSignal
 import io.infinitic.common.workflows.engine.messages.WaitWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowCompletedEvent
+import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
 import io.infinitic.common.workflows.engine.state.WorkflowState
@@ -97,6 +101,10 @@ class WorkflowStateEngine(
 ) {
 
   companion object {
+    const val DISPATCH_WORKFLOW_META_DATA = "DISPATCH_WORKFLOW_META_DATA"
+
+    const val UNDEFINED_DUE_TO_RACE_CONDITION = "UNDEFINED_DUE_TO_RACE_CONDITION"
+
     const val NO_STATE_DISCARDING_REASON = "for having null workflow state"
 
     val logger = LoggerWithCounter(KotlinLogging.logger {})
@@ -168,7 +176,7 @@ class WorkflowStateEngine(
 
   private suspend fun processSingle(
     producer: InfiniticProducer,
-    state: WorkflowState?,
+    initialState: WorkflowState?,
     message: WorkflowStateEngineMessage,
     publishTime: MillisInstant
   ): WorkflowState? {
@@ -176,21 +184,68 @@ class WorkflowStateEngine(
     // if a crash happened between the state update and the message acknowledgement,
     // it's possible to receive a message that has already been processed
     // in this case, we discard it
-    if (state?.lastMessageId == message.messageId) {
+    if (initialState?.lastMessageId == message.messageId) {
       logDiscarding(message) { "as state already contains messageId ${message.messageId}" }
 
-      return state
+      return initialState
     }
 
     // This is needed for compatibility with messages before v0.13.0
     if (message.emittedAt == null) message.emittedAt = publishTime
 
+
+    // Handling a sneaky race condition that may occur when workers are shutdown and restarted:
+    // Due to a Pulsar bug, we may receive the result of a workflow task (RemoteTaskCompleted)
+    // (or even the results of the actions of the workflow task)
+    // before receiving the initial dispatch message (DispatchWorkflow) that creates the workflow state.
+    // In this case,
+    // - if a workflow task completed: we extract the DispatchWorkflow message
+    //   from the workflow task metadata and process it first to create the initial state
+    //   before handling the completion. This metadata is added by the WorkflowStateCmdHandler
+    // - else we directly return an empty workflow state to be handled later
+
+    val raceConditionWithNullState =
+        (initialState == null && message !is DispatchWorkflow && message is MethodEvent)
+    val raceConditionWithNonNullState = (initialState != null &&
+        initialState.runningWorkflowTaskId == TaskId(UNDEFINED_DUE_TO_RACE_CONDITION))
+    val isWorkflowTaskCompleted = message.isWorkflowTaskEvent() && (message is RemoteTaskCompleted)
+
+    // received event, but no state, we return a transient state
+    if (raceConditionWithNullState && !isWorkflowTaskCompleted) return WorkflowState(
+        lastMessageId = message.messageId,
+        workflowId = message.workflowId,
+        workflowName = message.workflowName,
+        workflowVersion = null,
+        workflowTags = setOf(),
+        workflowMeta = WorkflowMeta(),
+        runningWorkflowTaskId = TaskId(UNDEFINED_DUE_TO_RACE_CONDITION),
+        workflowMethods = mutableListOf(),
+        messagesBuffer = mutableListOf(message),
+    )
+
+    // receive dispatch workflow, but no null state, we process it and add the message buffer of transient state
+    if (raceConditionWithNonNullState && message is DispatchWorkflow)
+      return processMessageWithoutState(producer, message)
+          ?.copy(messagesBuffer = initialState?.messagesBuffer ?: mutableListOf())
+
+    // receive workflow task completed but the workflow was not initialized correctly
+    // we make sure to create the workflow correctly, adding message buffer of transient state if any
+    val state =
+        if ((raceConditionWithNullState || raceConditionWithNonNullState) && isWorkflowTaskCompleted) {
+          (message as RemoteTaskCompleted).taskReturnValue.taskMeta[DISPATCH_WORKFLOW_META_DATA]?.let {
+            val dispatchWorkflow = AvroSerDe
+                .readBinaryWithSchemaFingerprint(it, WorkflowEngineEnvelope::class)
+                .message() as DispatchWorkflow
+            processMessageWithoutState(producer, dispatchWorkflow)
+                ?.copy(messagesBuffer = initialState?.messagesBuffer ?: mutableListOf())
+          } ?: initialState
+        } else initialState
+
+    // end of the race condition management
+
     val updatedState = when (state) {
       null -> processMessageWithoutState(producer, message)
-      else -> {
-        processMessageWithState(producer, message, state)
-        state
-      }
+      else -> state.also { processMessageWithState(producer, message, state) }
     }
 
     return when (updatedState?.workflowMethods?.size) {
@@ -295,7 +350,6 @@ class WorkflowStateEngine(
         }
       }
 
-
       // a client wants to wait the missing workflow
       is WaitWorkflow -> launch {
         val methodUnknown = MethodUnknown(
@@ -335,7 +389,8 @@ class WorkflowStateEngine(
         }
 
         // Idempotency: discard if this workflowTask is not the current one
-        if (state.runningWorkflowTaskId != (message as RemoteTaskEvent).taskId()) {
+        if (state.runningWorkflowTaskId != TaskId(UNDEFINED_DUE_TO_RACE_CONDITION) &&
+          state.runningWorkflowTaskId != (message as RemoteTaskEvent).taskId()) {
           logDiscarding(message) { "as workflowTask ${message.taskId()} is different than ${state.runningWorkflowTaskId} in state" }
 
           return

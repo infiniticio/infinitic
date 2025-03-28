@@ -25,6 +25,7 @@ dependencies {
   implementation(project(":infinitic-cache"))
   implementation(project(":infinitic-storage"))
 
+  implementation(Libs.Avro4k.core)
   implementation(Libs.Coroutines.core)
 }
 
