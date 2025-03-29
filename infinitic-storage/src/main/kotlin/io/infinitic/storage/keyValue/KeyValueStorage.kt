@@ -7,7 +7,7 @@
  * Without limiting other conditions in the License, the grant of rights under the License will not
  * include, and the License does not grant to you, the right to Sell the Software.
  *
- * For purposes of the foregoing, “Sell” means practicing any or all of the rights granted to you
+ * For purposes of the foregoing, "Sell" means practicing any or all of the rights granted to you
  * under the License to provide to third parties, for a fee or other consideration (including
  * without limitation fees for hosting or consulting/ support services related to the Software), a
  * product or service whose value derives, entirely or substantially, from the functionality of the
@@ -22,9 +22,10 @@
  */
 package io.infinitic.storage.keyValue
 
-import io.infinitic.storage.Flushable
+import org.jetbrains.annotations.TestOnly
+import java.io.Closeable
 
-interface KeyValueStorage : Flushable, AutoCloseable {
+interface KeyValueStorage : Closeable {
   /**
    * Retrieves the value associated with the specified key from the storage.
    */
@@ -47,4 +48,19 @@ interface KeyValueStorage : Flushable, AutoCloseable {
    * - This operation MUST be atomic
    */
   suspend fun put(bytes: Map<String, ByteArray?>)
+
+  /**
+   * Updates the value only if the current version matches the expected version.
+   * @return true if the update was successful, false if the version didn't match
+   */
+  suspend fun putWithVersion(key: String, bytes: ByteArray?, expectedVersion: Long): Boolean
+
+  /**
+   * Gets both value and version in a single call for efficiency
+   * @return Pair of value and version, where version is 0 if value is null
+   */
+  suspend fun getStateAndVersion(key: String): Pair<ByteArray?, Long>
+
+  @TestOnly
+  fun flush()
 }

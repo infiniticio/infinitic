@@ -27,7 +27,7 @@ import io.infinitic.storage.data.Bytes
 import io.infinitic.storage.keySet.KeySetStorage
 import org.jetbrains.annotations.TestOnly
 
-class InMemoryKeySetStorage(internal val storage: MutableMap<String, MutableSet<Bytes>>) :
+class InMemoryKeySetStorage(internal val storage: MutableMap<String, MutableSet<Bytes>> = mutableMapOf()) :
   KeySetStorage {
 
   companion object {

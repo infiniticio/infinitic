@@ -7,7 +7,7 @@
  * Without limiting other conditions in the License, the grant of rights under the License will not
  * include, and the License does not grant to you, the right to Sell the Software.
  *
- * For purposes of the foregoing, “Sell” means practicing any or all of the rights granted to you
+ * For purposes of the foregoing, "Sell" means practicing any or all of the rights granted to you
  * under the License to provide to third parties, for a fee or other consideration (including
  * without limitation fees for hosting or consulting/ support services related to the Software), a
  * product or service whose value derives, entirely or substantially, from the functionality of the
@@ -50,14 +50,18 @@ data class InMemoryConfig(
   class InMemoryPool {
     private val _keySet = mutableMapOf<String, MutableSet<Bytes>>()
     private val _keyValue = ConcurrentHashMap<String, ByteArray>()
+    private val _keyValueVersions = ConcurrentHashMap<String, Long>()
 
     internal val keySet get() = _keySet
 
     internal val keyValue get() = _keyValue
 
+    internal val keyValueVersions get() = _keyValueVersions
+
     fun close() {
       _keyValue.clear()
       _keySet.clear()
+      _keyValueVersions.clear()
     }
   }
 }
