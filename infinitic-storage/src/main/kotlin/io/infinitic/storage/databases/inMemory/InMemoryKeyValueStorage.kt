@@ -27,6 +27,9 @@ import io.infinitic.storage.keyValue.KeyValueStorage
 import org.jetbrains.annotations.TestOnly
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicReference
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.runBlocking
 
 internal data class VersionedValue(
   val value: ByteArray,
@@ -36,6 +39,8 @@ internal data class VersionedValue(
 internal class InMemoryKeyValueStorage(
   val storage: ConcurrentHashMap<String, AtomicReference<VersionedValue>> = ConcurrentHashMap()
 ) : KeyValueStorage {
+  // Mutex for atomic multi-key operations
+  private val mutex = Mutex()
 
   companion object {
     fun from(config: InMemoryConfig): InMemoryKeyValueStorage {
@@ -94,37 +99,92 @@ internal class InMemoryKeyValueStorage(
     }
   }
 
+  override suspend fun getStatesAndVersions(keys: Set<String>): Map<String, Pair<ByteArray?, Long>> =
+      keys.associateWith { getStateAndVersion(it) }
+
+  /**
+   * Helper function to handle a single versioned update
+   * @param alreadyLocked indicates if the mutex is already held by the caller
+   */
+  private suspend fun tryVersionedUpdate(
+    key: String,
+    bytes: ByteArray?,
+    expectedVersion: Long,
+    currentVersion: Long,
+    alreadyLocked: Boolean = false
+  ): Boolean {
+    // Early version check
+    if (currentVersion != expectedVersion) return false
+
+    return when {
+      // Handle null bytes (deletion)
+      bytes == null -> {
+        if (expectedVersion == 0L) {
+          storage[key] == null
+        } else {
+          storage.remove(key) != null
+        }
+      }
+      // Handle non-null bytes
+      else -> {
+        if (expectedVersion == 0L) {
+          // For version 0, use mutex to ensure atomicity if not already locked
+          val operation = {
+            if (storage[key] != null) {
+              false
+            } else {
+              storage[key] = AtomicReference(VersionedValue(bytes, 1L))
+              true
+            }
+          }
+          if (alreadyLocked) operation() else mutex.withLock { operation() }
+        } else {
+          val ref = storage[key] ?: return false
+          var success = false
+          while (!success) {
+            val current = ref.get()
+            if (current.version != expectedVersion) {
+              return false
+            }
+            success = ref.compareAndSet(current, VersionedValue(bytes, expectedVersion + 1L))
+          }
+          true
+        }
+      }
+    }
+  }
+
+  override suspend fun putWithVersions(updates: Map<String, Pair<ByteArray?, Long>>): Map<String, Boolean> {
+    // Early exit for empty updates
+    if (updates.isEmpty()) return emptyMap()
+
+    return mutex.withLock {
+      // Get current state atomically without suspension points
+      val currentStates = updates.keys.associateWith { key ->
+        val ref = storage[key]
+        if (ref != null) {
+          val current = ref.get()
+          Pair(current.value, current.version)
+        } else {
+          Pair(null, 0L)
+        }
+      }
+
+      updates.entries.associate { (key, update) ->
+        val (bytes, expectedVersion) = update
+        val (_, currentVersion) = currentStates[key]!!
+        key to tryVersionedUpdate(key, bytes, expectedVersion, currentVersion, alreadyLocked = true)
+      }
+    }
+  }
+
   override suspend fun putWithVersion(
     key: String,
     bytes: ByteArray?,
     expectedVersion: Long
   ): Boolean {
-    if (bytes == null) {
-      if (expectedVersion == 0L) return (storage[key] == null)
-      // Only remove if version matches
-      val ref = storage[key] ?: return false
-      val current = ref.get()
-      if (current.version != expectedVersion) return false
-      return storage.remove(key) != null
-    }
-
-    // Handle non-null bytes case
-    if (expectedVersion == 0L) {
-      // For version 0, only succeed if key doesn't exist
-      val existing = storage.putIfAbsent(key, AtomicReference(VersionedValue(bytes, 1L)))
-      return existing == null
-    }
-
-    // Update only if version matches
-    val ref = storage[key] ?: return false
-    while (true) {
-      val current = ref.get()
-      if (current.version != expectedVersion) return false
-      if (ref.compareAndSet(current, VersionedValue(bytes, expectedVersion + 1L))) {
-        return true
-      }
-      // If CAS failed, loop will retry with new current value
-    }
+    val (_, currentVersion) = getStateAndVersion(key)
+    return tryVersionedUpdate(key, bytes, expectedVersion, currentVersion, alreadyLocked = false)
   }
 
   @TestOnly

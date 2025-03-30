@@ -68,6 +68,18 @@ class WrappedKeyValueStorage(val storage: KeyValueStorage) : KeyValueStorage {
     throwWrappedException(e)
   }
 
+  override suspend fun getStatesAndVersions(keys: Set<String>): Map<String, Pair<ByteArray?, Long>> = try {
+    storage.getStatesAndVersions(keys)
+  } catch (e: Exception) {
+    throwWrappedException(e)
+  }
+
+  override suspend fun putWithVersions(updates: Map<String, Pair<ByteArray?, Long>>): Map<String, Boolean> = try {
+    storage.putWithVersions(updates)
+  } catch (e: Exception) {
+    throwWrappedException(e)
+  }
+
   @TestOnly
   override fun flush() =
       try {

@@ -88,6 +88,33 @@ open class CachedKeyValueStorage(
     return storage.getStateAndVersion(key)
   }
 
+  override suspend fun getStatesAndVersions(keys: Set<String>): Map<String, Pair<ByteArray?, Long>> {
+    // Must bypass cache to get atomic state and version from storage
+    logger.debug { "keys $keys - getStatesAndVersions - bypassing cache, get from storage" }
+    return storage.getStatesAndVersions(keys)
+  }
+
+  override suspend fun putWithVersions(updates: Map<String, Pair<ByteArray?, Long>>): Map<String, Boolean> {
+    // Attempt the atomic update on the underlying storage first
+    val results = storage.putWithVersions(updates)
+
+    // Update the cache only for operations that succeeded in storage
+    results.forEach { (key, success) ->
+      if (success) {
+        // Get the value intended for this key from the original updates map
+        val valueToCache = updates[key]?.first
+        logger.debug { "key $key - putWithVersions - updating cache after successful storage update" }
+        cache.putValue(key, valueToCache)
+      } else {
+        logger.debug { "key $key - putWithVersions - storage update failed, removing from cache" }
+        // Use putValue with null to invalidate/remove the entry
+        cache.putValue(key, null)
+      }
+    }
+
+    return results
+  }
+
   override fun close() {
     storage.close()
   }

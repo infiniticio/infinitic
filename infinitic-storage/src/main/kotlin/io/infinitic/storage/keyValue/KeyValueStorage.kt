@@ -56,10 +56,25 @@ interface KeyValueStorage : Closeable {
   suspend fun putWithVersion(key: String, bytes: ByteArray?, expectedVersion: Long): Boolean
 
   /**
-   * Gets both value and version in a single call for efficiency
+   * Retrieves  both value and version associated with the specified key from the storage
    * @return Pair of value and version, where version is 0 if value is null
    */
   suspend fun getStateAndVersion(key: String): Pair<ByteArray?, Long>
+
+  /**
+   * Retrieves both values and versions for multiple keys from the storage
+   * @return Map of keys to pairs of value and version, where version is 0 if value is null
+   */
+  suspend fun getStatesAndVersions(keys: Set<String>): Map<String, Pair<ByteArray?, Long>>
+
+  /**
+   * Updates multiple key-value pairs only if their current versions match the expected versions.
+   * - This operation MUST be atomic: either all updates succeed, or none do
+   * - If any version check fails, no updates should be performed
+   * @param updates Map of keys to pairs of new value and expected version
+   * @return Map of keys to success status for each operation
+   */
+  suspend fun putWithVersions(updates: Map<String, Pair<ByteArray?, Long>>): Map<String, Boolean>
 
   @TestOnly
   fun flush()

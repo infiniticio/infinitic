@@ -7,7 +7,7 @@
  * Without limiting other conditions in the License, the grant of rights under the License will not
  * include, and the License does not grant to you, the right to Sell the Software.
  *
- * For purposes of the foregoing, “Sell” means practicing any or all of the rights granted to you
+ * For purposes of the foregoing, "Sell" means practicing any or all of the rights granted to you
  * under the License to provide to third parties, for a fee or other consideration (including
  * without limitation fees for hosting or consulting/ support services related to the Software), a
  * product or service whose value derives, entirely or substantially, from the functionality of the
@@ -52,6 +52,33 @@ class CompressedKeyValueStorage(
         .mapValues { async { it.value?.let { v -> compress(v) } } }
         .mapValues { it.value.await() }
         .let { storage.put(it) }
+  }
+
+  override suspend fun putWithVersion(key: String, bytes: ByteArray?, expectedVersion: Long): Boolean =
+      storage.putWithVersion(key, bytes?.let { compress(it) }, expectedVersion)
+
+  override suspend fun getStateAndVersion(key: String): Pair<ByteArray?, Long> {
+    val (value, version) = storage.getStateAndVersion(key)
+    return Pair(value?.let { decompress(it) }, version)
+  }
+
+  override suspend fun getStatesAndVersions(keys: Set<String>): Map<String, Pair<ByteArray?, Long>> = coroutineScope {
+    storage.getStatesAndVersions(keys)
+        .mapValues { async { 
+          val (value, version) = it.value
+          Pair(value?.let { v -> decompress(v) }, version)
+        } }
+        .mapValues { it.value.await() }
+  }
+
+  override suspend fun putWithVersions(updates: Map<String, Pair<ByteArray?, Long>>): Map<String, Boolean> = coroutineScope {
+    updates
+        .mapValues { async { 
+          val (value, version) = it.value
+          Pair(value?.let { v -> compress(v) }, version)
+        } }
+        .mapValues { it.value.await() }
+        .let { storage.putWithVersions(it) }
   }
 
   private fun compress(value: ByteArray) = compressionConfig?.compress(value) ?: value

@@ -166,7 +166,29 @@ class MySQLKeyValueStorage(
 
     repeat(maxRetries) { attempt ->
       try {
-        return tryPutWithVersion(key, bytes, expectedVersion)
+        return pool.connection.use { connection ->
+          connection.autoCommit = false
+          try {
+            // Get current version inside transaction with row lock
+            val currentVersion = connection.prepareStatement(
+                "SELECT version FROM $tableName WHERE `key` = ? FOR UPDATE"
+            ).use { stmt ->
+              stmt.setString(1, key)
+              stmt.executeQuery().use { rs ->
+                if (rs.next()) rs.getLong("version") else 0L
+              }
+            }
+            
+            val result = tryVersionedUpdate(connection, key, bytes, expectedVersion, currentVersion)
+            connection.commit()
+            result
+          } catch (e: Exception) {
+            connection.rollback()
+            throw e
+          } finally {
+            connection.autoCommit = true
+          }
+        }
       } catch (e: Exception) {
         // Check if it's a MySQL deadlock exception
         if (e.message?.contains("Deadlock found") == true && attempt < maxRetries - 1) {
@@ -181,80 +203,59 @@ class MySQLKeyValueStorage(
     return false
   }
 
-  private fun tryPutWithVersion(
+  private fun tryVersionedUpdate(
+    connection: Connection,
     key: String,
     bytes: ByteArray?,
-    expectedVersion: Long
-  ): Boolean =
-      pool.connection.use { connection ->
-        connection.autoCommit = false
-        try {
-          val result = when (bytes) {
-            null -> when (expectedVersion) {
-              0L -> {
-                connection.prepareStatement(
-                    "SELECT 1 FROM $tableName WHERE `key` = ?",
-                ).use { stmt ->
-                  stmt.setString(1, key)
-                  val exists = stmt.executeQuery().next()
-                  !exists
-                }
-              }
+    expectedVersion: Long,
+    currentVersion: Long
+  ): Boolean {
+    // Early version check
+    if (currentVersion != expectedVersion) return false
 
-              else -> {
-                // Delete only if version matches
-                connection.prepareStatement(
-                    "DELETE FROM $tableName WHERE `key` = ? AND version = ?",
-                ).use { stmt ->
-                  stmt.setString(1, key)
-                  stmt.setLong(2, expectedVersion)
-                  stmt.executeUpdate() > 0
-                }
-              }
-            }
-
-            else -> when (expectedVersion) {
-              0L -> {
-                // For version 0, only succeed if key doesn't exist
-                connection.prepareStatement(
-                    """
-                            INSERT IGNORE INTO $tableName (`key`, value, version)
-                            VALUES (?, ?, 1)
-                            """.trimIndent(),
-                ).use { stmt ->
-                  stmt.setString(1, key)
-                  stmt.setBytes(2, bytes)
-                  // Success means we inserted a new row (affected rows = 1)
-                  stmt.executeUpdate() == 1
-                }
-              }
-
-              else -> {
-                // Update only if version matches
-                connection.prepareStatement(
-                    """
-                            UPDATE $tableName
-                            SET value = ?, version = version + 1
-                            WHERE `key` = ? AND version = ?
-                            """.trimIndent(),
-                ).use { stmt ->
-                  stmt.setBytes(1, bytes)
-                  stmt.setString(2, key)
-                  stmt.setLong(3, expectedVersion)
-                  stmt.executeUpdate() > 0
-                }
-              }
-            }
-          }
-          connection.commit()
-          result
-        } catch (e: Exception) {
-          connection.rollback()
-          throw e
-        } finally {
-          connection.autoCommit = true
+    return when {
+      bytes == null -> when (expectedVersion) {
+        0L -> currentVersion == 0L  // Key doesn't exist, already verified with lock
+        else -> connection.prepareStatement(
+            "DELETE FROM $tableName WHERE `key` = ? AND version = ?",
+        ).use { stmt ->
+          stmt.setString(1, key)
+          stmt.setLong(2, expectedVersion)
+          stmt.executeUpdate() > 0
         }
       }
+      else -> when (expectedVersion) {
+        0L -> if (currentVersion > 0L) {
+          false  // Key exists, already verified with lock
+        } else {
+          // Key doesn't exist, do the insert
+          connection.prepareStatement(
+              """
+              INSERT IGNORE INTO $tableName (`key`, value, version)
+              VALUES (?, ?, 1)
+              """.trimIndent(),
+          ).use { insertStmt ->
+            insertStmt.setString(1, key)
+            insertStmt.setBytes(2, bytes)
+            // For INSERT IGNORE, success means exactly 1 row was affected
+            insertStmt.executeUpdate() == 1
+          }
+        }
+        else -> connection.prepareStatement(
+            """
+            UPDATE $tableName
+            SET value = ?, version = version + 1
+            WHERE `key` = ? AND version = ?
+            """.trimIndent(),
+        ).use { stmt ->
+          stmt.setBytes(1, bytes)
+          stmt.setString(2, key)
+          stmt.setLong(3, expectedVersion)
+          stmt.executeUpdate() > 0
+        }
+      }
+    }
+  }
 
   override suspend fun getStateAndVersion(key: String): Pair<ByteArray?, Long> =
       pool.connection.use { connection ->
@@ -268,6 +269,91 @@ class MySQLKeyValueStorage(
               }
             }
       }
+
+  override suspend fun getStatesAndVersions(keys: Set<String>): Map<String, Pair<ByteArray?, Long>> {
+    if (keys.isEmpty()) return emptyMap()
+
+    return pool.connection.use { connection ->
+      val questionMarks = keys.joinToString(",") { "?" }
+      // Using BINARY for case-sensitive key comparison
+      connection.prepareStatement("SELECT `key`, value, version FROM $tableName WHERE BINARY `key` IN ($questionMarks)")
+          .use { statement ->
+            keys.forEachIndexed { index, key -> statement.setString(index + 1, key) }
+            statement.executeQuery().use { resultSet ->
+              val result = mutableMapOf<String, Pair<ByteArray?, Long>>()
+              while (resultSet.next()) {
+                result[resultSet.getString("key")] = Pair(
+                    resultSet.getBytes("value"),
+                    resultSet.getLong("version")
+                )
+              }
+              // add missing keys with version 0
+              keys.forEach { key ->
+                result.putIfAbsent(key, Pair(null, 0L))
+              }
+              result
+            }
+          }
+    }
+  }
+
+  override suspend fun putWithVersions(updates: Map<String, Pair<ByteArray?, Long>>): Map<String, Boolean> {
+    if (updates.isEmpty()) return emptyMap()
+
+    // Maximum number of retry attempts
+    val maxRetries = 5
+
+    repeat(maxRetries) { attempt ->
+      try {
+        return pool.connection.use { connection ->
+          connection.autoCommit = false
+          connection.transactionIsolation = Connection.TRANSACTION_READ_COMMITTED
+          try {
+            // First get all current versions
+            val questionMarks = updates.keys.joinToString(",") { "?" }
+            val currentVersions = connection.prepareStatement(
+                "SELECT `key`, version FROM $tableName WHERE BINARY `key` IN ($questionMarks)"
+            ).use { stmt ->
+              updates.keys.forEachIndexed { index, key -> stmt.setString(index + 1, key) }
+              stmt.executeQuery().use { rs ->
+                buildMap {
+                  while (rs.next()) {
+                    put(rs.getString("key"), rs.getLong("version"))
+                  }
+                }
+              }
+            }
+
+            // Process each update
+            val results = updates.entries.associate { (key, update) ->
+              val (bytes, expectedVersion) = update
+              val currentVersion = currentVersions[key] ?: 0L
+              key to tryVersionedUpdate(connection, key, bytes, expectedVersion, currentVersion)
+            }
+
+            connection.commit()
+            results
+          } catch (e: Exception) {
+            connection.rollback()
+            throw e
+          } finally {
+            connection.autoCommit = true
+          }
+        }
+      } catch (e: Exception) {
+        // Check if it's a MySQL deadlock exception
+        if (e.message?.contains("Deadlock found") == true && attempt < maxRetries - 1) {
+          // Exponential backoff delay: 10ms, 20ms, 40ms...
+          delay(10L * (1L shl attempt))
+        } else {
+          throw e
+        }
+      }
+    }
+
+    // If we reach here, all retries failed
+    return updates.keys.associateWith { false }
+  }
 
   @TestOnly
   override fun flush() {

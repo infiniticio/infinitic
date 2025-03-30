@@ -104,24 +104,34 @@ class RedisKeyValueStorage(internal val pool: JedisPool) : KeyValueStorage {
     when {
       // Special case for version 0: only succeed if key doesn't exist
       expectedVersion == 0L && bytes != null -> {
-        // Watch both keys first to ensure atomicity
         jedis.watch(keyBytes, versionKeyBytes)
-
-        // Check if either key exists
+        // Crucially, check if the target key OR the version key already exists.
+        // If either exists, we cannot perform a version 0 insert.
         if (jedis.exists(keyBytes) || jedis.exists(versionKeyBytes)) {
-          jedis.unwatch()
-          false
-        } else {
-          val transaction = jedis.multi()
-          try {
-            // Set both values atomically
-            transaction.set(keyBytes, bytes)
-            transaction.set(versionKeyBytes, "1".toByteArray())
-            transaction.exec() != null
-          } catch (e: Exception) {
-            transaction.discard()
+            jedis.unwatch()
             false
-          }
+        } else {
+            val transaction = jedis.multi()
+            try {
+                // Attempt to set the main value
+                transaction.set(keyBytes, bytes)
+                // Attempt to set the version ONLY if it doesn't exist (atomic check)
+                transaction.setnx(versionKeyBytes, "1".toByteArray())
+                val execResults = transaction.exec()
+
+                // Transaction failed (WATCH triggered)?
+                if (execResults == null) {
+                    false
+                } else {
+                    // Check the result of SETNX (should be the second result)
+                    // Should succeed only if SETNX returned 1 (meaning version key was set)
+                    // Note: result type might be Long for SETNX
+                    (execResults.getOrNull(1) as? Long) == 1L
+                }
+            } catch (e: Exception) {
+                 try { transaction.discard() } catch (discardEx: Exception) { /* ignore */ }
+                 false
+            }
         }
       }
 
@@ -217,5 +227,149 @@ class RedisKeyValueStorage(internal val pool: JedisPool) : KeyValueStorage {
   @TestOnly
   override fun flush() {
     pool.resource.use { it.flushDB() }
+  }
+
+  override suspend fun getStatesAndVersions(keys: Set<String>): Map<String, Pair<ByteArray?, Long>> {
+    if (keys.isEmpty()) return emptyMap()
+
+    return pool.resource.use { jedis ->
+      val keyBytes = keys.map { it.toByteArray() }.toTypedArray()
+      val versionKeyBytes = keys.map { "$it$VERSION_SUFFIX".toByteArray() }.toTypedArray()
+
+      // Use a transaction to get values and versions atomically
+      val transaction = jedis.multi()
+      transaction.mget(*keyBytes)
+      transaction.mget(*versionKeyBytes)
+      val results = transaction.exec()
+
+      // results[0] contains values, results[1] contains versions
+      val values = results[0] as List<ByteArray?>
+      val versions = results[1] as List<ByteArray?>
+
+      keys.mapIndexed { index, key ->
+        val value = values[index]
+        val version = versions[index]?.toString(Charsets.UTF_8)?.toLongOrNull() ?: 0L
+        key to Pair(value, version)
+      }.toMap()
+    }
+  }
+
+  override suspend fun putWithVersions(updates: Map<String, Pair<ByteArray?, Long>>): Map<String, Boolean> {
+    if (updates.isEmpty()) return emptyMap()
+
+    val maxRetries = 5
+
+    repeat(maxRetries) { attempt ->
+      val results = mutableMapOf<String, Boolean>()
+      var watchFailed = false
+
+      pool.resource.use { jedis ->
+        try {
+          // 1. WATCH all involved keys (data and version keys)
+          val keysToWatch = updates.keys.flatMap { key ->
+            listOf(key.toByteArray(), "$key$VERSION_SUFFIX".toByteArray())
+          }.toTypedArray()
+          jedis.watch(*keysToWatch)
+
+          // 2. Fetch current versions within the WATCH
+          val versionKeys = updates.keys.map { "$it$VERSION_SUFFIX".toByteArray() }.toTypedArray()
+          val currentVersionStrings = if (versionKeys.isNotEmpty()) jedis.mget(*versionKeys) else emptyList()
+          val currentVersions = updates.keys.mapIndexed { index, key ->
+            key to (currentVersionStrings.getOrNull(index)?.toString(Charsets.UTF_8)?.toLongOrNull() ?: 0L)
+          }.toMap()
+
+          // 3. Check versions
+          var allVersionsMatch = true
+          for ((key, update) in updates) {
+            val (_, expectedVersion) = update
+            val currentVersion = currentVersions[key] ?: 0L
+            if (currentVersion != expectedVersion) {
+              allVersionsMatch = false
+              results[key] = false // Mark immediate failure
+            } else {
+              results[key] = true // Mark potential success
+            }
+          }
+
+          // If any version mismatch, unwatch and return failures
+          if (!allVersionsMatch) {
+            jedis.unwatch()
+            return updates.keys.associateWith { results[it] ?: false } // Return immediately
+          }
+
+          // 4. Prepare and execute transaction if all versions match
+          val transaction = jedis.multi()
+          var transactionQueued = false
+          try {
+            updates.forEach { (key, update) ->
+              val (bytes, expectedVersion) = update
+              val keyBytes = key.toByteArray()
+              val versionKeyBytes = "$key$VERSION_SUFFIX".toByteArray()
+
+              when {
+                bytes == null -> { // Deletion
+                  if (expectedVersion != 0L) { // Only delete if it exists (version > 0)
+                    transaction.del(keyBytes)
+                    transaction.del(versionKeyBytes)
+                    transactionQueued = true
+                  }
+                  // If expectedVersion is 0 and bytes is null, it's a success no-op.
+                }
+                expectedVersion == 0L -> { // Insertion
+                  transaction.set(keyBytes, bytes)
+                  transaction.set(versionKeyBytes, "1".toByteArray())
+                  transactionQueued = true
+                }
+                else -> { // Update
+                  transaction.set(keyBytes, bytes)
+                  transaction.set(versionKeyBytes, (expectedVersion + 1).toString().toByteArray())
+                  transactionQueued = true
+                }
+              }
+            }
+            
+            // Only execute if operations were actually queued
+            if (transactionQueued) {
+              val execResults = transaction.exec()
+              if (execResults == null) {
+                // WATCH failed, need to retry
+                watchFailed = true
+              } else {
+                // Transaction succeeded
+                return results // Return the success map
+              }
+            } else {
+                // No operations queued (e.g., all were deletes of non-existent keys with version 0)
+                // Discard the transaction to reset Jedis state and unwatch keys
+                transaction.discard()
+                return results // Return the success map
+            }
+          } catch (e: JedisException) {
+            transaction.discard()
+            throw e // Re-throw Jedis specific exceptions for retry logic
+          } 
+
+        } catch (e: JedisException) {
+          // Handle potential connection errors during WATCH/MGET
+           if (isRetryableError(e) && attempt < maxRetries - 1) {
+               watchFailed = true // Treat as a reason to retry
+           } else {
+               throw e
+           }
+        }
+      } // end of use block
+
+      // If watch failed, delay and retry
+      if (watchFailed && attempt < maxRetries - 1) {
+        delay(10L * (1L shl attempt))
+      } else if (watchFailed) {
+          // Retries exhausted after watch failure
+          throw JedisException("Redis transaction failed after multiple retries due to WATCH failure.")
+      }
+    } // end of repeat block
+
+    // If we somehow exit the loop without returning (e.g., initial JedisException not caught above)
+    // Or if retries were exhausted for a non-watch failure initially captured
+    return updates.keys.associateWith { false }
   }
 }

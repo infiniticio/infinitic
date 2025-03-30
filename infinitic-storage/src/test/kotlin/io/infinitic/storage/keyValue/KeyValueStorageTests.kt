@@ -213,5 +213,101 @@ abstract class KeyValueStorageTests : StringSpec() {
       val (_, v3) = storage.getStateAndVersion("foo")
       v3 shouldBe 3L
     }
+
+    "getStatesAndVersions should return empty map for empty input" {
+      storage.getStatesAndVersions(emptySet()) shouldBe emptyMap()
+    }
+
+    "getStatesAndVersions should return correct states and versions for multiple keys" {
+      // Setup additional test data
+      storage.putWithVersion("foo2", "bar2".toByteArray(), 0L)
+      storage.putWithVersion("foo3", null, 0L)
+
+      val result = storage.getStatesAndVersions(setOf("foo", "foo2", "foo3", "unknown"))
+
+      // Check foo (existing key with value)
+      result["foo"]?.first?.contentEquals("bar".toByteArray()) shouldBe true
+      result["foo"]?.second shouldBe 1L
+
+      // Check foo2 (newly added key with value)
+      result["foo2"]?.first?.contentEquals("bar2".toByteArray()) shouldBe true
+      result["foo2"]?.second shouldBe 1L
+
+      // Check foo3 (deleted key)
+      result["foo3"]?.first shouldBe null
+      result["foo3"]?.second shouldBe 0L
+
+      // Check unknown key
+      result["unknown"]?.first shouldBe null
+      result["unknown"]?.second shouldBe 0L
+    }
+
+    "putWithVersions version 0 edge cases" {
+      // Setup: ensure 'foo' exists (version 1), 'newKey' does not exist.
+      storage.get("newKey") shouldBe null
+      val (_, fooVersion) = storage.getStateAndVersion("foo")
+      fooVersion shouldBe 1L
+
+      val updates = mapOf(
+        "foo" to Pair(null, 0L),                   // Fail: Delete existing with version 0
+        "newKey" to Pair("value".toByteArray(), 1L) // Fail: Insert with version > 0
+      )
+
+      val results = storage.putWithVersions(updates)
+
+      results["foo"] shouldBe false
+      results["newKey"] shouldBe false
+
+      // Verify state unchanged
+      storage.getStateAndVersion("foo").second shouldBe fooVersion
+      storage.get("newKey") shouldBe null
+
+      // Test successful deletion of non-existent key with version 0
+      val deleteNonExistentResult = storage.putWithVersions(mapOf("newKey2" to Pair(null, 0L)))
+      deleteNonExistentResult["newKey2"] shouldBe true
+      storage.get("newKey2") shouldBe null
+    }
+
+    "putWithVersions operations on non-existent keys with version > 0" {
+      storage.get("nonExistent1") shouldBe null
+      storage.get("nonExistent2") shouldBe null
+
+      val updates = mapOf(
+        "nonExistent1" to Pair("value".toByteArray(), 1L), // Fail: Update non-existent with version > 0
+        "nonExistent2" to Pair(null, 1L)                    // Fail: Delete non-existent with version > 0
+      )
+
+      val results = storage.putWithVersions(updates)
+
+      results["nonExistent1"] shouldBe false
+      results["nonExistent2"] shouldBe false
+
+      // Verify state unchanged
+      storage.get("nonExistent1") shouldBe null
+      storage.get("nonExistent2") shouldBe null
+    }
+
+    "putWithVersions large batch basic check" {
+      val batchSize = 50
+      val initialStates = (1..batchSize).map { "key$it" to storage.getStateAndVersion("key$it") }.toMap()
+      val updates = initialStates.mapValues { (_, state) ->
+        Pair("newValue${state.second + 1}".toByteArray(), state.second)
+      }
+
+      val results = storage.putWithVersions(updates)
+
+      // Check if all operations reported success
+      results.all { it.value } shouldBe true
+      results.size shouldBe batchSize
+
+      // Verify a few keys to ensure state changed correctly
+      val finalState1 = storage.getStateAndVersion("key1")
+      finalState1.first?.contentEquals("newValue${initialStates["key1"]!!.second + 1}".toByteArray()) shouldBe true
+      finalState1.second shouldBe initialStates["key1"]!!.second + 1
+
+      val finalStateLast = storage.getStateAndVersion("key$batchSize")
+      finalStateLast.first?.contentEquals("newValue${initialStates["key$batchSize"]!!.second + 1}".toByteArray()) shouldBe true
+      finalStateLast.second shouldBe initialStates["key$batchSize"]!!.second + 1
+    }
   }
 }

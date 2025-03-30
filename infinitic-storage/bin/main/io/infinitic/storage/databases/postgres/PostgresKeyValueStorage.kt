@@ -192,19 +192,16 @@ class PostgresKeyValueStorage(
     connection.autoCommit = false
     try {
       val result = when (bytes) {
-        null -> when (expectedVersion) {
-          0L -> {
-            // We checks there is no data
-            connection.prepareStatement(
-                "SELECT 1 FROM $schema.$tableName WHERE key = ?",
+        null -> { // Deletion case
+          if (expectedVersion == 0L) {
+            // Succeeds only if the key does not exist (version is implicitly 0)
+            !connection.prepareStatement(
+                "SELECT 1 FROM $schema.$tableName WHERE key = ?"
             ).use { stmt ->
-              stmt.setString(1, key)
-              val exists = stmt.executeQuery().next()
-              !exists
+                stmt.setString(1, key)
+                stmt.executeQuery().next() // Returns true if key exists, false otherwise
             }
-          }
-
-          else -> {
+          } else { // expectedVersion > 0
             // Delete only if version matches
             connection.prepareStatement(
                 "DELETE FROM $schema.$tableName WHERE key = ? AND version = ?",
@@ -217,42 +214,38 @@ class PostgresKeyValueStorage(
         }
 
         else -> {
-          when (expectedVersion) {
-            0L -> {
-              // For version 0, use INSERT ... ON CONFLICT DO NOTHING
-              // This ensures atomicity and avoids race conditions
-              connection.prepareStatement(
-                  """
+          if (expectedVersion == 0L) {
+            // For version 0, use INSERT ... ON CONFLICT DO NOTHING
+            // This ensures atomicity and avoids race conditions
+            connection.prepareStatement(
+                """
                 INSERT INTO $schema.$tableName (key, value, value_size_in_KiB, version)
                 VALUES (?, ?, ?, 1)
                 ON CONFLICT (key) DO NOTHING
                 RETURNING 1
                 """.trimIndent(),
-              ).use { stmt: PreparedStatement ->
-                stmt.setString(1, key)
-                stmt.setBytes(2, bytes)
-                stmt.setInt(3, ceil(bytes.size / 1024.0).toInt())
-                stmt.executeQuery().use { rs -> rs.next() }
-              }
+            ).use { stmt: PreparedStatement ->
+              stmt.setString(1, key)
+              stmt.setBytes(2, bytes)
+              stmt.setInt(3, ceil(bytes.size / 1024.0).toInt())
+              stmt.executeQuery().use { rs -> rs.next() }
             }
-
-            else -> {
-              // Update only if version matches
-              connection.prepareStatement(
-                  """
+          } else {
+            // Update only if version matches
+            connection.prepareStatement(
+                """
                 UPDATE $schema.$tableName
                 SET value = ?,
                     value_size_in_KiB = ?,
                     version = version + 1
                 WHERE key = ? AND version = ?
                 """.trimIndent(),
-              ).use { stmt: PreparedStatement ->
-                stmt.setBytes(1, bytes)
-                stmt.setInt(2, ceil(bytes.size / 1024.0).toInt())
-                stmt.setString(3, key)
-                stmt.setLong(4, expectedVersion)
-                stmt.executeUpdate() > 0
-              }
+            ).use { stmt: PreparedStatement ->
+              stmt.setBytes(1, bytes)
+              stmt.setInt(2, ceil(bytes.size / 1024.0).toInt())
+              stmt.setString(3, key)
+              stmt.setLong(4, expectedVersion)
+              stmt.executeUpdate() > 0
             }
           }
         }
@@ -279,6 +272,165 @@ class PostgresKeyValueStorage(
               }
             }
       }
+
+  override suspend fun getStatesAndVersions(keys: Set<String>): Map<String, Pair<ByteArray?, Long>> {
+    if (keys.isEmpty()) return emptyMap()
+
+    return pool.connection.use { connection: Connection ->
+      connection.prepareStatement(
+          "SELECT key, value, version FROM $schema.$tableName WHERE key = ANY(?)",
+      ).use { statement: PreparedStatement ->
+        val array = connection.createArrayOf("VARCHAR", keys.toTypedArray())
+        statement.setArray(1, array)
+        statement.executeQuery().use { resultSet: ResultSet ->
+          val results = mutableMapOf<String, Pair<ByteArray?, Long>>()
+          while (resultSet.next()) {
+            results[resultSet.getString("key")] = Pair(
+                resultSet.getBytes("value"),
+                resultSet.getLong("version")
+            )
+          }
+          // add missing keys with version 0
+          keys.forEach { key ->
+            results.putIfAbsent(key, Pair(null, 0L))
+          }
+          results
+        }
+      }
+    }
+  }
+
+  override suspend fun putWithVersions(updates: Map<String, Pair<ByteArray?, Long>>): Map<String, Boolean> {
+    if (updates.isEmpty()) return emptyMap()
+
+    val maxRetries = 5
+
+    repeat(maxRetries) { attempt ->
+      try {
+        return pool.connection.use { connection: Connection ->
+          connection.autoCommit = false
+          connection.transactionIsolation = Connection.TRANSACTION_READ_COMMITTED
+
+          try {
+            // 1. Lock all rows in a consistent order to prevent deadlocks
+            val sortedKeys = updates.keys.sorted()
+            val currentVersions = connection.prepareStatement(
+                "SELECT key, version FROM $schema.$tableName WHERE key = ANY(?) FOR UPDATE"
+            ).use { stmt: PreparedStatement ->
+              val array = connection.createArrayOf("VARCHAR", sortedKeys.toTypedArray())
+              stmt.setArray(1, array)
+              stmt.executeQuery().use { rs: ResultSet ->
+                buildMap {
+                  while (rs.next()) {
+                    put(rs.getString("key"), rs.getLong("version"))
+                  }
+                }
+              }
+            }
+
+            val results = mutableMapOf<String, Boolean>()
+            var allVersionsMatch = true
+
+            // 2. Check versions and prepare updates
+            val deletes = mutableListOf<Pair<String, Long>>()
+            val inserts = mutableListOf<Triple<String, ByteArray, Int>>()
+            val updatesList = mutableListOf<Triple<String, ByteArray, Int>>()
+
+            for (key in sortedKeys) {
+              val (bytes, expectedVersion) = updates[key]!!
+              val currentVersion = currentVersions[key] ?: 0L
+
+              if (currentVersion != expectedVersion) {
+                allVersionsMatch = false
+                results[key] = false
+              } else {
+                results[key] = true
+                when {
+                  bytes == null -> {
+                    if (expectedVersion != 0L) {
+                      deletes.add(key to expectedVersion)
+                    }
+                  }
+                  expectedVersion == 0L -> {
+                    val sizeKiB = ceil(bytes.size / 1024.0).toInt()
+                    inserts.add(Triple(key, bytes, sizeKiB))
+                  }
+                  else -> {
+                    val sizeKiB = ceil(bytes.size / 1024.0).toInt()
+                    updatesList.add(Triple(key, bytes, sizeKiB))
+                  }
+                }
+              }
+            }
+
+            // If any version check failed, rollback and return failures
+            if (!allVersionsMatch) {
+              connection.rollback()
+              return updates.keys.associateWith { results[it] ?: false }
+            }
+
+            // 3. Execute operations in a fixed order: deletes, then inserts, then updates
+            if (deletes.isNotEmpty()) {
+              connection.prepareStatement(
+                  "DELETE FROM $schema.$tableName WHERE key = ? AND version = ?"
+              ).use { stmt: PreparedStatement ->
+                deletes.forEach { (key, version) ->
+                  stmt.setString(1, key)
+                  stmt.setLong(2, version)
+                  stmt.executeUpdate()
+                }
+              }
+            }
+
+            if (inserts.isNotEmpty()) {
+              connection.prepareStatement(
+                  "INSERT INTO $schema.$tableName (key, value, value_size_in_KiB, version) VALUES (?, ?, ?, 1) ON CONFLICT (key) DO NOTHING"
+              ).use { stmt: PreparedStatement ->
+                inserts.forEach { (key, bytes, sizeKiB) ->
+                  stmt.setString(1, key)
+                  stmt.setBytes(2, bytes)
+                  stmt.setInt(3, sizeKiB)
+                  stmt.executeUpdate()
+                }
+              }
+            }
+
+            if (updatesList.isNotEmpty()) {
+              connection.prepareStatement(
+                  "UPDATE $schema.$tableName SET value = ?, value_size_in_KiB = ?, version = version + 1 WHERE key = ? AND version = ?"
+              ).use { stmt: PreparedStatement ->
+                updatesList.forEach { (key, bytes, sizeKiB) ->
+                  val expectedVersion = currentVersions[key] ?: 0L
+                  stmt.setBytes(1, bytes)
+                  stmt.setInt(2, sizeKiB)
+                  stmt.setString(3, key)
+                  stmt.setLong(4, expectedVersion)
+                  stmt.executeUpdate()
+                }
+              }
+            }
+
+            connection.commit()
+            results
+          } catch (e: Exception) {
+            connection.rollback()
+            throw e
+          } finally {
+            connection.autoCommit = true
+          }
+        }
+      } catch (e: Exception) {
+        // PostgreSQL deadlock error code is "40P01"
+        if (e is PSQLException && e.sqlState == "40P01" && attempt < maxRetries - 1) {
+          delay(10L * (1L shl attempt))
+        } else {
+          throw e
+        }
+      }
+    }
+    // If we reach here, all retries failed
+    return updates.keys.associateWith { false }
+  }
 
   @TestOnly
   override fun flush() {
