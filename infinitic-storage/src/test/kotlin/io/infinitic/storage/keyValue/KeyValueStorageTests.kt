@@ -309,5 +309,47 @@ abstract class KeyValueStorageTests : StringSpec() {
       finalStateLast.first?.contentEquals("newValue${initialStates["key$batchSize"]!!.second + 1}".toByteArray()) shouldBe true
       finalStateLast.second shouldBe initialStates["key$batchSize"]!!.second + 1
     }
+
+    "putWithVersions small batch (below threshold) should succeed" {
+      val batchSize = 5  // Below the 10 threshold
+      val initialStates = (1..batchSize).map { "smallKey$it" to storage.getStateAndVersion("smallKey$it") }.toMap()
+      val updates = initialStates.mapValues { (_, state) ->
+        Pair("smallBatch${state.second + 1}".toByteArray(), state.second)
+      }
+
+      val results = storage.putWithVersions(updates)
+
+      // Check if all operations reported success
+      results.all { it.value } shouldBe true
+      results.size shouldBe batchSize
+
+      // Verify all keys were updated correctly
+      initialStates.keys.forEach { key ->
+        val (value, version) = storage.getStateAndVersion(key)
+        value?.contentEquals("smallBatch${initialStates[key]!!.second + 1}".toByteArray()) shouldBe true
+        version shouldBe initialStates[key]!!.second + 1
+      }
+    }
+
+    "putWithVersions medium batch (around threshold) should succeed" {
+      val batchSize = 12  // Just above the 10 threshold
+      val initialStates = (1..batchSize).map { "mediumKey$it" to storage.getStateAndVersion("mediumKey$it") }.toMap()
+      val updates = initialStates.mapValues { (_, state) ->
+        Pair("mediumBatch${state.second + 1}".toByteArray(), state.second)
+      }
+
+      val results = storage.putWithVersions(updates)
+
+      // Check if all operations reported success
+      results.all { it.value } shouldBe true
+      results.size shouldBe batchSize
+
+      // Verify all keys were updated correctly
+      initialStates.keys.forEach { key ->
+        val (value, version) = storage.getStateAndVersion(key)
+        value?.contentEquals("mediumBatch${initialStates[key]!!.second + 1}".toByteArray()) shouldBe true
+        version shouldBe initialStates[key]!!.second + 1
+      }
+    }
   }
 }

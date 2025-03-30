@@ -290,6 +290,7 @@ abstract class KeyValueStorageRaceTests : StringSpec() {
                     Pair("writer-$writerId-iter-$iteration".toByteArray(), currentVersion)
                 }
               }
+              // try {
               storage.putWithVersions(updates)
             }
           }

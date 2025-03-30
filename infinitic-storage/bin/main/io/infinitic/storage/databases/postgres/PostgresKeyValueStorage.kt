@@ -192,61 +192,57 @@ class PostgresKeyValueStorage(
     connection.autoCommit = false
     try {
       val result = when (bytes) {
-        null -> { // Deletion case
-          if (expectedVersion == 0L) {
-            // Succeeds only if the key does not exist (version is implicitly 0)
-            !connection.prepareStatement(
-                "SELECT 1 FROM $schema.$tableName WHERE key = ?"
-            ).use { stmt ->
-                stmt.setString(1, key)
-                stmt.executeQuery().next() // Returns true if key exists, false otherwise
-            }
-          } else { // expectedVersion > 0
-            // Delete only if version matches
-            connection.prepareStatement(
-                "DELETE FROM $schema.$tableName WHERE key = ? AND version = ?",
-            ).use { stmt: PreparedStatement ->
-              stmt.setString(1, key)
-              stmt.setLong(2, expectedVersion)
-              stmt.executeUpdate() > 0
-            }
+        null -> when (expectedVersion) { // Deletion case
+          // Succeeds only if the key does not exist (version is implicitly 0)
+          0L -> !connection.prepareStatement(
+              "SELECT 1 FROM $schema.$tableName WHERE key = ?",
+          ).use { stmt ->
+            stmt.setString(1, key)
+            stmt.executeQuery().next() // Returns true if key exists, false otherwise
+          }
+
+          // Delete only if version matches
+          else -> connection.prepareStatement(
+              "DELETE FROM $schema.$tableName WHERE key = ? AND version = ?",
+          ).use { stmt: PreparedStatement ->
+            stmt.setString(1, key)
+            stmt.setLong(2, expectedVersion)
+            stmt.executeUpdate() > 0
           }
         }
 
-        else -> {
-          if (expectedVersion == 0L) {
-            // For version 0, use INSERT ... ON CONFLICT DO NOTHING
-            // This ensures atomicity and avoids race conditions
-            connection.prepareStatement(
-                """
+        else -> when (expectedVersion) {
+          // For version 0, use INSERT ... ON CONFLICT DO NOTHING
+          // This ensures atomicity and avoids race conditions
+          0L -> connection.prepareStatement(
+              """
                 INSERT INTO $schema.$tableName (key, value, value_size_in_KiB, version)
                 VALUES (?, ?, ?, 1)
                 ON CONFLICT (key) DO NOTHING
                 RETURNING 1
                 """.trimIndent(),
-            ).use { stmt: PreparedStatement ->
-              stmt.setString(1, key)
-              stmt.setBytes(2, bytes)
-              stmt.setInt(3, ceil(bytes.size / 1024.0).toInt())
-              stmt.executeQuery().use { rs -> rs.next() }
-            }
-          } else {
-            // Update only if version matches
-            connection.prepareStatement(
-                """
+          ).use { stmt: PreparedStatement ->
+            stmt.setString(1, key)
+            stmt.setBytes(2, bytes)
+            stmt.setInt(3, ceil(bytes.size / 1024.0).toInt())
+            stmt.executeQuery().use { rs -> rs.next() }
+          }
+
+          // Update only if version matches
+          else -> connection.prepareStatement(
+              """
                 UPDATE $schema.$tableName
                 SET value = ?,
                     value_size_in_KiB = ?,
                     version = version + 1
                 WHERE key = ? AND version = ?
                 """.trimIndent(),
-            ).use { stmt: PreparedStatement ->
-              stmt.setBytes(1, bytes)
-              stmt.setInt(2, ceil(bytes.size / 1024.0).toInt())
-              stmt.setString(3, key)
-              stmt.setLong(4, expectedVersion)
-              stmt.executeUpdate() > 0
-            }
+          ).use { stmt: PreparedStatement ->
+            stmt.setBytes(1, bytes)
+            stmt.setInt(2, ceil(bytes.size / 1024.0).toInt())
+            stmt.setString(3, key)
+            stmt.setLong(4, expectedVersion)
+            stmt.executeUpdate() > 0
           }
         }
       }
@@ -287,7 +283,7 @@ class PostgresKeyValueStorage(
           while (resultSet.next()) {
             results[resultSet.getString("key")] = Pair(
                 resultSet.getBytes("value"),
-                resultSet.getLong("version")
+                resultSet.getLong("version"),
             )
           }
           // add missing keys with version 0
@@ -309,103 +305,109 @@ class PostgresKeyValueStorage(
       try {
         return pool.connection.use { connection: Connection ->
           connection.autoCommit = false
-          connection.transactionIsolation = Connection.TRANSACTION_READ_COMMITTED
+          // Use SERIALIZABLE to ensure consistency
+          connection.transactionIsolation = Connection.TRANSACTION_SERIALIZABLE
 
           try {
-            // 1. Lock all rows in a consistent order to prevent deadlocks
+            // 1. Get current versions of all keys
             val sortedKeys = updates.keys.sorted()
             val currentVersions = connection.prepareStatement(
-                "SELECT key, version FROM $schema.$tableName WHERE key = ANY(?) FOR UPDATE"
+                """
+                SELECT key, version, true as exists
+                FROM $schema.$tableName
+                WHERE key = ANY(?)
+            """,
             ).use { stmt: PreparedStatement ->
               val array = connection.createArrayOf("VARCHAR", sortedKeys.toTypedArray())
               stmt.setArray(1, array)
               stmt.executeQuery().use { rs: ResultSet ->
                 buildMap {
                   while (rs.next()) {
-                    put(rs.getString("key"), rs.getLong("version"))
+                    put(rs.getString("key"), Pair(rs.getLong("version"), true))
+                  }
+                  // Add non-existent keys with version 0
+                  sortedKeys.forEach { key ->
+                    putIfAbsent(key, Pair(0L, false))
                   }
                 }
               }
             }
 
+            // 2. Check versions and prepare operations
             val results = mutableMapOf<String, Boolean>()
-            var allVersionsMatch = true
-
-            // 2. Check versions and prepare updates
-            val deletes = mutableListOf<Pair<String, Long>>()
-            val inserts = mutableListOf<Triple<String, ByteArray, Int>>()
-            val updatesList = mutableListOf<Triple<String, ByteArray, Int>>()
-
-            for (key in sortedKeys) {
+            val operations = sortedKeys.mapNotNull { key ->
               val (bytes, expectedVersion) = updates[key]!!
-              val currentVersion = currentVersions[key] ?: 0L
+              val (currentVersion, exists) = currentVersions[key]!!
 
               if (currentVersion != expectedVersion) {
-                allVersionsMatch = false
                 results[key] = false
+                null
               } else {
                 results[key] = true
                 when {
                   bytes == null -> {
                     if (expectedVersion != 0L) {
-                      deletes.add(key to expectedVersion)
-                    }
+                      Triple("DELETE", key, expectedVersion)
+                    } else null
                   }
-                  expectedVersion == 0L -> {
-                    val sizeKiB = ceil(bytes.size / 1024.0).toInt()
-                    inserts.add(Triple(key, bytes, sizeKiB))
+
+                  expectedVersion == 0L && !exists -> {
+                    Triple("INSERT", key, bytes)
                   }
+
                   else -> {
-                    val sizeKiB = ceil(bytes.size / 1024.0).toInt()
-                    updatesList.add(Triple(key, bytes, sizeKiB))
+                    Triple("UPDATE", key, bytes)
                   }
                 }
               }
             }
 
-            // If any version check failed, rollback and return failures
-            if (!allVersionsMatch) {
-              connection.rollback()
-              return updates.keys.associateWith { results[it] ?: false }
-            }
-
-            // 3. Execute operations in a fixed order: deletes, then inserts, then updates
-            if (deletes.isNotEmpty()) {
-              connection.prepareStatement(
-                  "DELETE FROM $schema.$tableName WHERE key = ? AND version = ?"
-              ).use { stmt: PreparedStatement ->
-                deletes.forEach { (key, version) ->
-                  stmt.setString(1, key)
-                  stmt.setLong(2, version)
-                  stmt.executeUpdate()
+            // 3. Execute operations
+            operations.forEach { (op, key, value) ->
+              when (op) {
+                "DELETE" -> {
+                  connection.prepareStatement(
+                      """
+                            DELETE FROM $schema.$tableName
+                            WHERE key = ? AND version = ?
+                        """,
+                  ).use { stmt ->
+                    stmt.setString(1, key)
+                    stmt.setLong(2, value as Long)
+                    stmt.executeUpdate()
+                  }
                 }
-              }
-            }
 
-            if (inserts.isNotEmpty()) {
-              connection.prepareStatement(
-                  "INSERT INTO $schema.$tableName (key, value, value_size_in_KiB, version) VALUES (?, ?, ?, 1) ON CONFLICT (key) DO NOTHING"
-              ).use { stmt: PreparedStatement ->
-                inserts.forEach { (key, bytes, sizeKiB) ->
-                  stmt.setString(1, key)
-                  stmt.setBytes(2, bytes)
-                  stmt.setInt(3, sizeKiB)
-                  stmt.executeUpdate()
+                "INSERT" -> {
+                  connection.prepareStatement(
+                      """
+                            INSERT INTO $schema.$tableName (key, value, value_size_in_KiB, version)
+                            VALUES (?, ?, ?, 1)
+                        """,
+                  ).use { stmt ->
+                    stmt.setString(1, key)
+                    stmt.setBytes(2, value as ByteArray)
+                    stmt.setInt(3, ceil(value.size / 1024.0).toInt())
+                    stmt.executeUpdate()
+                  }
                 }
-              }
-            }
 
-            if (updatesList.isNotEmpty()) {
-              connection.prepareStatement(
-                  "UPDATE $schema.$tableName SET value = ?, value_size_in_KiB = ?, version = version + 1 WHERE key = ? AND version = ?"
-              ).use { stmt: PreparedStatement ->
-                updatesList.forEach { (key, bytes, sizeKiB) ->
-                  val expectedVersion = currentVersions[key] ?: 0L
-                  stmt.setBytes(1, bytes)
-                  stmt.setInt(2, sizeKiB)
-                  stmt.setString(3, key)
-                  stmt.setLong(4, expectedVersion)
-                  stmt.executeUpdate()
+                "UPDATE" -> {
+                  connection.prepareStatement(
+                      """
+                            UPDATE $schema.$tableName
+                            SET value = ?,
+                                value_size_in_KiB = ?,
+                                version = version + 1
+                            WHERE key = ? AND version = ?
+                        """,
+                  ).use { stmt ->
+                    stmt.setBytes(1, value as ByteArray)
+                    stmt.setInt(2, ceil(value.size / 1024.0).toInt())
+                    stmt.setString(3, key)
+                    stmt.setLong(4, currentVersions[key]!!.first)
+                    stmt.executeUpdate()
+                  }
                 }
               }
             }
@@ -420,8 +422,12 @@ class PostgresKeyValueStorage(
           }
         }
       } catch (e: Exception) {
-        // PostgreSQL deadlock error code is "40P01"
-        if (e is PSQLException && e.sqlState == "40P01" && attempt < maxRetries - 1) {
+        // PostgreSQL error codes:
+        // 40P01 - deadlock
+        // 40001 - serialization failure
+        if ((e is PSQLException &&
+              (e.sqlState == "40P01" || e.sqlState == "40001")) &&
+          attempt < maxRetries - 1) {
           delay(10L * (1L shl attempt))
         } else {
           throw e

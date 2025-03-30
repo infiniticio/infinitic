@@ -168,18 +168,21 @@ class MySQLKeyValueStorage(
       try {
         return pool.connection.use { connection ->
           connection.autoCommit = false
+          connection.transactionIsolation = Connection.TRANSACTION_READ_COMMITTED
           try {
-            // Get current version inside transaction with row lock
-            val currentVersion = connection.prepareStatement(
-                "SELECT version FROM $tableName WHERE `key` = ? FOR UPDATE"
-            ).use { stmt ->
-              stmt.setString(1, key)
-              stmt.executeQuery().use { rs ->
-                if (rs.next()) rs.getLong("version") else 0L
+            // Get current version with row lock
+            val currentVersion = executeSelect(connection, key)
+
+            // Early version check
+            val result = if (currentVersion != expectedVersion) {
+              false
+            } else {
+              when {
+                bytes == null -> executeDelete(connection, key, expectedVersion)
+                expectedVersion == 0L -> executeInsert(connection, key, bytes, currentVersion)
+                else -> executeUpdate(connection, key, bytes, expectedVersion)
               }
             }
-            
-            val result = tryVersionedUpdate(connection, key, bytes, expectedVersion, currentVersion)
             connection.commit()
             result
           } catch (e: Exception) {
@@ -203,73 +206,6 @@ class MySQLKeyValueStorage(
     return false
   }
 
-  private fun tryVersionedUpdate(
-    connection: Connection,
-    key: String,
-    bytes: ByteArray?,
-    expectedVersion: Long,
-    currentVersion: Long
-  ): Boolean {
-    // Early version check
-    if (currentVersion != expectedVersion) return false
-
-    return when {
-      bytes == null -> when (expectedVersion) {
-        0L -> currentVersion == 0L  // Key doesn't exist, already verified with lock
-        else -> connection.prepareStatement(
-            "DELETE FROM $tableName WHERE `key` = ? AND version = ?",
-        ).use { stmt ->
-          stmt.setString(1, key)
-          stmt.setLong(2, expectedVersion)
-          stmt.executeUpdate() > 0
-        }
-      }
-      else -> when (expectedVersion) {
-        0L -> if (currentVersion > 0L) {
-          false  // Key exists, already verified with lock
-        } else {
-          // Key doesn't exist, do the insert
-          connection.prepareStatement(
-              """
-              INSERT IGNORE INTO $tableName (`key`, value, version)
-              VALUES (?, ?, 1)
-              """.trimIndent(),
-          ).use { insertStmt ->
-            insertStmt.setString(1, key)
-            insertStmt.setBytes(2, bytes)
-            // For INSERT IGNORE, success means exactly 1 row was affected
-            insertStmt.executeUpdate() == 1
-          }
-        }
-        else -> connection.prepareStatement(
-            """
-            UPDATE $tableName
-            SET value = ?, version = version + 1
-            WHERE `key` = ? AND version = ?
-            """.trimIndent(),
-        ).use { stmt ->
-          stmt.setBytes(1, bytes)
-          stmt.setString(2, key)
-          stmt.setLong(3, expectedVersion)
-          stmt.executeUpdate() > 0
-        }
-      }
-    }
-  }
-
-  override suspend fun getStateAndVersion(key: String): Pair<ByteArray?, Long> =
-      pool.connection.use { connection ->
-        connection.prepareStatement("SELECT value, version FROM $tableName WHERE `key`=?")
-            .use {
-              it.setString(1, key)
-              it.executeQuery().use { resultSet ->
-                if (resultSet.next()) {
-                  Pair(resultSet.getBytes("value"), resultSet.getLong("version"))
-                } else Pair(null, 0)
-              }
-            }
-      }
-
   override suspend fun getStatesAndVersions(keys: Set<String>): Map<String, Pair<ByteArray?, Long>> {
     if (keys.isEmpty()) return emptyMap()
 
@@ -284,7 +220,7 @@ class MySQLKeyValueStorage(
               while (resultSet.next()) {
                 result[resultSet.getString("key")] = Pair(
                     resultSet.getBytes("value"),
-                    resultSet.getLong("version")
+                    resultSet.getLong("version"),
                 )
               }
               // add missing keys with version 0
@@ -302,33 +238,25 @@ class MySQLKeyValueStorage(
 
     // Maximum number of retry attempts
     val maxRetries = 5
+    // Threshold for batch processing
+    val batchThreshold = 10
 
     repeat(maxRetries) { attempt ->
       try {
         return pool.connection.use { connection ->
           connection.autoCommit = false
           connection.transactionIsolation = Connection.TRANSACTION_READ_COMMITTED
-          try {
-            // First get all current versions
-            val questionMarks = updates.keys.joinToString(",") { "?" }
-            val currentVersions = connection.prepareStatement(
-                "SELECT `key`, version FROM $tableName WHERE BINARY `key` IN ($questionMarks)"
-            ).use { stmt ->
-              updates.keys.forEachIndexed { index, key -> stmt.setString(index + 1, key) }
-              stmt.executeQuery().use { rs ->
-                buildMap {
-                  while (rs.next()) {
-                    put(rs.getString("key"), rs.getLong("version"))
-                  }
-                }
-              }
-            }
 
-            // Process each update
-            val results = updates.entries.associate { (key, update) ->
-              val (bytes, expectedVersion) = update
-              val currentVersion = currentVersions[key] ?: 0L
-              key to tryVersionedUpdate(connection, key, bytes, expectedVersion, currentVersion)
+          try {
+            // Sort updates by key to prevent deadlocks
+            val sortedUpdates = updates.entries.sortedBy { it.key }
+
+            val results = if (updates.size <= batchThreshold) {
+              // For small batches, process one by one
+              processUpdatesOneByOne(connection, sortedUpdates)
+            } else {
+              // For larger batches, use batch processing
+              processUpdatesInBatch(connection, sortedUpdates)
             }
 
             connection.commit()
@@ -353,6 +281,150 @@ class MySQLKeyValueStorage(
 
     // If we reach here, all retries failed
     return updates.keys.associateWith { false }
+  }
+
+
+  private fun executeSelect(
+    connection: Connection,
+    key: String
+  ): Long = connection.prepareStatement(
+      "SELECT version FROM $tableName WHERE `key` = ? FOR UPDATE",
+  ).use { stmt ->
+    stmt.setString(1, key)
+    stmt.executeQuery().use { rs ->
+      if (rs.next()) rs.getLong("version") else 0L
+    }
+  }
+
+  private fun executeSelectBatch(
+    connection: Connection,
+    keys: List<String>
+  ): Map<String, Long> {
+    val questionMarks = keys.joinToString(",") { "?" }
+    return connection.prepareStatement(
+        "SELECT `key`, version FROM $tableName WHERE `key` IN ($questionMarks) FOR UPDATE",
+    ).use { stmt ->
+      keys.forEachIndexed { index, key ->
+        stmt.setString(index + 1, key)
+      }
+      stmt.executeQuery().use { rs ->
+        buildMap {
+          while (rs.next()) {
+            put(rs.getString("key"), rs.getLong("version"))
+          }
+        }
+      }
+    }
+  }
+
+  private fun executeDelete(
+    connection: Connection,
+    key: String,
+    expectedVersion: Long
+  ): Boolean = when (expectedVersion) {
+    0L -> true
+    else -> connection.prepareStatement(
+        "DELETE FROM $tableName WHERE `key` = ? AND version = ?",
+    ).use { stmt ->
+      stmt.setString(1, key)
+      stmt.setLong(2, expectedVersion)
+      stmt.executeUpdate() > 0
+    }
+  }
+
+  private fun executeInsert(
+    connection: Connection,
+    key: String,
+    bytes: ByteArray,
+    currentVersion: Long
+  ): Boolean = if (currentVersion > 0L) {
+    false
+  } else {
+    connection.prepareStatement(
+        """
+        INSERT IGNORE INTO $tableName (`key`, value, version)
+        VALUES (?, ?, 1)
+        """.trimIndent()
+    ).use { stmt ->
+      stmt.setString(1, key)
+      stmt.setBytes(2, bytes)
+      // For INSERT IGNORE, success means exactly 1 row was affected
+      stmt.executeUpdate() == 1
+    }
+  }
+
+  private fun executeUpdate(
+    connection: Connection,
+    key: String,
+    bytes: ByteArray,
+    expectedVersion: Long
+  ): Boolean = connection.prepareStatement(
+      "UPDATE $tableName SET value = ?, version = version + 1 WHERE `key` = ? AND version = ?",
+  ).use { stmt ->
+    stmt.setBytes(1, bytes)
+    stmt.setString(2, key)
+    stmt.setLong(3, expectedVersion)
+    stmt.executeUpdate() > 0
+  }
+
+  override suspend fun getStateAndVersion(key: String): Pair<ByteArray?, Long> =
+      pool.connection.use { connection ->
+        connection.prepareStatement("SELECT value, version FROM $tableName WHERE `key`=?")
+            .use {
+              it.setString(1, key)
+              it.executeQuery().use { resultSet ->
+                if (resultSet.next()) {
+                  Pair(resultSet.getBytes("value"), resultSet.getLong("version"))
+                } else Pair(null, 0)
+              }
+            }
+      }
+
+  private fun processUpdatesOneByOne(
+    connection: Connection,
+    updates: List<Map.Entry<String, Pair<ByteArray?, Long>>>
+  ): Map<String, Boolean> {
+    return updates.associate { (key, update) ->
+      val (bytes, expectedVersion) = update
+
+      // Get current version with row lock
+      val currentVersion = executeSelect(connection, key)
+
+      // Early version check
+      if (currentVersion != expectedVersion) {
+        key to false
+      } else {
+        key to when {
+          bytes == null -> executeDelete(connection, key, expectedVersion)
+          expectedVersion == 0L -> executeInsert(connection, key, bytes, currentVersion)
+          else -> executeUpdate(connection, key, bytes, expectedVersion)
+        }
+      }
+    }
+  }
+
+  private fun processUpdatesInBatch(
+    connection: Connection,
+    updates: List<Map.Entry<String, Pair<ByteArray?, Long>>>
+  ): Map<String, Boolean> {
+    // First get all versions with locks
+    val currentVersions = executeSelectBatch(connection, updates.map { it.key })
+
+    // Process updates in batches by operation type
+    return updates.associate { (key, update) ->
+      val (bytes, expectedVersion) = update
+      val currentVersion = currentVersions[key] ?: 0L
+
+      if (currentVersion != expectedVersion) {
+        key to false
+      } else {
+        key to when {
+          bytes == null -> executeDelete(connection, key, expectedVersion)
+          expectedVersion == 0L -> executeInsert(connection, key, bytes, currentVersion)
+          else -> executeUpdate(connection, key, bytes, expectedVersion)
+        }
+      }
+    }
   }
 
   @TestOnly
