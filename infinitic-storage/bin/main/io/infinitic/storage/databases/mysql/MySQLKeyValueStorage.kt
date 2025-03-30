@@ -7,7 +7,7 @@
  * Without limiting other conditions in the License, the grant of rights under the License will not
  * include, and the License does not grant to you, the right to Sell the Software.
  *
- * For purposes of the foregoing, “Sell” means practicing any or all of the rights granted to you
+ * For purposes of the foregoing, "Sell" means practicing any or all of the rights granted to you
  * under the License to provide to third parties, for a fee or other consideration (including
  * without limitation fees for hosting or consulting/ support services related to the Software), a
  * product or service whose value derives, entirely or substantially, from the functionality of the
@@ -25,6 +25,7 @@ package io.infinitic.storage.databases.mysql
 import com.zaxxer.hikari.HikariDataSource
 import io.infinitic.storage.config.MySQLConfig
 import io.infinitic.storage.keyValue.KeyValueStorage
+import kotlinx.coroutines.delay
 import org.jetbrains.annotations.TestOnly
 import java.sql.Connection
 
@@ -40,6 +41,10 @@ class MySQLKeyValueStorage(
   init {
     // Create table if needed
     initKeyValueTable()
+  }
+
+  override fun close() {
+    pool.close()
   }
 
   override suspend fun get(key: String): ByteArray? =
@@ -66,12 +71,11 @@ class MySQLKeyValueStorage(
         }
 
         else -> connection.prepareStatement(
-            "INSERT INTO $tableName (`key`, `value`) VALUES (?, ?) " +
-                "ON DUPLICATE KEY UPDATE `value`=?",
+            "INSERT INTO $tableName (`key`, value, version) VALUES (?, ?, 1) " +
+                "ON DUPLICATE KEY UPDATE value = VALUES(value), version = version + 1",
         ).use {
           it.setString(1, key)
           it.setBytes(2, bytes)
-          it.setBytes(3, bytes)
           it.executeUpdate()
         }
       }
@@ -79,11 +83,12 @@ class MySQLKeyValueStorage(
   }
 
   override suspend fun get(keys: Set<String>): Map<String, ByteArray?> {
-    if (keys.isEmpty()) return emptyMap() // Handle empty set case
+    if (keys.isEmpty()) return emptyMap()
 
     return pool.connection.use { connection ->
       val questionMarks = keys.joinToString(",") { "?" }
-      connection.prepareStatement("SELECT `key`, `value` FROM $tableName WHERE `key` IN ($questionMarks)")
+      // Using BINARY for case-sensitive key comparison
+      connection.prepareStatement("SELECT `key`, `value` FROM $tableName WHERE BINARY `key` IN ($questionMarks)")
           .use { statement ->
             keys.forEachIndexed { index, key -> statement.setString(index + 1, key) }
             statement.executeQuery().use { resultSet ->
@@ -102,38 +107,44 @@ class MySQLKeyValueStorage(
   }
 
   override suspend fun put(bytes: Map<String, ByteArray?>) {
-    if (bytes.isEmpty()) return  // Handle empty case
+    if (bytes.isEmpty()) return
 
     pool.connection.use { connection ->
       // Sorting keys to ensure consistent order of access
       val sortedBytes = bytes.toSortedMap()
       connection.autoCommit = false
-      // Change isolation level if necessary
       connection.transactionIsolation = Connection.TRANSACTION_READ_COMMITTED
-
       try {
-        // Batch DELETE
-        connection.prepareStatement("DELETE FROM $tableName WHERE `key` = ?")
-            .use { deleteStatement ->
-              sortedBytes.filter { it.value == null }.forEach { (key, _) ->
-                deleteStatement.setString(1, key)
-                deleteStatement.addBatch()
+        // Batch DELETE using IN clause for better performance
+        val keysToDelete = sortedBytes.filter { it.value == null }.keys
+        if (keysToDelete.isNotEmpty()) {
+          val questionMarks = keysToDelete.joinToString(",") { "?" }
+          connection.prepareStatement("DELETE FROM $tableName WHERE `key` IN ($questionMarks)")
+              .use { stmt ->
+                keysToDelete.forEachIndexed { index, key ->
+                  stmt.setString(index + 1, key)
+                }
+                stmt.executeUpdate()
               }
-              deleteStatement.executeBatch()
-            }
+        }
 
-        // Batch INSERT/UPDATE
-        connection.prepareStatement(
-            "INSERT INTO $tableName (`key`, `value`) VALUES (?, ?) " +
-                "ON DUPLICATE KEY UPDATE `value`=?",
-        ).use { insertStatement ->
-          sortedBytes.filter { it.value != null }.forEach { (key, value) ->
-            insertStatement.setString(1, key)
-            insertStatement.setBytes(2, value)
-            insertStatement.setBytes(3, value)
-            insertStatement.addBatch()
+        // Batch INSERT/UPDATE using VALUES for better performance
+        val keysToUpsert = sortedBytes.filter { it.value != null }
+        if (keysToUpsert.isNotEmpty()) {
+          val valuesSql = keysToUpsert.keys.joinToString(",") { "(?, ?, 1)" }
+          connection.prepareStatement(
+              "INSERT INTO $tableName(`key`, value, version) VALUES $valuesSql " +
+                  "ON DUPLICATE KEY UPDATE " +
+                  "value = VALUES(value), " +
+                  "version = version + 1",
+          ).use { stmt ->
+            var paramIndex = 1
+            keysToUpsert.forEach { (key, value) ->
+              stmt.setString(paramIndex++, key)
+              stmt.setBytes(paramIndex++, value)
+            }
+            stmt.executeUpdate()
           }
-          insertStatement.executeBatch()
         }
         connection.commit()
       } catch (e: Exception) {
@@ -145,9 +156,118 @@ class MySQLKeyValueStorage(
     }
   }
 
-  override fun close() {
-    pool.close()
+  override suspend fun putWithVersion(
+    key: String,
+    bytes: ByteArray?,
+    expectedVersion: Long
+  ): Boolean {
+    // Maximum number of retry attempts
+    val maxRetries = 5
+
+    repeat(maxRetries) { attempt ->
+      try {
+        return tryPutWithVersion(key, bytes, expectedVersion)
+      } catch (e: Exception) {
+        // Check if it's a MySQL deadlock exception
+        if (e.message?.contains("Deadlock found") == true && attempt < maxRetries - 1) {
+          // Exponential backoff delay: 10ms, 20ms, 40ms...
+          delay(10L * (1L shl attempt))
+        } else {
+          throw e
+        }
+      }
+    }
+
+    return false
   }
+
+  private fun tryPutWithVersion(
+    key: String,
+    bytes: ByteArray?,
+    expectedVersion: Long
+  ): Boolean =
+      pool.connection.use { connection ->
+        connection.autoCommit = false
+        try {
+          val result = when (bytes) {
+            null -> when (expectedVersion) {
+              0L -> {
+                connection.prepareStatement(
+                    "SELECT 1 FROM $tableName WHERE `key` = ?",
+                ).use { stmt ->
+                  stmt.setString(1, key)
+                  val exists = stmt.executeQuery().next()
+                  !exists
+                }
+              }
+
+              else -> {
+                // Delete only if version matches
+                connection.prepareStatement(
+                    "DELETE FROM $tableName WHERE `key` = ? AND version = ?",
+                ).use { stmt ->
+                  stmt.setString(1, key)
+                  stmt.setLong(2, expectedVersion)
+                  stmt.executeUpdate() > 0
+                }
+              }
+            }
+
+            else -> when (expectedVersion) {
+              0L -> {
+                // For version 0, only succeed if key doesn't exist
+                connection.prepareStatement(
+                    """
+                            INSERT IGNORE INTO $tableName (`key`, value, version)
+                            VALUES (?, ?, 1)
+                            """.trimIndent(),
+                ).use { stmt ->
+                  stmt.setString(1, key)
+                  stmt.setBytes(2, bytes)
+                  // Success means we inserted a new row (affected rows = 1)
+                  stmt.executeUpdate() == 1
+                }
+              }
+
+              else -> {
+                // Update only if version matches
+                connection.prepareStatement(
+                    """
+                            UPDATE $tableName
+                            SET value = ?, version = version + 1
+                            WHERE `key` = ? AND version = ?
+                            """.trimIndent(),
+                ).use { stmt ->
+                  stmt.setBytes(1, bytes)
+                  stmt.setString(2, key)
+                  stmt.setLong(3, expectedVersion)
+                  stmt.executeUpdate() > 0
+                }
+              }
+            }
+          }
+          connection.commit()
+          result
+        } catch (e: Exception) {
+          connection.rollback()
+          throw e
+        } finally {
+          connection.autoCommit = true
+        }
+      }
+
+  override suspend fun getStateAndVersion(key: String): Pair<ByteArray?, Long> =
+      pool.connection.use { connection ->
+        connection.prepareStatement("SELECT value, version FROM $tableName WHERE `key`=?")
+            .use {
+              it.setString(1, key)
+              it.executeQuery().use { resultSet ->
+                if (resultSet.next()) {
+                  Pair(resultSet.getBytes("value"), resultSet.getLong("version"))
+                } else Pair(null, 0)
+              }
+            }
+      }
 
   @TestOnly
   override fun flush() {
@@ -157,20 +277,34 @@ class MySQLKeyValueStorage(
   }
 
   private fun initKeyValueTable() {
-    // Here key is typically a workflowId
-    // And value is typically a serialized workflow state
     pool.connection.use { connection ->
       connection.prepareStatement(
           "CREATE TABLE IF NOT EXISTS $tableName (" +
-              "`id` BIGINT(20) AUTO_INCREMENT PRIMARY KEY," +
+              "id BIGINT AUTO_INCREMENT PRIMARY KEY," +
               "`key` VARCHAR(255) NOT NULL UNIQUE," +
-              "`value` LONGBLOB NOT NULL," +
-              "`last_update` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP," +
+              "value LONGBLOB NOT NULL," +
+              "last_update TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP," +
               "`value_size_in_KiB` BIGINT(20) GENERATED ALWAYS AS ((length(`value`) / 1024)) STORED," +
-              "KEY `value_size_index` (`value_size_in_KiB`)" +
+              "version BIGINT NOT NULL DEFAULT 1" +
               ") ENGINE=InnoDB DEFAULT CHARSET=utf8",
-      )
-          .use { it.executeUpdate() }
+      ).use { it.executeUpdate() }
+
+      // Check if index exists first
+      val indexExists = connection.prepareStatement(
+          "SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = ? AND index_name = ?",
+      ).use { stmt ->
+        stmt.setString(1, tableName)
+        stmt.setString(2, "value_size_index")
+        stmt.executeQuery().use { rs ->
+          rs.next() && rs.getInt(1) > 0
+        }
+      }
+
+      if (!indexExists) {
+        connection.prepareStatement(
+            "CREATE INDEX value_size_index ON $tableName(value_size_in_KiB);",
+        ).use { it.executeUpdate() }
+      }
     }
   }
 }

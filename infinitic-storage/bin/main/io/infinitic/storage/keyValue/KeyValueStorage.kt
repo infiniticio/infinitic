@@ -22,9 +22,10 @@
  */
 package io.infinitic.storage.keyValue
 
-import io.infinitic.storage.Flushable
+import org.jetbrains.annotations.TestOnly
+import java.io.Closeable
 
-interface KeyValueStorage : Flushable, AutoCloseable {
+interface KeyValueStorage : Closeable {
   /**
    * Retrieves the value associated with the specified key from the storage.
    */
@@ -48,8 +49,17 @@ interface KeyValueStorage : Flushable, AutoCloseable {
    */
   suspend fun put(bytes: Map<String, ByteArray?>)
 
-  suspend fun getVersion(key: String): Long
+  /**
+   * Updates the value only if the current version matches the expected version.
+   * @return true if the update was successful, false if the version didn't match
+   */
   suspend fun putWithVersion(key: String, bytes: ByteArray?, expectedVersion: Long): Boolean
+
+  /**
+   * Gets both value and version in a single call for efficiency
+   * @return Pair of value and version, where version is 0 if value is null
+   */
+  suspend fun getStateAndVersion(key: String): Pair<ByteArray?, Long>
 
   @TestOnly
   fun flush()

@@ -192,50 +192,67 @@ class PostgresKeyValueStorage(
     connection.autoCommit = false
     try {
       val result = when (bytes) {
-        null -> {
-          // Delete only if version matches
-          connection.prepareStatement(
-              "DELETE FROM $schema.$tableName WHERE key = ? AND version = ?",
-          ).use { stmt: PreparedStatement ->
-            stmt.setString(1, key)
-            stmt.setLong(2, expectedVersion)
-            stmt.executeUpdate() > 0
+        null -> when (expectedVersion) {
+          0L -> {
+            // We checks there is no data
+            connection.prepareStatement(
+                "SELECT 1 FROM $schema.$tableName WHERE key = ?",
+            ).use { stmt ->
+              stmt.setString(1, key)
+              val exists = stmt.executeQuery().next()
+              !exists
+            }
+          }
+
+          else -> {
+            // Delete only if version matches
+            connection.prepareStatement(
+                "DELETE FROM $schema.$tableName WHERE key = ? AND version = ?",
+            ).use { stmt: PreparedStatement ->
+              stmt.setString(1, key)
+              stmt.setLong(2, expectedVersion)
+              stmt.executeUpdate() > 0
+            }
           }
         }
 
         else -> {
-          if (expectedVersion == 0L) {
-            // For version 0, use INSERT ... ON CONFLICT DO NOTHING
-            // This ensures atomicity and avoids race conditions
-            connection.prepareStatement(
-                """
+          when (expectedVersion) {
+            0L -> {
+              // For version 0, use INSERT ... ON CONFLICT DO NOTHING
+              // This ensures atomicity and avoids race conditions
+              connection.prepareStatement(
+                  """
                 INSERT INTO $schema.$tableName (key, value, value_size_in_KiB, version)
                 VALUES (?, ?, ?, 1)
                 ON CONFLICT (key) DO NOTHING
                 RETURNING 1
                 """.trimIndent(),
-            ).use { stmt: PreparedStatement ->
-              stmt.setString(1, key)
-              stmt.setBytes(2, bytes)
-              stmt.setInt(3, ceil(bytes.size / 1024.0).toInt())
-              stmt.executeQuery().use { rs -> rs.next() }
+              ).use { stmt: PreparedStatement ->
+                stmt.setString(1, key)
+                stmt.setBytes(2, bytes)
+                stmt.setInt(3, ceil(bytes.size / 1024.0).toInt())
+                stmt.executeQuery().use { rs -> rs.next() }
+              }
             }
-          } else {
-            // Update only if version matches
-            connection.prepareStatement(
-                """
+
+            else -> {
+              // Update only if version matches
+              connection.prepareStatement(
+                  """
                 UPDATE $schema.$tableName
                 SET value = ?,
                     value_size_in_KiB = ?,
                     version = version + 1
                 WHERE key = ? AND version = ?
                 """.trimIndent(),
-            ).use { stmt: PreparedStatement ->
-              stmt.setBytes(1, bytes)
-              stmt.setInt(2, ceil(bytes.size / 1024.0).toInt())
-              stmt.setString(3, key)
-              stmt.setLong(4, expectedVersion)
-              stmt.executeUpdate() > 0
+              ).use { stmt: PreparedStatement ->
+                stmt.setBytes(1, bytes)
+                stmt.setInt(2, ceil(bytes.size / 1024.0).toInt())
+                stmt.setString(3, key)
+                stmt.setLong(4, expectedVersion)
+                stmt.executeUpdate() > 0
+              }
             }
           }
         }

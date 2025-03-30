@@ -100,7 +100,7 @@ internal class InMemoryKeyValueStorage(
     expectedVersion: Long
   ): Boolean {
     if (bytes == null) {
-      if (expectedVersion == 0L) return false
+      if (expectedVersion == 0L) return (storage[key] == null)
       // Only remove if version matches
       val ref = storage[key] ?: return false
       val current = ref.get()

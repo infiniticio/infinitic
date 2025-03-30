@@ -190,19 +190,31 @@ class MySQLKeyValueStorage(
         connection.autoCommit = false
         try {
           val result = when (bytes) {
-            null -> {
-              // Delete only if version matches
-              connection.prepareStatement(
-                  "DELETE FROM $tableName WHERE `key` = ? AND version = ?",
-              ).use { stmt ->
-                stmt.setString(1, key)
-                stmt.setLong(2, expectedVersion)
-                stmt.executeUpdate() > 0
+            null -> when (expectedVersion) {
+              0L -> {
+                connection.prepareStatement(
+                    "SELECT 1 FROM $tableName WHERE `key` = ?",
+                ).use { stmt ->
+                  stmt.setString(1, key)
+                  val exists = stmt.executeQuery().next()
+                  !exists
+                }
+              }
+
+              else -> {
+                // Delete only if version matches
+                connection.prepareStatement(
+                    "DELETE FROM $tableName WHERE `key` = ? AND version = ?",
+                ).use { stmt ->
+                  stmt.setString(1, key)
+                  stmt.setLong(2, expectedVersion)
+                  stmt.executeUpdate() > 0
+                }
               }
             }
 
-            else -> {
-              if (expectedVersion == 0L) {
+            else -> when (expectedVersion) {
+              0L -> {
                 // For version 0, only succeed if key doesn't exist
                 connection.prepareStatement(
                     """
@@ -215,7 +227,9 @@ class MySQLKeyValueStorage(
                   // Success means we inserted a new row (affected rows = 1)
                   stmt.executeUpdate() == 1
                 }
-              } else {
+              }
+
+              else -> {
                 // Update only if version matches
                 connection.prepareStatement(
                     """

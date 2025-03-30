@@ -48,7 +48,7 @@ abstract class KeyValueStorageTests : StringSpec() {
     super.beforeSpec(spec)
     startServer()
   }
-  
+
   override suspend fun afterSpec(spec: Spec) {
     withContext(Dispatchers.IO) {
       storage.close()
@@ -187,6 +187,15 @@ abstract class KeyValueStorageTests : StringSpec() {
       val (state, version) = storage.getStateAndVersion("foo")
       state.contentEquals("bar".toByteArray()) shouldBe true
       version shouldBe 1L
+    }
+
+    "putWithVersion null should success on new key" {
+      val success = storage.putWithVersion("newKey", null, 0L)
+      success shouldBe true
+
+      val (state, version) = storage.getStateAndVersion("newKey")
+      state shouldBe null
+      version shouldBe 0L
     }
 
     "putWithVersion should increment version on each successful update" {
