@@ -4,6 +4,7 @@
 .fleet/
 .gradle/
 build/
+bin/
 out/
 *.log
 .DS_Store

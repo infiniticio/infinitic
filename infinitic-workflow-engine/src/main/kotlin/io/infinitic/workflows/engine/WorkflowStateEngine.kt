@@ -161,17 +161,25 @@ class WorkflowStateEngine(
     // create a producer that buffers messages
     val bufferedProducer = BufferedInfiniticProducer(_producer)
 
-    // get current state
-    val state = storage.getState(message.workflowId)
+    while (true) {
+      // get current state and version in a single call
+      val (state, version) = storage.getStateAndVersion(message.workflowId)
 
-    // process this message
-    val updatedState = processSingle(bufferedProducer, state, message, publishTime)
+      // process this message
+      val updatedState = processSingle(bufferedProducer, state, message, publishTime)
 
-    // send new messages
-    bufferedProducer.send()
+      // send new messages
+      bufferedProducer.send()
 
-    // store updated state
-    storage.putState(message.workflowId, updatedState)
+      // store updated state atomically with optimistic locking
+      val success = storage.putStateWithVersion(
+          message.workflowId,
+          updatedState,
+          version, // version is 0 if state was null
+      )
+      if (success) break
+      // If update failed, continue to retry
+    }
   }
 
   private suspend fun processSingle(
@@ -195,23 +203,21 @@ class WorkflowStateEngine(
 
 
     // Handling a sneaky race condition that may occur when workers are shutdown and restarted:
-    // Due to a Pulsar bug, we may receive the result of a workflow task (RemoteTaskCompleted)
-    // (or even the results of the actions of the workflow task)
-    // before receiving the initial dispatch message (DispatchWorkflow) that creates the workflow state.
-    // In this case,
-    // - if a workflow task completed: we extract the DispatchWorkflow message
-    //   from the workflow task metadata and process it first to create the initial state
-    //   before handling the completion. This metadata is added by the WorkflowStateCmdHandler
-    // - else we directly return an empty workflow state to be handled later
+    // Due to a Pulsar bug in management of key-shared subscriptions,
+    // we may receive the result of a workflow task (RemoteTaskCompleted) or even the results
+    // of the actions of the workflow task before receiving the initial DispatchWorkflow
+    // that creates the workflow state.
 
-    val raceConditionWithNullState =
+    val raceConditionWithNoState =
         (initialState == null && message !is DispatchWorkflow && message is MethodEvent)
-    val raceConditionWithNonNullState = (initialState != null &&
+    val raceConditionWithState = (initialState != null &&
         initialState.runningWorkflowTaskId == TaskId(UNDEFINED_DUE_TO_RACE_CONDITION))
     val isWorkflowTaskCompleted = message.isWorkflowTaskEvent() && (message is RemoteTaskCompleted)
 
-    // received event, but no state, we return a transient state
-    if (raceConditionWithNullState && !isWorkflowTaskCompleted) return WorkflowState(
+    // Specific scenario where an event is received from a workflow,
+    // but there is no existing state for that workflow. In such cases,
+    // the event is stored in a transient state to be processed later.
+    if (raceConditionWithNoState && !isWorkflowTaskCompleted) return WorkflowState(
         lastMessageId = message.messageId,
         workflowId = message.workflowId,
         workflowName = message.workflowName,
@@ -223,23 +229,41 @@ class WorkflowStateEngine(
         messagesBuffer = mutableListOf(message),
     )
 
-    // receive dispatch workflow, but no null state, we process it and add the message buffer of transient state
-    if (raceConditionWithNonNullState && message is DispatchWorkflow)
-      return processMessageWithoutState(producer, message)
-          ?.copy(messagesBuffer = initialState?.messagesBuffer ?: mutableListOf())
+    // Specific scenario where an event is received from a workflow,
+    // but there is a transient state. In such cases,
+    // the event is stored in the transient state to be processed later.
+    if (raceConditionWithState && !isWorkflowTaskCompleted)
+      return initialState.also { it!!.messagesBuffer.add(message) }
 
-    // receive workflow task completed but the workflow was not initialized correctly
-    // we make sure to create the workflow correctly, adding message buffer of transient state if any
-    val state =
-        if ((raceConditionWithNullState || raceConditionWithNonNullState) && isWorkflowTaskCompleted) {
-          (message as RemoteTaskCompleted).taskReturnValue.taskMeta[DISPATCH_WORKFLOW_META_DATA]?.let {
-            val dispatchWorkflow = AvroSerDe
-                .readBinaryWithSchemaFingerprint(it, WorkflowEngineEnvelope::class)
-                .message() as DispatchWorkflow
-            processMessageWithoutState(producer, dispatchWorkflow)
-                ?.copy(messagesBuffer = initialState?.messagesBuffer ?: mutableListOf())
-          } ?: initialState
-        } else initialState
+    // Specific scenario where we receive a DispatchWorkflow message
+    // while there is a transient state storing a message,
+    // then we refine the state and keep the message.
+    // (We do not process the event, that should be processed only after a WorkflowTaskCompleted)
+    if (raceConditionWithState && message is DispatchWorkflow) {
+      return message.newState().copy(messagesBuffer = initialState!!.messagesBuffer)
+    }
+
+    val state = when {
+      // Specific scenario where we receive the result of a WorkflowTask without an existing state
+      // or with a transient state. This should necessarily be the first workflow task, for which
+      // the dispatchWorkflow details have been added to the metadata by the WorkflowStateCmdHandler.
+      (raceConditionWithNoState || raceConditionWithState) && isWorkflowTaskCompleted -> {
+        (message as RemoteTaskCompleted).taskReturnValue.taskMeta[DISPATCH_WORKFLOW_META_DATA]?.let {
+          val dispatchWorkflow = AvroSerDe
+              .readBinaryWithSchemaFingerprint(it, WorkflowEngineEnvelope::class)
+              .message() as DispatchWorkflow
+          dispatchWorkflow.newState()
+              .copy(messagesBuffer = initialState?.messagesBuffer ?: mutableListOf())
+        } ?: initialState
+      }
+
+      else -> initialState
+    }
+
+    // A transient state should not reach this point
+    if (state?.runningWorkflowTaskId == TaskId(UNDEFINED_DUE_TO_RACE_CONDITION)) {
+      logger.warn { "This should not happen:\n  state = $initialState \n  msg   = $message" }
+    }
 
     // end of the race condition management
 

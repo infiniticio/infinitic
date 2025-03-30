@@ -7,7 +7,7 @@
  * Without limiting other conditions in the License, the grant of rights under the License will not
  * include, and the License does not grant to you, the right to Sell the Software.
  *
- * For purposes of the foregoing, “Sell” means practicing any or all of the rights granted to you
+ * For purposes of the foregoing, "Sell" means practicing any or all of the rights granted to you
  * under the License to provide to third parties, for a fee or other consideration (including
  * without limitation fees for hosting or consulting/ support services related to the Software), a
  * product or service whose value derives, entirely or substantially, from the functionality of the
@@ -72,6 +72,21 @@ class BinaryWorkflowStateStorage(storage: KeyValueStorage) : WorkflowStateStorag
           .mapValues { it.value.await() }
     }
     storage.put(map)
+  }
+
+  override suspend fun putStateWithVersion(
+    workflowId: WorkflowId,
+    workflowState: WorkflowState?,
+    expectedVersion: Long
+  ): Boolean {
+    val key = getWorkflowStateKey(workflowId)
+    return storage.putWithVersion(key, workflowState?.toByteArray(), expectedVersion)
+  }
+
+  override suspend fun getStateAndVersion(workflowId: WorkflowId): Pair<WorkflowState?, Long> {
+    val key = getWorkflowStateKey(workflowId)
+    val (bytes, version) = storage.getStateAndVersion(key)
+    return Pair(bytes?.let { WorkflowState.fromByteArray(it) }, version)
   }
 
   @TestOnly

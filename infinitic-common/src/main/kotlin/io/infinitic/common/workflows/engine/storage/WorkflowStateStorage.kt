@@ -34,4 +34,20 @@ interface WorkflowStateStorage : Flushable {
   suspend fun getStates(workflowIds: List<WorkflowId>): Map<WorkflowId, WorkflowState?>
 
   suspend fun putStates(workflowStates: Map<WorkflowId, WorkflowState?>)
+
+  /**
+   * Updates the state only if the current version matches the expected version.
+   * @return true if the update was successful, false if the version didn't match
+   */
+  suspend fun putStateWithVersion(
+    workflowId: WorkflowId,
+    workflowState: WorkflowState?,
+    expectedVersion: Long
+  ): Boolean
+
+  /**
+   * Gets both state and version in a single call for efficiency
+   * @return Pair of state and version, where version is 0 if state is null
+   */
+  suspend fun getStateAndVersion(workflowId: WorkflowId): Pair<WorkflowState?, Long>
 }

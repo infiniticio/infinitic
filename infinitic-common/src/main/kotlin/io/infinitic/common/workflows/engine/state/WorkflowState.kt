@@ -49,6 +49,9 @@ import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+
+private val prettyPrint = Json { prettyPrint = true }
 
 @Serializable
 @AvroNamespace("io.infinitic.workflows.engine")
@@ -121,6 +124,8 @@ data class WorkflowState(
   }
 
   fun toByteArray() = AvroSerDe.writeBinaryWithSchemaFingerprint(this, serializer())
+
+  fun toJson(): String = prettyPrint.encodeToString(serializer(), this)
 
   fun hasSignalAlreadyBeenReceived(signalId: SignalId) =
       workflowMethods.any { methodRun ->

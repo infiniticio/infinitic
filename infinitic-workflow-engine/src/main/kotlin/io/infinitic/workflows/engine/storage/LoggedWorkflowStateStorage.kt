@@ -60,6 +60,33 @@ class LoggedWorkflowStateStorage(
     workflowStates.forEach { logger.debug { formatLog(it.key, "Put state:", it.value) } }
   }
 
+  override suspend fun putStateWithVersion(
+    workflowId: WorkflowId,
+    workflowState: WorkflowState?,
+    expectedVersion: Long
+  ): Boolean {
+    logger.trace { formatLog(workflowId, "Putting State (version $expectedVersion)...") }
+    val result = storage.putStateWithVersion(workflowId, workflowState, expectedVersion)
+    val msg = when (result) {
+      true -> "Put state (version $expectedVersion):"
+      false -> "Failed Putting state (version $expectedVersion):"
+    }
+    when (result) {
+      true -> logger.debug { formatLog(workflowId, msg, workflowState) }
+      false -> logger.warn { formatLog(workflowId, msg, workflowState) }
+    }
+    return result
+  }
+
+  override suspend fun getStateAndVersion(workflowId: WorkflowId): Pair<WorkflowState?, Long> {
+    logger.trace { formatLog(workflowId, "Getting State and version...") }
+    val result = storage.getStateAndVersion(workflowId)
+    logger.debug {
+      formatLog(workflowId, "Get state (version ${result.second}):", result.first)
+    }
+    return result
+  }
+
   @TestOnly
   override fun flush() {
     logger.warn { "Flushing workflowStateStorage" }
