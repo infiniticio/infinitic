@@ -153,7 +153,7 @@ class TaskExecutorTests :
           every { registry.getServiceExecutorInstance(testServiceName) } returns ServiceImplService()
           every { registry.getServiceExecutorWithTimeout(testServiceName) } returns WithTimeout.UNSET
           every { registry.getServiceExecutorWithRetry(testServiceName) } returns WithRetry.UNSET
-          val input = arrayOf(3, "3")
+          val input: Array<*> = arrayOf(3, "3")
           val types = listOf(Int::class.java.name, String::class.java.name)
           // with
           val msg = getExecuteTask("other", input, types)
@@ -283,7 +283,7 @@ class TaskExecutorTests :
           every { registry.getServiceExecutorInstance(testServiceName) } returns ServiceImplService()
           every { registry.getServiceExecutorWithTimeout(testServiceName) } returns WithTimeout.UNSET
           every { registry.getServiceExecutorWithRetry(testServiceName) } returns WithRetry.UNSET
-          val input = arrayOf(2, "3")
+          val input: Array<*> = arrayOf(2, "3")
           // with
           val msg = getExecuteTask("handle", input, null)
           // when

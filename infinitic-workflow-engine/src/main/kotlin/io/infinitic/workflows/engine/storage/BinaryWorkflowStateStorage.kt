@@ -43,37 +43,6 @@ class BinaryWorkflowStateStorage(storage: KeyValueStorage) : WorkflowStateStorag
   // wrap any exception into KeyValueStorageException
   private val storage = WrappedKeyValueStorage(storage)
 
-  override suspend fun getState(workflowId: WorkflowId): WorkflowState? {
-    val key = getWorkflowStateKey(workflowId)
-    return storage.get(key)?.let { WorkflowState.fromByteArray(it) }
-  }
-
-  override suspend fun putState(workflowId: WorkflowId, workflowState: WorkflowState?) {
-    val key = getWorkflowStateKey(workflowId)
-    storage.put(key, workflowState?.toByteArray())
-  }
-
-  override suspend fun getStates(workflowIds: List<WorkflowId>): Map<WorkflowId, WorkflowState?> {
-    val keys = workflowIds.associateWith { getWorkflowStateKey(it) }
-    val values = coroutineScope {
-      storage.get(keys.values.toSet())
-          .mapValues { async { it.value?.let { bytes -> WorkflowState.fromByteArray(bytes) } } }
-          .mapValues { it.value.await() }
-    }
-
-    return keys.mapValues { values[it.value] }
-  }
-
-  override suspend fun putStates(workflowStates: Map<WorkflowId, WorkflowState?>) {
-    val map = coroutineScope {
-      workflowStates
-          .mapKeys { getWorkflowStateKey(it.key) }
-          .mapValues { async { it.value?.toByteArray() } }
-          .mapValues { it.value.await() }
-    }
-    storage.put(map)
-  }
-
   override suspend fun putStateWithVersion(
     workflowId: WorkflowId,
     workflowState: WorkflowState?,
@@ -87,6 +56,42 @@ class BinaryWorkflowStateStorage(storage: KeyValueStorage) : WorkflowStateStorag
     val key = getWorkflowStateKey(workflowId)
     val (bytes, version) = storage.getStateAndVersion(key)
     return Pair(bytes?.let { WorkflowState.fromByteArray(it) }, version)
+  }
+
+  override suspend fun putStatesWithVersions(
+    workflowStates: Map<WorkflowId, Pair<WorkflowState?, Long>>
+  ): Map<WorkflowId, Boolean> {
+    val map = coroutineScope {
+      workflowStates
+          .mapKeys { getWorkflowStateKey(it.key) }
+          .mapValues { async { Pair(it.value.first?.toByteArray(), it.value.second) } }
+          .mapValues { it.value.await() }
+    }
+    val results = storage.putWithVersions(map)
+    return workflowStates.keys.associateWith { workflowId ->
+      results[getWorkflowStateKey(workflowId)] ?: false
+    }
+  }
+
+  override suspend fun getStatesAndVersions(
+    workflowIds: List<WorkflowId>
+  ): Map<WorkflowId, Pair<WorkflowState?, Long>> {
+    val keys = workflowIds.map { getWorkflowStateKey(it) }.toSet()
+    val results = coroutineScope {
+      storage.getStatesAndVersions(keys)
+          .mapValues {
+            async {
+              Pair(
+                  it.value.first?.let { bytes -> WorkflowState.fromByteArray(bytes) },
+                  it.value.second,
+              )
+            }
+          }
+          .mapValues { it.value.await() }
+    }
+    return workflowIds.associateWith { workflowId ->
+      results[getWorkflowStateKey(workflowId)] ?: Pair(null, 0L)
+    }
   }
 
   @TestOnly
