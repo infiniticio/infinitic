@@ -249,8 +249,8 @@ abstract class KeyValueStorageTests : StringSpec() {
       fooVersion shouldBe 1L
 
       val updates = mapOf(
-        "foo" to Pair(null, 0L),                   // Fail: Delete existing with version 0
-        "newKey" to Pair("value".toByteArray(), 1L) // Fail: Insert with version > 0
+          "foo" to Pair(null, 0L),                   // Fail: Delete existing with version 0
+          "newKey" to Pair("value".toByteArray(), 1L), // Fail: Insert with version > 0
       )
 
       val results = storage.putWithVersions(updates)
@@ -273,8 +273,14 @@ abstract class KeyValueStorageTests : StringSpec() {
       storage.get("nonExistent2") shouldBe null
 
       val updates = mapOf(
-        "nonExistent1" to Pair("value".toByteArray(), 1L), // Fail: Update non-existent with version > 0
-        "nonExistent2" to Pair(null, 1L)                    // Fail: Delete non-existent with version > 0
+          "nonExistent1" to Pair(
+              "value".toByteArray(),
+              1L,
+          ), // Fail: Update non-existent with version > 0
+          "nonExistent2" to Pair(
+              null,
+              1L,
+          ),                    // Fail: Delete non-existent with version > 0
       )
 
       val results = storage.putWithVersions(updates)
@@ -289,7 +295,8 @@ abstract class KeyValueStorageTests : StringSpec() {
 
     "putWithVersions large batch basic check" {
       val batchSize = 50
-      val initialStates = (1..batchSize).map { "key$it" to storage.getStateAndVersion("key$it") }.toMap()
+      val initialStates =
+          (1..batchSize).map { "key$it" to storage.getStateAndVersion("key$it") }.toMap()
       val updates = initialStates.mapValues { (_, state) ->
         Pair("newValue${state.second + 1}".toByteArray(), state.second)
       }
@@ -312,7 +319,8 @@ abstract class KeyValueStorageTests : StringSpec() {
 
     "putWithVersions small batch (below threshold) should succeed" {
       val batchSize = 5  // Below the 10 threshold
-      val initialStates = (1..batchSize).map { "smallKey$it" to storage.getStateAndVersion("smallKey$it") }.toMap()
+      val initialStates =
+          (1..batchSize).map { "smallKey$it" to storage.getStateAndVersion("smallKey$it") }.toMap()
       val updates = initialStates.mapValues { (_, state) ->
         Pair("smallBatch${state.second + 1}".toByteArray(), state.second)
       }
@@ -333,7 +341,9 @@ abstract class KeyValueStorageTests : StringSpec() {
 
     "putWithVersions medium batch (around threshold) should succeed" {
       val batchSize = 12  // Just above the 10 threshold
-      val initialStates = (1..batchSize).map { "mediumKey$it" to storage.getStateAndVersion("mediumKey$it") }.toMap()
+      val initialStates =
+          (1..batchSize).map { "mediumKey$it" to storage.getStateAndVersion("mediumKey$it") }
+              .toMap()
       val updates = initialStates.mapValues { (_, state) ->
         Pair("mediumBatch${state.second + 1}".toByteArray(), state.second)
       }
@@ -350,6 +360,62 @@ abstract class KeyValueStorageTests : StringSpec() {
         value?.contentEquals("mediumBatch${initialStates[key]!!.second + 1}".toByteArray()) shouldBe true
         version shouldBe initialStates[key]!!.second + 1
       }
+    }
+
+    "should handle transition from version-less to versioned state" {
+      val key = "transition-key"
+
+      // 1. Initial state - no version
+      storage.put(key, "initial".toByteArray())
+      val (initialValue, initialVersion) = storage.getStateAndVersion(key)
+      initialValue?.contentEquals("initial".toByteArray()) shouldBe true
+      initialVersion shouldBe 1L // Default version for existing key without version
+
+      // 2. Update with version check - should succeed with version 1
+      val success = storage.putWithVersion(key, "versioned".toByteArray(), initialVersion)
+      success shouldBe true
+
+      // 3. Verify state after transition
+      val (value, version) = storage.getStateAndVersion(key)
+      value?.contentEquals("versioned".toByteArray()) shouldBe true
+      version shouldBe 2L // Version should be incremented
+    }
+
+    "should handle deletion of keys without initial version" {
+      val key = "delete-no-version-key"
+
+      // 1. Create key without version
+      storage.put(key, "initial".toByteArray())
+      val (initialValue, initialVersion) = storage.getStateAndVersion(key)
+      initialValue?.contentEquals("initial".toByteArray()) shouldBe true
+      initialVersion shouldBe 1L // Default version for existing key without version
+
+      // 2. Delete using version-less operation
+      storage.put(key, null)
+      val (afterDelete, afterDeleteVersion) = storage.getStateAndVersion(key)
+      afterDelete shouldBe null
+      afterDeleteVersion shouldBe 0L
+
+      // 3. Recreate key without version
+      storage.put(key, "recreated".toByteArray())
+      val (recreatedValue, recreatedVersion) = storage.getStateAndVersion(key)
+      recreatedValue?.contentEquals("recreated".toByteArray()) shouldBe true
+      recreatedVersion shouldBe 1L // Version should reset to 1 after recreation
+
+      // 4. Delete using versioned operation
+      val deleteSuccess = storage.putWithVersion(key, null, recreatedVersion)
+      deleteSuccess shouldBe true
+      val (afterVersionedDelete, afterVersionedDeleteVersion) = storage.getStateAndVersion(key)
+      afterVersionedDelete shouldBe null
+      afterVersionedDeleteVersion shouldBe 0L
+
+      // 5. Verify we can't delete with wrong version
+      storage.put(key, "final".toByteArray())
+      val wrongVersionDelete = storage.putWithVersion(key, null, 0L)
+      wrongVersionDelete shouldBe false
+      val (afterWrongDelete, afterWrongDeleteVersion) = storage.getStateAndVersion(key)
+      afterWrongDelete?.contentEquals("final".toByteArray()) shouldBe true
+      afterWrongDeleteVersion shouldBe 1L
     }
   }
 }

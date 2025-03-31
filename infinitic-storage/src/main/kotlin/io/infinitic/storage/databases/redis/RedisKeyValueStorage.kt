@@ -194,7 +194,7 @@ class RedisKeyValueStorage(internal val pool: JedisPool) : KeyValueStorage {
       pool.resource.use { jedis ->
         val versionKey = "$key$VERSION_SUFFIX"
         val value = jedis.get(key.toByteArray())
-        val version = jedis.get(versionKey)?.toLong() ?: 0
+        val version = jedis.get(versionKey)?.toLong() ?: value.defaultVersion
         Pair(value, version)
       }
 
@@ -251,7 +251,8 @@ class RedisKeyValueStorage(internal val pool: JedisPool) : KeyValueStorage {
 
       keys.mapIndexed { index, key ->
         val value = values[index]
-        val version = versions[index]?.toString(Charsets.UTF_8)?.toLongOrNull() ?: 0L
+        val version = versions[index]?.toString(Charsets.UTF_8)?.toLongOrNull()
+          ?: value.defaultVersion
         key to Pair(value, version)
       }.toMap()
     }
@@ -393,4 +394,7 @@ class RedisKeyValueStorage(internal val pool: JedisPool) : KeyValueStorage {
     // Or if retries were exhausted for a non-watch failure initially captured
     return updates.keys.associateWith { false }
   }
+
+  // for transition, we set to 1 if version does not exist
+  private val ByteArray?.defaultVersion get() = if (this == null) 0L else 1L
 }
