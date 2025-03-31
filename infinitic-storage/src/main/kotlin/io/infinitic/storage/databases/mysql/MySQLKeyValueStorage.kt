@@ -195,8 +195,8 @@ class MySQLKeyValueStorage(
       } catch (e: Exception) {
         // Check if it's a MySQL deadlock exception
         if (e.message?.contains("Deadlock found") == true && attempt < maxRetries - 1) {
-          // Exponential backoff delay: 10ms, 20ms, 40ms...
-          delay(10L * (1L shl attempt))
+          // Exponential backoff delay: 50ms, 100ms, 200ms...
+          delay(50L * (1L shl attempt))
         } else {
           throw e
         }
@@ -344,7 +344,7 @@ class MySQLKeyValueStorage(
         """
         INSERT IGNORE INTO $tableName (`key`, value, version)
         VALUES (?, ?, 1)
-        """.trimIndent()
+        """.trimIndent(),
     ).use { stmt ->
       stmt.setString(1, key)
       stmt.setBytes(2, bytes)

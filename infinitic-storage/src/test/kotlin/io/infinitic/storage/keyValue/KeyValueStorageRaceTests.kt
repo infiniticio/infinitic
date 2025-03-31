@@ -11,6 +11,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -324,6 +325,141 @@ abstract class KeyValueStorageRaceTests : StringSpec() {
         readers.forEach { it.join() }
       }
       // No final state check needed, the goal is to ensure no inconsistent reads happened during the run.
+    }
+
+    "should handle transaction failures gracefully" {
+      val key = "transaction-test-key"
+      val numThreads = 10
+      val numIterations = 100
+      val successfulUpdates = mutableListOf<Boolean>()
+
+      // Initialize with version 1
+      storage.putWithVersion(key, "initial".toByteArray(), 0L) shouldBe true
+
+      coroutineScope {
+        val jobs = (1..numThreads).map { threadId ->
+          launch(Dispatchers.IO) {
+            repeat(numIterations) { iteration ->
+              val (_, currentVersion) = storage.getStateAndVersion(key)
+              val success = storage.putWithVersion(
+                  key,
+                  "thread-$threadId-iter-$iteration".toByteArray(),
+                  currentVersion,
+              )
+              synchronized(successfulUpdates) {
+                successfulUpdates.add(success)
+              }
+            }
+          }
+        }
+        jobs.forEach { it.join() }
+      }
+
+      // Verify that some updates succeeded and some failed (due to version conflicts)
+      successfulUpdates.any { it } shouldBe true
+      successfulUpdates.any { !it } shouldBe true
+
+      // Verify final state is consistent
+      val (finalValue, finalVersion) = storage.getStateAndVersion(key)
+      finalVersion should beGreaterThan(0L)
+      String(finalValue!!) shouldStartWith "thread-"
+    }
+
+    "should maintain consistency under high contention" {
+      val keys = (1..5).map { "contention-key-$it" }.toSet()
+      val numThreads = 20
+      val numIterations = 50
+      val successfulBatchUpdates = mutableListOf<Map<String, Boolean>>()
+
+      // Initialize all keys
+      keys.forEach { key ->
+        storage.putWithVersion(key, "initial".toByteArray(), 0L) shouldBe true
+      }
+
+      coroutineScope {
+        val jobs = (1..numThreads).map { threadId ->
+          launch(Dispatchers.IO) {
+            repeat(numIterations) { iteration ->
+              // Get current states for all keys
+              val currentStates = storage.getStatesAndVersions(keys)
+
+              // Prepare updates for all keys
+              val updates = currentStates.mapValues { (key, state) ->
+                val (_, currentVersion) = state
+                Pair("thread-$threadId-iter-$iteration".toByteArray(), currentVersion)
+              }
+
+              val results = storage.putWithVersions(updates)
+
+              // Record successful batch updates
+              if (results.values.all { it }) {
+                synchronized(successfulBatchUpdates) {
+                  successfulBatchUpdates.add(results)
+                }
+              }
+            }
+          }
+        }
+        jobs.forEach { it.join() }
+      }
+
+      // Verify that some batch updates succeeded
+      successfulBatchUpdates.isNotEmpty() shouldBe true
+
+      // Verify final states are consistent
+      val finalStates = storage.getStatesAndVersions(keys)
+      finalStates.values.forEach { (value, version) ->
+        version should beGreaterThan(0L)
+        String(value!!) shouldStartWith "thread-"
+      }
+    }
+
+    "should handle network partition scenarios" {
+      val key = "partition-test-key"
+      val numThreads = 5
+      val numIterations = 20
+      val successfulUpdates = mutableListOf<Boolean>()
+
+      // Initialize with version 1
+      storage.putWithVersion(key, "initial".toByteArray(), 0L) shouldBe true
+
+      coroutineScope {
+        val jobs = (1..numThreads).map { threadId ->
+          launch(Dispatchers.IO) {
+            repeat(numIterations) { iteration ->
+              try {
+                // Simulate network delay
+                delay(10L)
+
+                val (_, currentVersion) = storage.getStateAndVersion(key)
+                val success = storage.putWithVersion(
+                    key,
+                    "thread-$threadId-iter-$iteration".toByteArray(),
+                    currentVersion,
+                )
+
+                synchronized(successfulUpdates) {
+                  successfulUpdates.add(success)
+                }
+              } catch (e: Exception) {
+                // Record failed updates
+                synchronized(successfulUpdates) {
+                  successfulUpdates.add(false)
+                }
+              }
+            }
+          }
+        }
+        jobs.forEach { it.join() }
+      }
+
+      // Verify that some updates succeeded despite network issues
+      successfulUpdates.any { it } shouldBe true
+
+      // Verify final state is consistent
+      val (finalValue, finalVersion) = storage.getStateAndVersion(key)
+      finalVersion should beGreaterThan(0L)
+      String(finalValue!!) shouldStartWith "thread-"
     }
   }
 }

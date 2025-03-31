@@ -305,8 +305,9 @@ class PostgresKeyValueStorage(
       try {
         return pool.connection.use { connection: Connection ->
           connection.autoCommit = false
-          // Use SERIALIZABLE to ensure consistency
-          connection.transactionIsolation = Connection.TRANSACTION_SERIALIZABLE
+          // Use REPEATABLE_READ instead of SERIALIZABLE to reduce serialization failures
+          // while still maintaining strong consistency through version checks
+          connection.transactionIsolation = Connection.TRANSACTION_REPEATABLE_READ
 
           try {
             // 1. Get current versions of all keys
@@ -383,6 +384,7 @@ class PostgresKeyValueStorage(
                       """
                             INSERT INTO $schema.$tableName (key, value, value_size_in_KiB, version)
                             VALUES (?, ?, ?, 1)
+                            ON CONFLICT (key) DO NOTHING
                         """,
                   ).use { stmt ->
                     stmt.setString(1, key)
@@ -395,17 +397,21 @@ class PostgresKeyValueStorage(
                 "UPDATE" -> {
                   connection.prepareStatement(
                       """
-                            UPDATE $schema.$tableName
-                            SET value = ?,
-                                value_size_in_KiB = ?,
-                                version = version + 1
-                            WHERE key = ? AND version = ?
+                            INSERT INTO $schema.$tableName (key, value, value_size_in_KiB, version)
+                            VALUES (?, ?, ?, ?)
+                            ON CONFLICT (key) DO UPDATE
+                            SET value = EXCLUDED.value,
+                                value_size_in_KiB = EXCLUDED.value_size_in_KiB,
+                                version = EXCLUDED.version
+                            WHERE $schema.$tableName.version = ?
                         """,
                   ).use { stmt ->
-                    stmt.setBytes(1, value as ByteArray)
-                    stmt.setInt(2, ceil(value.size / 1024.0).toInt())
-                    stmt.setString(3, key)
-                    stmt.setLong(4, currentVersions[key]!!.first)
+                    val newVersion = (value as ByteArray).let { currentVersions[key]!!.first + 1 }
+                    stmt.setString(1, key)
+                    stmt.setBytes(2, value)
+                    stmt.setInt(3, ceil(value.size / 1024.0).toInt())
+                    stmt.setLong(4, newVersion)
+                    stmt.setLong(5, currentVersions[key]!!.first)
                     stmt.executeUpdate()
                   }
                 }
@@ -425,10 +431,11 @@ class PostgresKeyValueStorage(
         // PostgreSQL error codes:
         // 40P01 - deadlock
         // 40001 - serialization failure
-        if ((e is PSQLException &&
-              (e.sqlState == "40P01" || e.sqlState == "40001")) &&
+        if ((e is PSQLException && (e.sqlState == "40P01" || e.sqlState == "40001")) &&
           attempt < maxRetries - 1) {
-          delay(10L * (1L shl attempt))
+          // Exponential backoff with a base of 50ms
+          // This gives more time between retries to allow other transactions to complete
+          delay(50L * (1L shl attempt))
         } else {
           throw e
         }
