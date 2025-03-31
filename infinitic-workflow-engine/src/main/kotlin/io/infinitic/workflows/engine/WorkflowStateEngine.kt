@@ -7,7 +7,7 @@
  * Without limiting other conditions in the License, the grant of rights under the License will not
  * include, and the License does not grant to you, the right to Sell the Software.
  *
- * For purposes of the foregoing, “Sell” means practicing any or all of the rights granted to you
+ * For purposes of the foregoing, "Sell" means practicing any or all of the rights granted to you
  * under the License to provide to third parties, for a fee or other consideration (including
  * without limitation fees for hosting or consulting/ support services related to the Software), a
  * product or service whose value derives, entirely or substantially, from the functionality of the
@@ -29,6 +29,8 @@ import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.requester.ClientRequester
 import io.infinitic.common.requester.WorkflowRequester
+import io.infinitic.common.serDe.avro.AvroSerDe
+import io.infinitic.common.tasks.data.TaskId
 import io.infinitic.common.tasks.executors.errors.MethodUnknownError
 import io.infinitic.common.transport.ClientTopic
 import io.infinitic.common.transport.WorkflowStateEngineTopic
@@ -39,6 +41,7 @@ import io.infinitic.common.transport.logged.LoggerWithCounter
 import io.infinitic.common.transport.logged.formatLog
 import io.infinitic.common.transport.producers.BufferedInfiniticProducer
 import io.infinitic.common.workflows.data.workflows.WorkflowId
+import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
 import io.infinitic.common.workflows.engine.messages.CompleteTimers
 import io.infinitic.common.workflows.engine.messages.CompleteWorkflow
@@ -61,6 +64,7 @@ import io.infinitic.common.workflows.engine.messages.RetryWorkflowTask
 import io.infinitic.common.workflows.engine.messages.SendSignal
 import io.infinitic.common.workflows.engine.messages.WaitWorkflow
 import io.infinitic.common.workflows.engine.messages.WorkflowCompletedEvent
+import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.common.workflows.engine.messages.WorkflowEvent
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
 import io.infinitic.common.workflows.engine.state.WorkflowState
@@ -97,6 +101,10 @@ class WorkflowStateEngine(
 ) {
 
   companion object {
+    const val DISPATCH_WORKFLOW_META_DATA = "DISPATCH_WORKFLOW_META_DATA"
+
+    const val UNDEFINED_DUE_TO_RACE_CONDITION = "UNDEFINED_DUE_TO_RACE_CONDITION"
+
     const val NO_STATE_DISCARDING_REASON = "for having null workflow state"
 
     val logger = LoggerWithCounter(KotlinLogging.logger {})
@@ -110,25 +118,54 @@ class WorkflowStateEngine(
     val messagesMap: Map<WorkflowId, List<Pair<WorkflowStateEngineMessage, MillisInstant>>> =
         messages.groupBy { it.first.workflowId }
 
-    // get current states
-    val currentStates = storage.getStates(messagesMap.keys.toList())
+    // Keep track of remaining messages to process
+    var remainingMessages = messagesMap
 
-    // process all messages by workflowId, in parallel
-    val producersAndStates = coroutineScope {
-      messagesMap
-          .mapValues { (workflowId, messages) ->
-            async { batchProcessByWorkflowId(currentStates[workflowId], messages) }
-          }
-          .mapValues { it.value.await() }
-    }
-    // Send all messages
-    coroutineScope {
-      producersAndStates.values.forEach { (producer, _) -> launch { producer.send() } }
-    }
+    // Optimistic locking implementation
+    while (remainingMessages.isNotEmpty()) {
+      // get current states and versions in a single call
+      val currentStatesAndVersions = storage.getStatesAndVersions(remainingMessages.keys.toList())
 
-    // atomically stores the states
-    val newStates = producersAndStates.mapValues { it.value.second }
-    storage.putStates(newStates)
+      // process all messages by workflowId, in parallel
+      val producersAndStates = coroutineScope {
+        remainingMessages
+            .mapValues { (workflowId, messages) ->
+              async {
+                batchProcessByWorkflowId(
+                    currentStatesAndVersions[workflowId]?.first,
+                    messages,
+                )
+              }
+            }
+            .mapValues { it.value.await() }
+      }
+
+      // Send all messages
+      coroutineScope {
+        producersAndStates.values.forEach { (producer, _) -> launch { producer.send() } }
+      }
+
+      // prepare updates with versions
+      val updates = producersAndStates.mapValues { (workflowId, producerAndState) ->
+        Pair(
+            producerAndState.second,
+            currentStatesAndVersions[workflowId]?.second ?: 0L,
+        )
+      }
+
+      // atomically store all states with optimistic locking
+      val success = storage.putStatesWithVersions(updates)
+
+      // Keep only the failed updates for retry
+      remainingMessages = remainingMessages.filterKeys { workflowId ->
+        !(success[workflowId] ?: false)
+      }
+
+      // If there are failures, log them
+      if (remainingMessages.isNotEmpty()) {
+        logger.warn { "Retrying ${remainingMessages.size} failed updates due to version mismatch" }
+      }
+    }
   }
 
   private suspend fun batchProcessByWorkflowId(
@@ -153,22 +190,33 @@ class WorkflowStateEngine(
     // create a producer that buffers messages
     val bufferedProducer = BufferedInfiniticProducer(_producer)
 
-    // get current state
-    val state = storage.getState(message.workflowId)
+    // Optimistic locking implementation
+    while (true) {
+      // get current state and version in a single call
+      val (state, version) = storage.getStateAndVersion(message.workflowId)
 
-    // process this message
-    val updatedState = processSingle(bufferedProducer, state, message, publishTime)
+      // process this message
+      val updatedState = processSingle(bufferedProducer, state, message, publishTime)
 
-    // send new messages
-    bufferedProducer.send()
+      // send new messages
+      bufferedProducer.send()
 
-    // store updated state
-    storage.putState(message.workflowId, updatedState)
+      // store updated state atomically with optimistic locking
+      val success = storage.putStateWithVersion(
+          message.workflowId,
+          updatedState,
+          version, // version is 0 if state was null
+      )
+
+      if (success) break
+      else logger.warn { "Retrying failed update due to version mismatch" }
+      // If update failed, continue to retry
+    }
   }
 
   private suspend fun processSingle(
     producer: InfiniticProducer,
-    state: WorkflowState?,
+    initialState: WorkflowState?,
     message: WorkflowStateEngineMessage,
     publishTime: MillisInstant
   ): WorkflowState? {
@@ -176,21 +224,83 @@ class WorkflowStateEngine(
     // if a crash happened between the state update and the message acknowledgement,
     // it's possible to receive a message that has already been processed
     // in this case, we discard it
-    if (state?.lastMessageId == message.messageId) {
+    if (initialState?.lastMessageId == message.messageId) {
       logDiscarding(message) { "as state already contains messageId ${message.messageId}" }
 
-      return state
+      return initialState
     }
 
     // This is needed for compatibility with messages before v0.13.0
     if (message.emittedAt == null) message.emittedAt = publishTime
 
+    // Handling a sneaky race condition that may occur when workers are shutdown and restarted:
+    // Due to a Pulsar bug in management of key-shared subscriptions,
+    // we may receive the result of a workflow task (RemoteTaskCompleted) or even the results
+    // of the actions of the workflow task before receiving the initial DispatchWorkflow
+    // that creates the workflow state.
+
+    val raceConditionWithNoState =
+        (initialState == null && message !is DispatchWorkflow && message is MethodEvent)
+    val raceConditionWithState = (initialState != null &&
+        initialState.runningWorkflowTaskId == TaskId(UNDEFINED_DUE_TO_RACE_CONDITION))
+    val isWorkflowTaskCompleted = message.isWorkflowTaskEvent() && (message is RemoteTaskCompleted)
+
+    // Specific scenario where an event is received from a workflow,
+    // but there is no existing state for that workflow. In such cases,
+    // the event is stored in a transient state to be processed later.
+    if (raceConditionWithNoState && !isWorkflowTaskCompleted) return WorkflowState(
+        lastMessageId = message.messageId,
+        workflowId = message.workflowId,
+        workflowName = message.workflowName,
+        workflowVersion = null,
+        workflowTags = setOf(),
+        workflowMeta = WorkflowMeta(),
+        runningWorkflowTaskId = TaskId(UNDEFINED_DUE_TO_RACE_CONDITION),
+        workflowMethods = mutableListOf(),
+        messagesBuffer = mutableListOf(message),
+    )
+
+    // Specific scenario where an event is received from a workflow,
+    // but there is a transient state. In such cases,
+    // the event is stored in the transient state to be processed later.
+    if (raceConditionWithState && !isWorkflowTaskCompleted)
+      return initialState.also { it!!.messagesBuffer.add(message) }
+
+    // Specific scenario where we receive a DispatchWorkflow message
+    // while there is a transient state storing a message,
+    // then we refine the state and keep the message.
+    // (We do not process the event, that should be processed only after a WorkflowTaskCompleted)
+    if (raceConditionWithState && message is DispatchWorkflow) {
+      return message.newState().copy(messagesBuffer = initialState!!.messagesBuffer)
+    }
+
+    val state = when {
+      // Specific scenario where we receive the result of a WorkflowTask without an existing state
+      // or with a transient state. This should necessarily be the first workflow task, for which
+      // the dispatchWorkflow details have been added to the metadata by the WorkflowStateCmdHandler.
+      (raceConditionWithNoState || raceConditionWithState) && isWorkflowTaskCompleted -> {
+        (message as RemoteTaskCompleted).taskReturnValue.taskMeta[DISPATCH_WORKFLOW_META_DATA]?.let {
+          val dispatchWorkflow = AvroSerDe
+              .readBinaryWithSchemaFingerprint(it, WorkflowEngineEnvelope::class)
+              .message() as DispatchWorkflow
+          dispatchWorkflow.newState()
+              .copy(messagesBuffer = initialState?.messagesBuffer ?: mutableListOf())
+        } ?: initialState
+      }
+
+      else -> initialState
+    }
+
+    // A transient state should not reach this point
+    if (state?.runningWorkflowTaskId == TaskId(UNDEFINED_DUE_TO_RACE_CONDITION)) {
+      logger.warn { "This should not happen:\n  state = $initialState \n  msg   = $message" }
+    }
+
+    // end of the race condition management
+
     val updatedState = when (state) {
       null -> processMessageWithoutState(producer, message)
-      else -> {
-        processMessageWithState(producer, message, state)
-        state
-      }
+      else -> state.also { processMessageWithState(producer, message, state) }
     }
 
     return when (updatedState?.workflowMethods?.size) {
@@ -295,7 +405,6 @@ class WorkflowStateEngine(
         }
       }
 
-
       // a client wants to wait the missing workflow
       is WaitWorkflow -> launch {
         val methodUnknown = MethodUnknown(
@@ -335,7 +444,8 @@ class WorkflowStateEngine(
         }
 
         // Idempotency: discard if this workflowTask is not the current one
-        if (state.runningWorkflowTaskId != (message as RemoteTaskEvent).taskId()) {
+        if (state.runningWorkflowTaskId != TaskId(UNDEFINED_DUE_TO_RACE_CONDITION) &&
+          state.runningWorkflowTaskId != (message as RemoteTaskEvent).taskId()) {
           logDiscarding(message) { "as workflowTask ${message.taskId()} is different than ${state.runningWorkflowTaskId} in state" }
 
           return

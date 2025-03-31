@@ -8,7 +8,7 @@
 # License will not include, and the License does not grant to you, the right to
 # Sell the Software.
 #
-# For purposes of the foregoing, “Sell” means practicing any or all of the rights
+# For purposes of the foregoing, "Sell" means practicing any or all of the rights
 # granted to you under the License to provide to third parties, for a fee or
 # other consideration (including without limitation fees for hosting or
 # consulting/ support services related to the Software), a product or service
@@ -28,4 +28,33 @@
 # > docker pull nokia/addlicense-nokia
 #
 
-docker run -e OPTIONS="-s -c infinitic.io -f .license-header -config .addlicense.yml -check" --rm -it -v $(pwd):/myapp nokia/addlicense-nokia:latest
+# Default to check mode
+MODE="check"
+
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --fix)
+      MODE="fix"
+      shift
+      ;;
+    --check)
+      MODE="check"
+      shift
+      ;;
+    *)
+      echo "Unknown option: $1"
+      echo "Usage: $0 [--check|--fix]"
+      exit 1
+      ;;
+  esac
+done
+
+# Set options based on mode
+if [ "$MODE" = "check" ]; then
+  OPTIONS="-s -c infinitic.io -f .license-header -config .addlicense.yml -check"
+else
+  OPTIONS="-s -c infinitic.io -f .license-header -config .addlicense.yml"
+fi
+
+docker run -e OPTIONS="$OPTIONS" --rm -it -v $(pwd):/myapp nokia/addlicense-nokia:latest

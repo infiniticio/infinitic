@@ -66,7 +66,10 @@ data class WorkflowTaskParameters(
   @AvroName("methodRun") @SerialName("methodRun") val workflowMethod: WorkflowMethod,
   val emitterName: EmitterName,
 ) {
-  fun workflowTaskDispatchedEvent(emitterName: EmitterName) = TaskDispatchedEvent(
+  fun workflowTaskDispatchedEvent(
+    emitterName: EmitterName,
+    taskMeta: TaskMeta = TaskMeta(),
+  ) = TaskDispatchedEvent(
       taskDispatched = TaskDispatched(
           taskId = taskId,
           methodName = MethodName(WorkflowTask::handle.name),
@@ -74,7 +77,7 @@ data class WorkflowTaskParameters(
           methodParameters = WorkflowTask::handle.javaMethod!!.serializeArgs(this),
           serviceName = WorkflowTask.WORKFLOW_SERVICE_NAME,
           taskTags = setOf(),
-          taskMeta = TaskMeta(),
+          taskMeta = taskMeta,
           taskRetrySequence = TaskRetrySequence(),
           timeoutInstant = null,
       ),

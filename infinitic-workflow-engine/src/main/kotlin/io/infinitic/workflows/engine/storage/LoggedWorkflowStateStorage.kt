@@ -7,7 +7,7 @@
  * Without limiting other conditions in the License, the grant of rights under the License will not
  * include, and the License does not grant to you, the right to Sell the Software.
  *
- * For purposes of the foregoing, “Sell” means practicing any or all of the rights granted to you
+ * For purposes of the foregoing, "Sell" means practicing any or all of the rights granted to you
  * under the License to provide to third parties, for a fee or other consideration (including
  * without limitation fees for hosting or consulting/ support services related to the Software), a
  * product or service whose value derives, entirely or substantially, from the functionality of the
@@ -34,30 +34,67 @@ class LoggedWorkflowStateStorage(
   private val storage: WorkflowStateStorage,
 ) : WorkflowStateStorage {
 
-  override suspend fun getState(workflowId: WorkflowId): WorkflowState? {
-    logger.trace { formatLog(workflowId, "Getting State...") }
-    val workflowState = storage.getState(workflowId)
-    logger.debug { formatLog(workflowId, "Get state:", workflowState) }
-    return workflowState
+  override suspend fun putStateWithVersion(
+    workflowId: WorkflowId,
+    workflowState: WorkflowState?,
+    expectedVersion: Long
+  ): Boolean {
+    logger.trace { formatLog(workflowId, "Putting State (version $expectedVersion)...") }
+    val result = storage.putStateWithVersion(workflowId, workflowState, expectedVersion)
+    val msg = when (result) {
+      true -> "Put state (version $expectedVersion):"
+      false -> "Failed Putting state (version $expectedVersion):"
+    }
+    when (result) {
+      true -> logger.debug { formatLog(workflowId, msg, workflowState) }
+      false -> logger.warn { formatLog(workflowId, msg, workflowState) }
+    }
+    return result
   }
 
-  override suspend fun putState(workflowId: WorkflowId, workflowState: WorkflowState?) {
-    logger.trace { formatLog(workflowId, "Putting State...") }
-    storage.putState(workflowId, workflowState)
-    logger.debug { formatLog(workflowId, "Put state:", workflowState) }
+  override suspend fun getStateAndVersion(workflowId: WorkflowId): Pair<WorkflowState?, Long> {
+    logger.trace { formatLog(workflowId, "Getting State and version...") }
+    val result = storage.getStateAndVersion(workflowId)
+    logger.debug {
+      formatLog(workflowId, "Get state (version ${result.second}):", result.first)
+    }
+    return result
   }
 
-  override suspend fun getStates(workflowIds: List<WorkflowId>): Map<WorkflowId, WorkflowState?> {
-    workflowIds.forEach { logger.trace { formatLog(it, "Getting State...") } }
-    val workflowStates = storage.getStates(workflowIds)
-    workflowIds.forEach { logger.debug { formatLog(it, "Get state:", workflowStates[it]) } }
-    return workflowStates
+  override suspend fun putStatesWithVersions(
+    workflowStates: Map<WorkflowId, Pair<WorkflowState?, Long>>
+  ): Map<WorkflowId, Boolean> {
+    workflowStates.forEach { (workflowId, pair) ->
+      logger.trace { formatLog(workflowId, "Putting State (version ${pair.second})...") }
+    }
+    val results = storage.putStatesWithVersions(workflowStates)
+    workflowStates.forEach { (workflowId, pair) ->
+      val success = results[workflowId] ?: false
+      val msg = when (success) {
+        true -> "Put state (version ${pair.second}):"
+        false -> "Failed Putting state (version ${pair.second}):"
+      }
+      when (success) {
+        true -> logger.debug { formatLog(workflowId, msg, pair.first) }
+        false -> logger.warn { formatLog(workflowId, msg, pair.first) }
+      }
+    }
+    return results
   }
 
-  override suspend fun putStates(workflowStates: Map<WorkflowId, WorkflowState?>) {
-    workflowStates.forEach { logger.trace { formatLog(it.key, "Putting State...") } }
-    storage.putStates(workflowStates)
-    workflowStates.forEach { logger.debug { formatLog(it.key, "Put state:", it.value) } }
+  override suspend fun getStatesAndVersions(
+    workflowIds: List<WorkflowId>
+  ): Map<WorkflowId, Pair<WorkflowState?, Long>> {
+    workflowIds.forEach { workflowId ->
+      logger.trace { formatLog(workflowId, "Getting State and version...") }
+    }
+    val results = storage.getStatesAndVersions(workflowIds)
+    results.forEach { (workflowId, pair) ->
+      logger.debug {
+        formatLog(workflowId, "Get state (version ${pair.second}):", pair.first)
+      }
+    }
+    return results
   }
 
   @TestOnly

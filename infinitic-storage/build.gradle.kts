@@ -7,7 +7,7 @@
  * Without limiting other conditions in the License, the grant of rights under the License will not
  * include, and the License does not grant to you, the right to Sell the Software.
  *
- * For purposes of the foregoing, “Sell” means practicing any or all of the rights granted to you
+ * For purposes of the foregoing, "Sell" means practicing any or all of the rights granted to you
  * under the License to provide to third parties, for a fee or other consideration (including
  * without limitation fees for hosting or consulting/ support services related to the Software), a
  * product or service whose value derives, entirely or substantially, from the functionality of the
@@ -33,13 +33,13 @@ dependencies {
   implementation(Libs.Compress.commons)
 
   // Redis
-  implementation("redis.clients:jedis:5.0.2")
+  implementation("redis.clients:jedis:5.2.0")
 
   // MySql
-  implementation("com.mysql:mysql-connector-j:9.1.0")
+  implementation("com.mysql:mysql-connector-j:9.2.0")
 
   //Postgres
-  implementation("org.postgresql:postgresql:42.7.3")
+  implementation("org.postgresql:postgresql:42.7.5")
 
   // Tests
   testImplementation(Libs.TestContainers.testcontainers)

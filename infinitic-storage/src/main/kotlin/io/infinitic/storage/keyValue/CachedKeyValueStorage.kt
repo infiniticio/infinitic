@@ -7,7 +7,7 @@
  * Without limiting other conditions in the License, the grant of rights under the License will not
  * include, and the License does not grant to you, the right to Sell the Software.
  *
- * For purposes of the foregoing, “Sell” means practicing any or all of the rights granted to you
+ * For purposes of the foregoing, "Sell" means practicing any or all of the rights granted to you
  * under the License to provide to third parties, for a fee or other consideration (including
  * without limitation fees for hosting or consulting/ support services related to the Software), a
  * product or service whose value derives, entirely or substantially, from the functionality of the
@@ -64,6 +64,55 @@ open class CachedKeyValueStorage(
   override suspend fun put(bytes: Map<String, ByteArray?>) {
     storage.put(bytes)
     bytes.forEach { (key, value) -> cache.putValue(key, value) }
+  }
+
+  override suspend fun putWithVersion(
+    key: String,
+    bytes: ByteArray?,
+    expectedVersion: Long
+  ): Boolean {
+    // Try to update storage first
+    val success = storage.putWithVersion(key, bytes, expectedVersion)
+
+    // If storage update succeeded, update cache
+    if (success) {
+      cache.putValue(key, bytes)
+    }
+
+    return success
+  }
+
+  override suspend fun getStateAndVersion(key: String): Pair<ByteArray?, Long> {
+    // We must get state and version atomically from storage
+    // Cannot use cache here as we need the version
+    return storage.getStateAndVersion(key)
+  }
+
+  override suspend fun getStatesAndVersions(keys: Set<String>): Map<String, Pair<ByteArray?, Long>> {
+    // Must bypass cache to get atomic state and version from storage
+    logger.debug { "keys $keys - getStatesAndVersions - bypassing cache, get from storage" }
+    return storage.getStatesAndVersions(keys)
+  }
+
+  override suspend fun putWithVersions(updates: Map<String, Pair<ByteArray?, Long>>): Map<String, Boolean> {
+    // Attempt the atomic update on the underlying storage first
+    val results = storage.putWithVersions(updates)
+
+    // Update the cache only for operations that succeeded in storage
+    results.forEach { (key, success) ->
+      if (success) {
+        // Get the value intended for this key from the original updates map
+        val valueToCache = updates[key]?.first
+        logger.debug { "key $key - putWithVersions - updating cache after successful storage update" }
+        cache.putValue(key, valueToCache)
+      } else {
+        logger.debug { "key $key - putWithVersions - storage update failed, removing from cache" }
+        // Use putValue with null to invalidate/remove the entry
+        cache.putValue(key, null)
+      }
+    }
+
+    return results
   }
 
   override fun close() {

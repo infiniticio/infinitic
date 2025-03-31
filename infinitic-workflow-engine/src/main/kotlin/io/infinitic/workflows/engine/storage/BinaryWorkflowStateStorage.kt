@@ -7,7 +7,7 @@
  * Without limiting other conditions in the License, the grant of rights under the License will not
  * include, and the License does not grant to you, the right to Sell the Software.
  *
- * For purposes of the foregoing, “Sell” means practicing any or all of the rights granted to you
+ * For purposes of the foregoing, "Sell" means practicing any or all of the rights granted to you
  * under the License to provide to third parties, for a fee or other consideration (including
  * without limitation fees for hosting or consulting/ support services related to the Software), a
  * product or service whose value derives, entirely or substantially, from the functionality of the
@@ -43,39 +43,59 @@ class BinaryWorkflowStateStorage(storage: KeyValueStorage) : WorkflowStateStorag
   // wrap any exception into KeyValueStorageException
   private val storage = WrappedKeyValueStorage(storage)
 
-  override suspend fun getState(workflowId: WorkflowId): WorkflowState? {
+  override suspend fun putStateWithVersion(
+    workflowId: WorkflowId,
+    workflowState: WorkflowState?,
+    expectedVersion: Long
+  ): Boolean {
     val key = getWorkflowStateKey(workflowId)
-    return storage.get(key)?.let { WorkflowState.fromByteArray(it) }
+    return storage.putWithVersion(key, workflowState?.toByteArray(), expectedVersion)
   }
 
-  override suspend fun putState(workflowId: WorkflowId, workflowState: WorkflowState?) {
+  override suspend fun getStateAndVersion(workflowId: WorkflowId): Pair<WorkflowState?, Long> {
     val key = getWorkflowStateKey(workflowId)
-    storage.put(key, workflowState?.toByteArray())
+    val (bytes, version) = storage.getStateAndVersion(key)
+    return Pair(bytes?.let { WorkflowState.fromByteArray(it) }, version)
   }
 
-  override suspend fun getStates(workflowIds: List<WorkflowId>): Map<WorkflowId, WorkflowState?> {
-    val keys = workflowIds.associateWith { getWorkflowStateKey(it) }
-    val values = coroutineScope {
-      storage.get(keys.values.toSet())
-          .mapValues { async { it.value?.let { bytes -> WorkflowState.fromByteArray(bytes) } } }
-          .mapValues { it.value.await() }
-    }
-
-    return keys.mapValues { values[it.value] }
-  }
-
-  override suspend fun putStates(workflowStates: Map<WorkflowId, WorkflowState?>) {
+  override suspend fun putStatesWithVersions(
+    workflowStates: Map<WorkflowId, Pair<WorkflowState?, Long>>
+  ): Map<WorkflowId, Boolean> {
     val map = coroutineScope {
       workflowStates
           .mapKeys { getWorkflowStateKey(it.key) }
-          .mapValues { async { it.value?.toByteArray() } }
+          .mapValues { async { Pair(it.value.first?.toByteArray(), it.value.second) } }
           .mapValues { it.value.await() }
     }
-    storage.put(map)
+    val results = storage.putWithVersions(map)
+    return workflowStates.keys.associateWith { workflowId ->
+      results[getWorkflowStateKey(workflowId)] ?: false
+    }
+  }
+
+  override suspend fun getStatesAndVersions(
+    workflowIds: List<WorkflowId>
+  ): Map<WorkflowId, Pair<WorkflowState?, Long>> {
+    val keys = workflowIds.map { getWorkflowStateKey(it) }.toSet()
+    val results = coroutineScope {
+      storage.getStatesAndVersions(keys)
+          .mapValues {
+            async {
+              Pair(
+                  it.value.first?.let { bytes -> WorkflowState.fromByteArray(bytes) },
+                  it.value.second,
+              )
+            }
+          }
+          .mapValues { it.value.await() }
+    }
+    return workflowIds.associateWith { workflowId ->
+      results[getWorkflowStateKey(workflowId)] ?: Pair(null, 0L)
+    }
   }
 
   @TestOnly
   override fun flush() = storage.flush()
 
-  private fun getWorkflowStateKey(workflowId: WorkflowId) = "workflow.state.$workflowId"
+  internal fun getWorkflowStateKey(workflowId: WorkflowId) = "workflow.state.$workflowId"
 }

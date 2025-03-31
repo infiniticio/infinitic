@@ -7,7 +7,7 @@
  * Without limiting other conditions in the License, the grant of rights under the License will not
  * include, and the License does not grant to you, the right to Sell the Software.
  *
- * For purposes of the foregoing, “Sell” means practicing any or all of the rights granted to you
+ * For purposes of the foregoing, "Sell" means practicing any or all of the rights granted to you
  * under the License to provide to third parties, for a fee or other consideration (including
  * without limitation fees for hosting or consulting/ support services related to the Software), a
  * product or service whose value derives, entirely or substantially, from the functionality of the
@@ -48,6 +48,34 @@ class WrappedKeyValueStorage(val storage: KeyValueStorage) : KeyValueStorage {
 
   override suspend fun put(bytes: Map<String, ByteArray?>) = try {
     storage.put(bytes)
+  } catch (e: Exception) {
+    throwWrappedException(e)
+  }
+
+  override suspend fun putWithVersion(
+    key: String,
+    bytes: ByteArray?,
+    expectedVersion: Long
+  ): Boolean = try {
+    storage.putWithVersion(key, bytes, expectedVersion)
+  } catch (e: Exception) {
+    throwWrappedException(e)
+  }
+
+  override suspend fun getStateAndVersion(key: String): Pair<ByteArray?, Long> = try {
+    storage.getStateAndVersion(key)
+  } catch (e: Exception) {
+    throwWrappedException(e)
+  }
+
+  override suspend fun getStatesAndVersions(keys: Set<String>): Map<String, Pair<ByteArray?, Long>> = try {
+    storage.getStatesAndVersions(keys)
+  } catch (e: Exception) {
+    throwWrappedException(e)
+  }
+
+  override suspend fun putWithVersions(updates: Map<String, Pair<ByteArray?, Long>>): Map<String, Boolean> = try {
+    storage.putWithVersions(updates)
   } catch (e: Exception) {
     throwWrappedException(e)
   }

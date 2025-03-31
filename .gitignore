@@ -1,9 +1,12 @@
 .kotlin/
 .idea/
+.vscode/
 .fleet/
 .gradle/
 build/
+bin/
 out/
 *.log
 .DS_Store
 gradle.properties
+pulsar/data/
