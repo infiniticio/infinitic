@@ -42,7 +42,7 @@ internal class BatchesWorkflowTests : StringSpec(
       val batchWorkflow = client.newWorkflow(BatchWorkflow::class.java)
 
       "initialization".config(timeout = 1.minutes) {
-        delay(20000)
+        delay(30000)
       }
 
       "One primitive parameter (with maxMessages=10)" {
