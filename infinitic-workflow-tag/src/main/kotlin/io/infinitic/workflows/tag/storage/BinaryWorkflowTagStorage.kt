@@ -92,7 +92,7 @@ class BinaryWorkflowTagStorage(keySetStorage: KeySetStorage) :
     keySetStorage.update(add = addData, remove = removeData)
   }
 
-  private fun getTagSetIdsKey(tag: WorkflowTag, workflowName: WorkflowName) =
+  internal fun getTagSetIdsKey(tag: WorkflowTag, workflowName: WorkflowName) =
       "workflow:$workflowName|tag:$tag|setIds"
 
   /** Flush storage (testing purpose) */

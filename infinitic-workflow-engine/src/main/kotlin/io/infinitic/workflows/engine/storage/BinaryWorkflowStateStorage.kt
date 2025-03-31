@@ -97,5 +97,5 @@ class BinaryWorkflowStateStorage(storage: KeyValueStorage) : WorkflowStateStorag
   @TestOnly
   override fun flush() = storage.flush()
 
-  private fun getWorkflowStateKey(workflowId: WorkflowId) = "workflow.state.$workflowId"
+  internal fun getWorkflowStateKey(workflowId: WorkflowId) = "workflow.state.$workflowId"
 }
