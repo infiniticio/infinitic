@@ -255,7 +255,7 @@ data class PulsarConfig(
   val pulsarClient: PulsarClient by lazy {
     PulsarClient.builder().apply {
       serviceUrl(brokerServiceUrl)
-
+      
       client.listenerName?.let {
         listenerName(it)
       }
