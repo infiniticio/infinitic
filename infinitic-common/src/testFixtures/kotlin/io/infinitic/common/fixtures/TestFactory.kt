@@ -41,14 +41,13 @@ import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEventMessage
 import io.infinitic.exceptions.GenericException
 import io.infinitic.tasks.TaskFailure
+import java.nio.ByteBuffer
+import kotlin.random.Random
+import kotlin.reflect.KClass
 import org.apache.commons.lang3.RandomStringUtils
 import org.jeasy.random.EasyRandom
 import org.jeasy.random.EasyRandomParameters
 import org.jeasy.random.FieldPredicates
-import org.jeasy.random.api.Randomizer
-import java.nio.ByteBuffer
-import kotlin.random.Random
-import kotlin.reflect.KClass
 
 fun methodParametersFrom(vararg data: Any?) =
     MethodArgs(data.map { SerializedData.encode(it, (it ?: "")::class.java, null) }.toList())
@@ -76,8 +75,8 @@ object TestFactory {
         .randomize(ByteArray::class.java) { Random(seed).nextBytes(10) }
         .randomize(ByteBuffer::class.java) { ByteBuffer.wrap(random()) }
         .randomize(Version::class.java) { Version(random<String>()) }
-        .randomize(ServiceName::class.java) { ServiceName(RandomStringUtils.random(10)) }
-        .randomize(WorkflowName::class.java) { WorkflowName(RandomStringUtils.random(10)) }
+        .randomize(ServiceName::class.java) { ServiceName(RandomStringUtils.insecure().next(10)) }
+        .randomize(WorkflowName::class.java) { WorkflowName(RandomStringUtils.insecure().next(10)) }
         .randomize(SerializedData::class.java) {
           SerializedData.encode(random<String>(), String::class.java, null)
         }
@@ -116,7 +115,7 @@ object TestFactory {
         }
         .randomize(MessageId::class.java) { MessageId() }
 
-    values?.forEach { parameters.randomize(FieldPredicates.named(it.key), Randomizer { it.value }) }
+    values?.forEach { parameters.randomize(FieldPredicates.named(it.key), { it.value }) }
 
     return EasyRandom(parameters).nextObject(klass.java)
   }

@@ -7,7 +7,7 @@
  * Without limiting other conditions in the License, the grant of rights under the License will not
  * include, and the License does not grant to you, the right to Sell the Software.
  *
- * For purposes of the foregoing, "Sell" means practicing any or all of the rights granted to you
+ * For purposes of the foregoing, “Sell” means practicing any or all of the rights granted to you
  * under the License to provide to third parties, for a fee or other consideration (including
  * without limitation fees for hosting or consulting/ support services related to the Software), a
  * product or service whose value derives, entirely or substantially, from the functionality of the
@@ -20,29 +20,29 @@
  *
  * Licensor: infinitic.io
  */
-plugins { `java-library` }
+package io.infinitic.tests
 
-dependencies {
-  api(project(":infinitic-common"))
-  api(project(":infinitic-task-executor"))
+import io.infinitic.pulsar.config.PulsarProducerConfig
+import io.infinitic.transport.config.PulsarTransportConfig
+import io.kotest.core.spec.style.StringSpec
+import org.apache.pulsar.client.api.CompressionType
 
-  implementation(project(":infinitic-utils"))
-  implementation(project(":infinitic-workflow-tag"))
-  implementation(project(":infinitic-workflow-engine"))
+internal class ClientTests : StringSpec(
+    {
 
-  implementation(Libs.Coroutines.core)
-  implementation(Libs.Coroutines.jdk8)
-  implementation(Libs.Pulsar.functions)
-  implementation(Libs.Hoplite.yaml)
+      "initialization" {
+        val transport = PulsarTransportConfig.builder().setTenant("testTenant")
+            .setNamespace("testNamespace")
+            .setBrokerServiceUrl("pulsar://localhost:6650/")
+            .setWebServiceUrl("http://localhost:8080")
+            .setProducerConfig(
+                PulsarProducerConfig.builder().setBatchingMaxBytes(1024000)
+                    .setCompressionType(CompressionType.SNAPPY).build(),
+            ).build()
 
-  api(Libs.Hoplite.core) // API needed for Secret class
-  api(Libs.Pulsar.client)
-  api(Libs.Pulsar.clientAdmin)
-  api(Libs.Pulsar.clientAdminApi)
-  api(Libs.Pulsar.authAthenz)
-  api(Libs.Pulsar.authSasl)
+        transport.pulsar.pulsarClient
 
-  testImplementation(Libs.Kotlin.reflect)
-}
+      }
 
-apply("../publish.gradle.kts")
+    },
+)

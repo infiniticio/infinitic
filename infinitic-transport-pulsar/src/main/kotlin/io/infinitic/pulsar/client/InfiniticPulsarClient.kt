@@ -123,7 +123,7 @@ class InfiniticPulsarClient(private val pulsarClient: PulsarClient) {
     }
   }
 
-  private fun createProducer(
+  internal fun createProducer(
     topic: String,
     schemaKClass: KClass<out Envelope<out Message>>,
     pulsarProducerConfig: PulsarProducerConfig,

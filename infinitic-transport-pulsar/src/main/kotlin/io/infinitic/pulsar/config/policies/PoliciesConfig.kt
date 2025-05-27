@@ -36,6 +36,8 @@ data class PoliciesConfig(
   val timerTTLSeconds: Int = 3600 * 24 * 366,
     // Delayed delivery tick time = 1 second
   val delayedDeliveryTickTimeMillis: Long = 1000,
+    // Maximum delivery delay in milliseconds (0 = none)
+  val maxDeliveryDelayInMillis: Long = 0,
     // Changes allowed: add optional fields, delete fields
   val schemaCompatibilityStrategy: SchemaCompatibilityStrategy = SchemaCompatibilityStrategy.BACKWARD_TRANSITIVE,
     // Disallow auto topic creation
@@ -63,6 +65,7 @@ data class PoliciesConfig(
     private var messageTTLSeconds = default.messageTTLSeconds
     private var timerTTLSeconds = default.timerTTLSeconds
     private var delayedDeliveryTickTimeMillis = default.delayedDeliveryTickTimeMillis
+    private var maxDeliveryDelayInMillis = default.maxDeliveryDelayInMillis
     private var schemaCompatibilityStrategy = default.schemaCompatibilityStrategy
     private var allowAutoTopicCreation = default.allowAutoTopicCreation
     private var schemaValidationEnforced = default.schemaValidationEnforced
@@ -84,6 +87,9 @@ data class PoliciesConfig(
     fun setDelayedDeliveryTickTimeMillis(delayedDeliveryTickTimeMillis: Long) =
         apply { this.delayedDeliveryTickTimeMillis = delayedDeliveryTickTimeMillis }
 
+    fun setMaxDeliveryDelayInMillis(maxDeliveryDelayInMillis: Long) =
+        apply { this.maxDeliveryDelayInMillis = maxDeliveryDelayInMillis }
+
     fun setSchemaCompatibilityStrategy(schemaCompatibilityStrategy: SchemaCompatibilityStrategy) =
         apply { this.schemaCompatibilityStrategy = schemaCompatibilityStrategy }
 
@@ -100,16 +106,17 @@ data class PoliciesConfig(
         apply { this.deduplicationEnabled = deduplicationEnabled }
 
     fun build() = PoliciesConfig(
-        retentionTimeMinutes,
-        retentionSizeMB,
-        messageTTLSeconds,
-        timerTTLSeconds,
-        delayedDeliveryTickTimeMillis,
-        schemaCompatibilityStrategy,
-        allowAutoTopicCreation,
-        schemaValidationEnforced,
-        isAllowAutoUpdateSchema,
-        deduplicationEnabled,
+        retentionTimeMinutes = retentionTimeMinutes,
+        retentionSizeMB = retentionSizeMB,
+        messageTTLSeconds = messageTTLSeconds,
+        timerTTLSeconds = timerTTLSeconds,
+        delayedDeliveryTickTimeMillis = delayedDeliveryTickTimeMillis,
+        maxDeliveryDelayInMillis = maxDeliveryDelayInMillis,
+        schemaCompatibilityStrategy = schemaCompatibilityStrategy,
+        allowAutoTopicCreation = allowAutoTopicCreation,
+        schemaValidationEnforced = schemaValidationEnforced,
+        isAllowAutoUpdateSchema = isAllowAutoUpdateSchema,
+        deduplicationEnabled = deduplicationEnabled,
     )
   }
 }

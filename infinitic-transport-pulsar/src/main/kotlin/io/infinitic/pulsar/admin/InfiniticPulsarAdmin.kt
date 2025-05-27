@@ -24,6 +24,7 @@ package io.infinitic.pulsar.admin
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.pulsar.config.policies.PoliciesConfig
+import kotlin.random.Random
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.sync.Mutex
@@ -32,13 +33,12 @@ import org.apache.pulsar.client.admin.PulsarAdmin
 import org.apache.pulsar.client.admin.PulsarAdminException
 import org.apache.pulsar.common.partition.PartitionedTopicMetadata
 import org.apache.pulsar.common.policies.data.PartitionedTopicStats
+import org.apache.pulsar.common.policies.data.Policies as PulsarPolicies
 import org.apache.pulsar.common.policies.data.RetentionPolicies
 import org.apache.pulsar.common.policies.data.TenantInfo
+import org.apache.pulsar.common.policies.data.TopicType as PulsarTopicType
 import org.apache.pulsar.common.policies.data.impl.AutoTopicCreationOverrideImpl
 import org.apache.pulsar.common.policies.data.impl.DelayedDeliveryPoliciesImpl
-import kotlin.random.Random
-import org.apache.pulsar.common.policies.data.Policies as PulsarPolicies
-import org.apache.pulsar.common.policies.data.TopicType as PulsarTopicType
 
 @Suppress("MemberVisibilityCanBePrivate")
 class InfiniticPulsarAdmin(
@@ -276,7 +276,7 @@ class InfiniticPulsarAdmin(
     topics.deleteAsync(topic, true).await()
     logger.info { "Topic '$topic' deleted." }
     Result.success(Unit)
-  } catch (e: PulsarAdminException.NotFoundException) {
+  } catch (_: PulsarAdminException.NotFoundException) {
     logger.debug { "Unable to delete topic '$topic' that does not exist." }
     Result.success(null)
   } catch (e: PulsarAdminException) {
@@ -298,7 +298,7 @@ class InfiniticPulsarAdmin(
       val stats = topics.getPartitionedStatsAsync(topic, false, false, false, false).await()
       logger.info { "Topic '$topic': PartitionedStats retrieved ($stats)." }
       Result.success(stats)
-    } catch (e: PulsarAdminException.NotFoundException) {
+    } catch (_: PulsarAdminException.NotFoundException) {
       logger.debug { "Topic '$topic': Unable to get PartitionedStats as topic does not exist." }
       Result.success(null)
     } catch (e: PulsarAdminException) {
@@ -316,7 +316,7 @@ class InfiniticPulsarAdmin(
       } catch (e: PulsarAdminException.NotAuthorizedException) {
         logger.warn { "Not authorized to admin tenant '$tenant'." }
         Result.failure(e)
-      } catch (e: PulsarAdminException.NotFoundException) {
+      } catch (_: PulsarAdminException.NotFoundException) {
         logger.debug { "Tenant '$tenant': unable to get info as tenant does not exist." }
         Result.success(null)
       } catch (e: PulsarAdminException) {
@@ -414,7 +414,7 @@ class InfiniticPulsarAdmin(
       } catch (e: PulsarAdminException.NotAuthorizedException) {
         logger.warn { "Not authorized to admin namespace '$fullNamespace'." }
         Result.failure(e)
-      } catch (e: PulsarAdminException.NotFoundException) {
+      } catch (_: PulsarAdminException.NotFoundException) {
         Result.success(null)
       } catch (e: PulsarAdminException) {
         logger.warn(e) { "Unable to get policies of namespace '$fullNamespace'." }
@@ -451,7 +451,7 @@ class InfiniticPulsarAdmin(
         val ttl = topicPolicies.getMessageTTL(topic, true)
         logger.info { "Topic '$topic': MessageTTL retrieved ($ttl)." }
         Result.success(ttl)
-      } catch (e: PulsarAdminException.NotFoundException) {
+      } catch (_: PulsarAdminException.NotFoundException) {
         logger.debug { "Topic '$topic': Unable to retrieve MessageTTL as topic does not exist." }
         Result.success(null)
       } catch (e: PulsarAdminException) {
@@ -465,7 +465,7 @@ class InfiniticPulsarAdmin(
       val metadata = topics.getPartitionedTopicMetadataAsync(topic).await()
       logger.info { "Topic '$topic': PartitionedTopicMetadata retrieved ($metadata)." }
       Result.success(metadata)
-    } catch (e: PulsarAdminException.NotFoundException) {
+    } catch (_: PulsarAdminException.NotFoundException) {
       logger.debug { "Topic '$topic': Unable to retrieve PartitionedTopicMetadata as topic does not exist." }
       Result.success(null)
     } catch (e: PulsarAdminException) {
@@ -562,7 +562,8 @@ class InfiniticPulsarAdmin(
   private fun PoliciesConfig.getPulsarPolicies() = PulsarPolicies().also {
     it.retention_policies = RetentionPolicies(retentionTimeMinutes, retentionSizeMB)
     it.message_ttl_in_seconds = messageTTLSeconds
-    it.delayed_delivery_policies = DelayedDeliveryPoliciesImpl(delayedDeliveryTickTimeMillis, true)
+    it.delayed_delivery_policies =
+        DelayedDeliveryPoliciesImpl(delayedDeliveryTickTimeMillis, true, maxDeliveryDelayInMillis)
     it.schema_compatibility_strategy = schemaCompatibilityStrategy
     it.autoTopicCreationOverride =
         AutoTopicCreationOverrideImpl(

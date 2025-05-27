@@ -46,7 +46,7 @@ import java.util.concurrent.TimeUnit
 import org.apache.pulsar.client.api.Consumer as PulsarConsumer
 import org.apache.pulsar.client.api.Message as PulsarMessage
 
-class PulsarInfiniticClientTests :
+class PulsarInfiniticConsumerTests :
   StringSpec(
       {
         // consumer properties slots
@@ -85,7 +85,7 @@ class PulsarInfiniticClientTests :
         val startPaused = slot<Boolean>()
 
         // mocks
-        val pulsarMessage = mockk<PulsarMessage<WorkflowEngineEnvelope>>() {
+        val pulsarMessage = mockk<PulsarMessage<WorkflowEngineEnvelope>> {
           every { messageId } returns MessageIdImpl(-1, -1, -1)
           every { value } returns TestFactory.random<WorkflowEngineEnvelope>()
         }
