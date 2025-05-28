@@ -32,10 +32,10 @@ import io.infinitic.workflows.engine.storage.BinaryWorkflowStateStorage
 
 @Suppress("unused")
 data class WorkflowStateEngineConfig(
-  
+
   override var workflowName: String = "",
   /**
-   * The number of concurrent workflow state executions.
+   * The number of concurrent workflow state engine instances.
    * If not provided, it will default to 1.
    */
   val concurrency: Int = 1,
@@ -48,11 +48,32 @@ data class WorkflowStateEngineConfig(
    * Batch configuration for the workflow state engine.
    * If not provided, it will not use batching.
    */
-  val batch: BatchConfig? = null
+  val batch: BatchConfig? = null,
+  /**
+   * The number of concurrent workflow state timer handlers.
+   * If not provided, it will default to the same value as concurrency.
+   */
+  val timerHandlerConcurrency: Int = concurrency,
+  /**
+   * The number of concurrent workflow state command handlers.
+   * If not provided, it will default to the same value as concurrency.
+   */
+  val commandHandlerConcurrency: Int = concurrency,
+  /**
+   * The number of concurrent workflow state event handlers.
+   * If not provided, it will default to the same value as concurrency.
+   */
+  val eventHandlerConcurrency: Int = concurrency,
 ) : WithMutableWorkflowName, WithMutableStorage {
 
   init {
-    require(concurrency >= 0) { "concurrency must be positive" }
+    require(concurrency >= 0) { "${::concurrency.name} must be positive" }
+
+    require(timerHandlerConcurrency >= 0) { "${::timerHandlerConcurrency.name} must be positive" }
+
+    require(commandHandlerConcurrency >= 0) { "${::commandHandlerConcurrency.name} must be positive" }
+
+    require(eventHandlerConcurrency >= 0) { "${::eventHandlerConcurrency.name} must be positive" }
   }
 
   val workflowStateStorage by lazy {
@@ -94,6 +115,9 @@ data class WorkflowStateEngineConfig(
     private var concurrency = default.concurrency
     private var storage = default.storage
     private var batch = default.batch
+    private var timerHandlerConcurrency = default.timerHandlerConcurrency
+    private var commandHandlerConcurrency = default.commandHandlerConcurrency
+    private var eventHandlerConcurrency = default.eventHandlerConcurrency
 
     fun setWorkflowName(workflowName: String) =
         apply { this.workflowName = workflowName }
@@ -107,15 +131,27 @@ data class WorkflowStateEngineConfig(
     fun setBatch(maxMessages: Int, maxSeconds: Double) =
         apply { this.batch = BatchConfig(maxMessages, maxSeconds) }
 
+    fun setTimerHandlerConcurrency(concurrency: Int) =
+        apply { this.timerHandlerConcurrency = concurrency }
+
+    fun setCommandHandlerConcurrency(concurrency: Int) =
+        apply { this.commandHandlerConcurrency = concurrency }
+
+    fun setEventHandlerConcurrency(concurrency: Int) =
+        apply { this.eventHandlerConcurrency = concurrency }
+
     fun build(): WorkflowStateEngineConfig {
       workflowName.checkWorkflowName()
       concurrency.checkConcurrency()
 
       return WorkflowStateEngineConfig(
-          workflowName,
-          concurrency,
-          storage,
-          batch,
+          workflowName = workflowName,
+          concurrency = concurrency,
+          storage = storage,
+          batch = batch,
+          timerHandlerConcurrency = timerHandlerConcurrency,
+          commandHandlerConcurrency = commandHandlerConcurrency,
+          eventHandlerConcurrency = eventHandlerConcurrency,
       )
     }
   }
