@@ -36,13 +36,13 @@ import io.infinitic.pulsar.config.PulsarProducerConfig
 import io.infinitic.pulsar.resources.PulsarResources
 import io.infinitic.pulsar.resources.envelope
 import io.infinitic.pulsar.resources.initWhenProducing
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit
+import kotlin.reflect.KClass
 import kotlinx.coroutines.future.await
 import org.apache.pulsar.client.api.Producer
 import org.apache.pulsar.client.api.PulsarClientException.AlreadyClosedException
 import org.apache.pulsar.client.api.PulsarClientException.TopicDoesNotExistException
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.TimeUnit
-import kotlin.reflect.KClass
 
 class PulsarInfiniticProducer(
   private val client: InfiniticPulsarClient,
@@ -64,14 +64,14 @@ class PulsarInfiniticProducer(
     else throw e
   }
 
-  private suspend fun <T : Message> sendEnvelope(
+  internal suspend fun <T : Message> sendEnvelope(
     message: T,
     topic: Topic<out T>,
     after: MillisDuration,
     key: String? = null
   ): Unit = sendEnvelopeAsync(message, topic, after, key).await()
 
-  private suspend fun <T : Message> sendEnvelopeAsync(
+  internal suspend fun <T : Message> sendEnvelopeAsync(
     message: T,
     topic: Topic<out T>,
     after: MillisDuration,
@@ -95,6 +95,7 @@ class PulsarInfiniticProducer(
           }
           if (after > 0) {
             it.deliverAfter(after.millis, TimeUnit.MILLISECONDS)
+            it.eventTime(System.currentTimeMillis() + after.millis)
           }
         }
         .sendAsync()

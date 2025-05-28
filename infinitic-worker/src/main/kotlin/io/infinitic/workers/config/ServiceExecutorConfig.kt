@@ -45,7 +45,17 @@ suspend fun ServiceExecutorConfig.initBatchProcessorMethods() {
 sealed class ServiceExecutorConfig {
 
   abstract val serviceName: String
+
+  /**
+   * The factory is a function that returns a new instance of the service.
+   * This allows creating a new instance each time the service is executed.
+   */
   abstract val factory: ServiceFactory
+
+  /**
+   * The number of concurrent service executions.
+   * If not provided, it will default to 1.
+   */
   abstract val concurrency: Int
 
   /**

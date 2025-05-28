@@ -30,10 +30,23 @@ import io.infinitic.config.loadFromYamlString
 import io.infinitic.storage.config.StorageConfig
 import io.infinitic.workflows.tag.storage.BinaryWorkflowTagStorage
 
+@Suppress("unused")
 data class WorkflowTagEngineConfig(
   override var workflowName: String = "",
+  /**
+   * The number of concurrent workflow tag executions.
+   * If not provided, it will default to 1.
+   */
   var concurrency: Int = 1,
+  /**
+   * Storage configuration for the workflow tag engine.
+   * If not provided, it will use the default storage configuration.
+   */
   override var storage: StorageConfig? = null,
+  /**
+   * Batch configuration for the workflow tag engine.
+   * If not provided, it will not use batching.
+   */
   val batch: BatchConfig? = null
 ) : WithMutableWorkflowName, WithMutableStorage {
 

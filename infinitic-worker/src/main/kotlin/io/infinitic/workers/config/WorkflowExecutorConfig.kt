@@ -40,14 +40,45 @@ import io.infinitic.workflows.WorkflowCheckMode
 internal typealias WorkflowFactory = () -> Workflow
 internal typealias WorkflowFactories = List<WorkflowFactory>
 
+@Suppress("unused")
 sealed class WorkflowExecutorConfig {
 
   abstract val workflowName: String
+
+  /**
+   * The factories are functions that return a new instance of the workflow.
+   * This allows creating a new instance each time the workflow is executed.
+   */
   abstract val factories: WorkflowFactories
+
+  /**
+   * The number of concurrent workflow executions.
+   * If not provided, it will default to 1.
+   */
   abstract val concurrency: Int
+
+  /**
+   * The timeout in seconds for the workflow execution.
+   * If not provided, it will default to UNSET_RETRY.
+   */
   abstract val withRetry: WithRetry?
+
+  /**
+   * The timeout in seconds for the workflow execution.
+   * If not provided, it will default to UNSET_TIMEOUT.
+   */
   abstract val withTimeout: WithTimeout?
+
+  /**
+   * The check mode for the workflow execution.
+   * If not provided, it will default to null.
+   */
   abstract val checkMode: WorkflowCheckMode?
+
+  /**
+   * The batch configuration for the workflow execution.
+   * If not provided, it will not use batching.
+   */
   abstract val batch: BatchConfig?
 
   companion object {

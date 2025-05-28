@@ -27,16 +27,38 @@ import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.transport.WorkflowStateEngineTopic
 import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.transport.logged.LoggerWithCounter
+import io.infinitic.common.transport.withoutDelay
+import io.infinitic.common.workflows.engine.messages.RemoteTimerCompleted
 import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
+import java.time.Instant
 
 @Suppress("UNUSED_PARAMETER")
 class WorkflowStateTimerHandler(val producer: InfiniticProducer) {
 
   suspend fun process(message: WorkflowStateEngineMessage, publishTime: MillisInstant) {
-    with(producer) { message.sendTo(WorkflowStateEngineTopic) }
+    if (message is RemoteTimerCompleted) {
+      // Workaround for Pulsar: see https://github.com/apache/pulsar/discussions/23990
+      // When brokers restart, already acknowledged delayed messages may reappear.
+      // If a RemoteTimerCompleted message was supposed to be received over 72 hours ago, discard it
+      // to prevent unnecessary reprocessing. (WorkflowStateEngine would discard it anyway,
+      // but this avoids extra processing earlier in the pipeline.)
+      message.emittedAt?.let {
+        // If the emittedAt is more than 24 hours ago, we discard the message
+        if (Instant.now().toEpochMilli() - it.long > MAX_REMOTE_TIMER_AGE_MS) {
+          logger.warn { "RemoteTimerCompleted discarded as too old: $message" }
+          return
+        }
+      }
+    }
+    // Forward the message to the WorkflowStateEngineTopic
+    logger.trace { "Sending to WorkflowStateEngineTopic: $message" }
+    producer.internalSendTo(message, WorkflowStateEngineTopic.withoutDelay)
+    logger.debug { "Sent to WorkflowStateEngineTopic: $message" }
   }
 
   companion object {
     val logger = LoggerWithCounter(KotlinLogging.logger {})
+
+    var MAX_REMOTE_TIMER_AGE_MS = 3 * 24 * 60 * 60 * 1000 // 72 hours in milliseconds
   }
 }

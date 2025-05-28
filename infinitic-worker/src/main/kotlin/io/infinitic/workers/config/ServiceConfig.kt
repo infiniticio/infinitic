@@ -29,8 +29,19 @@ import io.infinitic.config.loadFromYamlString
 
 @Suppress("unused")
 data class ServiceConfig(
+  /**
+   * The unique name of the service.
+   */
   val name: String,
+  /**
+   * The executor configuration for the service.
+   * If not provided, it will not start an executor.
+   */
   var executor: ServiceExecutorConfig? = null,
+  /**
+   * The tag engine configuration for the service.
+   * If not provided, it will not start a tag engine.
+   */
   var tagEngine: ServiceTagEngineConfig? = null,
 ) {
   init {

@@ -30,12 +30,27 @@ import io.infinitic.config.loadFromYamlString
 import io.infinitic.storage.config.StorageConfig
 import io.infinitic.workflows.engine.storage.BinaryWorkflowStateStorage
 
+@Suppress("unused")
 data class WorkflowStateEngineConfig(
+  
   override var workflowName: String = "",
+  /**
+   * The number of concurrent workflow state executions.
+   * If not provided, it will default to 1.
+   */
   val concurrency: Int = 1,
+  /**
+   * Storage configuration for the workflow state engine.
+   * If not provided, it will use the default storage configuration.
+   */
   override var storage: StorageConfig? = null,
+  /**
+   * Batch configuration for the workflow state engine.
+   * If not provided, it will not use batching.
+   */
   val batch: BatchConfig? = null
 ) : WithMutableWorkflowName, WithMutableStorage {
+
   init {
     require(concurrency >= 0) { "concurrency must be positive" }
   }
