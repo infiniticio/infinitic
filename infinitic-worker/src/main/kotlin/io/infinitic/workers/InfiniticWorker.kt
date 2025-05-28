@@ -244,17 +244,17 @@ class InfiniticWorker(
     @JvmStatic
     fun builder() = InfiniticWorkerBuilder()
 
-    /** Create [InfiniticWorker] from yaml resources */
+    /** Create [InfiniticWorker] from YAML resources */
     @JvmStatic
     fun fromYamlResource(vararg resources: String) =
         InfiniticWorker(InfiniticWorkerConfig.fromYamlResource(*resources))
 
-    /** Create [InfiniticWorker] from yaml files */
+    /** Create [InfiniticWorker] from YAML files */
     @JvmStatic
     fun fromYamlFile(vararg files: String): InfiniticWorker =
         InfiniticWorker(InfiniticWorkerConfig.fromYamlFile(*files))
 
-    /** Create [InfiniticWorker] from yaml strings */
+    /** Create [InfiniticWorker] from YAML strings */
     @JvmStatic
     fun fromYamlString(vararg yamls: String): InfiniticWorker =
         InfiniticWorker(InfiniticWorkerConfig.fromYamlString(*yamls))
@@ -419,9 +419,7 @@ class InfiniticWorker(
   /**
    * Starts the Service Tag Engine with the given configuration.
    */
-  private suspend fun startServiceTagEngine(
-    config: ServiceTagEngineConfig
-  ) {
+  private suspend fun startServiceTagEngine(config: ServiceTagEngineConfig) {
     // Log Service Tag Engine configuration
     logServiceTagEngineStart(config)
 
@@ -449,9 +447,7 @@ class InfiniticWorker(
   /**
    * Starts the Service Executor with the given configuration.
    */
-  private suspend fun startServiceExecutor(
-    config: ServiceExecutorConfig
-  ) {
+  private suspend fun startServiceExecutor(config: ServiceExecutorConfig) {
     // init batch methods for the current factory
     config.initBatchProcessorMethods()
 

@@ -155,9 +155,13 @@ sealed class ServiceExecutorConfig {
 
     fun build(): ServiceExecutorConfig {
       serviceName.checkServiceName()
-      require(factory != null) { "${::factory.name} must not be null" }
       concurrency.checkConcurrency(::concurrency.name)
-      timeoutSeconds?.checkTimeout()
+      eventHandlerConcurrency.checkConcurrency(::eventHandlerConcurrency.name)
+      retryHandlerConcurrency.checkConcurrency(::retryHandlerConcurrency.name)
+      if (concurrency > 0) {
+        require(factory != null) { "${::factory.name} must not be null" }
+        timeoutSeconds?.checkTimeout()
+      }
 
       return BuiltServiceExecutorConfig(
           serviceName = serviceName!!,
@@ -192,7 +196,7 @@ data class BuiltServiceExecutorConfig(
  */
 data class LoadedServiceExecutorConfig(
   override var serviceName: String = "",
-  val `class`: String,
+  val `class`: String = "",
   override val concurrency: Int = 1,
   val timeoutSeconds: Double? = UNSET_TIMEOUT,
   val retry: RetryPolicy? = UNSET_RETRY_POLICY,
@@ -208,10 +212,14 @@ data class LoadedServiceExecutorConfig(
   override val withRetry: WithRetry? = retry.withRetry
 
   init {
-    `class`.checkClass()
     concurrency.checkConcurrency(::concurrency.name)
-    timeoutSeconds?.checkTimeout()
-    retry?.check()
+    eventHandlerConcurrency.checkConcurrency(::eventHandlerConcurrency.name)
+    retryHandlerConcurrency.checkConcurrency(::retryHandlerConcurrency.name)
+    if (concurrency > 0) {
+      `class`.checkClass()
+      timeoutSeconds?.checkTimeout()
+      retry?.check()
+    }
   }
 
   @JvmName("replaceServiceName")

@@ -163,17 +163,20 @@ sealed class WorkflowExecutorConfig {
     fun build(): WorkflowExecutorConfig {
       workflowName.checkWorkflowName()
 
-      // Needed if the workflow context is referenced within the properties of the workflow
-      Workflow.setContext(emptyWorkflowContext)
-
-      require(factories.isNotEmpty()) { "At least one factory must be defined" }
-      factories.checkVersionUniqueness()
-      factories.checkInstanceUniqueness()
-
       concurrency.checkConcurrency(::concurrency.name)
       eventHandlerConcurrency.checkConcurrency(::eventHandlerConcurrency.name)
       retryHandlerConcurrency.checkConcurrency(::retryHandlerConcurrency.name)
-      timeoutSeconds?.checkTimeout()
+
+      if (concurrency > 0) {
+        // Needed if the workflow context is referenced within the properties of the workflow
+        Workflow.setContext(emptyWorkflowContext)
+
+        require(factories.isNotEmpty()) { "At least one factory must be defined" }
+        factories.checkVersionUniqueness()
+        factories.checkInstanceUniqueness()
+
+        timeoutSeconds?.checkTimeout()
+      }
 
       return BuiltWorkflowExecutorConfig(
           workflowName = workflowName!!,
@@ -231,30 +234,33 @@ data class LoadedWorkflowExecutorConfig(
   }
 
   init {
-    // Needed if the workflow context is referenced within the properties of the workflow
-    Workflow.setContext(emptyWorkflowContext)
-
-    require((`class` != null) || (classes != null)) {
-      "'${::`class`.name}' and '${::classes.name}' can not be both null"
-    }
-
-    `class`?.let {
-      require(`class`.isNotEmpty()) { "'${::`class`.name}' can not be empty" }
-      allInstances.add(getInstance(it))
-    }
-
-    classes?.forEachIndexed { index, s: String ->
-      require(s.isNotEmpty()) { "'${::classes.name}[$index]' can not be empty" }
-      allInstances.add(getInstance(s))
-    }
-    factories.checkVersionUniqueness()
-    factories.checkInstanceUniqueness()
-
     concurrency.checkConcurrency(::concurrency.name)
     eventHandlerConcurrency.checkConcurrency(::eventHandlerConcurrency.name)
     retryHandlerConcurrency.checkConcurrency(::retryHandlerConcurrency.name)
-    timeoutSeconds?.checkTimeout()
-    retry?.check()
+
+    if (concurrency > 0) {
+      // Needed if the workflow context is referenced within the properties of the workflow
+      Workflow.setContext(emptyWorkflowContext)
+
+      require((`class` != null) || (classes != null)) {
+        "'${::`class`.name}' and '${::classes.name}' can not be both null"
+      }
+
+      `class`?.let {
+        require(`class`.isNotEmpty()) { "'${::`class`.name}' can not be empty" }
+        allInstances.add(getInstance(it))
+      }
+
+      classes?.forEachIndexed { index, s: String ->
+        require(s.isNotEmpty()) { "'${::classes.name}[$index]' can not be empty" }
+        allInstances.add(getInstance(s))
+      }
+      factories.checkVersionUniqueness()
+      factories.checkInstanceUniqueness()
+
+      timeoutSeconds?.checkTimeout()
+      retry?.check()
+    }
   }
 
   private fun getInstance(className: String): Workflow {
