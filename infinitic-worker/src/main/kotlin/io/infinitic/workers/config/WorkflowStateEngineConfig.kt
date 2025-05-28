@@ -142,7 +142,9 @@ data class WorkflowStateEngineConfig(
 
     fun build(): WorkflowStateEngineConfig {
       workflowName.checkWorkflowName()
-      concurrency.checkConcurrency()
+      concurrency.checkConcurrency(::concurrency.name)
+      commandHandlerConcurrency.checkConcurrency(::commandHandlerConcurrency.name)
+      eventHandlerConcurrency.checkConcurrency(::eventHandlerConcurrency.name)
 
       return WorkflowStateEngineConfig(
           workflowName = workflowName,

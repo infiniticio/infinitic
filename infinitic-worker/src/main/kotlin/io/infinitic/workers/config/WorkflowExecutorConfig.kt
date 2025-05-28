@@ -70,7 +70,7 @@ sealed class WorkflowExecutorConfig {
   abstract val withTimeout: WithTimeout?
 
   /**
-   * The check mode for the workflow execution.
+   * The check mode for the workflow executors.
    * If not provided, it will default to null.
    */
   abstract val checkMode: WorkflowCheckMode?
@@ -81,26 +81,38 @@ sealed class WorkflowExecutorConfig {
    */
   abstract val batch: BatchConfig?
 
+  /**
+   * The number of concurrent workflow executor event handlers.
+   * If not provided, it will default to the same value as concurrency.
+   */
+  abstract val eventHandlerConcurrency: Int
+
+  /**
+   * The number of concurrent workflow executor retry handlers.
+   * If not provided, it will default to the same value as concurrency.
+   */
+  abstract val retryHandlerConcurrency: Int
+
   companion object {
     @JvmStatic
     fun builder() = WorkflowExecutorConfigBuilder()
 
     /**
-     * Create WorkflowExecutorConfig from files in file system
+     * Create WorkflowExecutorConfig from files in the file system
      */
     @JvmStatic
     fun fromYamlFile(vararg files: String): WorkflowExecutorConfig =
         loadFromYamlFile<LoadedWorkflowExecutorConfig>(*files)
 
     /**
-     * Create WorkflowExecutorConfig from files in resources directory
+     * Create WorkflowExecutorConfig from files in the resources directory
      */
     @JvmStatic
     fun fromYamlResource(vararg resources: String): WorkflowExecutorConfig =
         loadFromYamlResource<LoadedWorkflowExecutorConfig>(*resources)
 
     /**
-     * Create WorkflowExecutorConfig from yaml strings
+     * Create WorkflowExecutorConfig from YAML strings
      */
     @JvmStatic
     fun fromYamlString(vararg yamls: String): WorkflowExecutorConfig =
@@ -118,6 +130,8 @@ sealed class WorkflowExecutorConfig {
     private var withRetry: WithRetry? = WithRetry.UNSET
     private var checkMode: WorkflowCheckMode? = null
     private var batch: BatchConfig? = null
+    private var eventHandlerConcurrency: Int = concurrency
+    private var retryHandlerConcurrency: Int = concurrency
 
     fun setWorkflowName(workflowName: String) =
         apply { this.workflowName = workflowName }
@@ -140,6 +154,12 @@ sealed class WorkflowExecutorConfig {
     fun setBatch(maxMessages: Int, maxSeconds: Double) =
         apply { this.batch = BatchConfig(maxMessages, maxSeconds) }
 
+    fun setEventHandlerConcurrency(eventHandlerConcurrency: Int) =
+        apply { this.eventHandlerConcurrency = eventHandlerConcurrency }
+
+    fun setRetryHandlerConcurrency(retryHandlerConcurrency: Int) =
+        apply { this.retryHandlerConcurrency = retryHandlerConcurrency }
+
     fun build(): WorkflowExecutorConfig {
       workflowName.checkWorkflowName()
 
@@ -150,17 +170,21 @@ sealed class WorkflowExecutorConfig {
       factories.checkVersionUniqueness()
       factories.checkInstanceUniqueness()
 
-      concurrency.checkConcurrency()
+      concurrency.checkConcurrency(::concurrency.name)
+      eventHandlerConcurrency.checkConcurrency(::eventHandlerConcurrency.name)
+      retryHandlerConcurrency.checkConcurrency(::retryHandlerConcurrency.name)
       timeoutSeconds?.checkTimeout()
 
       return BuiltWorkflowExecutorConfig(
-          workflowName!!,
-          factories,
-          concurrency,
-          timeoutSeconds.withTimeout,
-          withRetry,
-          checkMode,
-          batch,
+          workflowName = workflowName!!,
+          factories = factories,
+          concurrency = concurrency,
+          withTimeout = timeoutSeconds.withTimeout,
+          withRetry = withRetry,
+          checkMode = checkMode,
+          batch = batch,
+          eventHandlerConcurrency = eventHandlerConcurrency,
+          retryHandlerConcurrency = retryHandlerConcurrency,
       )
     }
   }
@@ -176,7 +200,9 @@ data class BuiltWorkflowExecutorConfig(
   override var withTimeout: WithTimeout?,
   override var withRetry: WithRetry?,
   override var checkMode: WorkflowCheckMode?,
-  override val batch: BatchConfig?
+  override val batch: BatchConfig?,
+  override val eventHandlerConcurrency: Int = concurrency,
+  override val retryHandlerConcurrency: Int = concurrency,
 ) : WorkflowExecutorConfig()
 
 /**
@@ -191,6 +217,8 @@ data class LoadedWorkflowExecutorConfig(
   var retry: RetryPolicy? = UNSET_RETRY_POLICY,
   override var checkMode: WorkflowCheckMode? = null,
   override val batch: BatchConfig? = null,
+  override val eventHandlerConcurrency: Int = concurrency,
+  override val retryHandlerConcurrency: Int = concurrency,
 ) : WorkflowExecutorConfig(), WithMutableWorkflowName {
   private val allInstances = mutableListOf<Workflow>()
 
@@ -222,7 +250,9 @@ data class LoadedWorkflowExecutorConfig(
     factories.checkVersionUniqueness()
     factories.checkInstanceUniqueness()
 
-    concurrency.checkConcurrency()
+    concurrency.checkConcurrency(::concurrency.name)
+    eventHandlerConcurrency.checkConcurrency(::eventHandlerConcurrency.name)
+    retryHandlerConcurrency.checkConcurrency(::retryHandlerConcurrency.name)
     timeoutSeconds?.checkTimeout()
     retry?.check()
   }

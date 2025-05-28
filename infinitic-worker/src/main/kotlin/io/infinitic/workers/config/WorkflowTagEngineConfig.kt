@@ -108,7 +108,7 @@ data class WorkflowTagEngineConfig(
 
     fun build(): WorkflowTagEngineConfig {
       workflowName.checkWorkflowName()
-      concurrency.checkConcurrency()
+      concurrency.checkConcurrency(::concurrency.name)
 
       return WorkflowTagEngineConfig(
           workflowName,

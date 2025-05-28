@@ -629,58 +629,63 @@ class InfiniticWorker(
     logWorkflowExecutorStart(config)
 
     val workflowName = config.workflowName
-    val concurrency = config.concurrency
     val configBatch = config.batch
     val producer = producerFactory.newProducer(configBatch)
 
-    // Executor
-    with(TaskExecutor.logger) {
-      val loggedProducer = LoggedInfiniticProducer(this, producer)
-      val consumer = consumerFactory.newConsumer(
-          subscription = MainSubscription(WorkflowExecutorTopic),
-          entity = workflowName,
-          batchReceivingConfig = configBatch,
-      )
-      scope.startWorkflowExecutor(
-          consumer,
-          loggedProducer,
-          workflowName,
-          concurrency,
-          configBatch,
-      )
+    // Workflow Executors
+    if (config.concurrency > 0) {
+      with(TaskExecutor.logger) {
+        val loggedProducer = LoggedInfiniticProducer(this, producer)
+        val consumer = consumerFactory.newConsumer(
+            subscription = MainSubscription(WorkflowExecutorTopic),
+            entity = workflowName,
+            batchReceivingConfig = configBatch,
+        )
+        scope.startWorkflowExecutor(
+            consumer,
+            loggedProducer,
+            workflowName,
+            config.concurrency,
+            configBatch,
+        )
+      }
     }
 
-    // Executor-Retry
-    with(TaskRetryHandler.logger) {
-      val loggedProducer = LoggedInfiniticProducer(this, producer)
-      val consumer = consumerFactory.newConsumer(
-          subscription = MainSubscription(WorkflowExecutorRetryTopic),
-          entity = workflowName,
-          batchReceivingConfig = configBatch,
-      )
-      scope.startWorkflowExecutorRetry(
-          consumer,
-          loggedProducer,
-          concurrency,
-          configBatch,
-      )
+    // Workflow Executor Retry Handlers
+    if (config.retryHandlerConcurrency > 0) {
+      with(TaskRetryHandler.logger) {
+        val loggedProducer = LoggedInfiniticProducer(this, producer)
+        val consumer = consumerFactory.newConsumer(
+            subscription = MainSubscription(WorkflowExecutorRetryTopic),
+            entity = workflowName,
+            batchReceivingConfig = configBatch,
+        )
+        scope.startWorkflowExecutorRetry(
+            consumer,
+            loggedProducer,
+            config.retryHandlerConcurrency,
+            configBatch,
+        )
+      }
     }
 
-    // Executor-Events
-    with(TaskEventHandler.logger) {
-      val loggedProducer = LoggedInfiniticProducer(this, producer)
-      val consumer = consumerFactory.newConsumer(
-          subscription = MainSubscription(WorkflowExecutorEventTopic),
-          entity = workflowName,
-          batchReceivingConfig = configBatch,
-      )
-      scope.startWorkflowExecutorEvent(
-          consumer,
-          loggedProducer,
-          workflowName,
-          concurrency,
-          configBatch,
-      )
+    // Workflow Executor Event Handlers
+    if (config.eventHandlerConcurrency > 0) {
+      with(TaskEventHandler.logger) {
+        val loggedProducer = LoggedInfiniticProducer(this, producer)
+        val consumer = consumerFactory.newConsumer(
+            subscription = MainSubscription(WorkflowExecutorEventTopic),
+            entity = workflowName,
+            batchReceivingConfig = configBatch,
+        )
+        scope.startWorkflowExecutorEvent(
+            consumer,
+            loggedProducer,
+            workflowName,
+            config.eventHandlerConcurrency,
+            configBatch,
+        )
+      }
     }
   }
 

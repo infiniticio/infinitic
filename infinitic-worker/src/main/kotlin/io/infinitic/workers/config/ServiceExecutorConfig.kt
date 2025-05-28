@@ -136,7 +136,7 @@ sealed class ServiceExecutorConfig {
     fun build(): ServiceExecutorConfig {
       serviceName.checkServiceName()
       require(factory != null) { "${::factory.name} must not be null" }
-      concurrency.checkConcurrency()
+      concurrency.checkConcurrency(::concurrency.name)
       timeoutSeconds?.checkTimeout()
 
       return BuiltServiceExecutorConfig(
@@ -183,7 +183,7 @@ data class LoadedServiceExecutorConfig(
 
   init {
     `class`.checkClass()
-    concurrency.checkConcurrency()
+    concurrency.checkConcurrency(::concurrency.name)
     timeoutSeconds?.checkTimeout()
     retry?.check()
   }
@@ -221,9 +221,9 @@ internal fun String?.checkServiceName() {
   require(this.isNotBlank()) { "serviceName must not be blank" }
 }
 
-internal fun Int?.checkConcurrency() {
-  require(this != null) { "concurrency must not be null" }
-  require(this > 0) { "concurrency must be > 0, but was $this" }
+internal fun Int?.checkConcurrency(name: String) {
+  require(this != null) { "$name must not be null" }
+  require(this >= 0) { "$name must be >= 0, but was $this" }
 }
 
 internal fun Double.checkTimeout() {
