@@ -459,43 +459,65 @@ class InfiniticWorker(
     logServiceExecutorStart(config)
 
     val serviceName = config.serviceName
-    val concurrency = config.concurrency
     val batchConfig = config.batch
 
     // Create a producer with the batchConfig
     val producer = producerFactory.newProducer(batchConfig)
 
-    // Executor
-    with(TaskExecutor.logger) {
-      val loggedProducer = LoggedInfiniticProducer(this, producer)
-      val consumer = consumerFactory.newConsumer(
-          subscription = MainSubscription(ServiceExecutorTopic),
-          entity = serviceName,
-          batchReceivingConfig = batchConfig,
-      )
-      scope.startServiceExecutor(consumer, loggedProducer, serviceName, concurrency, batchConfig)
+    // Service Executors
+    if (config.concurrency > 0) {
+      with(TaskExecutor.logger) {
+        val loggedProducer = LoggedInfiniticProducer(this, producer)
+        val consumer = consumerFactory.newConsumer(
+            subscription = MainSubscription(ServiceExecutorTopic),
+            entity = serviceName,
+            batchReceivingConfig = batchConfig,
+        )
+        scope.startServiceExecutor(
+            consumer = consumer,
+            producer = loggedProducer,
+            serviceName = serviceName,
+            concurrency = config.concurrency,
+            batchConfig = batchConfig,
+        )
+      }
     }
 
-    // Executor-Retry
-    with(TaskRetryHandler.logger) {
-      val loggedProducer = LoggedInfiniticProducer(this, producer)
-      val consumer = consumerFactory.newConsumer(
-          subscription = MainSubscription(ServiceExecutorRetryTopic),
-          entity = serviceName,
-          batchReceivingConfig = batchConfig,
-      )
-      scope.startServiceExecutorRetry(consumer, loggedProducer, concurrency, batchConfig)
+    // Service Executor Retry Handlers
+    if (config.retryHandlerConcurrency > 0) {
+      with(TaskRetryHandler.logger) {
+        val loggedProducer = LoggedInfiniticProducer(this, producer)
+        val consumer = consumerFactory.newConsumer(
+            subscription = MainSubscription(ServiceExecutorRetryTopic),
+            entity = serviceName,
+            batchReceivingConfig = batchConfig,
+        )
+        scope.startServiceExecutorRetry(
+            consumer = consumer,
+            producer = loggedProducer,
+            concurrency = config.retryHandlerConcurrency,
+            batchConfig = batchConfig,
+        )
+      }
     }
 
     // Executor-Event
-    with(TaskEventHandler.logger) {
-      val loggedProducer = LoggedInfiniticProducer(this, producer)
-      val consumer = consumerFactory.newConsumer(
-          subscription = MainSubscription(ServiceExecutorEventTopic),
-          entity = serviceName,
-          batchReceivingConfig = batchConfig,
-      )
-      scope.startServiceExecutorEvent(consumer, loggedProducer, config)
+    if (config.eventHandlerConcurrency > 0) {
+      with(TaskEventHandler.logger) {
+        val loggedProducer = LoggedInfiniticProducer(this, producer)
+        val consumer = consumerFactory.newConsumer(
+            subscription = MainSubscription(ServiceExecutorEventTopic),
+            entity = serviceName,
+            batchReceivingConfig = batchConfig,
+        )
+        scope.startServiceExecutorEvent(
+            consumer = consumer,
+            producer = loggedProducer,
+            serviceName = serviceName,
+            concurrency = config.eventHandlerConcurrency,
+            batchConfig = batchConfig,
+        )
+      }
     }
   }
 
@@ -819,14 +841,15 @@ class InfiniticWorker(
   private fun CoroutineScope.startServiceExecutorEvent(
     consumer: TransportConsumer<out TransportMessage<ServiceExecutorEventMessage>>,
     producer: InfiniticProducer,
-    config: ServiceExecutorConfig
+    serviceName: String,
+    concurrency: Int,
+    batchConfig: BatchConfig?
   ) {
     val taskEventHandler = TaskEventHandler(producer)
-    val batchConfig = config.batch
 
     val cloudEventLogger = CloudEventLogger(
         ServiceExecutorEventTopic,
-        config.serviceName,
+        serviceName,
         cloudEventSourcePrefix,
         beautifyLogs,
     )
@@ -835,7 +858,7 @@ class InfiniticWorker(
       null -> startProcessingWithoutKey(
           logger = this@LoggerWithCounter,
           consumer = consumer,
-          concurrency = config.concurrency,
+          concurrency = concurrency,
           processor = { message, publishedAt ->
             coroutineScope {
               launch { cloudEventLogger.log(message, publishedAt) }
@@ -847,7 +870,7 @@ class InfiniticWorker(
       else -> startBatchProcessingWithoutKey(
           logger = this@LoggerWithCounter,
           consumer = consumer,
-          concurrency = config.concurrency,
+          concurrency = concurrency,
           batchConfig = batchConfig,
           processor = { messages ->
             coroutineScope {
