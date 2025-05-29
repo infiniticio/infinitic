@@ -119,6 +119,21 @@ sealed class WorkflowExecutorConfig {
         loadFromYamlString<LoadedWorkflowExecutorConfig>(*yamls)
   }
 
+  internal fun check() {
+    concurrency.checkConcurrency(::concurrency.name)
+    eventHandlerConcurrency.checkConcurrency(::eventHandlerConcurrency.name)
+    retryHandlerConcurrency.checkConcurrency(::retryHandlerConcurrency.name)
+    if (factories.isNotEmpty()) {
+      require(concurrency > 0) { "${::concurrency.name} must be greater than 0 when ${::factories.name} is defined" }
+    }
+    if (concurrency > 0) {
+      require(factories.isNotEmpty()) { "At least one factory must be defined when ${::concurrency.name} is greater than 0" }
+      factories.checkVersionUniqueness()
+      factories.checkInstanceUniqueness()
+      withTimeout?.getTimeoutSeconds()?.checkTimeout()
+    }
+  }
+
   /**
    * ServiceConfig builder
    */
@@ -130,8 +145,8 @@ sealed class WorkflowExecutorConfig {
     private var withRetry: WithRetry? = WithRetry.UNSET
     private var checkMode: WorkflowCheckMode? = null
     private var batch: BatchConfig? = null
-    private var eventHandlerConcurrency: Int = concurrency
-    private var retryHandlerConcurrency: Int = concurrency
+    private var eventHandlerConcurrency: Int = UNSET_CONCURRENCY
+    private var retryHandlerConcurrency: Int = UNSET_CONCURRENCY
 
     fun setWorkflowName(workflowName: String) =
         apply { this.workflowName = workflowName }
@@ -162,19 +177,10 @@ sealed class WorkflowExecutorConfig {
 
     fun build(): WorkflowExecutorConfig {
       workflowName.checkWorkflowName()
-      // check values are valid
-      concurrency.checkConcurrency(::concurrency.name)
-      eventHandlerConcurrency.checkConcurrency(::eventHandlerConcurrency.name)
-      retryHandlerConcurrency.checkConcurrency(::retryHandlerConcurrency.name)
+
+      // Set workflow context if needed
       if (concurrency > 0) {
-        // Needed if the workflow context is referenced within the properties of the workflow
         Workflow.setContext(emptyWorkflowContext)
-
-        require(factories.isNotEmpty()) { "At least one factory must be defined" }
-        factories.checkVersionUniqueness()
-        factories.checkInstanceUniqueness()
-
-        timeoutSeconds?.checkTimeout()
       }
 
       return BuiltWorkflowExecutorConfig(
@@ -185,9 +191,11 @@ sealed class WorkflowExecutorConfig {
           withRetry = withRetry,
           checkMode = checkMode,
           batch = batch,
-          eventHandlerConcurrency = eventHandlerConcurrency,
-          retryHandlerConcurrency = retryHandlerConcurrency,
-      )
+          eventHandlerConcurrency = eventHandlerConcurrency
+              .takeIf { it != UNSET_CONCURRENCY } ?: concurrency,
+          retryHandlerConcurrency = retryHandlerConcurrency
+              .takeIf { it != UNSET_CONCURRENCY } ?: concurrency,
+      ).also { it.check() }
     }
   }
 }
@@ -233,9 +241,6 @@ data class LoadedWorkflowExecutorConfig(
   }
 
   init {
-    concurrency.checkConcurrency(::concurrency.name)
-    eventHandlerConcurrency.checkConcurrency(::eventHandlerConcurrency.name)
-    retryHandlerConcurrency.checkConcurrency(::retryHandlerConcurrency.name)
 
     if (concurrency > 0) {
       // Needed if the workflow context is referenced within the properties of the workflow
@@ -254,12 +259,10 @@ data class LoadedWorkflowExecutorConfig(
         require(s.isNotEmpty()) { "'${::classes.name}[$index]' can not be empty" }
         allInstances.add(getInstance(s))
       }
-      factories.checkVersionUniqueness()
-      factories.checkInstanceUniqueness()
 
-      timeoutSeconds?.checkTimeout()
       retry?.check()
     }
+    this.check()
   }
 
   private fun getInstance(className: String): Workflow {
