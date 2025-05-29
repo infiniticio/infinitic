@@ -162,11 +162,10 @@ sealed class WorkflowExecutorConfig {
 
     fun build(): WorkflowExecutorConfig {
       workflowName.checkWorkflowName()
-
+      // check values are valid
       concurrency.checkConcurrency(::concurrency.name)
       eventHandlerConcurrency.checkConcurrency(::eventHandlerConcurrency.name)
       retryHandlerConcurrency.checkConcurrency(::retryHandlerConcurrency.name)
-
       if (concurrency > 0) {
         // Needed if the workflow context is referenced within the properties of the workflow
         Workflow.setContext(emptyWorkflowContext)

@@ -85,21 +85,21 @@ data class WorkflowStateEngineConfig(
     fun builder() = WorkflowStateEngineConfigBuilder()
 
     /**
-     * Create WorkflowStateEngineConfig from files in file system
+     * Create WorkflowStateEngineConfig from files in the file system
      */
     @JvmStatic
     fun fromYamlFile(vararg files: String): WorkflowStateEngineConfig =
         loadFromYamlFile(*files)
 
     /**
-     * Create WorkflowStateEngineConfig from files in resources directory
+     * Create WorkflowStateEngineConfig from files in the resources directory
      */
     @JvmStatic
     fun fromYamlResource(vararg resources: String): WorkflowStateEngineConfig =
         loadFromYamlResource(*resources)
 
     /**
-     * Create WorkflowStateEngineConfig from yaml strings
+     * Create WorkflowStateEngineConfig from YAML strings
      */
     @JvmStatic
     fun fromYamlString(vararg yamls: String): WorkflowStateEngineConfig =
@@ -131,19 +131,21 @@ data class WorkflowStateEngineConfig(
     fun setBatch(maxMessages: Int, maxSeconds: Double) =
         apply { this.batch = BatchConfig(maxMessages, maxSeconds) }
 
-    fun setTimerHandlerConcurrency(concurrency: Int) =
-        apply { this.timerHandlerConcurrency = concurrency }
+    fun setTimerHandlerConcurrency(timerHandlerConcurrency: Int) =
+        apply { this.timerHandlerConcurrency = timerHandlerConcurrency }
 
-    fun setCommandHandlerConcurrency(concurrency: Int) =
-        apply { this.commandHandlerConcurrency = concurrency }
+    fun setCommandHandlerConcurrency(commandHandlerConcurrency: Int) =
+        apply { this.commandHandlerConcurrency = commandHandlerConcurrency }
 
-    fun setEventHandlerConcurrency(concurrency: Int) =
-        apply { this.eventHandlerConcurrency = concurrency }
+    fun setEventHandlerConcurrency(eventHandlerConcurrency: Int) =
+        apply { this.eventHandlerConcurrency = eventHandlerConcurrency }
 
     fun build(): WorkflowStateEngineConfig {
       workflowName.checkWorkflowName()
+      // check values are valid
       concurrency.checkConcurrency(::concurrency.name)
       commandHandlerConcurrency.checkConcurrency(::commandHandlerConcurrency.name)
+      timerHandlerConcurrency.checkConcurrency(::timerHandlerConcurrency.name)
       eventHandlerConcurrency.checkConcurrency(::eventHandlerConcurrency.name)
 
       return WorkflowStateEngineConfig(

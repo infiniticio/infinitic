@@ -51,10 +51,25 @@ internal class ServiceExecutorConfigTests : StringSpec(
 
         config.shouldBeInstanceOf<ServiceExecutorConfig>()
         config.serviceName shouldBe serviceName
-        config.factory.invoke().shouldBeInstanceOf<ServiceAImpl>()
+        config.factory?.invoke().shouldBeInstanceOf<ServiceAImpl>()
         config.concurrency shouldBe 1
         config.withRetry shouldBe WithRetry.UNSET
         config.withTimeout shouldBe WithTimeout.UNSET
+      }
+
+      "Can create ServiceExecutorConfig through builder with concurrency" {
+        val config = shouldNotThrowAny {
+          ServiceExecutorConfig.builder()
+              .setServiceName(serviceName)
+              .setConcurrency(10)
+              .setFactory { ServiceAImpl() }
+              .build()
+        }
+
+        config.shouldBeInstanceOf<ServiceExecutorConfig>()
+        config.concurrency shouldBe 10
+        config.retryHandlerConcurrency shouldBe 10
+        config.eventHandlerConcurrency shouldBe 10
       }
 
       "Can create ServiceExecutorConfig through builder with all parameters" {
@@ -64,16 +79,52 @@ internal class ServiceExecutorConfigTests : StringSpec(
               .setServiceName(serviceName)
               .setFactory { ServiceAImpl() }
               .setConcurrency(10)
+              .setEventHandlerConcurrency(11)
+              .setRetryHandlerConcurrency(12)
               .setTimeoutSeconds(3.0)
               .withRetry(withRetry)
               .build()
         }
 
         config.shouldBeInstanceOf<ServiceExecutorConfig>()
-        config.factory.invoke().shouldBeInstanceOf<ServiceAImpl>()
+        config.factory?.invoke().shouldBeInstanceOf<ServiceAImpl>()
         config.concurrency shouldBe 10
+        config.eventHandlerConcurrency shouldBe 11
+        config.retryHandlerConcurrency shouldBe 12
         config.withRetry shouldBe withRetry
         config.withTimeout?.getTimeoutSeconds() shouldBe 3.0
+      }
+
+      "Can create ServiceExecutorConfig through builder with only retries" {
+        WithExponentialBackoffRetry()
+        val config = shouldNotThrowAny {
+          ServiceExecutorConfig.builder()
+              .setServiceName(serviceName)
+              .setConcurrency(0)
+              .setRetryHandlerConcurrency(10)
+              .build()
+        }
+
+        config.shouldBeInstanceOf<ServiceExecutorConfig>()
+        config.concurrency shouldBe 0
+        config.retryHandlerConcurrency shouldBe 10
+        config.eventHandlerConcurrency shouldBe 0
+      }
+
+      "Can create ServiceExecutorConfig through builder with only events" {
+        WithExponentialBackoffRetry()
+        val config = shouldNotThrowAny {
+          ServiceExecutorConfig.builder()
+              .setServiceName(serviceName)
+              .setConcurrency(0)
+              .setEventHandlerConcurrency(10)
+              .build()
+        }
+
+        config.shouldBeInstanceOf<ServiceExecutorConfig>()
+        config.concurrency shouldBe 0
+        config.retryHandlerConcurrency shouldBe 0
+        config.eventHandlerConcurrency shouldBe 10
       }
 
       "Concurrency must be positive when building ServiceExecutorConfig" {
@@ -91,7 +142,6 @@ internal class ServiceExecutorConfigTests : StringSpec(
         val e = shouldThrow<IllegalArgumentException> {
           ServiceExecutorConfig.builder()
               .setFactory { ServiceAImpl() }
-              .setConcurrency(1)
               .build()
         }
         e.message shouldContain "serviceName"
@@ -101,7 +151,6 @@ internal class ServiceExecutorConfigTests : StringSpec(
         val e = shouldThrow<IllegalArgumentException> {
           ServiceExecutorConfig.builder()
               .setServiceName(serviceName)
-              .setConcurrency(1)
               .build()
         }
         e.message shouldContain "factory"
@@ -111,15 +160,66 @@ internal class ServiceExecutorConfigTests : StringSpec(
         val config = shouldNotThrowAny {
           ServiceExecutorConfig.fromYamlString(
               """
-class: ${ServiceAImpl::class.java.name}
-          """,
+            class: ${ServiceAImpl::class.java.name}
+           """.trimIndent(),
           )
         }
 
-        config.factory.invoke().shouldBeInstanceOf<ServiceAImpl>()
+        config.factory?.invoke().shouldBeInstanceOf<ServiceAImpl>()
         config.concurrency shouldBe 1
         config.withRetry shouldBe WithRetry.UNSET
         config.withTimeout shouldBe WithTimeout.UNSET
+      }
+
+      "Can create ServiceExecutorConfig through YAML with only retries" {
+        val config = shouldNotThrowAny {
+          ServiceExecutorConfig.fromYamlString(
+              """
+                concurrency: 0
+                retryHandlerConcurrency: 1
+          """.trimIndent(),
+          )
+        }
+
+        config.factory shouldBe null
+        config.concurrency shouldBe 0
+        config.retryHandlerConcurrency shouldBe 1
+        config.eventHandlerConcurrency shouldBe 0
+      }
+
+      "Can create ServiceExecutorConfig through YAML with only events" {
+        val config = shouldNotThrowAny {
+          ServiceExecutorConfig.fromYamlString(
+              """
+                concurrency: 0
+                eventHandlerConcurrency: 1
+          """.trimIndent(),
+          )
+        }
+
+        config.factory shouldBe null
+        config.concurrency shouldBe 0
+        config.retryHandlerConcurrency shouldBe 0
+        config.eventHandlerConcurrency shouldBe 1
+      }
+
+      "Can create ServiceExecutorConfig through YAML with concurrency" {
+        WithExponentialBackoffRetry(minimumSeconds = 4.0)
+        val config = shouldNotThrowAny {
+          ServiceExecutorConfig.fromYamlString(
+              """
+              class: ${ServiceAImpl::class.java.name}
+              concurrency: 10
+          """.trimIndent(),
+          )
+        }
+
+        config.factory?.invoke().shouldBeInstanceOf<ServiceAImpl>()
+        config.concurrency shouldBe 10
+        config.retryHandlerConcurrency shouldBe 10
+        config.eventHandlerConcurrency shouldBe 10
+        config.withTimeout shouldBe WithTimeout.UNSET
+        config.withRetry shouldBe WithRetry.UNSET
       }
 
       "Can create ServiceExecutorConfig through YAML with all parameters" {
@@ -127,17 +227,21 @@ class: ${ServiceAImpl::class.java.name}
         val config = shouldNotThrowAny {
           ServiceExecutorConfig.fromYamlString(
               """
-class: ${ServiceAImpl::class.java.name}
-concurrency: 10
-timeoutSeconds: 3.0
-retry:
-  minimumSeconds: 4
-          """,
+              class: ${ServiceAImpl::class.java.name}
+              concurrency: 10
+              retryHandlerConcurrency: 11
+              eventHandlerConcurrency: 12
+              timeoutSeconds: 3.0
+              retry:
+                minimumSeconds: 4
+          """.trimIndent(),
           )
         }
 
-        config.factory.invoke().shouldBeInstanceOf<ServiceAImpl>()
+        config.factory?.invoke().shouldBeInstanceOf<ServiceAImpl>()
         config.concurrency shouldBe 10
+        config.retryHandlerConcurrency shouldBe 11
+        config.eventHandlerConcurrency shouldBe 12
         config.withTimeout?.getTimeoutSeconds() shouldBe 3.0
         config.withRetry shouldBe withRetry
       }
@@ -146,8 +250,8 @@ retry:
         val e = shouldThrow<ConfigException> {
           ServiceExecutorConfig.fromYamlString(
               """
-concurrency: 10
-          """,
+              concurrency: 10
+            """.trimIndent(),
           )
         }
 
@@ -158,11 +262,11 @@ concurrency: 10
         val e = shouldThrow<ConfigException> {
           ServiceExecutorConfig.fromYamlString(
               """
-class: ${ServiceAImpl::class.java.name}
-retry:
-  ignoredExceptions:
-    - foobar
-""",
+            class: ${ServiceAImpl::class.java.name}
+            retry:
+              ignoredExceptions:
+                - foobar
+            """.trimIndent(),
           )
         }
         e.message shouldContain "Class 'foobar' not found"
@@ -172,11 +276,11 @@ retry:
         val e = shouldThrow<ConfigException> {
           ServiceExecutorConfig.fromYamlString(
               """
-class: ${ServiceAImpl::class.java.name}
-retry:
-  ignoredExceptions:
-    - ${ServiceA::class.java.name}
-""",
+            class: ${ServiceAImpl::class.java.name}
+            retry:
+              ignoredExceptions:
+                - ${ServiceA::class.java.name}
+            """.trimIndent(),
           )
         }
         e.message shouldContain "must be an Exception"
@@ -186,9 +290,9 @@ retry:
         val e = shouldThrow<ConfigException> {
           ServiceExecutorConfig.fromYamlString(
               """
-class: ${ServiceAImpl::class.java.name}
-timeoutSeconds: 0
-""",
+            class: ${ServiceAImpl::class.java.name}
+            timeoutSeconds: 0
+            """.trimIndent(),
           )
         }
         e.message shouldContain "timeoutSeconds must be > 0"
@@ -198,8 +302,8 @@ timeoutSeconds: 0
         val e = shouldThrow<ConfigException> {
           ServiceExecutorConfig.fromYamlString(
               """
-class: ${ServiceWithInvocationTargetException::class.java.name}
-          """,
+            class: ${ServiceWithInvocationTargetException::class.java.name}
+            """.trimIndent(),
           )
         }
         e.message shouldContain
@@ -210,8 +314,8 @@ class: ${ServiceWithInvocationTargetException::class.java.name}
         val e = shouldThrow<ConfigException> {
           ServiceExecutorConfig.fromYamlString(
               """
-class: ${ServiceWithExceptionInInitializerError::class.java.name}
-          """,
+            class: ${ServiceWithExceptionInInitializerError::class.java.name}
+            """.trimIndent(),
           )
         }
         e.message shouldContain "ExceptionInInitializerError"
@@ -221,8 +325,8 @@ class: ${ServiceWithExceptionInInitializerError::class.java.name}
         val e = shouldThrow<ConfigException> {
           ServiceExecutorConfig.fromYamlString(
               """
-class: io.infinitic.workers.samples.UnknownService
-          """,
+            class: io.infinitic.workers.samples.UnknownService
+            """.trimIndent(),
           )
         }
         e.message shouldContain "Class 'io.infinitic.workers.samples.UnknownService' not found"

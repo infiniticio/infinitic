@@ -49,9 +49,11 @@ data class ServiceConfig(
 
     executor?.let {
       if (it is LoadedServiceExecutorConfig) it.setServiceName(name)
-      val instance = it.factory()
-      require(instance::class.java.isImplementationOf(name)) {
-        error("Class '${instance::class.java.name}' must be an implementation of Service '$name', but is not.")
+      it.factory?.let { factory ->
+        val instance = factory()
+        require(instance::class.java.isImplementationOf(name)) {
+          error("Class '${instance::class.qualifiedName}' must be an implementation of Service '$name', but is not.")
+        }
       }
     }
 

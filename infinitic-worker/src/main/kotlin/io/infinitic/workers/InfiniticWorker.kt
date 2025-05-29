@@ -82,7 +82,6 @@ import io.infinitic.workers.config.WorkflowConfig
 import io.infinitic.workers.config.WorkflowExecutorConfig
 import io.infinitic.workers.config.WorkflowStateEngineConfig
 import io.infinitic.workers.config.WorkflowTagEngineConfig
-import io.infinitic.workers.config.initBatchProcessorMethods
 import io.infinitic.workers.registry.ExecutorRegistry
 import io.infinitic.workflows.Workflow
 import io.infinitic.workflows.engine.WorkflowStateCmdHandler
@@ -177,7 +176,7 @@ class InfiniticWorker(
     }
   }
 
-  private val registry = ExecutorRegistry(config.services, config.workflows)
+  internal val registry = ExecutorRegistry(config.services, config.workflows)
 
   private fun getService(serviceName: String): ServiceConfig? =
       config.services.firstOrNull { it.name == serviceName }
@@ -314,13 +313,7 @@ class InfiniticWorker(
               workflowConfig.executor?.let { startWorkflowExecutor(it) }
             }
 
-            config.eventListener?.let {
-              logEventListenerStart(it)
-
-              with(LoggerWithCounter(logger)) {
-                consumerFactory.startCloudEventListener(resources, it, cloudEventSourcePrefix)
-              }
-            }
+            config.eventListener?.let { startEventListener(it) }
 
             val workerName = producerFactory.getName()
 
@@ -357,12 +350,15 @@ class InfiniticWorker(
   private fun logServiceExecutorStart(config: ServiceExecutorConfig) {
     logger.info {
       "* Service Executor".padEnd(25) + ": (" +
-          "concurrency: ${config.concurrency}, " +
-          "class: ${config.factory()::class.java.name}, " +
-          "timeout: ${config.withTimeout?.toLog()}, " +
-          "withRetry: ${config.withRetry ?: NONE}, " +
-          "batch: ${config.batch?.notNullPropertiesToString() ?: NONE})"
-
+          if (config.concurrency > 0) {
+            "concurrency: ${config.concurrency}, " +
+                "class: ${config.factory!!()::class.java.name}, " +
+                "timeout: ${config.withTimeout?.toLog()}, " +
+                "withRetry: ${config.withRetry ?: NONE}, " +
+                "batch: ${config.batch?.notNullPropertiesToString() ?: NONE}"
+          } else {
+            ""
+          } + ")"
     }
   }
 
@@ -416,10 +412,18 @@ class InfiniticWorker(
 
   private val sendingMessageToDLQ = { "Unable to process message, sending to Dead Letter Queue" }
 
+  internal fun startEventListener(config: EventListenerConfig) {
+    logEventListenerStart(config)
+
+    with(LoggerWithCounter(logger)) {
+      scope.startCloudEventListener(consumerFactory, resources, config, cloudEventSourcePrefix)
+    }
+  }
+
   /**
    * Starts the Service Tag Engine with the given configuration.
    */
-  private suspend fun startServiceTagEngine(config: ServiceTagEngineConfig) {
+  internal suspend fun startServiceTagEngine(config: ServiceTagEngineConfig) {
     // Log Service Tag Engine configuration
     logServiceTagEngineStart(config)
 
@@ -447,7 +451,7 @@ class InfiniticWorker(
   /**
    * Starts the Service Executor with the given configuration.
    */
-  private suspend fun startServiceExecutor(config: ServiceExecutorConfig) {
+  internal suspend fun startServiceExecutor(config: ServiceExecutorConfig) {
     // init batch methods for the current factory
     config.initBatchProcessorMethods()
 
@@ -520,7 +524,7 @@ class InfiniticWorker(
   /**
    * Starts the Workflow Tag Engine with the given configuration.
    */
-  private suspend fun startWorkflowTagEngine(config: WorkflowTagEngineConfig) {
+  internal suspend fun startWorkflowTagEngine(config: WorkflowTagEngineConfig) {
     if (config.concurrency > 0) {
       // Log Workflow State Engine configuration
       logWorkflowTagEngineStart(config)
@@ -553,7 +557,7 @@ class InfiniticWorker(
   /**
    * Starts the Workflow State Engine with the given configuration.
    */
-  private suspend fun startWorkflowStateEngine(config: WorkflowStateEngineConfig) {
+  internal suspend fun startWorkflowStateEngine(config: WorkflowStateEngineConfig) {
     // Log Workflow State Engine configuration
     logWorkflowStateEngineStart(config)
 
@@ -642,7 +646,7 @@ class InfiniticWorker(
   /**
    * Starts the Workflow Executor with the given configuration.
    */
-  private suspend fun startWorkflowExecutor(config: WorkflowExecutorConfig) {
+  internal suspend fun startWorkflowExecutor(config: WorkflowExecutorConfig) {
     // Log Workflow Executor configuration
     logWorkflowExecutorStart(config)
 
@@ -709,7 +713,7 @@ class InfiniticWorker(
 
   // TASK-TAG
   context(LoggerWithCounter)
-  private fun CoroutineScope.startServiceTagEngine(
+  internal fun CoroutineScope.startServiceTagEngine(
     consumer: TransportConsumer<out TransportMessage<ServiceTagMessage>>,
     producer: InfiniticProducer,
     storage: TaskTagStorage,
@@ -741,7 +745,7 @@ class InfiniticWorker(
 
   // TASK-EXECUTOR
   context(LoggerWithCounter)
-  private fun CoroutineScope.startServiceExecutor(
+  internal fun CoroutineScope.startServiceExecutor(
     consumer: TransportConsumer<out TransportMessage<ServiceExecutorMessage>>,
     producer: InfiniticProducer,
     serviceName: String,
@@ -798,7 +802,7 @@ class InfiniticWorker(
 
   // TASK-EXECUTOR-RETRY
   context(LoggerWithCounter)
-  private fun CoroutineScope.startServiceExecutorRetry(
+  internal fun CoroutineScope.startServiceExecutorRetry(
     consumer: TransportConsumer<out TransportMessage<ServiceExecutorMessage>>,
     producer: InfiniticProducer,
     concurrency: Int,
@@ -834,7 +838,7 @@ class InfiniticWorker(
 
   // TASK-EVENTS
   context(LoggerWithCounter)
-  private fun CoroutineScope.startServiceExecutorEvent(
+  internal fun CoroutineScope.startServiceExecutorEvent(
     consumer: TransportConsumer<out TransportMessage<ServiceExecutorEventMessage>>,
     producer: InfiniticProducer,
     serviceName: String,
@@ -882,7 +886,7 @@ class InfiniticWorker(
 
   // WORKFLOW-TAG
   context(LoggerWithCounter)
-  private fun CoroutineScope.startWorkflowTagEngine(
+  internal fun CoroutineScope.startWorkflowTagEngine(
     consumer: TransportConsumer<out TransportMessage<WorkflowTagEngineMessage>>,
     producer: InfiniticProducer,
     storage: WorkflowTagStorage,
@@ -929,7 +933,7 @@ class InfiniticWorker(
 
   // WORKFLOW-STATE-CMD
   context(LoggerWithCounter)
-  private fun CoroutineScope.startWorkflowStateCmd(
+  internal fun CoroutineScope.startWorkflowStateCmd(
     consumer: TransportConsumer<out TransportMessage<WorkflowStateCmdMessage>>,
     producer: InfiniticProducer,
     workflowName: String,
@@ -977,7 +981,7 @@ class InfiniticWorker(
 
   // WORKFLOW-STATE-ENGINE
   context(LoggerWithCounter)
-  private fun CoroutineScope.startWorkflowStateEngine(
+  internal fun CoroutineScope.startWorkflowStateEngine(
     consumer: TransportConsumer<out TransportMessage<WorkflowStateEngineMessage>>,
     producer: InfiniticProducer,
     storage: WorkflowStateStorage,
@@ -1026,7 +1030,7 @@ class InfiniticWorker(
 
   // WORKFLOW-STATE-TIMERS
   context(LoggerWithCounter)
-  private fun CoroutineScope.startWorkflowStateTimer(
+  internal fun CoroutineScope.startWorkflowStateTimer(
     consumer: TransportConsumer<out TransportMessage<WorkflowStateEngineMessage>>,
     producer: InfiniticProducer,
     concurrency: Int,
@@ -1060,7 +1064,7 @@ class InfiniticWorker(
 
   // WORKFLOW-STATE-EVENTS
   context(LoggerWithCounter)
-  private fun CoroutineScope.startWorkflowStateEvent(
+  internal fun CoroutineScope.startWorkflowStateEvent(
     consumer: TransportConsumer<out TransportMessage<WorkflowStateEventMessage>>,
     producer: InfiniticProducer,
     workflowName: String,
@@ -1108,7 +1112,7 @@ class InfiniticWorker(
 
   // WORKFLOW-EXECUTOR
   context(LoggerWithCounter)
-  private fun CoroutineScope.startWorkflowExecutor(
+  internal fun CoroutineScope.startWorkflowExecutor(
     consumer: TransportConsumer<out TransportMessage<ServiceExecutorMessage>>,
     producer: InfiniticProducer,
     workflowName: String,
@@ -1167,7 +1171,7 @@ class InfiniticWorker(
 
   // WORKFLOW-EXECUTOR-RETRY
   context(LoggerWithCounter)
-  private fun CoroutineScope.startWorkflowExecutorRetry(
+  internal fun CoroutineScope.startWorkflowExecutorRetry(
     consumer: TransportConsumer<out TransportMessage<ServiceExecutorMessage>>,
     producer: InfiniticProducer,
     concurrency: Int,
@@ -1201,7 +1205,7 @@ class InfiniticWorker(
 
   // WORKFLOW-EXECUTOR-EVENT
   context(LoggerWithCounter)
-  private fun CoroutineScope.startWorkflowExecutorEvent(
+  internal fun CoroutineScope.startWorkflowExecutorEvent(
     consumer: TransportConsumer<out TransportMessage<ServiceExecutorEventMessage>>,
     producer: InfiniticProducer,
     workflowName: String,
