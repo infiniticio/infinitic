@@ -313,6 +313,7 @@ class InfiniticWorker(
               workflowConfig.executor?.let { startWorkflowExecutor(it) }
             }
 
+            // Start Event Listener
             config.eventListener?.let { startEventListener(it) }
 
             val workerName = producerFactory.getName()
@@ -338,75 +339,110 @@ class InfiniticWorker(
 
   private fun logEventListenerStart(config: EventListenerConfig) {
     logger.info {
-      "* Service Event Listener".padEnd(25) + ": (" +
-          "concurrency: ${config.concurrency}, " +
-          "class: ${config.listener::class.java.name}" +
-          (config.subscriptionName?.let { ", subscription: $it" } ?: "") +
-          "batch: ${config.batchConfig.notNullPropertiesToString()})" +
-          ")"
+      buildString {
+        append("* Event Listener".padEnd(25))
+        append(": (")
+        append("concurrency: ${config.concurrency}, ")
+        append("class: ${config.listener::class.java.name}")
+        if (config.subscriptionName != null) append(", subscription: ${config.subscriptionName}")
+        append(", batch: ${config.batchConfig.notNullPropertiesToString()}")
+        append(")")
+      }
     }
   }
 
   private fun logServiceExecutorStart(config: ServiceExecutorConfig) {
     logger.info {
-      "* Service Executor".padEnd(25) + ": (" +
-          if (config.concurrency > 0) {
-            "concurrency: ${config.concurrency}, " +
-                "class: ${config.factory!!()::class.java.name}, " +
-                "timeout: ${config.withTimeout?.toLog()}, " +
-                "withRetry: ${config.withRetry ?: NONE}, " +
-                "batch: ${config.batch?.notNullPropertiesToString() ?: NONE}"
-          } else {
-            ""
-          } + ")"
+      buildString {
+        append("* Service Executor".padEnd(25))
+        append(": (concurrency: ${config.concurrency}")
+        config.factory?.let { append(", class: ${it()::class.java.name}") }
+        config.withTimeout?.let { append(", timeout: ${it.toLog()}") }
+        config.withRetry?.let { append(", withRetry: $it") }
+        config.batch?.let { append(", batch: ${it.notNullPropertiesToString()}") }
+        if (config.retryHandlerConcurrency != config.concurrency) {
+          append(", retryHandlerConcurrency: ${config.retryHandlerConcurrency}")
+        }
+        if (config.eventHandlerConcurrency != config.concurrency) {
+          append(", eventHandlerConcurrency: ${config.eventHandlerConcurrency}")
+        }
+        append(")")
+      }
     }
   }
 
   private fun logServiceTagEngineStart(config: ServiceTagEngineConfig) {
     logger.info {
-      "* Service Tag Engine".padEnd(25) + ": (" +
-          "concurrency: ${config.concurrency}, " +
-          "storage: ${config.storage?.type}, " +
-          "cache: ${config.storage?.cache?.type ?: NONE}, " +
-          "compression: ${config.storage?.compression ?: NONE})"
+      buildString {
+        append("* Service Tag Engine".padEnd(25))
+        append(": (concurrency: ${config.concurrency}")
+        append(", storage: ${config.storage?.type}")
+        config.storage?.cache?.let { append(", cache: ${it.type}") }
+        config.storage?.compression?.let { append(", compression: ${it}") }
+        append(")")
+      }
     }
   }
 
   private fun logWorkflowExecutorStart(config: WorkflowExecutorConfig) {
     Workflow.setContext(emptyWorkflowContext)
     logger.info {
-      "* Workflow Executor".padEnd(25) + ": (" +
-          "concurrency: ${config.concurrency}, " +
-          "classes: ${
-            config.factories.map { it.invoke()::class.java }.joinToString { it.name }
-          }, " +
-          "timeout: ${config.withTimeout?.toLog()}, " +
-          "withRetry: ${config.withRetry ?: NONE}, " +
-          "batch: ${config.batch?.notNullPropertiesToString() ?: NONE}" +
-          (config.checkMode?.let { ", checkMode: $it" } ?: "") +
-          ")"
+      buildString {
+        append("* Workflow Executor".padEnd(25))
+        append(": (concurrency: ${config.concurrency}")
+        config.factories.forEachIndexed { index, factory ->
+          if (index == 0) append(", classes: ") else append(", ")
+          append(factory.invoke()::class.simpleName)
+        }
+        config.withTimeout?.let { append(", timeout: ${it.toLog()}") }
+        config.withRetry?.let { append(", withRetry: $it") }
+        config.batch?.let { append(", batch: ${it.notNullPropertiesToString()}") }
+        if (config.checkMode != null) append(", checkMode: ${config.checkMode}")
+        if (config.retryHandlerConcurrency != config.concurrency) {
+          append(", retryHandlerConcurrency: ${config.retryHandlerConcurrency}")
+        }
+        if (config.eventHandlerConcurrency != config.concurrency) {
+          append(", eventHandlerConcurrency: ${config.eventHandlerConcurrency}")
+        }
+        append(")")
+      }
     }
   }
 
   private fun logWorkflowTagEngineStart(config: WorkflowTagEngineConfig) {
     logger.info {
-      "* Workflow Tag Engine".padEnd(25) + ": (" +
-          "concurrency: ${config.concurrency}, " +
-          "storage: ${config.storage?.type}, " +
-          "cache: ${config.storage?.cache?.type ?: NONE}, " +
-          "compression: ${config.storage?.compression ?: NONE}, " +
-          "batch: ${config.batch?.notNullPropertiesToString() ?: NONE})"
+      buildString {
+        append("* Workflow Tag Engine".padEnd(25))
+        append(": (concurrency: ${config.concurrency}")
+        append(", storage: ${config.storage?.type}")
+        config.storage?.cache?.let { append(", cache: ${it.type}") }
+        config.storage?.compression?.let { append(", compression: $it") }
+        config.batch?.let { append(", batch: ${it.notNullPropertiesToString()}") }
+        append(")")
+      }
     }
   }
 
   private fun logWorkflowStateEngineStart(config: WorkflowStateEngineConfig) {
     logger.info {
-      "* Workflow State Engine".padEnd(25) + ": (" +
-          "concurrency: ${config.concurrency}, " +
-          "storage: ${config.storage?.type}, " +
-          "cache: ${config.storage?.cache?.type ?: NONE}, " +
-          "compression: ${config.storage?.compression ?: NONE}, " +
-          "batch: ${config.batch?.notNullPropertiesToString() ?: NONE})"
+      buildString {
+        append("* Workflow State Engine".padEnd(25))
+        append(": (concurrency: ${config.concurrency}")
+        append(", storage: ${config.storage?.type}")
+        config.storage?.cache?.let { append(", cache: ${it.type}") }
+        config.storage?.compression?.let { append(", compression: $it") }
+        config.batch?.let { append(", batch: ${it.notNullPropertiesToString()}") }
+        if (config.commandHandlerConcurrency != config.concurrency) {
+          append(", commandHandlerConcurrency: ${config.commandHandlerConcurrency}")
+        }
+        if (config.timerHandlerConcurrency != config.concurrency) {
+          append(", timerHandlerConcurrency: ${config.timerHandlerConcurrency}")
+        }
+        if (config.eventHandlerConcurrency != config.concurrency) {
+          append(", eventHandlerConcurrency: ${config.eventHandlerConcurrency}")
+        }
+        append(")")
+      }
     }
   }
 

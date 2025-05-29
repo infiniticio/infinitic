@@ -115,9 +115,9 @@ data class WorkflowStateEngineConfig(
     private var concurrency = default.concurrency
     private var storage = default.storage
     private var batch = default.batch
-    private var timerHandlerConcurrency = default.timerHandlerConcurrency
-    private var commandHandlerConcurrency = default.commandHandlerConcurrency
-    private var eventHandlerConcurrency = default.eventHandlerConcurrency
+    private var timerHandlerConcurrency = UNSET_CONCURRENCY
+    private var commandHandlerConcurrency = UNSET_CONCURRENCY
+    private var eventHandlerConcurrency = UNSET_CONCURRENCY
 
     fun setWorkflowName(workflowName: String) =
         apply { this.workflowName = workflowName }
@@ -142,20 +142,18 @@ data class WorkflowStateEngineConfig(
 
     fun build(): WorkflowStateEngineConfig {
       workflowName.checkWorkflowName()
-      // check values are valid
-      concurrency.checkConcurrency(::concurrency.name)
-      commandHandlerConcurrency.checkConcurrency(::commandHandlerConcurrency.name)
-      timerHandlerConcurrency.checkConcurrency(::timerHandlerConcurrency.name)
-      eventHandlerConcurrency.checkConcurrency(::eventHandlerConcurrency.name)
 
       return WorkflowStateEngineConfig(
           workflowName = workflowName,
           concurrency = concurrency,
           storage = storage,
           batch = batch,
-          timerHandlerConcurrency = timerHandlerConcurrency,
-          commandHandlerConcurrency = commandHandlerConcurrency,
-          eventHandlerConcurrency = eventHandlerConcurrency,
+          timerHandlerConcurrency = timerHandlerConcurrency
+              .takeIf { it != UNSET_CONCURRENCY } ?: concurrency,
+          commandHandlerConcurrency = commandHandlerConcurrency
+              .takeIf { it != UNSET_CONCURRENCY } ?: concurrency,
+          eventHandlerConcurrency = eventHandlerConcurrency
+              .takeIf { it != UNSET_CONCURRENCY } ?: concurrency,
       )
     }
   }

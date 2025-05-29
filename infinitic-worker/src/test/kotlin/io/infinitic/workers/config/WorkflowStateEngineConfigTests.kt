@@ -47,9 +47,12 @@ internal class WorkflowStateEngineConfigTests : StringSpec(
         config.shouldBeInstanceOf<WorkflowStateEngineConfig>()
         config.storage shouldBe null
         config.concurrency shouldBe 1
+        config.commandHandlerConcurrency shouldBe 1
+        config.eventHandlerConcurrency shouldBe 1
+        config.timerHandlerConcurrency shouldBe 1
       }
 
-      "Can create WorkflowStateEngineConfig through builder with all parameters" {
+      "Can create WorkflowStateEngineConfig through builder with concurrency" {
         val config = shouldNotThrowAny {
           WorkflowStateEngineConfig.builder()
               .setWorkflowName(workflowName)
@@ -60,6 +63,29 @@ internal class WorkflowStateEngineConfigTests : StringSpec(
 
         config.shouldBeInstanceOf<WorkflowStateEngineConfig>()
         config.concurrency shouldBe 10
+        config.commandHandlerConcurrency shouldBe 10
+        config.eventHandlerConcurrency shouldBe 10
+        config.timerHandlerConcurrency shouldBe 10
+        config.storage shouldBe storage
+      }
+
+      "Can create WorkflowStateEngineConfig through builder with all parameters" {
+        val config = shouldNotThrowAny {
+          WorkflowStateEngineConfig.builder()
+              .setWorkflowName(workflowName)
+              .setConcurrency(10)
+              .setCommandHandlerConcurrency(11)
+              .setEventHandlerConcurrency(12)
+              .setTimerHandlerConcurrency(13)
+              .setStorage(storage)
+              .build()
+        }
+
+        config.shouldBeInstanceOf<WorkflowStateEngineConfig>()
+        config.concurrency shouldBe 10
+        config.commandHandlerConcurrency shouldBe 11
+        config.eventHandlerConcurrency shouldBe 12
+        config.timerHandlerConcurrency shouldBe 13
         config.storage shouldBe storage
       }
 
@@ -71,28 +97,78 @@ internal class WorkflowStateEngineConfigTests : StringSpec(
         e.message shouldContain "workflowName"
       }
 
-      "Concurrency must be positive when building WorkflowStateEngineConfig" {
-        val e = shouldThrow<IllegalArgumentException> {
-          WorkflowStateEngineConfig.builder()
-              .setWorkflowName(workflowName)
-              .setConcurrency(0)
-              .build()
-        }
-        e.message shouldContain "concurrency"
-      }
-
       "Can create WorkflowStateEngineConfig through YAML without workflowName" {
         val config = shouldNotThrowAny {
           WorkflowStateEngineConfig.fromYamlString(
               """
-concurrency: 10
-          """,
+            concurrency: 10
+          """.trimIndent(),
           )
         }
 
         config.shouldBeInstanceOf<WorkflowStateEngineConfig>()
         config.workflowName.isBlank() shouldBe true
         config.concurrency shouldBe 10
+        config.commandHandlerConcurrency shouldBe 10
+        config.eventHandlerConcurrency shouldBe 10
+        config.timerHandlerConcurrency shouldBe 10
+        config.storage shouldBe null
+      }
+
+      "Can create WorkflowStateEngineConfig through YAML without commands only" {
+        val config = shouldNotThrowAny {
+          WorkflowStateEngineConfig.fromYamlString(
+              """
+            concurrency: 0
+            commandHandlerConcurrency: 10
+          """.trimIndent(),
+          )
+        }
+
+        config.shouldBeInstanceOf<WorkflowStateEngineConfig>()
+        config.workflowName.isBlank() shouldBe true
+        config.concurrency shouldBe 0
+        config.commandHandlerConcurrency shouldBe 10
+        config.eventHandlerConcurrency shouldBe 0
+        config.timerHandlerConcurrency shouldBe 0
+        config.storage shouldBe null
+      }
+
+      "Can create WorkflowStateEngineConfig through YAML without events only" {
+        val config = shouldNotThrowAny {
+          WorkflowStateEngineConfig.fromYamlString(
+              """
+            concurrency: 0
+            eventHandlerConcurrency: 10
+          """.trimIndent(),
+          )
+        }
+
+        config.shouldBeInstanceOf<WorkflowStateEngineConfig>()
+        config.workflowName.isBlank() shouldBe true
+        config.concurrency shouldBe 0
+        config.commandHandlerConcurrency shouldBe 0
+        config.eventHandlerConcurrency shouldBe 10
+        config.timerHandlerConcurrency shouldBe 0
+        config.storage shouldBe null
+      }
+
+      "Can create WorkflowStateEngineConfig through YAML without retries only" {
+        val config = shouldNotThrowAny {
+          WorkflowStateEngineConfig.fromYamlString(
+              """
+            concurrency: 0
+            timerHandlerConcurrency: 10
+          """.trimIndent(),
+          )
+        }
+
+        config.shouldBeInstanceOf<WorkflowStateEngineConfig>()
+        config.workflowName.isBlank() shouldBe true
+        config.concurrency shouldBe 0
+        config.commandHandlerConcurrency shouldBe 0
+        config.eventHandlerConcurrency shouldBe 0
+        config.timerHandlerConcurrency shouldBe 10
         config.storage shouldBe null
       }
 
@@ -100,10 +176,10 @@ concurrency: 10
         val config = shouldNotThrowAny {
           WorkflowStateEngineConfig.fromYamlString(
               """
-concurrency: 10
-storage:
-  inMemory:
-          """,
+            concurrency: 10
+            storage:
+              inMemory:
+          """.trimEnd(),
           )
         }
 
