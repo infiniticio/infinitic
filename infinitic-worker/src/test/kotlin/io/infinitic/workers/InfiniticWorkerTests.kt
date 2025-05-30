@@ -412,7 +412,21 @@ workflows:
         }
       }
 
-      "startAsync() should not block" {
+      "startAsync() with Event Listener should not block" {
+        val worker = InfiniticWorker.builder()
+            .setTransport(transport)
+            .setEventListener(eventListener)
+            .build()
+        var flag = false
+        later {
+          flag = true
+        }
+        worker.startAsync()
+        flag shouldBe false
+        worker.close()
+      }
+
+      "startAsync() with Service Executor should not block" {
         val worker = InfiniticWorker.builder()
             .setTransport(transport)
             .addServiceExecutor(serviceExecutor)
@@ -426,20 +440,145 @@ workflows:
         worker.close()
       }
 
-      "start() should block, and be released when closed" {
+      "startAsync() with Service Tag Engine should not block" {
+        val worker = InfiniticWorker.builder()
+            .setTransport(transport)
+            .addServiceTagEngine(serviceTagEngine)
+            .build()
+        var flag = false
+        later {
+          flag = true
+        }
+        worker.startAsync()
+        flag shouldBe false
+        worker.close()
+      }
+
+      "startAsync() with Workflow Tag Engine should not block" {
+        val worker = InfiniticWorker.builder()
+            .setTransport(transport)
+            .addWorkflowTagEngine(workflowTagEngine)
+            .build()
+        var flag = false
+        later {
+          flag = true
+        }
+        worker.startAsync()
+        flag shouldBe false
+        worker.close()
+      }
+
+      "startAsync() with Workflow Executor should not block" {
+        val worker = InfiniticWorker.builder()
+            .setTransport(transport)
+            .addWorkflowExecutor(workflowExecutor)
+            .build()
+        var flag = false
+        later {
+          flag = true
+        }
+        worker.startAsync()
+        flag shouldBe false
+        worker.close()
+      }
+
+      "startAsync() with Workflow State Engine should not block" {
+        val worker = InfiniticWorker.builder()
+            .setTransport(transport)
+            .addWorkflowStateEngine(workflowStateEngine)
+            .build()
+        var flag = false
+        later {
+          flag = true
+        }
+        worker.startAsync()
+        flag shouldBe false
+        worker.close()
+      }
+
+      "start() with Event Listener should block, and be released when closed" {
         val worker = InfiniticWorker.builder()
             .setTransport(transport)
             .setEventListener(eventListener)
+            .build()
+
+        var flag = false
+        later(100) {
+          flag = true
+          worker.close()
+        }
+        worker.start()
+        flag shouldBe true
+      }
+
+      "start() with Service Executor should block, and be released when closed" {
+        val worker = InfiniticWorker.builder()
+            .setTransport(transport)
             .addServiceExecutor(serviceExecutor)
+            .build()
+
+        var flag = false
+        later(100) {
+          flag = true
+          worker.close()
+        }
+        worker.start()
+        flag shouldBe true
+      }
+
+      "start() with Service Tag Engine should block, and be released when closed" {
+        val worker = InfiniticWorker.builder()
+            .setTransport(transport)
             .addServiceTagEngine(serviceTagEngine)
+            .build()
+
+        var flag = false
+        later(100) {
+          flag = true
+          worker.close()
+        }
+        worker.start()
+        flag shouldBe true
+      }
+
+      "start() with Workflow Tag Engine should block, and be released when closed" {
+        val worker = InfiniticWorker.builder()
+            .setTransport(transport)
             .addWorkflowTagEngine(workflowTagEngine)
+            .build()
+
+        var flag = false
+        later(100) {
+          flag = true
+          worker.close()
+        }
+        worker.start()
+        flag shouldBe true
+      }
+
+      "start() with Workflow Executor should block, and be released when closed" {
+        val worker = InfiniticWorker.builder()
+            .setTransport(transport)
             .addWorkflowExecutor(workflowExecutor)
+            .build()
+
+        var flag = false
+        later(100) {
+          flag = true
+          worker.close()
+        }
+        worker.start()
+        flag shouldBe true
+      }
+
+      "start() with Workflow State Engine should block, and be released when closed" {
+        val worker = InfiniticWorker.builder()
+            .setTransport(transport)
             .addWorkflowStateEngine(workflowStateEngine)
             .build()
 
         var flag = false
-        later(1000) {
-          println("Setting flag to true")
+        later(100) {
           flag = true
           worker.close()
         }

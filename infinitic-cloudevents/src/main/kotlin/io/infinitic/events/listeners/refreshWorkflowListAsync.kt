@@ -22,19 +22,15 @@
  */
 package io.infinitic.events.listeners
 
-import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.common.transport.interfaces.InfiniticResources
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.events.config.EventListenerConfig
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
-context(CoroutineScope, KLogger)
-internal fun InfiniticResources.refreshWorkflowListAsync(
+internal suspend fun InfiniticResources.refreshWorkflowListAsync(
   config: EventListenerConfig,
   start: suspend (WorkflowName) -> Unit
-) = launch {
+) {
   val processedWorkflows = mutableSetOf<String>()
 
   while (true) {

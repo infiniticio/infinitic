@@ -299,23 +299,23 @@ class InfiniticWorker(
             config.services.forEach { serviceConfig ->
               logger.info { "Service ${serviceConfig.name}:" }
               // Start SERVICE TAG ENGINE
-              serviceConfig.tagEngine?.let { startServiceTagEngine(it) }
+              serviceConfig.tagEngine?.let { startServiceTagEngine(this, it) }
               // Start SERVICE EXECUTOR
-              serviceConfig.executor?.let { startServiceExecutor(it) }
+              serviceConfig.executor?.let { startServiceExecutor(this, it) }
             }
 
             config.workflows.forEach { workflowConfig ->
               logger.info { "Workflow ${workflowConfig.name}:" }
               // Start WORKFLOW TAG ENGINE
-              workflowConfig.tagEngine?.let { startWorkflowTagEngine(it) }
+              workflowConfig.tagEngine?.let { startWorkflowTagEngine(this, it) }
               // Start WORKFLOW STATE ENGINE
-              workflowConfig.stateEngine?.let { startWorkflowStateEngine(it) }
+              workflowConfig.stateEngine?.let { startWorkflowStateEngine(this, it) }
               // Start WORKFLOW EXECUTOR
-              workflowConfig.executor?.let { startWorkflowExecutor(it) }
+              workflowConfig.executor?.let { startWorkflowExecutor(this, it) }
             }
 
             // Start Event Listener
-            config.eventListener?.let { startEventListener(it) }
+            config.eventListener?.let { startEventListener(this, it) }
 
             val workerName = producerFactory.getName()
 
@@ -449,18 +449,32 @@ class InfiniticWorker(
 
   private val sendingMessageToDLQ = { "Unable to process message, sending to Dead Letter Queue" }
 
-  internal fun startEventListener(config: EventListenerConfig) {
+  /**
+   * Starts the Event Listener with the given configuration.
+   */
+  internal fun startEventListener(
+    scope: CoroutineScope,
+    config: EventListenerConfig
+  ) {
     logEventListenerStart(config)
 
     with(LoggerWithCounter(logger)) {
-      scope.startCloudEventListener(consumerFactory, resources, config, cloudEventSourcePrefix)
+      scope.startCloudEventListener(
+          consumerFactory = consumerFactory,
+          resources = resources,
+          config = config,
+          cloudEventSourcePrefix = cloudEventSourcePrefix,
+      )
     }
   }
 
   /**
    * Starts the Service Tag Engine with the given configuration.
    */
-  internal suspend fun startServiceTagEngine(config: ServiceTagEngineConfig) {
+  internal suspend fun startServiceTagEngine(
+    scope: CoroutineScope,
+    config: ServiceTagEngineConfig
+  ) {
     if (config.concurrency > 0) {
       // Log Service Tag Engine configuration
       logServiceTagEngineStart(config)
@@ -495,7 +509,10 @@ class InfiniticWorker(
   /**
    * Starts the Service Executor with the given configuration.
    */
-  internal suspend fun startServiceExecutor(config: ServiceExecutorConfig) {
+  internal suspend fun startServiceExecutor(
+    scope: CoroutineScope,
+    config: ServiceExecutorConfig
+  ) {
     // init batch methods for the current factory
     config.initBatchProcessorMethods()
 
@@ -568,7 +585,10 @@ class InfiniticWorker(
   /**
    * Starts the Workflow Tag Engine with the given configuration.
    */
-  internal suspend fun startWorkflowTagEngine(config: WorkflowTagEngineConfig) {
+  internal suspend fun startWorkflowTagEngine(
+    scope: CoroutineScope,
+    config: WorkflowTagEngineConfig
+  ) {
     if (config.concurrency > 0) {
       // Log Workflow State Engine configuration
       logWorkflowTagEngineStart(config)
@@ -601,7 +621,10 @@ class InfiniticWorker(
   /**
    * Starts the Workflow State Engine with the given configuration.
    */
-  internal suspend fun startWorkflowStateEngine(config: WorkflowStateEngineConfig) {
+  internal suspend fun startWorkflowStateEngine(
+    scope: CoroutineScope,
+    config: WorkflowStateEngineConfig
+  ) {
     // Log Workflow State Engine configuration
     logWorkflowStateEngineStart(config)
 
@@ -690,7 +713,10 @@ class InfiniticWorker(
   /**
    * Starts the Workflow Executor with the given configuration.
    */
-  internal suspend fun startWorkflowExecutor(config: WorkflowExecutorConfig) {
+  internal suspend fun startWorkflowExecutor(
+    scope: CoroutineScope,
+    config: WorkflowExecutorConfig
+  ) {
     // Log Workflow Executor configuration
     logWorkflowExecutorStart(config)
 

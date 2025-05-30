@@ -22,19 +22,15 @@
  */
 package io.infinitic.events.listeners
 
-import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.common.tasks.data.ServiceName
 import io.infinitic.common.transport.interfaces.InfiniticResources
 import io.infinitic.events.config.EventListenerConfig
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
-context(CoroutineScope, KLogger)
-internal fun InfiniticResources.refreshServiceListAsync(
+internal suspend fun InfiniticResources.refreshServiceListAsync(
   config: EventListenerConfig,
   start: suspend (ServiceName) -> Unit
-) = launch {
+) {
   val processedServices = mutableSetOf<String>()
 
   while (true) {

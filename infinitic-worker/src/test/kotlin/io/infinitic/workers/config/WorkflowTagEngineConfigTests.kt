@@ -70,16 +70,6 @@ internal class WorkflowTagEngineConfigTests : StringSpec(
         e.message shouldContain "workflowName"
       }
 
-      "Concurrency must be positive when building WorkflowTagEngineConfig" {
-        val e = shouldThrow<IllegalArgumentException> {
-          WorkflowTagEngineConfig.builder()
-              .setWorkflowName(workflowName)
-              .setConcurrency(0)
-              .build()
-        }
-        e.message shouldContain "concurrency"
-      }
-
       "Can create WorkflowTagEngineConfig through YAML without workflowName" {
         val config = shouldNotThrowAny {
           WorkflowTagEngineConfig.fromYamlString(

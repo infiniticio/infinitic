@@ -85,34 +85,38 @@ fun CoroutineScope.startCloudEventListener(
     }
   }
 
-  // Listen service topics, for each service found
-  resources.refreshServiceListAsync(config) { serviceName ->
-    info { "EventListener starts listening Service $serviceName" }
+  // Listen to the service topics for each service found
+  launch {
+    resources.refreshServiceListAsync(config) { serviceName ->
+      info { "EventListener starts listening Service $serviceName" }
 
-    consumerFactory.listenToServiceExecutorTopics(
-        serviceName,
-        config.batchConfig,
-        config.subscriptionName,
-        outChannel,
-    )
+      consumerFactory.listenToServiceExecutorTopics(
+          serviceName,
+          config.batchConfig,
+          config.subscriptionName,
+          outChannel,
+      )
+    }
   }
 
-  // Listen workflow topics, for each workflow found
-  resources.refreshWorkflowListAsync(config) { workflowName ->
-    info { "EventListener starts listening Workflow $workflowName" }
+  // Listen to the workflow topics for each workflow found
+  launch {
+    resources.refreshWorkflowListAsync(config) { workflowName ->
+      info { "EventListener starts listening Workflow $workflowName" }
 
-    consumerFactory.listenToWorkflowExecutorTopics(
-        workflowName,
-        config.batchConfig,
-        config.subscriptionName,
-        outChannel,
-    )
+      consumerFactory.listenToWorkflowExecutorTopics(
+          workflowName,
+          config.batchConfig,
+          config.subscriptionName,
+          outChannel,
+      )
 
-    consumerFactory.listenToWorkflowStateTopics(
-        workflowName,
-        config.batchConfig,
-        config.subscriptionName,
-        outChannel,
-    )
+      consumerFactory.listenToWorkflowStateTopics(
+          workflowName,
+          config.batchConfig,
+          config.subscriptionName,
+          outChannel,
+      )
+    }
   }
 }
