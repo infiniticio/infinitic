@@ -29,9 +29,18 @@ import io.infinitic.config.loadFromYamlString
 import io.infinitic.storage.config.StorageConfig
 import io.infinitic.tasks.tag.storage.BinaryTaskTagStorage
 
+@Suppress("unused")
 data class ServiceTagEngineConfig(
   override var serviceName: String = "",
+  /**
+   * The number of concurrent service tag executions.
+   * If not provided, it will default to 1.
+   */
   val concurrency: Int = 1,
+  /**
+   * Storage configuration for the service tag engine.
+   * If not provided, it will use the default storage configuration.
+   */
   override var storage: StorageConfig? = null,
 ) : WithMutableServiceName, WithMutableStorage {
   init {
@@ -49,21 +58,21 @@ data class ServiceTagEngineConfig(
     fun builder() = ServiceTagEngineConfigBuilder()
 
     /**
-     * Create ServiceTagEngineConfig from files in file system
+     * Create ServiceTagEngineConfig from files in the file system
      */
     @JvmStatic
     fun fromYamlFile(vararg files: String): ServiceTagEngineConfig =
         loadFromYamlFile(*files)
 
     /**
-     * Create ServiceTagEngineConfig from files in resources directory
+     * Create ServiceTagEngineConfig from files in the resources directory
      */
     @JvmStatic
     fun fromYamlResource(vararg resources: String): ServiceTagEngineConfig =
         loadFromYamlResource(*resources)
 
     /**
-     * Create ServiceTagEngineConfig from yaml strings
+     * Create ServiceTagEngineConfig from YAML strings
      */
     @JvmStatic
     fun fromYamlString(vararg yamls: String): ServiceTagEngineConfig =

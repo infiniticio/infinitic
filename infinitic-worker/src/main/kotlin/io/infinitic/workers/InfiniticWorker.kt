@@ -66,6 +66,7 @@ import io.infinitic.events.CloudEventLogger
 import io.infinitic.events.config.EventListenerConfig
 import io.infinitic.events.listeners.startCloudEventListener
 import io.infinitic.tasks.Task
+import io.infinitic.tasks.WithRetry
 import io.infinitic.tasks.WithTimeout
 import io.infinitic.tasks.executor.TaskEventHandler
 import io.infinitic.tasks.executor.TaskExecutor
@@ -82,7 +83,6 @@ import io.infinitic.workers.config.WorkflowConfig
 import io.infinitic.workers.config.WorkflowExecutorConfig
 import io.infinitic.workers.config.WorkflowStateEngineConfig
 import io.infinitic.workers.config.WorkflowTagEngineConfig
-import io.infinitic.workers.config.initBatchProcessorMethods
 import io.infinitic.workers.registry.ExecutorRegistry
 import io.infinitic.workflows.Workflow
 import io.infinitic.workflows.engine.WorkflowStateCmdHandler
@@ -92,6 +92,10 @@ import io.infinitic.workflows.engine.WorkflowStateTimerHandler
 import io.infinitic.workflows.engine.storage.LoggedWorkflowStateStorage
 import io.infinitic.workflows.tag.WorkflowTagEngine
 import io.infinitic.workflows.tag.storage.LoggedWorkflowTagStorage
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.coroutines.cancellation.CancellationException
+import kotlin.system.exitProcess
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
@@ -101,10 +105,6 @@ import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.atomic.AtomicBoolean
-import kotlin.coroutines.cancellation.CancellationException
-import kotlin.system.exitProcess
 
 @Suppress("unused")
 class InfiniticWorker(
@@ -177,7 +177,7 @@ class InfiniticWorker(
     }
   }
 
-  private val registry = ExecutorRegistry(config.services, config.workflows)
+  internal val registry = ExecutorRegistry(config.services, config.workflows)
 
   private fun getService(serviceName: String): ServiceConfig? =
       config.services.firstOrNull { it.name == serviceName }
@@ -244,17 +244,17 @@ class InfiniticWorker(
     @JvmStatic
     fun builder() = InfiniticWorkerBuilder()
 
-    /** Create [InfiniticWorker] from yaml resources */
+    /** Create [InfiniticWorker] from YAML resources */
     @JvmStatic
     fun fromYamlResource(vararg resources: String) =
         InfiniticWorker(InfiniticWorkerConfig.fromYamlResource(*resources))
 
-    /** Create [InfiniticWorker] from yaml files */
+    /** Create [InfiniticWorker] from YAML files */
     @JvmStatic
     fun fromYamlFile(vararg files: String): InfiniticWorker =
         InfiniticWorker(InfiniticWorkerConfig.fromYamlFile(*files))
 
-    /** Create [InfiniticWorker] from yaml strings */
+    /** Create [InfiniticWorker] from YAML strings */
     @JvmStatic
     fun fromYamlString(vararg yamls: String): InfiniticWorker =
         InfiniticWorker(InfiniticWorkerConfig.fromYamlString(*yamls))
@@ -299,28 +299,23 @@ class InfiniticWorker(
             config.services.forEach { serviceConfig ->
               logger.info { "Service ${serviceConfig.name}:" }
               // Start SERVICE TAG ENGINE
-              serviceConfig.tagEngine?.let { startServiceTagEngine(it) }
+              serviceConfig.tagEngine?.let { startServiceTagEngine(this, it) }
               // Start SERVICE EXECUTOR
-              serviceConfig.executor?.let { startServiceExecutor(it) }
+              serviceConfig.executor?.let { startServiceExecutor(this, it) }
             }
 
             config.workflows.forEach { workflowConfig ->
               logger.info { "Workflow ${workflowConfig.name}:" }
               // Start WORKFLOW TAG ENGINE
-              workflowConfig.tagEngine?.let { startWorkflowTagEngine(it) }
+              workflowConfig.tagEngine?.let { startWorkflowTagEngine(this, it) }
               // Start WORKFLOW STATE ENGINE
-              workflowConfig.stateEngine?.let { startWorkflowStateEngine(it) }
+              workflowConfig.stateEngine?.let { startWorkflowStateEngine(this, it) }
               // Start WORKFLOW EXECUTOR
-              workflowConfig.executor?.let { startWorkflowExecutor(it) }
+              workflowConfig.executor?.let { startWorkflowExecutor(this, it) }
             }
 
-            config.eventListener?.let {
-              logEventListenerStart(it)
-
-              with(LoggerWithCounter(logger)) {
-                consumerFactory.startCloudEventListener(resources, it, cloudEventSourcePrefix)
-              }
-            }
+            // Start Event Listener
+            config.eventListener?.let { startEventListener(this, it) }
 
             val workerName = producerFactory.getName()
 
@@ -345,340 +340,450 @@ class InfiniticWorker(
 
   private fun logEventListenerStart(config: EventListenerConfig) {
     logger.info {
-      "* Service Event Listener".padEnd(25) + ": (" +
-          "concurrency: ${config.concurrency}, " +
-          "class: ${config.listener::class.java.name}" +
-          (config.subscriptionName?.let { ", subscription: $it" } ?: "") +
-          "batch: ${config.batchConfig.notNullPropertiesToString()})" +
-          ")"
+      buildString {
+        append("* Event Listener".padEnd(25))
+        append(": (")
+        append("concurrency: ${config.concurrency}, ")
+        append("class: ${config.listener::class.java.simpleName}")
+        append(", batch: ${config.batchConfig.notNullPropertiesToString()}")
+        if (config.subscriptionName != null) append(", subscription: ${config.subscriptionName}")
+        append(")")
+      }
     }
   }
 
   private fun logServiceExecutorStart(config: ServiceExecutorConfig) {
     logger.info {
-      "* Service Executor".padEnd(25) + ": (" +
-          "concurrency: ${config.concurrency}, " +
-          "class: ${config.factory()::class.java.name}, " +
-          "timeout: ${config.withTimeout?.toLog()}, " +
-          "withRetry: ${config.withRetry ?: NONE}, " +
-          "batch: ${config.batch?.notNullPropertiesToString() ?: NONE})"
-
+      buildString {
+        append("* Service Executor".padEnd(25))
+        append(": (concurrency: ${config.concurrency}")
+        config.factory?.let { append(", class: ${it()::class.simpleName}") }
+        config.withTimeout?.let { if (it != WithTimeout.UNSET) append(", timeout: ${it.toLog()}") }
+        config.withRetry?.let { if (it != WithRetry.UNSET) append(", withRetry: $it") }
+        config.batch?.let { append(", batch: ${it.notNullPropertiesToString()}") }
+        if (config.retryHandlerConcurrency != config.concurrency) {
+          append(", retryHandlerConcurrency: ${config.retryHandlerConcurrency}")
+        }
+        if (config.eventHandlerConcurrency != config.concurrency) {
+          append(", eventHandlerConcurrency: ${config.eventHandlerConcurrency}")
+        }
+        append(")")
+      }
     }
   }
 
   private fun logServiceTagEngineStart(config: ServiceTagEngineConfig) {
     logger.info {
-      "* Service Tag Engine".padEnd(25) + ": (" +
-          "concurrency: ${config.concurrency}, " +
-          "storage: ${config.storage?.type}, " +
-          "cache: ${config.storage?.cache?.type ?: NONE}, " +
-          "compression: ${config.storage?.compression ?: NONE})"
+      buildString {
+        append("* Service Tag Engine".padEnd(25))
+        append(": (concurrency: ${config.concurrency}")
+        append(", storage: ${config.storage?.type}")
+        config.storage?.cache?.let { append(", cache: ${it.type}") }
+        config.storage?.compression?.let { append(", compression: ${it}") }
+        append(")")
+      }
     }
   }
 
   private fun logWorkflowExecutorStart(config: WorkflowExecutorConfig) {
     Workflow.setContext(emptyWorkflowContext)
     logger.info {
-      "* Workflow Executor".padEnd(25) + ": (" +
-          "concurrency: ${config.concurrency}, " +
-          "classes: ${
-            config.factories.map { it.invoke()::class.java }.joinToString { it.name }
-          }, " +
-          "timeout: ${config.withTimeout?.toLog()}, " +
-          "withRetry: ${config.withRetry ?: NONE}, " +
-          "batch: ${config.batch?.notNullPropertiesToString() ?: NONE}" +
-          (config.checkMode?.let { ", checkMode: $it" } ?: "") +
-          ")"
+      buildString {
+        append("* Workflow Executor".padEnd(25))
+        append(": (concurrency: ${config.concurrency}")
+        config.factories.forEachIndexed { index, factory ->
+          if (index == 0) append(", classes: ") else append(", ")
+          append(factory.invoke()::class.simpleName)
+        }
+        config.withTimeout?.let { if (it != WithTimeout.UNSET) append(", timeout: ${it.toLog()}") }
+        config.withRetry?.let { if (it != WithRetry.UNSET) append(", withRetry: $it") }
+        config.batch?.let { append(", batch: ${it.notNullPropertiesToString()}") }
+        if (config.checkMode != null) append(", checkMode: ${config.checkMode}")
+        if (config.retryHandlerConcurrency != config.concurrency) {
+          append(", retryHandlerConcurrency: ${config.retryHandlerConcurrency}")
+        }
+        if (config.eventHandlerConcurrency != config.concurrency) {
+          append(", eventHandlerConcurrency: ${config.eventHandlerConcurrency}")
+        }
+        append(")")
+      }
     }
   }
 
   private fun logWorkflowTagEngineStart(config: WorkflowTagEngineConfig) {
     logger.info {
-      "* Workflow Tag Engine".padEnd(25) + ": (" +
-          "concurrency: ${config.concurrency}, " +
-          "storage: ${config.storage?.type}, " +
-          "cache: ${config.storage?.cache?.type ?: NONE}, " +
-          "compression: ${config.storage?.compression ?: NONE}, " +
-          "batch: ${config.batch?.notNullPropertiesToString() ?: NONE})"
+      buildString {
+        append("* Workflow Tag Engine".padEnd(25))
+        append(": (concurrency: ${config.concurrency}")
+        append(", storage: ${config.storage?.type}")
+        config.storage?.cache?.let { append(", cache: ${it.type}") }
+        config.storage?.compression?.let { append(", compression: $it") }
+        config.batch?.let { append(", batch: ${it.notNullPropertiesToString()}") }
+        append(")")
+      }
     }
   }
 
   private fun logWorkflowStateEngineStart(config: WorkflowStateEngineConfig) {
     logger.info {
-      "* Workflow State Engine".padEnd(25) + ": (" +
-          "concurrency: ${config.concurrency}, " +
-          "storage: ${config.storage?.type}, " +
-          "cache: ${config.storage?.cache?.type ?: NONE}, " +
-          "compression: ${config.storage?.compression ?: NONE}, " +
-          "batch: ${config.batch?.notNullPropertiesToString() ?: NONE})"
+      buildString {
+        append("* Workflow State Engine".padEnd(25))
+        append(": (concurrency: ${config.concurrency}")
+        append(", storage: ${config.storage?.type}")
+        config.storage?.cache?.let { append(", cache: ${it.type}") }
+        config.storage?.compression?.let { append(", compression: $it") }
+        config.batch?.let { append(", batch: ${it.notNullPropertiesToString()}") }
+        if (config.commandHandlerConcurrency != config.concurrency) {
+          append(", commandHandlerConcurrency: ${config.commandHandlerConcurrency}")
+        }
+        if (config.timerHandlerConcurrency != config.concurrency) {
+          append(", timerHandlerConcurrency: ${config.timerHandlerConcurrency}")
+        }
+        if (config.eventHandlerConcurrency != config.concurrency) {
+          append(", eventHandlerConcurrency: ${config.eventHandlerConcurrency}")
+        }
+        append(")")
+      }
     }
   }
 
   private val sendingMessageToDLQ = { "Unable to process message, sending to Dead Letter Queue" }
 
   /**
+   * Starts the Event Listener with the given configuration.
+   */
+  internal fun startEventListener(
+    scope: CoroutineScope,
+    config: EventListenerConfig
+  ) {
+    logEventListenerStart(config)
+
+    with(LoggerWithCounter(logger)) {
+      scope.startCloudEventListener(
+          consumerFactory = consumerFactory,
+          resources = resources,
+          config = config,
+          cloudEventSourcePrefix = cloudEventSourcePrefix,
+      )
+    }
+  }
+
+  /**
    * Starts the Service Tag Engine with the given configuration.
    */
-  private suspend fun startServiceTagEngine(
+  internal suspend fun startServiceTagEngine(
+    scope: CoroutineScope,
     config: ServiceTagEngineConfig
   ) {
-    // Log Service Tag Engine configuration
-    logServiceTagEngineStart(config)
+    if (config.concurrency > 0) {
+      // Log Service Tag Engine configuration
+      logServiceTagEngineStart(config)
 
-    val serviceName = config.serviceName
-    val concurrency = config.concurrency
+      val serviceName = config.serviceName
 
-    // Create a producer with the batchConfig
-    val producer = producerFactory.newProducer(null)
+      // Create a producer with the batchConfig
+      val producer = producerFactory.newProducer(null)
 
-    with(TaskTagEngine.logger) {
-      // producer
-      val loggedProducer = LoggedInfiniticProducer(this, producer)
-      // storage
-      val storage = LoggedTaskTagStorage(this, config.serviceTagStorage)
-      // consumer
-      val consumer = consumerFactory.newConsumer(
-          subscription = MainSubscription(ServiceTagEngineTopic),
-          entity = serviceName,
-          batchReceivingConfig = null,
-      )
-      scope.startServiceTagEngine(consumer, loggedProducer, storage, serviceName, concurrency)
+      with(TaskTagEngine.logger) {
+        // producer
+        val loggedProducer = LoggedInfiniticProducer(this, producer)
+        // storage
+        val storage = LoggedTaskTagStorage(this, config.serviceTagStorage)
+        // consumer
+        val consumer = consumerFactory.newConsumer(
+            subscription = MainSubscription(ServiceTagEngineTopic),
+            entity = serviceName,
+            batchReceivingConfig = null,
+        )
+        scope.startServiceTagEngine(
+            consumer = consumer,
+            producer = loggedProducer,
+            storage = storage,
+            serviceName = serviceName,
+            concurrency = config.concurrency,
+        )
+      }
     }
   }
 
   /**
    * Starts the Service Executor with the given configuration.
    */
-  private suspend fun startServiceExecutor(
+  internal suspend fun startServiceExecutor(
+    scope: CoroutineScope,
     config: ServiceExecutorConfig
   ) {
-    // init batch methods for current factory
+    // init batch methods for the current factory
     config.initBatchProcessorMethods()
 
     // Log Service Executor configuration
     logServiceExecutorStart(config)
 
     val serviceName = config.serviceName
-    val concurrency = config.concurrency
     val batchConfig = config.batch
 
     // Create a producer with the batchConfig
     val producer = producerFactory.newProducer(batchConfig)
 
-    // Executor
-    with(TaskExecutor.logger) {
-      val loggedProducer = LoggedInfiniticProducer(this, producer)
-      val consumer = consumerFactory.newConsumer(
-          subscription = MainSubscription(ServiceExecutorTopic),
-          entity = serviceName,
-          batchReceivingConfig = batchConfig,
-      )
-      scope.startServiceExecutor(consumer, loggedProducer, serviceName, concurrency, batchConfig)
+    // Service Executors
+    if (config.concurrency > 0) {
+      with(TaskExecutor.logger) {
+        val loggedProducer = LoggedInfiniticProducer(this, producer)
+        val consumer = consumerFactory.newConsumer(
+            subscription = MainSubscription(ServiceExecutorTopic),
+            entity = serviceName,
+            batchReceivingConfig = batchConfig,
+        )
+        scope.startServiceExecutor(
+            consumer = consumer,
+            producer = loggedProducer,
+            serviceName = serviceName,
+            concurrency = config.concurrency,
+            batchConfig = batchConfig,
+        )
+      }
     }
 
-    // Executor-Retry
-    with(TaskRetryHandler.logger) {
-      val loggedProducer = LoggedInfiniticProducer(this, producer)
-      val consumer = consumerFactory.newConsumer(
-          subscription = MainSubscription(ServiceExecutorRetryTopic),
-          entity = serviceName,
-          batchReceivingConfig = batchConfig,
-      )
-      scope.startServiceExecutorRetry(consumer, loggedProducer, concurrency, batchConfig)
+    // Service Executor Retry Handlers
+    if (config.retryHandlerConcurrency > 0) {
+      with(TaskRetryHandler.logger) {
+        val loggedProducer = LoggedInfiniticProducer(this, producer)
+        val consumer = consumerFactory.newConsumer(
+            subscription = MainSubscription(ServiceExecutorRetryTopic),
+            entity = serviceName,
+            batchReceivingConfig = batchConfig,
+        )
+        scope.startServiceExecutorRetry(
+            consumer = consumer,
+            producer = loggedProducer,
+            concurrency = config.retryHandlerConcurrency,
+            batchConfig = batchConfig,
+        )
+      }
     }
 
     // Executor-Event
-    with(TaskEventHandler.logger) {
-      val loggedProducer = LoggedInfiniticProducer(this, producer)
-      val consumer = consumerFactory.newConsumer(
-          subscription = MainSubscription(ServiceExecutorEventTopic),
-          entity = serviceName,
-          batchReceivingConfig = batchConfig,
-      )
-      scope.startServiceExecutorEvent(consumer, loggedProducer, config)
+    if (config.eventHandlerConcurrency > 0) {
+      with(TaskEventHandler.logger) {
+        val loggedProducer = LoggedInfiniticProducer(this, producer)
+        val consumer = consumerFactory.newConsumer(
+            subscription = MainSubscription(ServiceExecutorEventTopic),
+            entity = serviceName,
+            batchReceivingConfig = batchConfig,
+        )
+        scope.startServiceExecutorEvent(
+            consumer = consumer,
+            producer = loggedProducer,
+            serviceName = serviceName,
+            concurrency = config.eventHandlerConcurrency,
+            batchConfig = batchConfig,
+        )
+      }
     }
   }
 
   /**
    * Starts the Workflow Tag Engine with the given configuration.
    */
-  private suspend fun startWorkflowTagEngine(config: WorkflowTagEngineConfig) {
-    // Log Workflow State Engine configuration
-    logWorkflowTagEngineStart(config)
+  internal suspend fun startWorkflowTagEngine(
+    scope: CoroutineScope,
+    config: WorkflowTagEngineConfig
+  ) {
+    if (config.concurrency > 0) {
+      // Log Workflow State Engine configuration
+      logWorkflowTagEngineStart(config)
 
-    val workflowName = config.workflowName
-    val concurrency = config.concurrency
-    val batchConfig = config.batch
-    val producer = producerFactory.newProducer(batchConfig)
+      val workflowName = config.workflowName
+      val batchConfig = config.batch
+      val producer = producerFactory.newProducer(batchConfig)
 
-    // Tag-Engine
-    with(WorkflowTagEngine.logger) {
-      val storage = LoggedWorkflowTagStorage(this, config.workflowTagStorage)
-      val loggedProducer = LoggedInfiniticProducer(this, producer)
-      val consumer = consumerFactory.newConsumer(
-          subscription = MainSubscription(WorkflowTagEngineTopic),
-          entity = workflowName,
-          batchReceivingConfig = batchConfig,
-      )
-      scope.startWorkflowTagEngine(
-          consumer,
-          loggedProducer,
-          storage,
-          workflowName,
-          concurrency,
-          batchConfig,
-      )
+      // Tag-Engine
+      with(WorkflowTagEngine.logger) {
+        val storage = LoggedWorkflowTagStorage(this, config.workflowTagStorage)
+        val loggedProducer = LoggedInfiniticProducer(this, producer)
+        val consumer = consumerFactory.newConsumer(
+            subscription = MainSubscription(WorkflowTagEngineTopic),
+            entity = workflowName,
+            batchReceivingConfig = batchConfig,
+        )
+        scope.startWorkflowTagEngine(
+            consumer = consumer,
+            producer = loggedProducer,
+            storage = storage,
+            workflowName = workflowName,
+            concurrency = config.concurrency,
+            batchConfig = batchConfig,
+        )
+      }
     }
   }
 
   /**
    * Starts the Workflow State Engine with the given configuration.
    */
-  private suspend fun startWorkflowStateEngine(config: WorkflowStateEngineConfig) {
+  internal suspend fun startWorkflowStateEngine(
+    scope: CoroutineScope,
+    config: WorkflowStateEngineConfig
+  ) {
     // Log Workflow State Engine configuration
     logWorkflowStateEngineStart(config)
 
     val workflowName = config.workflowName
-    val concurrency = config.concurrency
     val batchConfig = config.batch
     val producer = producerFactory.newProducer(batchConfig)
 
     // State-Cmd
-    with(WorkflowStateCmdHandler.logger) {
-      val loggedProducer = LoggedInfiniticProducer(this, producer)
-      val consumer = consumerFactory.newConsumer(
-          subscription = MainSubscription(WorkflowStateCmdTopic),
-          entity = workflowName,
-          batchReceivingConfig = batchConfig,
-      )
-      scope.startWorkflowStateCmd(
-          consumer,
-          loggedProducer,
-          workflowName,
-          concurrency,
-          batchConfig,
-      )
+    if (config.commandHandlerConcurrency > 0) {
+      with(WorkflowStateCmdHandler.logger) {
+        val loggedProducer = LoggedInfiniticProducer(this, producer)
+        val consumer = consumerFactory.newConsumer(
+            subscription = MainSubscription(WorkflowStateCmdTopic),
+            entity = workflowName,
+            batchReceivingConfig = batchConfig,
+        )
+        scope.startWorkflowStateCmd(
+            consumer = consumer,
+            producer = loggedProducer,
+            workflowName = workflowName,
+            concurrency = config.commandHandlerConcurrency,
+            batchConfig = batchConfig,
+        )
+      }
     }
 
-    // State-Engine
-    with(WorkflowStateEngine.logger) {
-      val loggedProducer = LoggedInfiniticProducer(this, producer)
-      val consumer = consumerFactory.newConsumer(
-          subscription = MainSubscription(WorkflowStateEngineTopic),
-          entity = workflowName,
-          batchReceivingConfig = batchConfig,
-      )
-      val storage = LoggedWorkflowStateStorage(this, config.workflowStateStorage)
-      scope.startWorkflowStateEngine(
-          consumer,
-          loggedProducer,
-          storage,
-          workflowName,
-          concurrency,
-          batchConfig,
-      )
+    // Workflow State Engines
+    if (config.concurrency > 0) {
+      with(WorkflowStateEngine.logger) {
+        val loggedProducer = LoggedInfiniticProducer(this, producer)
+        val consumer = consumerFactory.newConsumer(
+            subscription = MainSubscription(WorkflowStateEngineTopic),
+            entity = workflowName,
+            batchReceivingConfig = batchConfig,
+        )
+        val storage = LoggedWorkflowStateStorage(this, config.workflowStateStorage)
+        scope.startWorkflowStateEngine(
+            consumer = consumer,
+            producer = loggedProducer,
+            storage = storage,
+            workflowName = workflowName,
+            concurrency = config.concurrency,
+            batchConfig = batchConfig,
+        )
+      }
     }
 
-    // State-Timer
-    with(WorkflowStateTimerHandler.logger) {
-      val loggedProducer = LoggedInfiniticProducer(this, producer)
-      val consumer = consumerFactory.newConsumer(
-          subscription = MainSubscription(WorkflowStateTimerTopic),
-          entity = workflowName,
-          batchReceivingConfig = batchConfig,
-      )
-      scope.startWorkflowStateTimer(
-          consumer,
-          loggedProducer,
-          concurrency,
-          batchConfig,
-      )
+    // Workflow State Timer Handlers
+    if (config.timerHandlerConcurrency > 0) {
+      with(WorkflowStateTimerHandler.logger) {
+        val loggedProducer = LoggedInfiniticProducer(this, producer)
+        val consumer = consumerFactory.newConsumer(
+            subscription = MainSubscription(WorkflowStateTimerTopic),
+            entity = workflowName,
+            batchReceivingConfig = batchConfig,
+        )
+        scope.startWorkflowStateTimer(
+            consumer = consumer,
+            producer = loggedProducer,
+            concurrency = config.timerHandlerConcurrency,
+            batchConfig = batchConfig,
+        )
+      }
     }
 
-    // State-Event
-    with(WorkflowStateEventHandler.logger) {
-      val loggedProducer = LoggedInfiniticProducer(this, producer)
-      val consumer = consumerFactory.newConsumer(
-          subscription = MainSubscription(WorkflowStateEventTopic),
-          entity = workflowName,
-          batchReceivingConfig = batchConfig,
-      )
-      scope.startWorkflowStateEvent(
-          consumer,
-          loggedProducer,
-          workflowName,
-          concurrency,
-          batchConfig,
-      )
+    // Workflow State Event Handlers
+    if (config.eventHandlerConcurrency > 0) {
+      with(WorkflowStateEventHandler.logger) {
+        val loggedProducer = LoggedInfiniticProducer(this, producer)
+        val consumer = consumerFactory.newConsumer(
+            subscription = MainSubscription(WorkflowStateEventTopic),
+            entity = workflowName,
+            batchReceivingConfig = batchConfig,
+        )
+        scope.startWorkflowStateEvent(
+            consumer,
+            loggedProducer,
+            workflowName,
+            config.eventHandlerConcurrency,
+            batchConfig,
+        )
+      }
     }
   }
 
   /**
    * Starts the Workflow Executor with the given configuration.
    */
-  private suspend fun startWorkflowExecutor(config: WorkflowExecutorConfig) {
+  internal suspend fun startWorkflowExecutor(
+    scope: CoroutineScope,
+    config: WorkflowExecutorConfig
+  ) {
     // Log Workflow Executor configuration
     logWorkflowExecutorStart(config)
 
     val workflowName = config.workflowName
-    val concurrency = config.concurrency
     val configBatch = config.batch
     val producer = producerFactory.newProducer(configBatch)
 
-    // Executor
-    with(TaskExecutor.logger) {
-      val loggedProducer = LoggedInfiniticProducer(this, producer)
-      val consumer = consumerFactory.newConsumer(
-          subscription = MainSubscription(WorkflowExecutorTopic),
-          entity = workflowName,
-          batchReceivingConfig = configBatch,
-      )
-      scope.startWorkflowExecutor(
-          consumer,
-          loggedProducer,
-          workflowName,
-          concurrency,
-          configBatch,
-      )
+    // Workflow Executors
+    if (config.concurrency > 0) {
+      with(TaskExecutor.logger) {
+        val loggedProducer = LoggedInfiniticProducer(this, producer)
+        val consumer = consumerFactory.newConsumer(
+            subscription = MainSubscription(WorkflowExecutorTopic),
+            entity = workflowName,
+            batchReceivingConfig = configBatch,
+        )
+        scope.startWorkflowExecutor(
+            consumer,
+            loggedProducer,
+            workflowName,
+            config.concurrency,
+            configBatch,
+        )
+      }
     }
 
-    // Executor-Retry
-    with(TaskRetryHandler.logger) {
-      val loggedProducer = LoggedInfiniticProducer(this, producer)
-      val consumer = consumerFactory.newConsumer(
-          subscription = MainSubscription(WorkflowExecutorRetryTopic),
-          entity = workflowName,
-          batchReceivingConfig = configBatch,
-      )
-      scope.startWorkflowExecutorRetry(
-          consumer,
-          loggedProducer,
-          concurrency,
-          configBatch,
-      )
+    // Workflow Executor Retry Handlers
+    if (config.retryHandlerConcurrency > 0) {
+      with(TaskRetryHandler.logger) {
+        val loggedProducer = LoggedInfiniticProducer(this, producer)
+        val consumer = consumerFactory.newConsumer(
+            subscription = MainSubscription(WorkflowExecutorRetryTopic),
+            entity = workflowName,
+            batchReceivingConfig = configBatch,
+        )
+        scope.startWorkflowExecutorRetry(
+            consumer,
+            loggedProducer,
+            config.retryHandlerConcurrency,
+            configBatch,
+        )
+      }
     }
 
-    // Executor-Events
-    with(TaskEventHandler.logger) {
-      val loggedProducer = LoggedInfiniticProducer(this, producer)
-      val consumer = consumerFactory.newConsumer(
-          subscription = MainSubscription(WorkflowExecutorEventTopic),
-          entity = workflowName,
-          batchReceivingConfig = configBatch,
-      )
-      scope.startWorkflowExecutorEvent(
-          consumer,
-          loggedProducer,
-          workflowName,
-          concurrency,
-          configBatch,
-      )
+    // Workflow Executor Event Handlers
+    if (config.eventHandlerConcurrency > 0) {
+      with(TaskEventHandler.logger) {
+        val loggedProducer = LoggedInfiniticProducer(this, producer)
+        val consumer = consumerFactory.newConsumer(
+            subscription = MainSubscription(WorkflowExecutorEventTopic),
+            entity = workflowName,
+            batchReceivingConfig = configBatch,
+        )
+        scope.startWorkflowExecutorEvent(
+            consumer,
+            loggedProducer,
+            workflowName,
+            config.eventHandlerConcurrency,
+            configBatch,
+        )
+      }
     }
   }
 
   // TASK-TAG
   context(LoggerWithCounter)
-  private fun CoroutineScope.startServiceTagEngine(
+  internal fun CoroutineScope.startServiceTagEngine(
     consumer: TransportConsumer<out TransportMessage<ServiceTagMessage>>,
     producer: InfiniticProducer,
     storage: TaskTagStorage,
@@ -710,7 +815,7 @@ class InfiniticWorker(
 
   // TASK-EXECUTOR
   context(LoggerWithCounter)
-  private fun CoroutineScope.startServiceExecutor(
+  internal fun CoroutineScope.startServiceExecutor(
     consumer: TransportConsumer<out TransportMessage<ServiceExecutorMessage>>,
     producer: InfiniticProducer,
     serviceName: String,
@@ -767,7 +872,7 @@ class InfiniticWorker(
 
   // TASK-EXECUTOR-RETRY
   context(LoggerWithCounter)
-  private fun CoroutineScope.startServiceExecutorRetry(
+  internal fun CoroutineScope.startServiceExecutorRetry(
     consumer: TransportConsumer<out TransportMessage<ServiceExecutorMessage>>,
     producer: InfiniticProducer,
     concurrency: Int,
@@ -803,17 +908,18 @@ class InfiniticWorker(
 
   // TASK-EVENTS
   context(LoggerWithCounter)
-  private fun CoroutineScope.startServiceExecutorEvent(
+  internal fun CoroutineScope.startServiceExecutorEvent(
     consumer: TransportConsumer<out TransportMessage<ServiceExecutorEventMessage>>,
     producer: InfiniticProducer,
-    config: ServiceExecutorConfig
+    serviceName: String,
+    concurrency: Int,
+    batchConfig: BatchConfig?
   ) {
     val taskEventHandler = TaskEventHandler(producer)
-    val batchConfig = config.batch
 
     val cloudEventLogger = CloudEventLogger(
         ServiceExecutorEventTopic,
-        config.serviceName,
+        serviceName,
         cloudEventSourcePrefix,
         beautifyLogs,
     )
@@ -822,7 +928,7 @@ class InfiniticWorker(
       null -> startProcessingWithoutKey(
           logger = this@LoggerWithCounter,
           consumer = consumer,
-          concurrency = config.concurrency,
+          concurrency = concurrency,
           processor = { message, publishedAt ->
             coroutineScope {
               launch { cloudEventLogger.log(message, publishedAt) }
@@ -834,7 +940,7 @@ class InfiniticWorker(
       else -> startBatchProcessingWithoutKey(
           logger = this@LoggerWithCounter,
           consumer = consumer,
-          concurrency = config.concurrency,
+          concurrency = concurrency,
           batchConfig = batchConfig,
           processor = { messages ->
             coroutineScope {
@@ -850,7 +956,7 @@ class InfiniticWorker(
 
   // WORKFLOW-TAG
   context(LoggerWithCounter)
-  private fun CoroutineScope.startWorkflowTagEngine(
+  internal fun CoroutineScope.startWorkflowTagEngine(
     consumer: TransportConsumer<out TransportMessage<WorkflowTagEngineMessage>>,
     producer: InfiniticProducer,
     storage: WorkflowTagStorage,
@@ -897,7 +1003,7 @@ class InfiniticWorker(
 
   // WORKFLOW-STATE-CMD
   context(LoggerWithCounter)
-  private fun CoroutineScope.startWorkflowStateCmd(
+  internal fun CoroutineScope.startWorkflowStateCmd(
     consumer: TransportConsumer<out TransportMessage<WorkflowStateCmdMessage>>,
     producer: InfiniticProducer,
     workflowName: String,
@@ -945,7 +1051,7 @@ class InfiniticWorker(
 
   // WORKFLOW-STATE-ENGINE
   context(LoggerWithCounter)
-  private fun CoroutineScope.startWorkflowStateEngine(
+  internal fun CoroutineScope.startWorkflowStateEngine(
     consumer: TransportConsumer<out TransportMessage<WorkflowStateEngineMessage>>,
     producer: InfiniticProducer,
     storage: WorkflowStateStorage,
@@ -994,7 +1100,7 @@ class InfiniticWorker(
 
   // WORKFLOW-STATE-TIMERS
   context(LoggerWithCounter)
-  private fun CoroutineScope.startWorkflowStateTimer(
+  internal fun CoroutineScope.startWorkflowStateTimer(
     consumer: TransportConsumer<out TransportMessage<WorkflowStateEngineMessage>>,
     producer: InfiniticProducer,
     concurrency: Int,
@@ -1028,7 +1134,7 @@ class InfiniticWorker(
 
   // WORKFLOW-STATE-EVENTS
   context(LoggerWithCounter)
-  private fun CoroutineScope.startWorkflowStateEvent(
+  internal fun CoroutineScope.startWorkflowStateEvent(
     consumer: TransportConsumer<out TransportMessage<WorkflowStateEventMessage>>,
     producer: InfiniticProducer,
     workflowName: String,
@@ -1076,7 +1182,7 @@ class InfiniticWorker(
 
   // WORKFLOW-EXECUTOR
   context(LoggerWithCounter)
-  private fun CoroutineScope.startWorkflowExecutor(
+  internal fun CoroutineScope.startWorkflowExecutor(
     consumer: TransportConsumer<out TransportMessage<ServiceExecutorMessage>>,
     producer: InfiniticProducer,
     workflowName: String,
@@ -1135,7 +1241,7 @@ class InfiniticWorker(
 
   // WORKFLOW-EXECUTOR-RETRY
   context(LoggerWithCounter)
-  private fun CoroutineScope.startWorkflowExecutorRetry(
+  internal fun CoroutineScope.startWorkflowExecutorRetry(
     consumer: TransportConsumer<out TransportMessage<ServiceExecutorMessage>>,
     producer: InfiniticProducer,
     concurrency: Int,
@@ -1169,7 +1275,7 @@ class InfiniticWorker(
 
   // WORKFLOW-EXECUTOR-EVENT
   context(LoggerWithCounter)
-  private fun CoroutineScope.startWorkflowExecutorEvent(
+  internal fun CoroutineScope.startWorkflowExecutorEvent(
     consumer: TransportConsumer<out TransportMessage<ServiceExecutorEventMessage>>,
     producer: InfiniticProducer,
     workflowName: String,

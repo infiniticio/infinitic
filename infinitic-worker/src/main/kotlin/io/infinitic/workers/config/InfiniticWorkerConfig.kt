@@ -30,6 +30,9 @@ import io.infinitic.events.config.EventListenerConfig
 import io.infinitic.storage.config.StorageConfig
 import io.infinitic.transport.config.TransportConfig
 
+internal const val UNSET_TIMEOUT = Double.MAX_VALUE
+internal const val UNSET_CONCURRENCY = Int.MIN_VALUE
+
 @Suppress("unused")
 data class InfiniticWorkerConfig(
   /** Worker name */

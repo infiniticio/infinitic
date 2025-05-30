@@ -47,7 +47,7 @@ class ExecutorRegistry(
 ) : ExecutorRegistryInterface {
 
   override fun getServiceExecutorInstance(serviceName: ServiceName): Any =
-      getServiceExecutor(serviceName).factory.invoke()
+      (getServiceExecutor(serviceName).factory ?: thisShouldNotHappen()).invoke()
 
   override fun getServiceExecutorWithTimeout(serviceName: ServiceName): WithTimeout? =
       getServiceExecutor(serviceName).withTimeout

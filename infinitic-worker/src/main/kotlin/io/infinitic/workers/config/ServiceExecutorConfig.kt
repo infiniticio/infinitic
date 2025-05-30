@@ -35,17 +35,21 @@ import io.infinitic.tasks.WithTimeout
 
 private typealias ServiceFactory = () -> Any
 
-internal const val UNSET_TIMEOUT = Double.MAX_VALUE
-
-suspend fun ServiceExecutorConfig.initBatchProcessorMethods() {
-  factory()::class.java.initBatchProcessorMethods()
-}
-
 @Suppress("unused")
 sealed class ServiceExecutorConfig {
 
   abstract val serviceName: String
-  abstract val factory: ServiceFactory
+
+  /**
+   * The factory is a function that returns a new instance of the service.
+   * This allows creating a new instance each time the service is executed.
+   */
+  abstract val factory: ServiceFactory?
+
+  /**
+   * The number of concurrent service executions.
+   * If not provided, it will default to 1.
+   */
   abstract val concurrency: Int
 
   /**
@@ -67,19 +71,49 @@ sealed class ServiceExecutorConfig {
    */
   abstract val withTimeout: WithTimeout?
 
+  /**
+   * The number of concurrent Service executor event handlers.
+   * If not provided, it will default to the same value as concurrency.
+   */
+  abstract val eventHandlerConcurrency: Int
+
+  /**
+   * The number of concurrent Service executor retry handlers.
+   * If not provided, it will default to the same value as concurrency.
+   */
+  abstract val retryHandlerConcurrency: Int
+
+  suspend fun initBatchProcessorMethods() {
+    factory?.let { it()::class.java.initBatchProcessorMethods() }
+  }
+
+  internal fun check() {
+    concurrency.checkConcurrency(::concurrency.name)
+    eventHandlerConcurrency.checkConcurrency(::eventHandlerConcurrency.name)
+    retryHandlerConcurrency.checkConcurrency(::retryHandlerConcurrency.name)
+    if (factory != null) {
+      require(concurrency > 0) { "${::concurrency.name} must be greater than 0 when ${::factory.name} is defined" }
+    }
+    if (concurrency > 0) {
+      require(factory != null) { "${::factory.name} must not be null when concurrency is greater than 0" }
+      factory!!.invoke()
+      withTimeout?.getTimeoutSeconds()?.checkTimeout()
+    }
+  }
+
   companion object {
     @JvmStatic
     fun builder() = ServiceExecutorConfigBuilder()
 
     /**
-     * Create ServiceExecutorConfig from files in file system
+     * Create ServiceExecutorConfig from files in the file system
      */
     @JvmStatic
     fun fromYamlFile(vararg files: String): ServiceExecutorConfig =
         loadFromYamlFile<LoadedServiceExecutorConfig>(*files)
 
     /**
-     * Create ServiceExecutorConfig from files in resources directory
+     * Create ServiceExecutorConfig from files in the resources directory
      */
     @JvmStatic
     fun fromYamlResource(vararg resources: String): ServiceExecutorConfig =
@@ -103,6 +137,8 @@ sealed class ServiceExecutorConfig {
     private var timeoutSeconds: Double? = UNSET_TIMEOUT
     private var withRetry: WithRetry? = WithRetry.UNSET
     private var batchConfig: BatchConfig? = null
+    private var eventHandlerConcurrency: Int = UNSET_CONCURRENCY
+    private var retryHandlerConcurrency: Int = UNSET_CONCURRENCY
 
     fun setServiceName(name: String) =
         apply { this.serviceName = name }
@@ -119,24 +155,30 @@ sealed class ServiceExecutorConfig {
     fun withRetry(retry: WithRetry) =
         apply { this.withRetry = retry }
 
-    fun setBatch(maxMessages: Int, maxSeconds: Double) {
-      apply { this.batchConfig = BatchConfig(maxMessages, maxSeconds) }
-    }
+    fun setBatch(maxMessages: Int, maxSeconds: Double) =
+        apply { this.batchConfig = BatchConfig(maxMessages, maxSeconds) }
+
+    fun setEventHandlerConcurrency(eventHandlerConcurrency: Int) =
+        apply { this.eventHandlerConcurrency = eventHandlerConcurrency }
+
+    fun setRetryHandlerConcurrency(retryHandlerConcurrency: Int) =
+        apply { this.retryHandlerConcurrency = retryHandlerConcurrency }
 
     fun build(): ServiceExecutorConfig {
       serviceName.checkServiceName()
-      require(factory != null) { "${::factory.name} must not be null" }
-      concurrency.checkConcurrency()
-      timeoutSeconds?.checkTimeout()
 
       return BuiltServiceExecutorConfig(
-          serviceName!!,
-          factory!!,
-          concurrency,
-          withRetry,
-          timeoutSeconds.withTimeout,
-          batchConfig,
-      )
+          serviceName = serviceName!!,
+          factory = factory,
+          concurrency = concurrency,
+          withRetry = withRetry,
+          withTimeout = timeoutSeconds.withTimeout,
+          batch = batchConfig,
+          eventHandlerConcurrency = eventHandlerConcurrency
+              .takeIf { it != UNSET_CONCURRENCY } ?: concurrency,
+          retryHandlerConcurrency = retryHandlerConcurrency
+              .takeIf { it != UNSET_CONCURRENCY } ?: concurrency,
+      ).also { it.check() }
     }
   }
 }
@@ -146,11 +188,13 @@ sealed class ServiceExecutorConfig {
  */
 data class BuiltServiceExecutorConfig(
   override val serviceName: String,
-  override val factory: ServiceFactory,
+  override val factory: ServiceFactory?,
   override val concurrency: Int,
   override val withRetry: WithRetry?,
   override val withTimeout: WithTimeout?,
-  override val batch: BatchConfig?
+  override val batch: BatchConfig?,
+  override val eventHandlerConcurrency: Int = concurrency,
+  override val retryHandlerConcurrency: Int = concurrency
 ) : ServiceExecutorConfig()
 
 /**
@@ -158,24 +202,24 @@ data class BuiltServiceExecutorConfig(
  */
 data class LoadedServiceExecutorConfig(
   override var serviceName: String = "",
-  val `class`: String,
-  override val concurrency: Int = 1,
+  val `class`: String? = null,
+  override var concurrency: Int = 1,
   val timeoutSeconds: Double? = UNSET_TIMEOUT,
   val retry: RetryPolicy? = UNSET_RETRY_POLICY,
-  override val batch: BatchConfig? = null
+  override val batch: BatchConfig? = null,
+  override var eventHandlerConcurrency: Int = concurrency,
+  override var retryHandlerConcurrency: Int = concurrency
 ) : ServiceExecutorConfig(), WithMutableServiceName {
 
-  override val factory: () -> Any = { `class`.getInstance().getOrThrow() }
+  override val factory: (() -> Any)? = `class`?.let { { it.getInstance().getOrThrow() } }
 
   override val withTimeout = timeoutSeconds.withTimeout
 
   override val withRetry: WithRetry? = retry.withRetry
 
   init {
-    `class`.checkClass()
-    concurrency.checkConcurrency()
-    timeoutSeconds?.checkTimeout()
     retry?.check()
+    check()
   }
 
   @JvmName("replaceServiceName")
@@ -200,20 +244,14 @@ internal val WithRetry?.withRetry
     else -> this
   }
 
-internal fun String.checkClass() {
-  require(isNotEmpty()) { "class can not be empty" }
-
-  getInstance().getOrThrow()
-}
-
 internal fun String?.checkServiceName() {
   require(this != null) { "serviceName must not be null" }
   require(this.isNotBlank()) { "serviceName must not be blank" }
 }
 
-internal fun Int?.checkConcurrency() {
-  require(this != null) { "concurrency must not be null" }
-  require(this > 0) { "concurrency must be > 0, but was $this" }
+internal fun Int?.checkConcurrency(name: String) {
+  require(this != null) { "$name must not be null" }
+  require(this >= 0) { "$name must be >= 0, but was $this" }
 }
 
 internal fun Double.checkTimeout() {

@@ -29,8 +29,19 @@ import io.infinitic.config.loadFromYamlString
 
 @Suppress("unused")
 data class ServiceConfig(
+  /**
+   * The unique name of the service.
+   */
   val name: String,
+  /**
+   * The executor configuration for the service.
+   * If not provided, it will not start an executor.
+   */
   var executor: ServiceExecutorConfig? = null,
+  /**
+   * The tag engine configuration for the service.
+   * If not provided, it will not start a tag engine.
+   */
   var tagEngine: ServiceTagEngineConfig? = null,
 ) {
   init {
@@ -38,9 +49,11 @@ data class ServiceConfig(
 
     executor?.let {
       if (it is LoadedServiceExecutorConfig) it.setServiceName(name)
-      val instance = it.factory()
-      require(instance::class.java.isImplementationOf(name)) {
-        error("Class '${instance::class.java.name}' must be an implementation of Service '$name', but is not.")
+      it.factory?.let { factory ->
+        val instance = factory()
+        require(instance::class.java.isImplementationOf(name)) {
+          error("Class '${instance::class.qualifiedName}' must be an implementation of Service '$name', but is not.")
+        }
       }
     }
 

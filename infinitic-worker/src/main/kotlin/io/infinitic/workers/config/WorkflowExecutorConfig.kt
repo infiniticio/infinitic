@@ -40,40 +40,98 @@ import io.infinitic.workflows.WorkflowCheckMode
 internal typealias WorkflowFactory = () -> Workflow
 internal typealias WorkflowFactories = List<WorkflowFactory>
 
+@Suppress("unused")
 sealed class WorkflowExecutorConfig {
 
   abstract val workflowName: String
+
+  /**
+   * The factories are functions that return a new instance of the workflow.
+   * This allows creating a new instance each time the workflow is executed.
+   */
   abstract val factories: WorkflowFactories
+
+  /**
+   * The number of concurrent workflow executions.
+   * If not provided, it will default to 1.
+   */
   abstract val concurrency: Int
+
+  /**
+   * The timeout in seconds for the workflow execution.
+   * If not provided, it will default to UNSET_RETRY.
+   */
   abstract val withRetry: WithRetry?
+
+  /**
+   * The timeout in seconds for the workflow execution.
+   * If not provided, it will default to UNSET_TIMEOUT.
+   */
   abstract val withTimeout: WithTimeout?
+
+  /**
+   * The check mode for the workflow executors.
+   * If not provided, it will default to null.
+   */
   abstract val checkMode: WorkflowCheckMode?
+
+  /**
+   * The batch configuration for the workflow execution.
+   * If not provided, it will not use batching.
+   */
   abstract val batch: BatchConfig?
+
+  /**
+   * The number of concurrent workflow executor event handlers.
+   * If not provided, it will default to the same value as concurrency.
+   */
+  abstract val eventHandlerConcurrency: Int
+
+  /**
+   * The number of concurrent workflow executor retry handlers.
+   * If not provided, it will default to the same value as concurrency.
+   */
+  abstract val retryHandlerConcurrency: Int
 
   companion object {
     @JvmStatic
     fun builder() = WorkflowExecutorConfigBuilder()
 
     /**
-     * Create WorkflowExecutorConfig from files in file system
+     * Create WorkflowExecutorConfig from files in the file system
      */
     @JvmStatic
     fun fromYamlFile(vararg files: String): WorkflowExecutorConfig =
         loadFromYamlFile<LoadedWorkflowExecutorConfig>(*files)
 
     /**
-     * Create WorkflowExecutorConfig from files in resources directory
+     * Create WorkflowExecutorConfig from files in the resources directory
      */
     @JvmStatic
     fun fromYamlResource(vararg resources: String): WorkflowExecutorConfig =
         loadFromYamlResource<LoadedWorkflowExecutorConfig>(*resources)
 
     /**
-     * Create WorkflowExecutorConfig from yaml strings
+     * Create WorkflowExecutorConfig from YAML strings
      */
     @JvmStatic
     fun fromYamlString(vararg yamls: String): WorkflowExecutorConfig =
         loadFromYamlString<LoadedWorkflowExecutorConfig>(*yamls)
+  }
+
+  internal fun check() {
+    concurrency.checkConcurrency(::concurrency.name)
+    eventHandlerConcurrency.checkConcurrency(::eventHandlerConcurrency.name)
+    retryHandlerConcurrency.checkConcurrency(::retryHandlerConcurrency.name)
+    if (factories.isNotEmpty()) {
+      require(concurrency > 0) { "${::concurrency.name} must be greater than 0 when ${::factories.name} is defined" }
+    }
+    if (concurrency > 0) {
+      require(factories.isNotEmpty()) { "At least one factory must be defined when ${::concurrency.name} is greater than 0" }
+      factories.checkVersionUniqueness()
+      factories.checkInstanceUniqueness()
+      withTimeout?.getTimeoutSeconds()?.checkTimeout()
+    }
   }
 
   /**
@@ -87,6 +145,8 @@ sealed class WorkflowExecutorConfig {
     private var withRetry: WithRetry? = WithRetry.UNSET
     private var checkMode: WorkflowCheckMode? = null
     private var batch: BatchConfig? = null
+    private var eventHandlerConcurrency: Int = UNSET_CONCURRENCY
+    private var retryHandlerConcurrency: Int = UNSET_CONCURRENCY
 
     fun setWorkflowName(workflowName: String) =
         apply { this.workflowName = workflowName }
@@ -109,28 +169,33 @@ sealed class WorkflowExecutorConfig {
     fun setBatch(maxMessages: Int, maxSeconds: Double) =
         apply { this.batch = BatchConfig(maxMessages, maxSeconds) }
 
+    fun setEventHandlerConcurrency(eventHandlerConcurrency: Int) =
+        apply { this.eventHandlerConcurrency = eventHandlerConcurrency }
+
+    fun setRetryHandlerConcurrency(retryHandlerConcurrency: Int) =
+        apply { this.retryHandlerConcurrency = retryHandlerConcurrency }
+
     fun build(): WorkflowExecutorConfig {
       workflowName.checkWorkflowName()
 
-      // Needed if the workflow context is referenced within the properties of the workflow
-      Workflow.setContext(emptyWorkflowContext)
-
-      require(factories.isNotEmpty()) { "At least one factory must be defined" }
-      factories.checkVersionUniqueness()
-      factories.checkInstanceUniqueness()
-
-      concurrency.checkConcurrency()
-      timeoutSeconds?.checkTimeout()
+      // Set workflow context if needed
+      if (concurrency > 0) {
+        Workflow.setContext(emptyWorkflowContext)
+      }
 
       return BuiltWorkflowExecutorConfig(
-          workflowName!!,
-          factories,
-          concurrency,
-          timeoutSeconds.withTimeout,
-          withRetry,
-          checkMode,
-          batch,
-      )
+          workflowName = workflowName!!,
+          factories = factories,
+          concurrency = concurrency,
+          withTimeout = timeoutSeconds.withTimeout,
+          withRetry = withRetry,
+          checkMode = checkMode,
+          batch = batch,
+          eventHandlerConcurrency = eventHandlerConcurrency
+              .takeIf { it != UNSET_CONCURRENCY } ?: concurrency,
+          retryHandlerConcurrency = retryHandlerConcurrency
+              .takeIf { it != UNSET_CONCURRENCY } ?: concurrency,
+      ).also { it.check() }
     }
   }
 }
@@ -145,7 +210,9 @@ data class BuiltWorkflowExecutorConfig(
   override var withTimeout: WithTimeout?,
   override var withRetry: WithRetry?,
   override var checkMode: WorkflowCheckMode?,
-  override val batch: BatchConfig?
+  override val batch: BatchConfig?,
+  override val eventHandlerConcurrency: Int = concurrency,
+  override val retryHandlerConcurrency: Int = concurrency,
 ) : WorkflowExecutorConfig()
 
 /**
@@ -160,6 +227,8 @@ data class LoadedWorkflowExecutorConfig(
   var retry: RetryPolicy? = UNSET_RETRY_POLICY,
   override var checkMode: WorkflowCheckMode? = null,
   override val batch: BatchConfig? = null,
+  override val eventHandlerConcurrency: Int = concurrency,
+  override val retryHandlerConcurrency: Int = concurrency,
 ) : WorkflowExecutorConfig(), WithMutableWorkflowName {
   private val allInstances = mutableListOf<Workflow>()
 
@@ -172,28 +241,28 @@ data class LoadedWorkflowExecutorConfig(
   }
 
   init {
-    // Needed if the workflow context is referenced within the properties of the workflow
-    Workflow.setContext(emptyWorkflowContext)
 
-    require((`class` != null) || (classes != null)) {
-      "'${::`class`.name}' and '${::classes.name}' can not be both null"
+    if (concurrency > 0) {
+      // Needed if the workflow context is referenced within the properties of the workflow
+      Workflow.setContext(emptyWorkflowContext)
+
+      require((`class` != null) || (classes != null)) {
+        "'${::`class`.name}' and '${::classes.name}' can not be both null"
+      }
+
+      `class`?.let {
+        require(`class`.isNotEmpty()) { "'${::`class`.name}' can not be empty" }
+        allInstances.add(getInstance(it))
+      }
+
+      classes?.forEachIndexed { index, s: String ->
+        require(s.isNotEmpty()) { "'${::classes.name}[$index]' can not be empty" }
+        allInstances.add(getInstance(s))
+      }
+
+      retry?.check()
     }
-
-    `class`?.let {
-      require(`class`.isNotEmpty()) { "'${::`class`.name}' can not be empty" }
-      allInstances.add(getInstance(it))
-    }
-
-    classes?.forEachIndexed { index, s: String ->
-      require(s.isNotEmpty()) { "'${::classes.name}[$index]' can not be empty" }
-      allInstances.add(getInstance(s))
-    }
-    factories.checkVersionUniqueness()
-    factories.checkInstanceUniqueness()
-
-    concurrency.checkConcurrency()
-    timeoutSeconds?.checkTimeout()
-    retry?.check()
+    this.check()
   }
 
   private fun getInstance(className: String): Workflow {

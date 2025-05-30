@@ -27,18 +27,35 @@ import io.infinitic.config.loadFromYamlFile
 import io.infinitic.config.loadFromYamlResource
 import io.infinitic.config.loadFromYamlString
 
+@Suppress("unused")
 data class WorkflowConfig(
+  /**
+   * The unique name of the workflow.
+   */
   val name: String,
+  /**
+   * The executor configuration for the workflow.
+   * If not provided, it will not start an executor.
+   */
   var executor: WorkflowExecutorConfig? = null,
+  /**
+   * The tag engine configuration for the workflow.
+   * If not provided, it will not start a tag engine.
+   */
   var tagEngine: WorkflowTagEngineConfig? = null,
+  /**
+   * The state engine configuration for the workflow.
+   * If not provided, it will not start a state engine.
+   */
   var stateEngine: WorkflowStateEngineConfig? = null,
 ) {
+
   init {
     require(name.isNotEmpty()) { "'${::name.name}' can not be empty" }
 
     executor?.let {
       if (it is LoadedWorkflowExecutorConfig) it.setWorkflowName(name)
-      val instances = it.factories.map { it() }
+      val instances = it.factories.map { factory -> factory() }
       instances.forEach { instance ->
         require(instance::class.java.isImplementationOf(name)) {
           error("Class '${instance::class.java.name}' must be an implementation of Workflow '$name'")
@@ -51,21 +68,21 @@ data class WorkflowConfig(
 
   companion object {
     /**
-     * Create WorkflowConfig from files in file system
+     * Create WorkflowConfig from files in the file system
      */
     @JvmStatic
     fun fromYamlFile(vararg files: String): WorkflowConfig =
         loadFromYamlFile(*files)
 
     /**
-     * Create WorkflowConfig from files in resources directory
+     * Create WorkflowConfig from files in the resources directory
      */
     @JvmStatic
     fun fromYamlResource(vararg resources: String): WorkflowConfig =
         loadFromYamlResource(*resources)
 
     /**
-     * Create WorkflowConfig from yaml strings
+     * Create WorkflowConfig from YAML strings
      */
     @JvmStatic
     fun fromYamlString(vararg yamls: String): WorkflowConfig =

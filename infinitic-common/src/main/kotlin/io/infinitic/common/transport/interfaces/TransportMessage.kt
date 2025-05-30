@@ -25,14 +25,26 @@ package io.infinitic.common.transport.interfaces
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.transport.Topic
 
+
 /**
- * Represents a transport message that can be deserialized.
+ * Represents a message transported within the Infinitic system.
  *
- * @param M The type of the payload contained within the message.
+ * @param M The type of the deserialized message.
  */
 interface TransportMessage<out M> {
+  /**
+   * The timestamp when the message was published.
+   */
   val publishTime: MillisInstant
+
+  /**
+   * The unique identifier of the message.
+   */
   val messageId: String
+
+  /**
+   * The topic to which the message was published.
+   */
   val topic: Topic<*>
 
   /**

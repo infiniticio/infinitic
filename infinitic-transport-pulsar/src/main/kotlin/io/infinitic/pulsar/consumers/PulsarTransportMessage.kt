@@ -37,7 +37,15 @@ class PulsarTransportMessage<M : Message>(
   override val topic: Topic<M>,
   maxRedeliveryCount: Int
 ) : TransportMessage<M> {
+
+  /**
+   * The time at which the message was published to the Pulsar topic.
+   */
   override val publishTime = MillisInstant(pulsarMessage.publishTime)
+
+  /**
+   * The unique identifier of the Pulsar message.
+   */
   override val messageId = pulsarMessage.messageId.toString()
 
   /**

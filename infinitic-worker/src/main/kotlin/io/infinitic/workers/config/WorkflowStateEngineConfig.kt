@@ -30,14 +30,50 @@ import io.infinitic.config.loadFromYamlString
 import io.infinitic.storage.config.StorageConfig
 import io.infinitic.workflows.engine.storage.BinaryWorkflowStateStorage
 
+@Suppress("unused")
 data class WorkflowStateEngineConfig(
+
   override var workflowName: String = "",
+  /**
+   * The number of concurrent workflow state engine instances.
+   * If not provided, it will default to 1.
+   */
   val concurrency: Int = 1,
+  /**
+   * Storage configuration for the workflow state engine.
+   * If not provided, it will use the default storage configuration.
+   */
   override var storage: StorageConfig? = null,
-  val batch: BatchConfig? = null
+  /**
+   * Batch configuration for the workflow state engine.
+   * If not provided, it will not use batching.
+   */
+  val batch: BatchConfig? = null,
+  /**
+   * The number of concurrent workflow state timer handlers.
+   * If not provided, it will default to the same value as concurrency.
+   */
+  val timerHandlerConcurrency: Int = concurrency,
+  /**
+   * The number of concurrent workflow state command handlers.
+   * If not provided, it will default to the same value as concurrency.
+   */
+  val commandHandlerConcurrency: Int = concurrency,
+  /**
+   * The number of concurrent workflow state event handlers.
+   * If not provided, it will default to the same value as concurrency.
+   */
+  val eventHandlerConcurrency: Int = concurrency,
 ) : WithMutableWorkflowName, WithMutableStorage {
+
   init {
-    require(concurrency >= 0) { "concurrency must be positive" }
+    require(concurrency >= 0) { "${::concurrency.name} must be positive" }
+
+    require(timerHandlerConcurrency >= 0) { "${::timerHandlerConcurrency.name} must be positive" }
+
+    require(commandHandlerConcurrency >= 0) { "${::commandHandlerConcurrency.name} must be positive" }
+
+    require(eventHandlerConcurrency >= 0) { "${::eventHandlerConcurrency.name} must be positive" }
   }
 
   val workflowStateStorage by lazy {
@@ -49,21 +85,21 @@ data class WorkflowStateEngineConfig(
     fun builder() = WorkflowStateEngineConfigBuilder()
 
     /**
-     * Create WorkflowStateEngineConfig from files in file system
+     * Create WorkflowStateEngineConfig from files in the file system
      */
     @JvmStatic
     fun fromYamlFile(vararg files: String): WorkflowStateEngineConfig =
         loadFromYamlFile(*files)
 
     /**
-     * Create WorkflowStateEngineConfig from files in resources directory
+     * Create WorkflowStateEngineConfig from files in the resources directory
      */
     @JvmStatic
     fun fromYamlResource(vararg resources: String): WorkflowStateEngineConfig =
         loadFromYamlResource(*resources)
 
     /**
-     * Create WorkflowStateEngineConfig from yaml strings
+     * Create WorkflowStateEngineConfig from YAML strings
      */
     @JvmStatic
     fun fromYamlString(vararg yamls: String): WorkflowStateEngineConfig =
@@ -79,6 +115,9 @@ data class WorkflowStateEngineConfig(
     private var concurrency = default.concurrency
     private var storage = default.storage
     private var batch = default.batch
+    private var timerHandlerConcurrency = UNSET_CONCURRENCY
+    private var commandHandlerConcurrency = UNSET_CONCURRENCY
+    private var eventHandlerConcurrency = UNSET_CONCURRENCY
 
     fun setWorkflowName(workflowName: String) =
         apply { this.workflowName = workflowName }
@@ -92,15 +131,29 @@ data class WorkflowStateEngineConfig(
     fun setBatch(maxMessages: Int, maxSeconds: Double) =
         apply { this.batch = BatchConfig(maxMessages, maxSeconds) }
 
+    fun setTimerHandlerConcurrency(timerHandlerConcurrency: Int) =
+        apply { this.timerHandlerConcurrency = timerHandlerConcurrency }
+
+    fun setCommandHandlerConcurrency(commandHandlerConcurrency: Int) =
+        apply { this.commandHandlerConcurrency = commandHandlerConcurrency }
+
+    fun setEventHandlerConcurrency(eventHandlerConcurrency: Int) =
+        apply { this.eventHandlerConcurrency = eventHandlerConcurrency }
+
     fun build(): WorkflowStateEngineConfig {
       workflowName.checkWorkflowName()
-      concurrency.checkConcurrency()
 
       return WorkflowStateEngineConfig(
-          workflowName,
-          concurrency,
-          storage,
-          batch,
+          workflowName = workflowName,
+          concurrency = concurrency,
+          storage = storage,
+          batch = batch,
+          timerHandlerConcurrency = timerHandlerConcurrency
+              .takeIf { it != UNSET_CONCURRENCY } ?: concurrency,
+          commandHandlerConcurrency = commandHandlerConcurrency
+              .takeIf { it != UNSET_CONCURRENCY } ?: concurrency,
+          eventHandlerConcurrency = eventHandlerConcurrency
+              .takeIf { it != UNSET_CONCURRENCY } ?: concurrency,
       )
     }
   }

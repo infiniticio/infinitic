@@ -22,9 +22,6 @@
  */
 package io.infinitic.common.transport.config
 
-import io.infinitic.common.data.MillisDuration
-import io.infinitic.common.transport.BatchProcessorConfig
-
 data class BatchConfig(
   val maxMessages: Int = 1000,
   val maxSeconds: Double = 1.0
@@ -33,17 +30,6 @@ data class BatchConfig(
     require(maxMessages > 0) { error("'${::maxMessages.name}' must be > 0, but was $maxMessages") }
     require(maxSeconds > 0) { error("'${::maxSeconds.name}' must be > 0, but was $maxSeconds") }
   }
-}
-
-fun BatchConfig?.normalized(concurrency: Int) =
-    this?.copy(maxMessages = (maxMessages / concurrency).coerceAtLeast(1))
-
-fun BatchConfig?.normalized(key: String, concurrency: Int = 1) = this?.let {
-  BatchProcessorConfig(
-      key,
-      (maxMessages / concurrency).coerceAtLeast(1),
-      MillisDuration(maxMillis),
-  )
 }
 
 val BatchConfig.maxMillis: Long

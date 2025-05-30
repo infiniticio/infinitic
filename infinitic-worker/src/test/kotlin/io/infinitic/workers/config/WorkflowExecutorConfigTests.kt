@@ -54,13 +54,62 @@ internal class WorkflowExecutorConfigTests : StringSpec(
               .build()
         }
 
-        config.workflowName shouldBe workflowName
         config.shouldBeInstanceOf<WorkflowExecutorConfig>()
+        config.workflowName shouldBe workflowName
         config.factories.size shouldBe 1
         config.factories[0].invoke().shouldBeInstanceOf<WorkflowAImpl>()
         config.concurrency shouldBe 1
+        config.eventHandlerConcurrency shouldBe 1
+        config.retryHandlerConcurrency shouldBe 1
         config.withRetry shouldBe WithRetry.UNSET
         config.withTimeout shouldBe WithTimeout.UNSET
+      }
+
+      "Can create WorkflowExecutorConfig through builder with concurrency" {
+        val config = shouldNotThrowAny {
+          WorkflowExecutorConfig.builder()
+              .setWorkflowName(workflowName)
+              .addFactory { WorkflowAImpl() }
+              .setConcurrency(10)
+              .setEventHandlerConcurrency(11)
+              .setRetryHandlerConcurrency(12)
+              .build()
+        }
+
+        config.shouldBeInstanceOf<WorkflowExecutorConfig>()
+        config.concurrency shouldBe 10
+        config.eventHandlerConcurrency shouldBe 11
+        config.retryHandlerConcurrency shouldBe 12
+      }
+
+      "Can create WorkflowExecutorConfig through builder with only retries" {
+        val config = shouldNotThrowAny {
+          WorkflowExecutorConfig.builder()
+              .setWorkflowName(workflowName)
+              .setConcurrency(0)
+              .setRetryHandlerConcurrency(10)
+              .build()
+        }
+
+        config.shouldBeInstanceOf<WorkflowExecutorConfig>()
+        config.concurrency shouldBe 0
+        config.retryHandlerConcurrency shouldBe 10
+        config.eventHandlerConcurrency shouldBe 0
+      }
+
+      "Can create WorkflowExecutorConfig through builder with only events" {
+        val config = shouldNotThrowAny {
+          WorkflowExecutorConfig.builder()
+              .setWorkflowName(workflowName)
+              .setConcurrency(0)
+              .setEventHandlerConcurrency(10)
+              .build()
+        }
+
+        config.shouldBeInstanceOf<WorkflowExecutorConfig>()
+        config.concurrency shouldBe 0
+        config.retryHandlerConcurrency shouldBe 0
+        config.eventHandlerConcurrency shouldBe 10
       }
 
       "Can create WorkflowExecutorConfig through builder with all parameters" {
@@ -70,6 +119,8 @@ internal class WorkflowExecutorConfigTests : StringSpec(
               .setWorkflowName(workflowName)
               .addFactory { WorkflowAImpl() }
               .setConcurrency(10)
+              .setEventHandlerConcurrency(11)
+              .setRetryHandlerConcurrency(12)
               .setTimeoutSeconds(3.0)
               .withRetry(withRetry)
               .setCheckMode(WorkflowCheckMode.strict)
@@ -77,7 +128,10 @@ internal class WorkflowExecutorConfigTests : StringSpec(
         }
 
         config.shouldBeInstanceOf<WorkflowExecutorConfig>()
+        config.factories[0].invoke().shouldBeInstanceOf<WorkflowAImpl>()
         config.concurrency shouldBe 10
+        config.eventHandlerConcurrency shouldBe 11
+        config.retryHandlerConcurrency shouldBe 12
         config.withRetry shouldBe withRetry
         config.withTimeout?.getTimeoutSeconds() shouldBe 3.0
         config.checkMode shouldBe WorkflowCheckMode.strict
@@ -113,12 +167,12 @@ internal class WorkflowExecutorConfigTests : StringSpec(
         e.message shouldContain "factory"
       }
 
-      "Can create WorkflowExecutorConfig through YAML without workflowName" {
+      "Can create WorkflowExecutorConfig through YAML with default parameters" {
         val config = shouldNotThrowAny {
           WorkflowExecutorConfig.fromYamlString(
               """
 class: ${WorkflowAImpl::class.java.name}
-          """,
+              """.trimIndent(),
           )
         }
 
@@ -126,8 +180,40 @@ class: ${WorkflowAImpl::class.java.name}
         config.factories.size shouldBe 1
         config.factories[0].invoke().shouldBeInstanceOf<WorkflowAImpl>()
         config.concurrency shouldBe 1
+        config.eventHandlerConcurrency shouldBe 1
+        config.retryHandlerConcurrency shouldBe 1
         config.withRetry shouldBe WithRetry.UNSET
         config.withTimeout shouldBe WithTimeout.UNSET
+      }
+
+      "Can create WorkflowExecutorConfig through YAML with only retries" {
+        val config = shouldNotThrowAny {
+          WorkflowExecutorConfig.fromYamlString(
+              """
+                concurrency: 0
+                retryHandlerConcurrency: 1
+              """.trimIndent(),
+          )
+        }
+
+        config.concurrency shouldBe 0
+        config.retryHandlerConcurrency shouldBe 1
+        config.eventHandlerConcurrency shouldBe 0
+      }
+
+      "Can create WorkflowExecutorConfig through YAML with only events" {
+        val config = shouldNotThrowAny {
+          WorkflowExecutorConfig.fromYamlString(
+              """
+                concurrency: 0
+                eventHandlerConcurrency: 1
+              """.trimIndent(),
+          )
+        }
+
+        config.concurrency shouldBe 0
+        config.retryHandlerConcurrency shouldBe 0
+        config.eventHandlerConcurrency shouldBe 1
       }
 
       "Can create WorkflowExecutorConfig through YAML with all parameters" {
@@ -137,6 +223,8 @@ class: ${WorkflowAImpl::class.java.name}
               """
 class: ${WorkflowAImpl::class.java.name}
 concurrency: 10
+eventHandlerConcurrency: 11
+retryHandlerConcurrency: 12
 timeoutSeconds: 3.0
 checkMode: strict
 batch:
@@ -144,11 +232,13 @@ batch:
   maxSeconds: 0.5
 retry:
   minimumSeconds: 4
-          """,
+              """.trimIndent(),
           )
         }
 
         config.concurrency shouldBe 10
+        config.eventHandlerConcurrency shouldBe 11
+        config.retryHandlerConcurrency shouldBe 12
         config.withTimeout?.getTimeoutSeconds() shouldBe 3.0
         config.withRetry shouldBe withRetry
         config.checkMode shouldBe WorkflowCheckMode.strict
