@@ -25,6 +25,8 @@ package io.infinitic.common.transport.consumers
 import io.infinitic.common.transport.interfaces.TransportConsumer
 import io.infinitic.common.transport.interfaces.TransportMessage
 import io.infinitic.common.transport.logged.LoggerWithCounter
+import java.util.zip.CRC32
+import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.cancel
@@ -32,8 +34,6 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.util.zip.CRC32
-import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * Starts receiving messages and distributes (shards) them across multiple channels.
@@ -87,7 +87,7 @@ internal fun <T : TransportMessage<M>, M> CoroutineScope.startReceivingAndShard(
         warn(e) { "Exception when receiving message from $this" }
       } catch (e: Error) {
         warn(e) { "Error when receiving message from $this" }
-        // canceling current scope (warning scope is different from inside launch)
+        // canceling the current scope (warning scope is different from inside launch)
         // that's why we define the scope variable at the very beginning
         this@CoroutineScope.cancel()
       }

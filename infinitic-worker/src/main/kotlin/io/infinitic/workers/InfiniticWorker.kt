@@ -66,6 +66,7 @@ import io.infinitic.events.CloudEventLogger
 import io.infinitic.events.config.EventListenerConfig
 import io.infinitic.events.listeners.startCloudEventListener
 import io.infinitic.tasks.Task
+import io.infinitic.tasks.WithRetry
 import io.infinitic.tasks.WithTimeout
 import io.infinitic.tasks.executor.TaskEventHandler
 import io.infinitic.tasks.executor.TaskExecutor
@@ -343,9 +344,9 @@ class InfiniticWorker(
         append("* Event Listener".padEnd(25))
         append(": (")
         append("concurrency: ${config.concurrency}, ")
-        append("class: ${config.listener::class.java.name}")
-        if (config.subscriptionName != null) append(", subscription: ${config.subscriptionName}")
+        append("class: ${config.listener::class.java.simpleName}")
         append(", batch: ${config.batchConfig.notNullPropertiesToString()}")
+        if (config.subscriptionName != null) append(", subscription: ${config.subscriptionName}")
         append(")")
       }
     }
@@ -356,9 +357,9 @@ class InfiniticWorker(
       buildString {
         append("* Service Executor".padEnd(25))
         append(": (concurrency: ${config.concurrency}")
-        config.factory?.let { append(", class: ${it()::class.java.name}") }
-        config.withTimeout?.let { append(", timeout: ${it.toLog()}") }
-        config.withRetry?.let { append(", withRetry: $it") }
+        config.factory?.let { append(", class: ${it()::class.simpleName}") }
+        config.withTimeout?.let { if (it != WithTimeout.UNSET) append(", timeout: ${it.toLog()}") }
+        config.withRetry?.let { if (it != WithRetry.UNSET) append(", withRetry: $it") }
         config.batch?.let { append(", batch: ${it.notNullPropertiesToString()}") }
         if (config.retryHandlerConcurrency != config.concurrency) {
           append(", retryHandlerConcurrency: ${config.retryHandlerConcurrency}")
@@ -394,8 +395,8 @@ class InfiniticWorker(
           if (index == 0) append(", classes: ") else append(", ")
           append(factory.invoke()::class.simpleName)
         }
-        config.withTimeout?.let { append(", timeout: ${it.toLog()}") }
-        config.withRetry?.let { append(", withRetry: $it") }
+        config.withTimeout?.let { if (it != WithTimeout.UNSET) append(", timeout: ${it.toLog()}") }
+        config.withRetry?.let { if (it != WithRetry.UNSET) append(", withRetry: $it") }
         config.batch?.let { append(", batch: ${it.notNullPropertiesToString()}") }
         if (config.checkMode != null) append(", checkMode: ${config.checkMode}")
         if (config.retryHandlerConcurrency != config.concurrency) {
@@ -460,27 +461,34 @@ class InfiniticWorker(
    * Starts the Service Tag Engine with the given configuration.
    */
   internal suspend fun startServiceTagEngine(config: ServiceTagEngineConfig) {
-    // Log Service Tag Engine configuration
-    logServiceTagEngineStart(config)
+    if (config.concurrency > 0) {
+      // Log Service Tag Engine configuration
+      logServiceTagEngineStart(config)
 
-    val serviceName = config.serviceName
-    val concurrency = config.concurrency
+      val serviceName = config.serviceName
 
-    // Create a producer with the batchConfig
-    val producer = producerFactory.newProducer(null)
+      // Create a producer with the batchConfig
+      val producer = producerFactory.newProducer(null)
 
-    with(TaskTagEngine.logger) {
-      // producer
-      val loggedProducer = LoggedInfiniticProducer(this, producer)
-      // storage
-      val storage = LoggedTaskTagStorage(this, config.serviceTagStorage)
-      // consumer
-      val consumer = consumerFactory.newConsumer(
-          subscription = MainSubscription(ServiceTagEngineTopic),
-          entity = serviceName,
-          batchReceivingConfig = null,
-      )
-      scope.startServiceTagEngine(consumer, loggedProducer, storage, serviceName, concurrency)
+      with(TaskTagEngine.logger) {
+        // producer
+        val loggedProducer = LoggedInfiniticProducer(this, producer)
+        // storage
+        val storage = LoggedTaskTagStorage(this, config.serviceTagStorage)
+        // consumer
+        val consumer = consumerFactory.newConsumer(
+            subscription = MainSubscription(ServiceTagEngineTopic),
+            entity = serviceName,
+            batchReceivingConfig = null,
+        )
+        scope.startServiceTagEngine(
+            consumer = consumer,
+            producer = loggedProducer,
+            storage = storage,
+            serviceName = serviceName,
+            concurrency = config.concurrency,
+        )
+      }
     }
   }
 
