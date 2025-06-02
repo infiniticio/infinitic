@@ -66,7 +66,8 @@ import io.infinitic.events.CloudEventLogger
 import io.infinitic.events.config.EventListenerConfig
 import io.infinitic.events.listeners.startCloudEventListener
 import io.infinitic.tasks.Task
-import io.infinitic.tasks.WithRetry
+import io.infinitic.tasks.UNSET_WITH_RETRY
+import io.infinitic.tasks.UNSET_WITH_TIMEOUT
 import io.infinitic.tasks.WithTimeout
 import io.infinitic.tasks.executor.TaskEventHandler
 import io.infinitic.tasks.executor.TaskExecutor
@@ -93,6 +94,8 @@ import io.infinitic.workflows.engine.storage.LoggedWorkflowStateStorage
 import io.infinitic.workflows.tag.WorkflowTagEngine
 import io.infinitic.workflows.tag.storage.LoggedWorkflowTagStorage
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.system.exitProcess
@@ -118,6 +121,9 @@ class InfiniticWorker(
 
   /** Coroutine scope used to launch consumers and await their termination */
   private lateinit var scope: CoroutineScope
+
+  /** List of executors used by the worker */
+  private val executors = mutableListOf<ExecutorService>()
 
   override fun close() {
     if (isStarted.compareAndSet(true, false)) runBlocking {
@@ -168,6 +174,9 @@ class InfiniticWorker(
             logger.info { "* WorkflowStateCmdHandler: $remaining ($received received)" }
           }
         }
+        // closing Executors
+        executors.forEach { it.shutdownNow() }
+        executors.clear()
         // closing client
         client.close()
       }
@@ -358,8 +367,8 @@ class InfiniticWorker(
         append("* Service Executor".padEnd(25))
         append(": (concurrency: ${config.concurrency}")
         config.factory?.let { append(", class: ${it()::class.simpleName}") }
-        config.withTimeout?.let { if (it != WithTimeout.UNSET) append(", timeout: ${it.toLog()}") }
-        config.withRetry?.let { if (it != WithRetry.UNSET) append(", withRetry: $it") }
+        config.withTimeout?.let { if (it != UNSET_WITH_TIMEOUT) append(", timeout: ${it.toLog()}") }
+        config.withRetry?.let { if (it != UNSET_WITH_RETRY) append(", withRetry: $it") }
         config.batch?.let { append(", batch: ${it.notNullPropertiesToString()}") }
         if (config.retryHandlerConcurrency != config.concurrency) {
           append(", retryHandlerConcurrency: ${config.retryHandlerConcurrency}")
@@ -395,8 +404,8 @@ class InfiniticWorker(
           if (index == 0) append(", classes: ") else append(", ")
           append(factory.invoke()::class.simpleName)
         }
-        config.withTimeout?.let { if (it != WithTimeout.UNSET) append(", timeout: ${it.toLog()}") }
-        config.withRetry?.let { if (it != WithRetry.UNSET) append(", withRetry: $it") }
+        config.withTimeout?.let { if (it != UNSET_WITH_TIMEOUT) append(", timeout: ${it.toLog()}") }
+        config.withRetry?.let { if (it != UNSET_WITH_RETRY) append(", withRetry: $it") }
         config.batch?.let { append(", batch: ${it.notNullPropertiesToString()}") }
         if (config.checkMode != null) append(", checkMode: ${config.checkMode}")
         if (config.retryHandlerConcurrency != config.concurrency) {
@@ -822,7 +831,8 @@ class InfiniticWorker(
     concurrency: Int,
     batchConfig: BatchConfig?
   ) {
-    val taskExecutor = TaskExecutor(registry, producer, client)
+    val executor = Executors.newFixedThreadPool(concurrency)
+    val taskExecutor = TaskExecutor(executor, registry, producer, client)
 
     val cloudEventLogger = CloudEventLogger(
         ServiceExecutorTopic,
@@ -1189,7 +1199,8 @@ class InfiniticWorker(
     concurrency: Int,
     batchConfig: BatchConfig?
   ) {
-    val workflowTaskExecutor = TaskExecutor(registry, producer, client)
+    val executor = Executors.newFixedThreadPool(concurrency * (batchConfig?.maxMessages ?: 1))
+    val workflowTaskExecutor = TaskExecutor(executor, registry, producer, client)
 
     val cloudEventLogger = CloudEventLogger(
         WorkflowExecutorTopic,

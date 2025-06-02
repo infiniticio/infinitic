@@ -23,6 +23,7 @@
 package io.infinitic.tests.timeouts
 
 import io.infinitic.Test
+import io.infinitic.exceptions.TaskFailedException
 import io.infinitic.exceptions.TaskTimedOutException
 import io.infinitic.exceptions.WorkflowFailedException
 import io.infinitic.exceptions.WorkflowTimedOutException
@@ -91,6 +92,21 @@ internal class TimeoutsWorkflowTests :
 
         "timeout on a synchronous task should NOT throw if slower than the task" {
           shouldNotThrowAny { timeoutsWorkflow.withTimeoutOnTask(10) }
+        }
+
+        "Execution timeout triggered in a synchronous task should throw" {
+          val e = shouldThrow<WorkflowFailedException> {
+            timeoutsWorkflow.withTimeoutOnTaskExecution(2000)
+          }
+
+          e.deferredException.shouldBeInstanceOf<TaskFailedException>()
+          val cause = e.deferredException as TaskFailedException
+          cause.serviceName shouldBe UtilService::class.java.name
+          cause.methodName shouldBe "withExecutionTimeout"
+        }
+
+        "Execution timeout on a synchronous task should NOT throw if slower than the task" {
+          shouldNotThrowAny { timeoutsWorkflow.withTimeoutOnTaskExecution(10) }
         }
 
         "timeout triggered on a synchronous task can be caught" {

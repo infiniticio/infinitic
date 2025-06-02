@@ -38,16 +38,16 @@ import io.mockk.mockk
 import io.mockk.verify
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 
 internal class TaskRunnerTests : StringSpec(
     {
+      val name = "test"
       val taskId = TaskId()
       val serviceName = ServiceName("test-service")
       val taskName = MethodName("testTask")
 
-      val taskContext = mockk<TaskContext>(relaxed = true) {
+      mockk<TaskContext>(relaxed = true) {
         every { this@mockk.serviceName } returns serviceName
         every { this@mockk.taskName } returns taskName
         every { this@mockk.taskId } returns taskId
@@ -62,7 +62,7 @@ internal class TaskRunnerTests : StringSpec(
       }
 
       "successfully run a task" {
-        val result = taskRunner.runWithTimeout(taskContext, 1000, 100) {
+        val result = taskRunner.runWithTimeout(name, 1000, 100) {
           "success"
         }
 
@@ -73,7 +73,7 @@ internal class TaskRunnerTests : StringSpec(
 
       "handle task failure" {
         val exception = RuntimeException("Task failed")
-        val result = taskRunner.runWithTimeout(taskContext, 1000, 100) {
+        val result = taskRunner.runWithTimeout(name, 1000, 100) {
           throw exception
         }
 
@@ -83,16 +83,13 @@ internal class TaskRunnerTests : StringSpec(
 
       "timeout task that runs too long" {
         val startTime = System.currentTimeMillis()
-        val latch = CountDownLatch(1)
 
-        val result = taskRunner.runWithTimeout(taskContext, 50, 10) {
-          latch.countDown() // Signal that task has started
+        val result = taskRunner.runWithTimeout(name, 50, 10) {
           Thread.sleep(200)
           "should not reach here"
         }
 
         // Wait for the task to start before checking duration
-        latch.await(100, TimeUnit.MILLISECONDS)
         val duration = System.currentTimeMillis() - startTime
 
         result.isFailure shouldBe true
@@ -114,10 +111,7 @@ internal class TaskRunnerTests : StringSpec(
           "should not reach here"
         }
 
-        val result = taskRunner.runWithTimeout(taskContext, 50, 10, task)
-
-        // Wait for the callback to be executed
-        latch.await(100, TimeUnit.MILLISECONDS)
+        val result = taskRunner.runWithTimeout(name, 50, 10, task)
 
         result.isFailure shouldBe true
         result.exceptionOrNull().shouldBeInstanceOf<TimeoutException>()
@@ -125,20 +119,15 @@ internal class TaskRunnerTests : StringSpec(
       }
 
       "handle task that completes during grace period" {
-        val latch = CountDownLatch(1)
         var completed = false
 
         val task = {
-          Thread.sleep(30) // Shorter sleep to ensure it completes during grace period
+          Thread.sleep(50) // Shorter sleep to ensure it completes during grace period
           completed = true
-          latch.countDown()
           "completed in grace period"
         }
 
-        val result = taskRunner.runWithTimeout(taskContext, 10, 100, task)
-
-        // Wait for the task to complete
-        latch.await(200, TimeUnit.MILLISECONDS)
+        val result = taskRunner.runWithTimeout(name, 10, 100, task)
 
         completed shouldBe true
         result.isSuccess shouldBe true
@@ -147,7 +136,7 @@ internal class TaskRunnerTests : StringSpec(
 
       "handle task that throws Error" {
         val error = OutOfMemoryError("Simulated error")
-        val result = taskRunner.runWithTimeout(taskContext, 1000, 100) {
+        val result = taskRunner.runWithTimeout(name, 1000, 100) {
           throw error
         }
 
@@ -158,16 +147,16 @@ internal class TaskRunnerTests : StringSpec(
       "set and clear thread name during execution" {
         var threadName: String? = null
 
-        taskRunner.runWithTimeout(taskContext, 1000, 100) {
+        taskRunner.runWithTimeout(name, 1000, 100) {
           threadName = Thread.currentThread().name
           "success"
         }
 
-        threadName shouldBe "task-${serviceName}:${taskName}-${taskId}"
+        threadName shouldBe "task-test"
       }
 
       "handle task cancellation during execution" {
-        val result = taskRunner.runWithTimeout(taskContext, 50, 0) {
+        val result = taskRunner.runWithTimeout(name, 50, 0) {
           try {
             Thread.sleep(200)
             "should not reach here"
@@ -182,34 +171,20 @@ internal class TaskRunnerTests : StringSpec(
       }
 
       "log warning when task times out" {
-        var logMessage = ""
-        every { mockLogger.warn(captureLambda()) } answers {
-          logMessage = firstArg()
-        }
+        var warnMessages: MutableList<() -> String> = mutableListOf()
+        var errorMessages: MutableList<() -> String> = mutableListOf()
+        every { mockLogger.warn(captureLambda()) } answers { warnMessages.add(firstArg()) }
+        every { mockLogger.error(captureLambda()) } answers { errorMessages.add(firstArg()) }
 
-        taskRunner.runWithTimeout(taskContext, 50, 10) {
-          Thread.sleep(100)
+        taskRunner.runWithTimeout(name, 50, 10) {
+          Thread.sleep(200)
           "should not reach here"
         }
 
         verify { mockLogger.warn(any<() -> String>()) }
-        logMessage shouldContain "timed out after 50ms"
-        logMessage shouldContain "grace period"
-      }
-
-      "log error when task exceeds grace period" {
-        var logMessage = ""
-        every { mockLogger.error(captureLambda()) } answers {
-          logMessage = firstArg()
-        }
-
-        taskRunner.runWithTimeout(taskContext, 10, 10) {
-          Thread.sleep(100)
-          "should not reach here"
-        }
-
-        verify { mockLogger.error(any<() -> String>()) }
-        logMessage shouldContain "still running after timeout + grace"
+        warnMessages[0]() shouldContain "timed out after"
+        warnMessages[1]() shouldContain "grace period"
+        errorMessages[0]() shouldContain "still running after timeout + grace"
       }
     },
 )

@@ -26,8 +26,8 @@ import com.sksamuel.hoplite.ConfigException
 import io.infinitic.common.transport.config.BatchConfig
 import io.infinitic.common.workers.config.WithExponentialBackoffRetry
 import io.infinitic.common.workflows.emptyWorkflowContext
-import io.infinitic.tasks.WithRetry
-import io.infinitic.tasks.WithTimeout
+import io.infinitic.tasks.UNSET_WITH_RETRY
+import io.infinitic.tasks.UNSET_WITH_TIMEOUT
 import io.infinitic.workers.samples.NotAWorkflow
 import io.infinitic.workers.samples.ServiceA
 import io.infinitic.workers.samples.WorkflowAImpl
@@ -61,8 +61,8 @@ internal class WorkflowExecutorConfigTests : StringSpec(
         config.concurrency shouldBe 1
         config.eventHandlerConcurrency shouldBe 1
         config.retryHandlerConcurrency shouldBe 1
-        config.withRetry shouldBe WithRetry.UNSET
-        config.withTimeout shouldBe WithTimeout.UNSET
+        config.withRetry shouldBe UNSET_WITH_RETRY
+        config.withTimeout shouldBe UNSET_WITH_TIMEOUT
       }
 
       "Can create WorkflowExecutorConfig through builder with concurrency" {
@@ -182,8 +182,8 @@ class: ${WorkflowAImpl::class.java.name}
         config.concurrency shouldBe 1
         config.eventHandlerConcurrency shouldBe 1
         config.retryHandlerConcurrency shouldBe 1
-        config.withRetry shouldBe WithRetry.UNSET
-        config.withTimeout shouldBe WithTimeout.UNSET
+        config.withRetry shouldBe UNSET_WITH_RETRY
+        config.withTimeout shouldBe UNSET_WITH_TIMEOUT
       }
 
       "Can create WorkflowExecutorConfig through YAML with only retries" {

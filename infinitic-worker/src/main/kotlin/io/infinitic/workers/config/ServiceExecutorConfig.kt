@@ -30,6 +30,8 @@ import io.infinitic.common.workers.config.UNSET_RETRY_POLICY
 import io.infinitic.config.loadFromYamlFile
 import io.infinitic.config.loadFromYamlResource
 import io.infinitic.config.loadFromYamlString
+import io.infinitic.tasks.UNSET_WITH_RETRY
+import io.infinitic.tasks.UNSET_WITH_TIMEOUT
 import io.infinitic.tasks.WithRetry
 import io.infinitic.tasks.WithTimeout
 
@@ -135,7 +137,7 @@ sealed class ServiceExecutorConfig {
     private var factory: ServiceFactory? = null
     private var concurrency: Int = 1
     private var timeoutSeconds: Double? = UNSET_TIMEOUT
-    private var withRetry: WithRetry? = WithRetry.UNSET
+    private var withRetry: WithRetry? = UNSET_WITH_RETRY
     private var batchConfig: BatchConfig? = null
     private var eventHandlerConcurrency: Int = UNSET_CONCURRENCY
     private var retryHandlerConcurrency: Int = UNSET_CONCURRENCY
@@ -234,13 +236,13 @@ data class LoadedServiceExecutorConfig(
 
 internal val Double?.withTimeout
   get() = when (this) {
-    UNSET_TIMEOUT -> WithTimeout.UNSET
+    UNSET_TIMEOUT -> UNSET_WITH_TIMEOUT
     else -> this?.let { WithTimeout { it } }
   }
 
 internal val WithRetry?.withRetry
   get() = when (this) {
-    is UNSET_RETRY_POLICY -> WithRetry.UNSET
+    is UNSET_RETRY_POLICY -> UNSET_WITH_RETRY
     else -> this
   }
 

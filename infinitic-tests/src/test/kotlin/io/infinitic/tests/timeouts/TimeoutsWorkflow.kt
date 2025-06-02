@@ -31,13 +31,15 @@ import io.infinitic.utils.UtilService
 import io.infinitic.workflows.Workflow
 
 
-interface TimeoutsWorkflow {
+internal interface TimeoutsWorkflow {
 
   // the workflow method 'withMethodTimeout' has a 100ms timeout
   @Timeout(After1Second::class)
   fun withTimeoutOnMethod(duration: Long): Long
 
   fun withTimeoutOnTask(wait: Long): Long
+
+  fun withTimeoutOnTaskExecution(wait: Long): Long
 
   fun withCaughtTimeoutOnTask(wait: Long): Long
 
@@ -50,7 +52,7 @@ interface TimeoutsWorkflow {
 }
 
 
-class TimeoutsWorkflowImpl : Workflow(), TimeoutsWorkflow {
+internal class TimeoutsWorkflowImpl : Workflow(), TimeoutsWorkflow {
 
   private val child = newWorkflow(TimeoutsWorkflow::class.java)
 
@@ -66,6 +68,9 @@ class TimeoutsWorkflowImpl : Workflow(), TimeoutsWorkflow {
 
   // the task 'withTimeout' has a 100ms timeout
   override fun withTimeoutOnTask(wait: Long): Long = utilService.withTimeout(wait)
+
+  // the task 'withExecutionTimeout' has a 100ms execution timeout
+  override fun withTimeoutOnTaskExecution(wait: Long): Long = utilService.withExecutionTimeout(wait)
 
   // the task 'withTimeout' has a 100ms timeout
   override fun withCaughtTimeoutOnTask(wait: Long): Long = try {

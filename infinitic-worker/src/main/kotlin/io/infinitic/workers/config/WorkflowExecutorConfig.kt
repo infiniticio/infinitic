@@ -32,6 +32,7 @@ import io.infinitic.common.workflows.executors.getProperties
 import io.infinitic.config.loadFromYamlFile
 import io.infinitic.config.loadFromYamlResource
 import io.infinitic.config.loadFromYamlString
+import io.infinitic.tasks.UNSET_WITH_RETRY
 import io.infinitic.tasks.WithRetry
 import io.infinitic.tasks.WithTimeout
 import io.infinitic.workflows.Workflow
@@ -142,7 +143,7 @@ sealed class WorkflowExecutorConfig {
     private var factories: MutableList<() -> Workflow> = mutableListOf()
     private var concurrency: Int = 1
     private var timeoutSeconds: Double? = UNSET_TIMEOUT
-    private var withRetry: WithRetry? = WithRetry.UNSET
+    private var withRetry: WithRetry? = UNSET_WITH_RETRY
     private var checkMode: WorkflowCheckMode? = null
     private var batch: BatchConfig? = null
     private var eventHandlerConcurrency: Int = UNSET_CONCURRENCY

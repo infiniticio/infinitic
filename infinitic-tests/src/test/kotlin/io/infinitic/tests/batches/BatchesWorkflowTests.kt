@@ -27,13 +27,13 @@ import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.longs.shouldBeLessThan
 import io.kotest.matchers.shouldBe
+import kotlin.system.measureTimeMillis
+import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlin.system.measureTimeMillis
-import kotlin.time.Duration.Companion.minutes
 
 internal class BatchesWorkflowTests : StringSpec(
     {
@@ -126,7 +126,7 @@ internal class BatchesWorkflowTests : StringSpec(
           scope.launch {
             coroutineScope {
               repeat(20) {
-                launch { batchWorkflow.withDelay(1000) }
+                launch { println("starting $it"); batchWorkflow.withDelay(1000); println("ending $it"); }
               }
             }
           }.join()

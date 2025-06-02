@@ -29,6 +29,8 @@ interface TestService {
   fun log(): String
 
   fun await(delay: Long): Long
+
+  fun getTimeout(): Double?
 }
 
 class ExpectedException(log: String? = null) : Exception(log)
@@ -81,6 +83,8 @@ class TestServiceImpl : TestService, WithRetry {
 
         else -> null
       }
+
+  override fun getTimeout(): Double? = Task.withTimeout?.getTimeoutSeconds()
 }
 
 enum class Status {

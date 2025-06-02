@@ -24,8 +24,8 @@ package io.infinitic.workers.config
 
 import com.sksamuel.hoplite.ConfigException
 import io.infinitic.common.workers.config.WithExponentialBackoffRetry
-import io.infinitic.tasks.WithRetry
-import io.infinitic.tasks.WithTimeout
+import io.infinitic.tasks.UNSET_WITH_RETRY
+import io.infinitic.tasks.UNSET_WITH_TIMEOUT
 import io.infinitic.workers.samples.ServiceA
 import io.infinitic.workers.samples.ServiceAImpl
 import io.infinitic.workers.samples.ServiceWithExceptionInInitializerError
@@ -53,8 +53,8 @@ internal class ServiceExecutorConfigTests : StringSpec(
         config.serviceName shouldBe serviceName
         config.factory?.invoke().shouldBeInstanceOf<ServiceAImpl>()
         config.concurrency shouldBe 1
-        config.withRetry shouldBe WithRetry.UNSET
-        config.withTimeout shouldBe WithTimeout.UNSET
+        config.withRetry shouldBe UNSET_WITH_RETRY
+        config.withTimeout shouldBe UNSET_WITH_TIMEOUT
       }
 
       "Can create ServiceExecutorConfig through builder with concurrency" {
@@ -167,8 +167,8 @@ internal class ServiceExecutorConfigTests : StringSpec(
 
         config.factory?.invoke().shouldBeInstanceOf<ServiceAImpl>()
         config.concurrency shouldBe 1
-        config.withRetry shouldBe WithRetry.UNSET
-        config.withTimeout shouldBe WithTimeout.UNSET
+        config.withRetry shouldBe UNSET_WITH_RETRY
+        config.withTimeout shouldBe UNSET_WITH_TIMEOUT
       }
 
       "Can create ServiceExecutorConfig through YAML with only retries" {
@@ -218,8 +218,8 @@ internal class ServiceExecutorConfigTests : StringSpec(
         config.concurrency shouldBe 10
         config.retryHandlerConcurrency shouldBe 10
         config.eventHandlerConcurrency shouldBe 10
-        config.withTimeout shouldBe WithTimeout.UNSET
-        config.withRetry shouldBe WithRetry.UNSET
+        config.withTimeout shouldBe UNSET_WITH_TIMEOUT
+        config.withRetry shouldBe UNSET_WITH_RETRY
       }
 
       "Can create ServiceExecutorConfig through YAML with all parameters" {

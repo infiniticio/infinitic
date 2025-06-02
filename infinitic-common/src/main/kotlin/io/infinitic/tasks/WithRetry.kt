@@ -24,10 +24,6 @@ package io.infinitic.tasks
 
 fun interface WithRetry {
   fun getSecondsBeforeRetry(retry: Int, e: Exception): Double?
-
-  companion object {
-    val UNSET = WithRetry { _, _ -> null }
-  }
 }
 
 fun interface WithRetryBuilder {
@@ -36,3 +32,5 @@ fun interface WithRetryBuilder {
 
 fun WithRetry.getMillisBeforeRetry(retry: Int, e: Exception) =
     getSecondsBeforeRetry(retry, e)?.let { 0L.coerceAtLeast((it * 1000).toLong()) }
+
+val UNSET_WITH_RETRY = WithRetry { _, _ -> null }

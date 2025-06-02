@@ -25,11 +25,17 @@ package io.infinitic.tasks
 import kotlin.math.max
 
 fun interface WithTimeout {
+  /**
+   * Returns the timeout duration in seconds.
+   * Null means no timeout is set.
+   */
   fun getTimeoutSeconds(): Double?
 
-  companion object {
-    val UNSET = WithTimeout { null }
-  }
+  /**
+   * Returns the grace period after the timeout in seconds.
+   * Default is 1 second.
+   */
+  fun getGracePeriodAfterTimeoutSeconds(): Double = 1.0
 }
 
 val WithTimeout.millis: Result<Long?>
@@ -38,3 +44,5 @@ val WithTimeout.millis: Result<Long?>
   } catch (e: Exception) {
     Result.failure(e)
   }
+
+val UNSET_WITH_TIMEOUT: WithTimeout = WithTimeout { null }

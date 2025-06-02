@@ -24,6 +24,7 @@
 
 package io.infinitic.utils
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.annotations.Delegated
 import io.infinitic.annotations.Retry
 import io.infinitic.annotations.Timeout
@@ -70,11 +71,12 @@ internal interface UtilService : ParentInterface {
 
   fun getRetry(): Double?
 
-  fun getTimeout(): Double?
-
   @Timeout(After100MilliSeconds::class)
   // Timeout at Service level
   fun withTimeout(wait: Long): Long
+
+  // Timeout at Execution level
+  fun withExecutionTimeout(wait: Long): Long
 
   @Timeout(After100MilliSeconds::class)
   // Timeout at Service level
@@ -86,6 +88,8 @@ internal interface UtilService : ParentInterface {
 
 @Retry(Only1Retry::class)
 internal class UtilServiceImpl : UtilService {
+  private val logger = KotlinLogging.logger {}
+
   override fun concat(str1: String, str2: String): String = str1 + str2
 
   override fun reverse(str: String) = str.reversed()
@@ -135,10 +139,20 @@ internal class UtilServiceImpl : UtilService {
 
   override fun getRetry(): Double? = Task.withRetry?.getSecondsBeforeRetry(0, RuntimeException())
 
-  override fun getTimeout(): Double? = Task.withTimeout?.getTimeoutSeconds()
-
   override fun withTimeout(wait: Long): Long {
     Thread.sleep(wait)
+    return wait
+  }
+
+  @Timeout(After100MilliSeconds::class)
+  override fun withExecutionTimeout(wait: Long): Long {
+    Task.onTimeOut {
+      logger.error { "Timeout!" }
+    }
+    while (!Task.hasTimedOut) {
+      println("Waiting for execution timeout...in Thread ${Thread.currentThread().name}")
+      Thread.sleep(wait)
+    }
     return wait
   }
 
