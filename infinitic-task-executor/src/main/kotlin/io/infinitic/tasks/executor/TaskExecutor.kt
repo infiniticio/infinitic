@@ -69,9 +69,10 @@ import io.infinitic.tasks.WithTimeout
 import io.infinitic.tasks.executor.task.TaskContextImpl
 import io.infinitic.tasks.executor.task.TaskRunner
 import io.infinitic.tasks.getMillisBeforeRetry
-import io.infinitic.tasks.millis
+import io.infinitic.tasks.graceMillis
 import io.infinitic.tasks.threadLocalBatchContext
 import io.infinitic.tasks.threadLocalTaskContext
+import io.infinitic.tasks.timeoutMillis
 import io.infinitic.workflows.WorkflowCheckMode
 import io.infinitic.workflows.threadLocalWorkflowContext
 import io.infinitic.workflows.workflowTask.WorkflowTaskImpl
@@ -216,10 +217,13 @@ class TaskExecutor(
     val taskData = parse().getOrElse { return }
 
     // Get the task timeout. If this operation fails, return without proceeding
-    val timeout = getTaskTimeout(taskData).getOrElse { return }
+    val timeoutMillis = getTimeoutMillis(taskData).getOrElse { return }
 
-    // Execute the task with the specified timeout. If this operation fails, return without proceeding
-    val output = executeWithTimeout(taskData, timeout, 10).getOrElse { return }
+    // Get the task grace. If this operation fails, return without proceeding
+    val graceMillis = getGraceMillis(taskData).getOrElse { return }
+
+    // Execute the task with the specified timeout and grace. If this operation fails, return without proceeding
+    val output = executeWithTimeout(taskData, timeoutMillis, graceMillis).getOrElse { return }
 
     // Signal that the task has completed successfully
     sendTaskCompleted(output, taskData)
@@ -232,36 +236,39 @@ class TaskExecutor(
     sendTaskStarted()
 
     // Parse the batch. If parsing fails, return without proceeding
-    val batchedTaskData = parse().getOrElse { return }
+    val batchData = parse().getOrElse { return }
 
     // Get the batch timeout. If this operation fails, return without proceeding
-    val timeout = getBatchTimeout(batchedTaskData).getOrElse { return }
+    val timeoutMillis = getTimeoutMillis(batchData).getOrElse { return }
+
+    // Get the task grace. If this operation fails, return without proceeding
+    val graceMillis = getGraceMillis(batchData).getOrElse { return }
 
     // Execute the batch with the specified timeout.
     // If this operation fails, return without proceeding
-    val output = executeWithTimeout(batchedTaskData, timeout, 10).getOrElse { return }
+    val output = executeWithTimeout(batchData, timeoutMillis, graceMillis).getOrElse { return }
 
-    val inputTaskIds = batchedTaskData.argsMap.keys.map { it.toString() }.toSet()
+    val inputTaskIds = batchData.argsMap.keys.map { it.toString() }.toSet()
     val unknownFromOutput = output.keys.subtract(inputTaskIds)
     val missingFromOutput = inputTaskIds.subtract(output.keys)
 
     when {
       unknownFromOutput.isNotEmpty() -> sendTaskFailed(
           Exception("Unknown keys: ${unknownFromOutput.joinToString()}}"),
-          batchedTaskData.toMetaMap(),
+          batchData.toMetaMap(),
       ) {
-        "Error in the return values of the @batch ${batchedTaskData.batchMethod.batch.name} method return value"
+        "Error in the return values of the @batch ${batchData.batchMethod.batch.name} method return value"
       }
 
       missingFromOutput.isNotEmpty() -> sendTaskFailed(
           Exception("Missing keys: ${missingFromOutput.joinToString()}}"),
-          batchedTaskData.toMetaMap(),
+          batchData.toMetaMap(),
       ) {
-        "Error in the return values of the @batch ${batchedTaskData.batchMethod.batch.name} method return value"
+        "Error in the return values of the @batch ${batchData.batchMethod.batch.name} method return value"
       }
 
       // All tasks have completed successfully
-      else -> sendTaskCompleted(output, batchedTaskData)
+      else -> sendTaskCompleted(output, batchData)
     }
   }
 
@@ -302,33 +309,52 @@ class TaskExecutor(
     Result.failure(e)
   }
 
-  private suspend fun getTimeout(
+  private suspend fun getTimeoutMillis(
     withTimeout: WithTimeout?,
     onError: suspend (Throwable) -> Unit
-  ): Result<Long> {
-    val timeoutMillis = withTimeout?.millis
-    val timeoutException = timeoutMillis?.exceptionOrNull()
+  ): Result<Long> = withTimeout?.timeoutMillis?.fold(
+      onSuccess = { Result.success(it ?: Long.MAX_VALUE) },
+      onFailure = {
+        onError(it)
+        Result.failure(it)
+      },
+  ) ?: Result.success(Long.MAX_VALUE)
 
-    if (timeoutException != null) {
-      onError(timeoutException)
-      return Result.failure(timeoutException)
-    }
+  private suspend fun getGraceMillis(
+    withTimeout: WithTimeout?,
+    onError: suspend (Throwable) -> Unit
+  ): Result<Long> = withTimeout?.graceMillis?.fold(
+      onSuccess = { Result.success(it) },
+      onFailure = {
+        onError(it)
+        Result.failure(it)
+      },
+  ) ?: Result.success(0L)
 
-    val timeoutValue = timeoutMillis?.getOrNull() ?: Long.MAX_VALUE
-    return Result.success(timeoutValue)
-  }
-
-  private suspend fun List<ExecuteTask>.getBatchTimeout(batchData: BatchData): Result<Long> =
-      getTimeout(batchData.withTimeout) { e ->
-        sendTaskFailed(
-            e,
-            associate { it.taskId to it.taskMeta },
-        ) { "Error in ${WithTimeout::getTimeoutSeconds.name} method" }
+  private suspend fun ExecuteTask.getTimeoutMillis(taskData: TaskData): Result<Long> =
+      getTimeoutMillis(taskData.withTimeout) {
+        sendTaskFailed(it, taskMeta) { "Error in ${WithTimeout::getTimeoutSeconds.name} method" }
       }
 
-  private suspend fun ExecuteTask.getTaskTimeout(taskData: TaskData): Result<Long> =
-      getTimeout(taskData.withTimeout) {
-        sendTaskFailed(it, taskMeta) { "Error in ${WithTimeout::getTimeoutSeconds.name} method" }
+  private suspend fun ExecuteTask.getGraceMillis(taskData: TaskData): Result<Long> =
+      getGraceMillis(taskData.withTimeout) {
+        sendTaskFailed(it, taskMeta) {
+          "Error in ${WithTimeout::getGracePeriodAfterTimeoutSeconds.name} method"
+        }
+      }
+
+  private suspend fun List<ExecuteTask>.getTimeoutMillis(batchData: BatchData): Result<Long> =
+      getTimeoutMillis(batchData.withTimeout) { e ->
+        sendTaskFailed(e, associate { it.taskId to it.taskMeta }) {
+          "Error in ${WithTimeout::getTimeoutSeconds.name} method"
+        }
+      }
+
+  private suspend fun List<ExecuteTask>.getGraceMillis(batchData: BatchData): Result<Long> =
+      getGraceMillis(batchData.withTimeout) { e ->
+        sendTaskFailed(e, associate { it.taskId to it.taskMeta }) {
+          "Error in ${WithTimeout::getGracePeriodAfterTimeoutSeconds.name} method"
+        }
       }
 
   private suspend fun ExecuteTask.executeWithTimeout(

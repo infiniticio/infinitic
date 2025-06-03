@@ -175,8 +175,10 @@ class InfiniticWorker(
           }
         }
         // closing Executors
-        executors.forEach { it.shutdownNow() }
-        executors.clear()
+        synchronized(executors) {
+          executors.forEach { it.shutdownNow() }
+          executors.clear()
+        }
         // closing client
         client.close()
       }
@@ -832,6 +834,7 @@ class InfiniticWorker(
     batchConfig: BatchConfig?
   ) {
     val executor = Executors.newFixedThreadPool(concurrency)
+    synchronized<Unit>(executors) { executors.add(executor) }
     val taskExecutor = TaskExecutor(executor, registry, producer, client)
 
     val cloudEventLogger = CloudEventLogger(
@@ -1200,6 +1203,7 @@ class InfiniticWorker(
     batchConfig: BatchConfig?
   ) {
     val executor = Executors.newFixedThreadPool(concurrency * (batchConfig?.maxMessages ?: 1))
+    synchronized<Unit>(executors) { executors.add(executor) }
     val workflowTaskExecutor = TaskExecutor(executor, registry, producer, client)
 
     val cloudEventLogger = CloudEventLogger(

@@ -27,6 +27,8 @@ import io.infinitic.tasks.WithTimeout
 
 class After100MilliSeconds : WithTimeout {
   override fun getTimeoutSeconds() = 0.1
+
+  override fun getGracePeriodAfterTimeoutSeconds() = 0.02
 }
 
 class After1Second : WithTimeout {

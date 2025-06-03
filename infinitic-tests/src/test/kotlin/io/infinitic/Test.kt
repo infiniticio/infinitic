@@ -36,8 +36,8 @@ import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.listeners.AfterProjectListener
 import io.kotest.core.listeners.BeforeProjectListener
 import io.kotest.core.spec.AutoScan
-import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
+import kotlinx.coroutines.delay
 
 
 /**
@@ -121,7 +121,7 @@ internal suspend fun InfiniticWorker.getWorkflowState(
 }
 
 object ProjectConfig : AbstractProjectConfig() {
-  // each test should not be longer than 5s
+  // each test should not be longer than 30s
   override val timeout = 30000.milliseconds
 
   override suspend fun beforeProject() {

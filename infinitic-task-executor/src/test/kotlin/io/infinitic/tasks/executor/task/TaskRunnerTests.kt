@@ -130,8 +130,8 @@ internal class TaskRunnerTests : StringSpec(
         val result = taskRunner.runWithTimeout(name, 10, 100, task)
 
         completed shouldBe true
-        result.isSuccess shouldBe true
-        result.getOrNull() shouldBe "completed in grace period"
+        result.isSuccess shouldBe false
+        result.exceptionOrNull().shouldBeInstanceOf<TimeoutException>()
       }
 
       "handle task that throws Error" {
@@ -183,8 +183,8 @@ internal class TaskRunnerTests : StringSpec(
 
         verify { mockLogger.warn(any<() -> String>()) }
         warnMessages[0]() shouldContain "timed out after"
-        warnMessages[1]() shouldContain "grace period"
-        errorMessages[0]() shouldContain "still running after timeout + grace"
+        warnMessages[1]() shouldContain "still running"
+        errorMessages.size shouldBe 0
       }
     },
 )

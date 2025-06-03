@@ -25,7 +25,6 @@ package io.infinitic.tasks.executor.task
 
 import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.tasks.TimeoutContext
-import java.util.concurrent.CancellationException
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.TimeUnit
@@ -57,56 +56,48 @@ class TaskRunner(
       }
     }
 
-    var output: Result<T>
-
-    try {
+    return try {
       // Try to get the result within the timeout
-      output = future.get(timeoutMillis, TimeUnit.MILLISECONDS)
+      future.get(timeoutMillis, TimeUnit.MILLISECONDS)
     } catch (timeoutEx: TimeoutException) {
-      logger.warn { "Task '$name' timed out after ${timeoutMillis}ms. Waiting for ${gracePeriodMillis}ms grace period..." }
+      logger.warn {
+        buildString {
+          append("Task '$name' timed out after ${timeoutMillis}ms. ")
+          if (gracePeriodMillis > 0) {
+            append("Waiting for ${gracePeriodMillis}ms grace period to clean up...")
+          } else {
+            append("No grace period defined, cleaning up immediately.")
+          }
+        }
+      }
 
+      // Call the timeout callback if defined
       try {
         timeoutContext.onTimeOut()
       } catch (callbackEx: Exception) {
         logger.error(callbackEx) { "Task '$name' error during timeout callback execution" }
       }
 
-      // Wait for the grace period
-      try {
-        future.get(gracePeriodMillis, TimeUnit.MILLISECONDS)
-      } catch (_: TimeoutException) {
-        logger.warn { "Task '$name' exceeded grace period of $gracePeriodMillis ms" }
-      } catch (_: Exception) {
-        // Grace logic ignores failure for now
+      // Give user the opportunity to clean up during the grace period
+      if (gracePeriodMillis > 0) {
+        try {
+          future.get(gracePeriodMillis, TimeUnit.MILLISECONDS)
+        } catch (_: TimeoutException) {
+          logger.warn { "Task '$name' still running after timeout + grace" }
+        } catch (e: Exception) {
+          logger.error(e) { "Task '$name' error during grace period after timeout" }
+        }
       }
 
       // Still not done? Cancel and log
-      if (!future.isDone) {
-        if (timeoutContext.executingThread?.isAlive == true) {
-          logger.error { "Task '$name' still running after timeout + grace" }
-        } else {
-          logger.warn { "Task '$name' not done, but thread not alive — possible race or shutdown" }
-        }
-        future.cancel(true)
-      }
+      if (!future.isDone) future.cancel(true)
 
-      // Now attempt to get the final result
-      output = try {
-        future.get()
-      } catch (_: CancellationException) {
-        Result.failure(timeoutEx)
-      } catch (execEx: ExecutionException) {
-        Result.failure(execEx.cause ?: execEx)
-      } catch (ex: Exception) {
-        Result.failure(ex)
-      }
-
+      // Returns failure with the initial timeout exception
+      Result.failure(timeoutEx)
     } catch (ex: ExecutionException) {
-      output = Result.failure(ex.cause ?: ex)
+      Result.failure(ex.cause ?: ex)
     } catch (ex: Exception) {
-      output = Result.failure(ex)
+      Result.failure(ex)
     }
-
-    return output
   }
 }
