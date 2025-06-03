@@ -695,6 +695,7 @@ class InfiniticWorker(
           producer = loggedProducer,
           concurrency = config.timerHandlerConcurrency,
           batchConfig = batchConfig,
+          pastDueSeconds = config.timerHandlerPastDueSeconds,
       )
     }
 
@@ -1114,9 +1115,10 @@ class InfiniticWorker(
     consumer: TransportConsumer<out TransportMessage<WorkflowStateEngineMessage>>,
     producer: InfiniticProducer,
     concurrency: Int,
-    batchConfig: BatchConfig?
+    batchConfig: BatchConfig?,
+    pastDueSeconds: Long
   ) {
-    val workflowStateTimerHandler = WorkflowStateTimerHandler(producer)
+    val workflowStateTimerHandler = WorkflowStateTimerHandler(producer, pastDueSeconds)
 
     when (batchConfig) {
       null -> startProcessingWithoutKey(
