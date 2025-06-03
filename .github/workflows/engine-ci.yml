@@ -49,7 +49,7 @@ jobs:
 
       - name: Test with Gradle
         run: ./gradlew test --info --scan  # <= -d used to debug if needed
-        timeout-minutes: 12 # max time allocated (useful if some tests hang)
+        timeout-minutes: 15 # max time allocated (useful if some tests hang)
 
       - name: Publish Build Scan
         if: success()
