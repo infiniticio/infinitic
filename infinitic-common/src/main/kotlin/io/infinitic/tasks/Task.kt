@@ -198,7 +198,7 @@ object Task {
    * Sets a callback function to be executed when the task times out.
    */
   @JvmStatic
-  fun onTimeOut(callback: () -> Unit) {
+  fun onTimeOut(callback: Runnable) {
     TimeoutContext.current().onTimeout(callback)
   }
 }

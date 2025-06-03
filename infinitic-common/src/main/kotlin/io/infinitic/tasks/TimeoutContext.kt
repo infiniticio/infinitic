@@ -49,7 +49,7 @@ class TimeoutContext() {
   val isCancelled: Boolean get() = _isCancelled.get()
 
   /** Callback to be invoked when the timeout occurs. */
-  internal var timeoutCallback: (() -> Unit)? = null
+  internal var timeoutCallback: Runnable? = null
 
   /**
    * Triggers the timeout if it hasn't been triggered yet.
@@ -57,7 +57,7 @@ class TimeoutContext() {
    */
   fun onTimeOut() {
     if (_isCancelled.compareAndSet(false, true)) {
-      timeoutCallback?.invoke()
+      timeoutCallback?.run()
     }
   }
 
@@ -65,7 +65,7 @@ class TimeoutContext() {
    * Registers a callback to be executed when the timeout occurs.
    * @param callback The function to call on timeout.
    */
-  fun onTimeout(callback: () -> Unit) {
+  fun onTimeout(callback: Runnable) {
     timeoutCallback = callback
   }
 
