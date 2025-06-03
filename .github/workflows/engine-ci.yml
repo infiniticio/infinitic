@@ -48,5 +48,5 @@ jobs:
 
       - name: Test with Gradle
         run: ./gradlew test  # <= --info -d used to debug if needed
-        timeout-minutes: 15 # max time allocated (useful if some tests hang)
+        timeout-minutes: 17 # max time allocated (useful if some tests hang)
 

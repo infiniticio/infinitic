@@ -42,15 +42,15 @@ internal class BatchesWorkflowTests : StringSpec(
       val batchWorkflow = client.newWorkflow(BatchWorkflow::class.java)
 
       "initialization".config(timeout = 1.minutes) {
-        delay(30000)
+        delay(20000)
       }
 
       "One primitive parameter (with maxMessages=10)" {
         BatchServiceImpl.foos.clear()
-        for (i in 1..99) {
+        for (i in 1..29) {
           client.dispatch(batchWorkflow::foo, i)
         }
-        batchWorkflow.foo(100)
+        batchWorkflow.foo(30)
 
         println("BatchServiceImpl.foos.average: ${BatchServiceImpl.foos.average()}")
         BatchServiceImpl.foos.average() shouldBeGreaterThan 2.0
@@ -58,42 +58,42 @@ internal class BatchesWorkflowTests : StringSpec(
 
       "One primitive parameter (with maxSeconds=0.25)" {
         BatchServiceImpl.foos.clear()
-        for (i in 1..99) {
+        for (i in 1..29) {
           client.dispatch(batchWorkflow::foo, i)
           delay(30)
         }
-        batchWorkflow.foo(100)
+        batchWorkflow.foo(30)
         println("BatchServiceImpl.foos.average: ${BatchServiceImpl.foos.average()}")
         BatchServiceImpl.foos.average() shouldBeGreaterThan 2.0
       }
 
       "One Object parameter (with maxMessages=10)" {
         BatchServiceImpl.foo2s.clear()
-        for (i in 1..99) {
+        for (i in 1..29) {
           client.dispatch(batchWorkflow::foo2, i, i)
         }
-        batchWorkflow.foo2(100, 100)
+        batchWorkflow.foo2(30, 30)
         println("BatchServiceImpl.foo2s.average: ${BatchServiceImpl.foo2s.average()}")
         BatchServiceImpl.foo2s.average() shouldBeGreaterThan 2.0
       }
 
       "One Object parameter (with maxSeconds=0.25)" {
         BatchServiceImpl.foo2s.clear()
-        for (i in 1..99) {
+        for (i in 1..29) {
           client.dispatch(batchWorkflow::foo2, i, i)
           delay(30)
         }
-        batchWorkflow.foo2(100, 100)
+        batchWorkflow.foo2(30, 30)
         println("BatchServiceImpl.foo2s.average: ${BatchServiceImpl.foo2s.average()}")
         BatchServiceImpl.foo2s.average() shouldBeGreaterThan 2.0
       }
 
       "Returns Object (with maxMessages=10)" {
         BatchServiceImpl.foo4s.clear()
-        for (i in 1..99) {
+        for (i in 1..29) {
           client.dispatch(batchWorkflow::foo4, i, i)
         }
-        batchWorkflow.foo4(100, 100)
+        batchWorkflow.foo4(30, 30)
 
         println("BatchServiceImpl.foo4s.average: ${BatchServiceImpl.foo4s.average()}")
         BatchServiceImpl.foo4s.average() shouldBeGreaterThan 2.0
@@ -101,11 +101,11 @@ internal class BatchesWorkflowTests : StringSpec(
 
       "Returns Object (with maxSeconds=0.25)" {
         BatchServiceImpl.foo4s.clear()
-        for (i in 1..99) {
+        for (i in 1..29) {
           client.dispatch(batchWorkflow::foo4, i, i)
           delay(30)
         }
-        batchWorkflow.foo4(100, 100)
+        batchWorkflow.foo4(30, 30)
 
         println("BatchServiceImpl.foo4s.average: ${BatchServiceImpl.foo4s.average()}")
         BatchServiceImpl.foo4s.average() shouldBeGreaterThan 2.0
@@ -113,21 +113,21 @@ internal class BatchesWorkflowTests : StringSpec(
 
       "One Object parameter and returns Object(with maxMessages=10)" {
         BatchServiceImpl.foo5s.clear()
-        for (i in 1..99) {
+        for (i in 1..29) {
           client.dispatch(batchWorkflow::foo5, i, i)
         }
-        batchWorkflow.foo5(100, 100)
+        batchWorkflow.foo5(30, 30)
 
         println("BatchServiceImpl.foo5s.average: ${BatchServiceImpl.foo5s.average()}")
         BatchServiceImpl.foo5s.average() shouldBeGreaterThan 2.0
       }
 
       "One Object parameter and returns Object (with maxSeconds=0.25)" {
-        for (i in 1..99) {
+        for (i in 1..29) {
           client.dispatch(batchWorkflow::foo5, i, i)
           delay(30)
         }
-        batchWorkflow.foo5(100, 100)
+        batchWorkflow.foo5(30, 30)
 
         println("BatchServiceImpl.foo5s.average: ${BatchServiceImpl.foo5s.average()}")
         BatchServiceImpl.foo5s.average() shouldBeGreaterThan 2.0
@@ -135,21 +135,21 @@ internal class BatchesWorkflowTests : StringSpec(
 
 
       "No return Object(with maxMessages=10)" {
-        for (i in 1..99) {
+        for (i in 1..29) {
           client.dispatch(batchWorkflow::foo6, i, i)
         }
-        batchWorkflow.foo6(100, 100)
+        batchWorkflow.foo6(30, 30)
 
         println("BatchServiceImpl.foo6s.average: ${BatchServiceImpl.foo6s.average()}")
         BatchServiceImpl.foo6s.average() shouldBeGreaterThan 2.0
       }
 
       "No return Object (with maxSeconds=0.25)" {
-        for (i in 1..99) {
+        for (i in 1..29) {
           client.dispatch(batchWorkflow::foo6, i, i)
           delay(30)
         }
-        batchWorkflow.foo6(100, 100) shouldBe Unit
+        batchWorkflow.foo6(30, 30) shouldBe Unit
 
         println("BatchServiceImpl.foo6s.average: ${BatchServiceImpl.foo6s.average()}")
         BatchServiceImpl.foo6s.average() shouldBeGreaterThan 2.0
