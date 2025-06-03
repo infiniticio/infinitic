@@ -24,7 +24,7 @@ package io.infinitic.tests.batches
 
 import io.infinitic.Test
 import io.kotest.core.spec.style.StringSpec
-import io.kotest.matchers.ints.shouldBeGreaterThan
+import io.kotest.matchers.comparables.shouldBeGreaterThan
 import io.kotest.matchers.longs.shouldBeLessThan
 import io.kotest.matchers.shouldBe
 import kotlin.system.measureTimeMillis
@@ -46,73 +46,113 @@ internal class BatchesWorkflowTests : StringSpec(
       }
 
       "One primitive parameter (with maxMessages=10)" {
-        for (i in 1..9) {
+        BatchServiceImpl.foos.clear()
+        for (i in 1..99) {
           client.dispatch(batchWorkflow::foo, i)
         }
-        batchWorkflow.foo(10) shouldBeGreaterThan 1 // should be 10, but Github is slow
+        batchWorkflow.foo(100)
+
+        println("BatchServiceImpl.foos.average: ${BatchServiceImpl.foos.average()}")
+        BatchServiceImpl.foos.average() shouldBeGreaterThan 2.0
       }
 
-      "One primitive parameter (with maxSeconds=1)" {
-        for (i in 1..8) {
+      "One primitive parameter (with maxSeconds=0.25)" {
+        BatchServiceImpl.foos.clear()
+        for (i in 1..99) {
           client.dispatch(batchWorkflow::foo, i)
+          delay(30)
         }
-        batchWorkflow.foo(9) shouldBeGreaterThan 1
+        batchWorkflow.foo(100)
+        println("BatchServiceImpl.foos.average: ${BatchServiceImpl.foos.average()}")
+        BatchServiceImpl.foos.average() shouldBeGreaterThan 2.0
       }
 
       "One Object parameter (with maxMessages=10)" {
-        for (i in 1..9) {
+        BatchServiceImpl.foo2s.clear()
+        for (i in 1..99) {
           client.dispatch(batchWorkflow::foo2, i, i)
         }
-        batchWorkflow.foo2(10, 10) shouldBeGreaterThan 10
+        batchWorkflow.foo2(100, 100)
+        println("BatchServiceImpl.foo2s.average: ${BatchServiceImpl.foo2s.average()}")
+        BatchServiceImpl.foo2s.average() shouldBeGreaterThan 2.0
       }
 
-      "One Object parameter (with maxSeconds=1)" {
-        for (i in 1..8) {
+      "One Object parameter (with maxSeconds=0.25)" {
+        BatchServiceImpl.foo2s.clear()
+        for (i in 1..99) {
           client.dispatch(batchWorkflow::foo2, i, i)
+          delay(30)
         }
-        batchWorkflow.foo2(9, 9) shouldBeGreaterThan 9
+        batchWorkflow.foo2(100, 100)
+        println("BatchServiceImpl.foo2s.average: ${BatchServiceImpl.foo2s.average()}")
+        BatchServiceImpl.foo2s.average() shouldBeGreaterThan 2.0
       }
 
-      "Returns Object (with maxMessages=10)".config(timeout = 1.minutes) {
-        for (i in 1..9) {
+      "Returns Object (with maxMessages=10)" {
+        BatchServiceImpl.foo4s.clear()
+        for (i in 1..99) {
           client.dispatch(batchWorkflow::foo4, i, i)
         }
-        batchWorkflow.foo4(10, 10).bar shouldBeGreaterThan 1
+        batchWorkflow.foo4(100, 100)
+
+        println("BatchServiceImpl.foo4s.average: ${BatchServiceImpl.foo4s.average()}")
+        BatchServiceImpl.foo4s.average() shouldBeGreaterThan 2.0
       }
 
-      "Returns Object (with maxSeconds=1)" {
-        for (i in 1..8) {
+      "Returns Object (with maxSeconds=0.25)" {
+        BatchServiceImpl.foo4s.clear()
+        for (i in 1..99) {
           client.dispatch(batchWorkflow::foo4, i, i)
+          delay(30)
         }
-        batchWorkflow.foo4(9, 9).bar shouldBeGreaterThan 1
+        batchWorkflow.foo4(100, 100)
+
+        println("BatchServiceImpl.foo4s.average: ${BatchServiceImpl.foo4s.average()}")
+        BatchServiceImpl.foo4s.average() shouldBeGreaterThan 2.0
       }
 
       "One Object parameter and returns Object(with maxMessages=10)" {
-        for (i in 1..9) {
+        BatchServiceImpl.foo5s.clear()
+        for (i in 1..99) {
           client.dispatch(batchWorkflow::foo5, i, i)
         }
-        batchWorkflow.foo5(10, 10).bar shouldBeGreaterThan 1
+        batchWorkflow.foo5(100, 100)
+
+        println("BatchServiceImpl.foo5s.average: ${BatchServiceImpl.foo5s.average()}")
+        BatchServiceImpl.foo5s.average() shouldBeGreaterThan 2.0
       }
 
-      "One Object parameter and returns Object (with maxSeconds=1)" {
-        for (i in 1..8) {
+      "One Object parameter and returns Object (with maxSeconds=0.25)" {
+        for (i in 1..99) {
           client.dispatch(batchWorkflow::foo5, i, i)
+          delay(30)
         }
-        batchWorkflow.foo5(9, 9).bar shouldBeGreaterThan 1
+        batchWorkflow.foo5(100, 100)
+
+        println("BatchServiceImpl.foo5s.average: ${BatchServiceImpl.foo5s.average()}")
+        BatchServiceImpl.foo5s.average() shouldBeGreaterThan 2.0
       }
+
 
       "No return Object(with maxMessages=10)" {
-        for (i in 1..9) {
+        for (i in 1..99) {
           client.dispatch(batchWorkflow::foo6, i, i)
         }
-        batchWorkflow.foo6(10, 10) shouldBe Unit
+        batchWorkflow.foo6(100, 100)
+
+        println("BatchServiceImpl.foo6s.average: ${BatchServiceImpl.foo6s.average()}")
+        BatchServiceImpl.foo6s.average() shouldBeGreaterThan 2.0
       }
 
-      "No return Object (with maxSeconds=1)" {
-        for (i in 1..8) {
+      "No return Object (with maxSeconds=0.25)" {
+        for (i in 1..99) {
           client.dispatch(batchWorkflow::foo6, i, i)
+          delay(30)
         }
-        batchWorkflow.foo6(9, 9) shouldBe Unit
+        batchWorkflow.foo6(100, 100) shouldBe Unit
+
+        println("BatchServiceImpl.foo6s.average: ${BatchServiceImpl.foo6s.average()}")
+        BatchServiceImpl.foo6s.average() shouldBeGreaterThan 2.0
       }
 
       "If Task contains a batch key, all batches should have the same key" {

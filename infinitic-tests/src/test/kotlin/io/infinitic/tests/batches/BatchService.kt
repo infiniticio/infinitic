@@ -28,20 +28,6 @@ import io.infinitic.annotations.Batch
 import io.infinitic.annotations.Name
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.tasks.Task
-import io.mockk.InternalPlatformDsl.toArray
-
-fun main() {
-  // BatchServiceImpl::class.java.getBatchMethods().forEach { println(it) }
-  val l: List<Any> = listOf(Input(1, 2), Input(3, 4))
-
-  val m1 = BatchServiceImpl::class.java.methods.filter { it.name == "foo2" }[2]
-  println(m1)
-  println(m1.invoke(BatchServiceImpl(), l))
-
-  val m2 = BatchServiceImpl::class.java.methods.filter { it.name == "bar2" }[0]
-  println(m2)
-  m2.invoke(BatchServiceImpl(), l.toArray())
-}
 
 @Name("batchService")
 internal interface BatchService {
@@ -64,24 +50,28 @@ internal class BatchServiceImpl : BatchService {
 
   @Batch
   fun foo(list: Map<String, Int>): Map<String, Int> {
+    synchronized(foos) { foos.add(list.values.count()) }
     val count = list.values.count()
     return list.mapValues { count }
   }
 
   @Batch
   fun foo2(list: Map<String, Input>): Map<String, Int> {
+    synchronized(foo2s) { foo2s.add(list.values.count()) }
     val count = list.values.count()
     return list.mapValues { it.value.bar + count }
   }
 
   @Batch
   fun foo4(list: Map<String, Int>): Map<String, Input> {
+    synchronized(foo4s) { foo4s.add(list.values.count()) }
     val count = list.values.count()
     return list.mapValues { Input(it.value, count) }
   }
 
   @Batch
   fun foo5(list: Map<String, Input>): Map<String, Input> {
+    synchronized(foo5s) { foo5s.add(list.values.count()) }
     val count = list.values.count()
     return list.mapValues { Input(it.value.bar, count) }
   }
@@ -89,6 +79,7 @@ internal class BatchServiceImpl : BatchService {
   @Batch
   fun foo6(list: Map<String, Input>) {
     // Nothing
+    synchronized(foo6s) { foo6s.add(list.values.count()) }
   }
 
   @Batch
@@ -101,6 +92,14 @@ internal class BatchServiceImpl : BatchService {
     // if all have the same batch keys then this should return Map<String, true>
     val allHaveSameKey = batchKeys.all { it == batchKey }
     return all.mapValues { allHaveSameKey }
+  }
+
+  companion object {
+    internal val foos = mutableListOf<Int>()
+    internal val foo2s = mutableListOf<Int>()
+    internal val foo4s = mutableListOf<Int>()
+    internal val foo5s = mutableListOf<Int>()
+    internal val foo6s = mutableListOf<Int>()
   }
 }
 
