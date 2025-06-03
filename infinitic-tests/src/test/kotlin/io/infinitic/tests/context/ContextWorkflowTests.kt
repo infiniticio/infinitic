@@ -75,7 +75,7 @@ internal class ContextWorkflowTests : StringSpec(
       }
 
       "get task timeout from config file" {
-        contextWorkflow.context9() shouldBe 100.0
+        contextWorkflow.context9() shouldBe 1000.0
       }
     },
 )

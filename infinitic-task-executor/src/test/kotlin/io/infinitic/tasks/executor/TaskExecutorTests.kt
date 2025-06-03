@@ -61,8 +61,8 @@ import io.infinitic.exceptions.tasks.ClassNotFoundException
 import io.infinitic.exceptions.tasks.NoMethodFoundWithParameterCountException
 import io.infinitic.exceptions.tasks.NoMethodFoundWithParameterTypesException
 import io.infinitic.exceptions.tasks.TooManyMethodsFoundWithParameterCountException
-import io.infinitic.tasks.WithRetry
-import io.infinitic.tasks.WithTimeout
+import io.infinitic.tasks.UNSET_WITH_RETRY
+import io.infinitic.tasks.UNSET_WITH_TIMEOUT
 import io.infinitic.tasks.executor.samples.RetryImpl
 import io.infinitic.tasks.executor.samples.ServiceImplService
 import io.infinitic.tasks.executor.samples.ServiceWithBuggyRetryInClass
@@ -83,6 +83,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.Executors
 import java.util.concurrent.TimeoutException
 
 private val testServiceName = ServiceName("SimpleService")
@@ -113,7 +114,8 @@ class TaskExecutorTests :
           } returns Unit
         }
 
-        var taskExecutor = TaskExecutor(registry, producer, client)
+        val executor = Executors.newFixedThreadPool(10)
+        var taskExecutor = TaskExecutor(executor, registry, producer, client)
 
         // ensure slots are emptied between each test
         beforeEach {
@@ -126,8 +128,8 @@ class TaskExecutorTests :
 
         "Task executed should send TaskStarted and TaskCompleted events" {
           every { registry.getServiceExecutorInstance(testServiceName) } returns ServiceImplService()
-          every { registry.getServiceExecutorWithTimeout(testServiceName) } returns WithTimeout.UNSET
-          every { registry.getServiceExecutorWithRetry(testServiceName) } returns WithRetry.UNSET
+          every { registry.getServiceExecutorWithTimeout(testServiceName) } returns UNSET_WITH_TIMEOUT
+          every { registry.getServiceExecutorWithRetry(testServiceName) } returns UNSET_WITH_RETRY
           val input = arrayOf(3, 3)
           val types = listOf(Int::class.java.name, Int::class.java.name)
           // with
@@ -151,8 +153,8 @@ class TaskExecutorTests :
 
         "Should be able to run an explicit method with 2 parameters" {
           every { registry.getServiceExecutorInstance(testServiceName) } returns ServiceImplService()
-          every { registry.getServiceExecutorWithTimeout(testServiceName) } returns WithTimeout.UNSET
-          every { registry.getServiceExecutorWithRetry(testServiceName) } returns WithRetry.UNSET
+          every { registry.getServiceExecutorWithTimeout(testServiceName) } returns UNSET_WITH_TIMEOUT
+          every { registry.getServiceExecutorWithRetry(testServiceName) } returns UNSET_WITH_RETRY
           val input: Array<*> = arrayOf(3, "3")
           val types = listOf(Int::class.java.name, String::class.java.name)
           // with
@@ -173,8 +175,8 @@ class TaskExecutorTests :
 
         "Should be able to run an explicit method with 2 parameters without parameterTypes" {
           every { registry.getServiceExecutorInstance(testServiceName) } returns ServiceImplService()
-          every { registry.getServiceExecutorWithTimeout(testServiceName) } returns WithTimeout.UNSET
-          every { registry.getServiceExecutorWithRetry(testServiceName) } returns WithRetry.UNSET
+          every { registry.getServiceExecutorWithTimeout(testServiceName) } returns UNSET_WITH_TIMEOUT
+          every { registry.getServiceExecutorWithRetry(testServiceName) } returns UNSET_WITH_RETRY
           val input = arrayOf(4, "3")
           val types = null
           val msg = getExecuteTask("other", input, types)
@@ -194,8 +196,8 @@ class TaskExecutorTests :
 
         "Throwable should not be caught on task" {
           every { registry.getServiceExecutorInstance(testServiceName) } returns ServiceImplService()
-          every { registry.getServiceExecutorWithTimeout(testServiceName) } returns WithTimeout.UNSET
-          every { registry.getServiceExecutorWithRetry(testServiceName) } returns WithRetry.UNSET
+          every { registry.getServiceExecutorWithTimeout(testServiceName) } returns UNSET_WITH_TIMEOUT
+          every { registry.getServiceExecutorWithRetry(testServiceName) } returns UNSET_WITH_RETRY
           val input = arrayOf<Any>()
           val types = listOf<String>()
           val msg = getExecuteTask("withThrowable", input, types)
@@ -212,7 +214,8 @@ class TaskExecutorTests :
           // Note that the Throwable sent (and not caught) during the test has the side effect
           // to cancel the coroutineScope of producerAsync, that's why we recreate it after the test
           // in a real case, the Throwable would kill the worker
-          taskExecutor = TaskExecutor(registry, producer, client)
+          val executor = Executors.newFixedThreadPool(10)
+          taskExecutor = TaskExecutor(executor, registry, producer, client)
         }
 
         "Should throw ClassNotFoundException when trying to process an unknown task" {
@@ -238,8 +241,8 @@ class TaskExecutorTests :
 
         "Should throw NoMethodFoundWithParameterTypesException when trying to process an unknown method" {
           every { registry.getServiceExecutorInstance(testServiceName) } returns ServiceImplService()
-          every { registry.getServiceExecutorWithTimeout(testServiceName) } returns WithTimeout.UNSET
-          every { registry.getServiceExecutorWithRetry(testServiceName) } returns WithRetry.UNSET
+          every { registry.getServiceExecutorWithTimeout(testServiceName) } returns UNSET_WITH_TIMEOUT
+          every { registry.getServiceExecutorWithRetry(testServiceName) } returns UNSET_WITH_RETRY
           val input = arrayOf(2, "3")
           val types = listOf(Int::class.java.name, String::class.java.name)
           // with
@@ -260,8 +263,8 @@ class TaskExecutorTests :
 
         "Should throw NoMethodFoundWithParameterCount when trying to process an unknown method without parameterTypes" {
           every { registry.getServiceExecutorInstance(testServiceName) } returns ServiceImplService()
-          every { registry.getServiceExecutorWithTimeout(testServiceName) } returns WithTimeout.UNSET
-          every { registry.getServiceExecutorWithRetry(testServiceName) } returns WithRetry.UNSET
+          every { registry.getServiceExecutorWithTimeout(testServiceName) } returns UNSET_WITH_TIMEOUT
+          every { registry.getServiceExecutorWithRetry(testServiceName) } returns UNSET_WITH_RETRY
           val input = arrayOf(2, "3")
           // with
           val msg = getExecuteTask("unknown", input, null)
@@ -281,8 +284,8 @@ class TaskExecutorTests :
 
         "Should throw TooManyMethodsFoundWithParameterCount when trying to process an unknown method without parameterTypes" {
           every { registry.getServiceExecutorInstance(testServiceName) } returns ServiceImplService()
-          every { registry.getServiceExecutorWithTimeout(testServiceName) } returns WithTimeout.UNSET
-          every { registry.getServiceExecutorWithRetry(testServiceName) } returns WithRetry.UNSET
+          every { registry.getServiceExecutorWithTimeout(testServiceName) } returns UNSET_WITH_TIMEOUT
+          every { registry.getServiceExecutorWithRetry(testServiceName) } returns UNSET_WITH_RETRY
           val input: Array<*> = arrayOf(2, "3")
           // with
           val msg = getExecuteTask("handle", input, null)
@@ -302,8 +305,8 @@ class TaskExecutorTests :
 
         "Should retry with correct exception with Retry interface" {
           every { registry.getServiceExecutorInstance(testServiceName) } returns SimpleServiceWithRetry()
-          every { registry.getServiceExecutorWithTimeout(testServiceName) } returns WithTimeout.UNSET
-          every { registry.getServiceExecutorWithRetry(testServiceName) } returns WithRetry.UNSET
+          every { registry.getServiceExecutorWithTimeout(testServiceName) } returns UNSET_WITH_TIMEOUT
+          every { registry.getServiceExecutorWithRetry(testServiceName) } returns UNSET_WITH_RETRY
           // with
           val msg = getExecuteTask("handle", arrayOf(2, "3"), null)
           // when
@@ -327,8 +330,8 @@ class TaskExecutorTests :
 
         "Should retry with correct exception with Retry annotation on method" {
           every { registry.getServiceExecutorInstance(testServiceName) } returns ServiceWithRetryInMethod()
-          every { registry.getServiceExecutorWithTimeout(testServiceName) } returns WithTimeout.UNSET
-          every { registry.getServiceExecutorWithRetry(testServiceName) } returns WithRetry.UNSET
+          every { registry.getServiceExecutorWithTimeout(testServiceName) } returns UNSET_WITH_TIMEOUT
+          every { registry.getServiceExecutorWithRetry(testServiceName) } returns UNSET_WITH_RETRY
           // with
           val msg = getExecuteTask("handle", arrayOf(2, "3"), null)
           // when
@@ -353,8 +356,8 @@ class TaskExecutorTests :
 
         "Should retry with correct exception with Retry annotation on class" {
           every { registry.getServiceExecutorInstance(testServiceName) } returns ServiceWithRetryInClass()
-          every { registry.getServiceExecutorWithTimeout(testServiceName) } returns WithTimeout.UNSET
-          every { registry.getServiceExecutorWithRetry(testServiceName) } returns WithRetry.UNSET
+          every { registry.getServiceExecutorWithTimeout(testServiceName) } returns UNSET_WITH_TIMEOUT
+          every { registry.getServiceExecutorWithRetry(testServiceName) } returns UNSET_WITH_RETRY
           // with
           val msg = getExecuteTask("handle", arrayOf(2, "3"), null)
           // when
@@ -379,8 +382,8 @@ class TaskExecutorTests :
 
         "Should not retry if error in getSecondsBeforeRetry" {
           every { registry.getServiceExecutorInstance(testServiceName) } returns ServiceWithBuggyRetryInClass()
-          every { registry.getServiceExecutorWithTimeout(testServiceName) } returns WithTimeout.UNSET
-          every { registry.getServiceExecutorWithRetry(testServiceName) } returns WithRetry.UNSET
+          every { registry.getServiceExecutorWithTimeout(testServiceName) } returns UNSET_WITH_TIMEOUT
+          every { registry.getServiceExecutorWithRetry(testServiceName) } returns UNSET_WITH_RETRY
           // with
           val msg = getExecuteTask("handle", arrayOf(2, "3"), null)
           // when
@@ -399,8 +402,8 @@ class TaskExecutorTests :
 
         "Should be able to access context from task" {
           every { registry.getServiceExecutorInstance(testServiceName) } returns ServiceWithContext()
-          every { registry.getServiceExecutorWithTimeout(testServiceName) } returns WithTimeout.UNSET
-          every { registry.getServiceExecutorWithRetry(testServiceName) } returns WithRetry.UNSET
+          every { registry.getServiceExecutorWithTimeout(testServiceName) } returns UNSET_WITH_TIMEOUT
+          every { registry.getServiceExecutorWithRetry(testServiceName) } returns UNSET_WITH_RETRY
           val input = arrayOf(2, "3")
           // with
           val msg = getExecuteTask("handle", input, null)
@@ -445,7 +448,7 @@ class TaskExecutorTests :
 
         "Should throw TimeoutException with timeout from method Annotation" {
           every { registry.getServiceExecutorInstance(testServiceName) } returns ServiceWithTimeoutOnMethod()
-          every { registry.getServiceExecutorWithTimeout(testServiceName) } returns WithTimeout.UNSET
+          every { registry.getServiceExecutorWithTimeout(testServiceName) } returns UNSET_WITH_TIMEOUT
           every { registry.getServiceExecutorWithRetry(testServiceName) } returns
               WithExponentialBackoffRetry(maximumRetries = 0)
           val input = arrayOf(2, "3")
@@ -468,7 +471,7 @@ class TaskExecutorTests :
 
         "Should throw TimeoutException with timeout from class Annotation" {
           every { registry.getServiceExecutorInstance(testServiceName) } returns ServiceWithTimeoutOnClass()
-          every { registry.getServiceExecutorWithTimeout(testServiceName) } returns WithTimeout.UNSET
+          every { registry.getServiceExecutorWithTimeout(testServiceName) } returns UNSET_WITH_TIMEOUT
           every { registry.getServiceExecutorWithRetry(testServiceName) } returns WithExponentialBackoffRetry(
               maximumRetries = 0,
           )

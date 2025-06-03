@@ -51,6 +51,7 @@ import io.infinitic.exceptions.workflows.NonIdempotentChannelGetterException
 import java.lang.reflect.ParameterizedType
 import java.time.Duration
 import java.time.Instant
+import org.jetbrains.annotations.TestOnly
 
 @Suppress("unused")
 abstract class Workflow {
@@ -58,30 +59,32 @@ abstract class Workflow {
   lateinit var dispatcher: WorkflowDispatcher
 
   companion object {
-    val context: ThreadLocal<WorkflowContext> = ThreadLocal.withInitial { null }
+    private val context: WorkflowContext
+      get() = threadLocalWorkflowContext.get()
 
+    @TestOnly
     @JvmStatic
     fun setContext(c: WorkflowContext) {
-      context.set(c)
+      threadLocalWorkflowContext.set(c)
     }
 
     @JvmStatic
-    val workflowName get() = context.get().workflowName
+    val workflowName get() = context.workflowName
 
     @JvmStatic
-    val workflowId get() = context.get().workflowId
+    val workflowId get() = context.workflowId
 
     @JvmStatic
-    val methodName get() = context.get().methodName
+    val methodName get() = context.methodName
 
     @JvmStatic
-    val methodId get() = context.get().methodId
+    val methodId get() = context.methodId
 
     @JvmStatic
-    val tags get() = context.get().tags
+    val tags get() = context.tags
 
     @JvmStatic
-    val meta get() = context.get().meta
+    val meta get() = context.meta
   }
 
   /** Create a stub for a task */
@@ -327,7 +330,9 @@ abstract class Workflow {
   }
 }
 
-/** Set names of all channels in this workflow */
+val threadLocalWorkflowContext: ThreadLocal<WorkflowContext> = ThreadLocal.withInitial { null }
+
+/** Set the names of all channels in this workflow */
 fun Workflow.setChannelNames() {
   this::class.java.declaredMethods
       .filter { it.returnType.name == Channel::class.java.name && it.parameterCount == 0 }

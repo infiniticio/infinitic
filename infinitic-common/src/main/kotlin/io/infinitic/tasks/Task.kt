@@ -25,93 +25,187 @@ package io.infinitic.tasks
 import io.infinitic.clients.InfiniticClientInterface
 import org.jetbrains.annotations.TestOnly
 
+@Suppress("unused")
 object Task {
-  private val context: ThreadLocal<TaskContext> = ThreadLocal.withInitial { null }
-
-  private val _batchContext: ThreadLocal<Map<String, TaskContext>> =
-      ThreadLocal.withInitial { mapOf() }
 
   @JvmStatic
-  fun getContext(taskId: String): TaskContext? = _batchContext.get()[taskId]
+  fun getContext(taskId: String): TaskContext? = threadLocalBatchContext.get()[taskId]
 
+  /**
+   * This method is intended for test purposes only. It allows you to manually assign a `TaskContext`
+   * to the current thread, which can be useful for simulating task execution in unit tests.
+   *
+   * @param context The `TaskContext` to set for the current thread.
+   */
   @TestOnly
   @JvmStatic
-  fun setContext(taskId: String, taskContext: TaskContext) {
-    val batchContext = _batchContext.get().toMutableMap()
-    batchContext[taskId] = taskContext
-    _batchContext.set(batchContext)
+  fun setContext(context: TaskContext) {
+    threadLocalTaskContext.set(context)
   }
 
-  @JvmStatic
-  fun getContext(): TaskContext? = context.get()
-
+  /**
+   * This method is intended for test purposes only. It allows you to manually assign a
+   * map of task IDs to their corresponding `TaskContext` to the current thread,
+   * which can be useful for simulating batch execution in unit tests.
+   *
+   * @param context A map where the key is the task ID and the value is the corresponding `TaskContext`.
+   */
   @TestOnly
   @JvmStatic
-  fun setContext(c: TaskContext) {
-    context.set(c)
+  fun setBatchContext(context: Map<String, TaskContext>) {
+    threadLocalBatchContext.set(context)
   }
 
+  /**
+   * This method is intended for test purposes only. It allows you to manually assign a hasTimedOut
+   * status for the current task, which can be useful for simulating task execution in unit tests.
+   *
+   * @param hasTimedOut `true` if the task has timed out, `false` otherwise.
+   */
+  @TestOnly
+  @JvmStatic
+  fun setHasTimedOut(hasTimedOut: Boolean) {
+    TimeoutContext.current()._isCancelled.set(hasTimedOut)
+  }
+
+  /**
+   * The current [TaskContext]
+   */
+  @JvmStatic
+  val context: TaskContext?
+    get() = threadLocalTaskContext.get()
+
+  /**
+   * The name of the worker
+   */
   @JvmStatic
   val workerName
-    get() = context.get().workerName
+    get() = threadLocalTaskContext.get().workerName
 
+  /**
+   * The name of the Service that the task belongs to.
+   */
   @JvmStatic
   val serviceName: String
-    get() = context.get().serviceName.toString()
+    get() = threadLocalTaskContext.get().serviceName.toString()
 
+  /**
+   * The unique identifier for the task.
+   */
   @JvmStatic
   val taskId: String
-    get() = context.get().taskId.toString()
+    get() = threadLocalTaskContext.get().taskId.toString()
 
+  /**
+   * The name of the task being executed.
+   */
   @JvmStatic
   val taskName: String
-    get() = context.get().taskName.toString()
+    get() = threadLocalTaskContext.get().taskName.toString()
 
+  /**
+   * The unique identifier for the workflow associated with the task.
+   */
   @JvmStatic
   val workflowId: String?
-    get() = context.get().workflowId?.toString()
+    get() = threadLocalTaskContext.get().workflowId?.toString()
 
+  /**
+   * The name of the workflow associated with the task.
+   */
   @JvmStatic
   val workflowName: String?
-    get() = context.get().workflowName?.toString()
+    get() = threadLocalTaskContext.get().workflowName?.toString()
 
+  /**
+   * The version of the workflow associated with the task.
+   */
   @JvmStatic
   val workflowVersion: Int?
-    get() = context.get().workflowVersion?.toInt()
+    get() = threadLocalTaskContext.get().workflowVersion?.toInt()
 
+  /**
+   * The last error encountered during task execution.
+   */
   @JvmStatic
   val lastError: TaskFailure?
-    get() = context.get().lastError
+    get() = threadLocalTaskContext.get().lastError
 
+  /**
+   * The sequence number of the current retry attempt for the task.
+   */
   @JvmStatic
   val retrySequence: Int
-    get() = context.get().retrySequence.toInt()
+    get() = threadLocalTaskContext.get().retrySequence.toInt()
 
+  /**
+   * The index of the current retry attempt for the task.
+   */
   @JvmStatic
   val retryIndex: Int
-    get() = context.get().retryIndex.toInt()
+    get() = threadLocalTaskContext.get().retryIndex.toInt()
 
+  /**
+   * The batch key associated with the task, if it is part of a batch.
+   */
   @JvmStatic
   val batchKey: String?
-    get() = context.get().batchKey
+    get() = threadLocalTaskContext.get().batchKey
 
+  /**
+   * A set of tags associated with the task.
+   */
   @JvmStatic
   val tags: Set<String>
-    get() = context.get().tags
+    get() = threadLocalTaskContext.get().tags
 
+  /**
+   * A mutable map of metadata associated with the task.
+   */
   @JvmStatic
   val meta: MutableMap<String, ByteArray>
-    get() = context.get().meta
+    get() = threadLocalTaskContext.get().meta
 
+  /**
+   * The timeout configuration for the task, if defined.
+   */
   @JvmStatic
   val withTimeout: WithTimeout?
-    get() = context.get().withTimeout
+    get() = threadLocalTaskContext.get().withTimeout
 
+  /**
+   * The retry configuration for the task, if defined.
+   */
   @JvmStatic
   val withRetry: WithRetry?
-    get() = context.get().withRetry
+    get() = threadLocalTaskContext.get().withRetry
 
+  /**
+   * The Infinitic client used to interact with the Infinitic system.
+   */
   @JvmStatic
   val client: InfiniticClientInterface
-    get() = context.get().client
+    get() = threadLocalTaskContext.get().client
+
+  /**
+   * Indicates whether the current task execution has timed out.
+   */
+  @JvmStatic
+  val hasTimedOut: Boolean
+    get() = TimeoutContext.current().isCancelled
+
+  /**
+   * Sets a callback function to be executed when the task times out.
+   */
+  @JvmStatic
+  fun onTimeOut(callback: Runnable) {
+    TimeoutContext.current().onTimeout(callback)
+  }
 }
+
+val threadLocalTaskContext: ThreadLocal<TaskContext> =
+    ThreadLocal.withInitial { null }
+
+val threadLocalBatchContext: ThreadLocal<Map<String, TaskContext>> =
+    ThreadLocal.withInitial { mapOf() }
+

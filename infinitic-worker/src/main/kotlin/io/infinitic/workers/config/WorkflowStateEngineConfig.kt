@@ -64,7 +64,14 @@ data class WorkflowStateEngineConfig(
    * If not provided, it will default to the same value as concurrency.
    */
   val eventHandlerConcurrency: Int = concurrency,
-) : WithMutableWorkflowName, WithMutableStorage {
+
+  /**
+   * The maximum number of seconds a message received by timer handler can be past due before being considered expired.
+   * Default is 3 days (60 * 60 * 24 * 3 seconds).
+   */
+  val timerHandlerPastDueSeconds: Long = 60 * 60 * 24 * 3,
+
+  ) : WithMutableWorkflowName, WithMutableStorage {
 
   init {
     require(concurrency >= 0) { "${::concurrency.name} must be positive" }
@@ -74,6 +81,8 @@ data class WorkflowStateEngineConfig(
     require(commandHandlerConcurrency >= 0) { "${::commandHandlerConcurrency.name} must be positive" }
 
     require(eventHandlerConcurrency >= 0) { "${::eventHandlerConcurrency.name} must be positive" }
+
+    require(timerHandlerPastDueSeconds >= 60 * 60) { "${::timerHandlerPastDueSeconds.name} must be at least 1 hour" }
   }
 
   val workflowStateStorage by lazy {
@@ -118,6 +127,7 @@ data class WorkflowStateEngineConfig(
     private var timerHandlerConcurrency = UNSET_CONCURRENCY
     private var commandHandlerConcurrency = UNSET_CONCURRENCY
     private var eventHandlerConcurrency = UNSET_CONCURRENCY
+    private var timerHandlerPastDueSeconds = default.timerHandlerPastDueSeconds
 
     fun setWorkflowName(workflowName: String) =
         apply { this.workflowName = workflowName }
@@ -140,6 +150,9 @@ data class WorkflowStateEngineConfig(
     fun setEventHandlerConcurrency(eventHandlerConcurrency: Int) =
         apply { this.eventHandlerConcurrency = eventHandlerConcurrency }
 
+    fun setTimerHandlerPastDueSeconds(timerHandlerPastDueSeconds: Long) =
+        apply { this.timerHandlerPastDueSeconds = timerHandlerPastDueSeconds }
+
     fun build(): WorkflowStateEngineConfig {
       workflowName.checkWorkflowName()
 
@@ -154,6 +167,7 @@ data class WorkflowStateEngineConfig(
               .takeIf { it != UNSET_CONCURRENCY } ?: concurrency,
           eventHandlerConcurrency = eventHandlerConcurrency
               .takeIf { it != UNSET_CONCURRENCY } ?: concurrency,
+          timerHandlerPastDueSeconds = timerHandlerPastDueSeconds,
       )
     }
   }

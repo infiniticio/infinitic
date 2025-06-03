@@ -24,6 +24,7 @@ package io.infinitic.tests.context
 
 import io.infinitic.common.tasks.data.TaskMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
+import io.infinitic.utils.TestService
 import io.infinitic.utils.UtilService
 import io.infinitic.workflows.Workflow
 
@@ -60,6 +61,8 @@ class ContextWorkflowImpl : Workflow(), ContextWorkflow {
       meta = mutableMapOf("foo" to "bar".toByteArray()),
   )
 
+  private val testService = newService(TestService::class.java)
+
   override fun context1(): String = _workflowId
 
   override fun context2(): Set<String> = _tags
@@ -76,5 +79,5 @@ class ContextWorkflowImpl : Workflow(), ContextWorkflow {
 
   override fun context8(): Double? = utilService.getRetry()
 
-  override fun context9(): Double? = utilService.getTimeout()
+  override fun context9(): Double? = testService.getTimeout()
 }

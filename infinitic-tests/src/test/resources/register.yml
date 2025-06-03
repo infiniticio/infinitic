@@ -42,7 +42,6 @@ services:
     executor:
       class: io.infinitic.utils.UtilServiceImpl
       concurrency: 5
-      timeoutSeconds: 100
       retry:
         maximumRetries: 1
         randomFactor: 0
@@ -51,6 +50,7 @@ services:
     executor:
       class: io.infinitic.utils.TestServiceImpl
       concurrency: 5
+      timeoutSeconds: 1000
   - name: io.infinitic.tests.jsonView.JsonViewService
     tagEngine:
     executor:

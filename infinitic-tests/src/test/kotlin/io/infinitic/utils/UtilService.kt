@@ -24,6 +24,7 @@
 
 package io.infinitic.utils
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.annotations.Delegated
 import io.infinitic.annotations.Retry
 import io.infinitic.annotations.Timeout
@@ -32,12 +33,14 @@ import io.infinitic.tasks.Task
 import io.infinitic.tests.syntax.Child1
 import io.infinitic.tests.syntax.Parent
 import io.infinitic.workflows.DeferredStatus
+import java.util.concurrent.atomic.AtomicBoolean
 
 internal interface ParentInterface {
   fun parent(): String
 }
 
 internal interface UtilService : ParentInterface {
+
   fun concat(str1: String, str2: String): String
 
   fun reverse(str: String): String
@@ -70,11 +73,15 @@ internal interface UtilService : ParentInterface {
 
   fun getRetry(): Double?
 
-  fun getTimeout(): Double?
-
   @Timeout(After100MilliSeconds::class)
   // Timeout at Service level
-  fun withTimeout(wait: Long): Long
+  fun withServiceTimeout(wait: Long): Long
+
+  // Timeout at Execution level
+  fun withExecutionTimeout(wait: Long): Long
+
+  // Managed Timeout at Execution level
+  fun withManagedExecutionTimeout(): Long
 
   @Timeout(After100MilliSeconds::class)
   // Timeout at Service level
@@ -86,6 +93,8 @@ internal interface UtilService : ParentInterface {
 
 @Retry(Only1Retry::class)
 internal class UtilServiceImpl : UtilService {
+  private val logger = KotlinLogging.logger {}
+
   override fun concat(str1: String, str2: String): String = str1 + str2
 
   override fun reverse(str: String) = str.reversed()
@@ -135,11 +144,28 @@ internal class UtilServiceImpl : UtilService {
 
   override fun getRetry(): Double? = Task.withRetry?.getSecondsBeforeRetry(0, RuntimeException())
 
-  override fun getTimeout(): Double? = Task.withTimeout?.getTimeoutSeconds()
-
-  override fun withTimeout(wait: Long): Long {
+  override fun withServiceTimeout(wait: Long): Long {
     Thread.sleep(wait)
     return wait
+  }
+
+  @Timeout(After100MilliSeconds::class)
+  override fun withExecutionTimeout(wait: Long): Long {
+    Thread.sleep(wait)
+    return wait
+  }
+
+  @Timeout(After100MilliSeconds::class)
+  override fun withManagedExecutionTimeout(): Long {
+    val start = System.currentTimeMillis()
+    hasTimedOut.set(false)
+    onTimeout.set(false)
+    Task.onTimeOut { onTimeout.set(true) }
+    while (!Task.hasTimedOut) {
+      Thread.sleep(10)
+    }
+    hasTimedOut.set(true)
+    return System.currentTimeMillis() - start
   }
 
   override fun tryAgain(): Int {
@@ -160,6 +186,9 @@ internal class UtilServiceImpl : UtilService {
   companion object {
     lateinit var delegatedTaskId: String
     lateinit var delegatedServiceName: String
+
+    internal val hasTimedOut: AtomicBoolean = AtomicBoolean(false)
+    internal val onTimeout: AtomicBoolean = AtomicBoolean(false)
   }
 }
 

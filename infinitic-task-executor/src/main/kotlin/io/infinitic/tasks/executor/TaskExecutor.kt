@@ -55,30 +55,37 @@ import io.infinitic.common.utils.getMethodPerNameAndParameters
 import io.infinitic.common.utils.isDelegated
 import io.infinitic.common.utils.withRetry
 import io.infinitic.common.utils.withTimeout
+import io.infinitic.common.workflows.WorkflowContext
 import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskParameters
 import io.infinitic.common.workflows.data.workflowTasks.isWorkflowTask
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.exceptions.DeferredException
 import io.infinitic.tasks.Task
 import io.infinitic.tasks.TaskContext
+import io.infinitic.tasks.UNSET_WITH_RETRY
+import io.infinitic.tasks.UNSET_WITH_TIMEOUT
 import io.infinitic.tasks.WithRetry
 import io.infinitic.tasks.WithTimeout
 import io.infinitic.tasks.executor.task.TaskContextImpl
+import io.infinitic.tasks.executor.task.TaskRunner
 import io.infinitic.tasks.getMillisBeforeRetry
-import io.infinitic.tasks.millis
+import io.infinitic.tasks.graceMillis
+import io.infinitic.tasks.threadLocalBatchContext
+import io.infinitic.tasks.threadLocalTaskContext
+import io.infinitic.tasks.timeoutMillis
 import io.infinitic.workflows.WorkflowCheckMode
+import io.infinitic.workflows.threadLocalWorkflowContext
 import io.infinitic.workflows.workflowTask.WorkflowTaskImpl
-import kotlinx.coroutines.TimeoutCancellationException
+import java.lang.reflect.InvocationTargetException
+import java.lang.reflect.Method
+import java.lang.reflect.Type
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.TimeoutException
+import kotlin.reflect.jvm.javaMethod
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeout
-import java.lang.reflect.InvocationTargetException
-import java.lang.reflect.Method
-import java.lang.reflect.Type
-import java.util.concurrent.TimeoutException
-import kotlin.reflect.jvm.javaMethod
 
 
 /**
@@ -94,6 +101,7 @@ import kotlin.reflect.jvm.javaMethod
  * The class supports detailed handling of timeouts, retries, and exceptions during task execution.
  */
 class TaskExecutor(
+  private val executor: ExecutorService,
   private val registry: ExecutorRegistryInterface,
   private val producer: InfiniticProducer,
   private val client: InfiniticClientInterface
@@ -108,7 +116,6 @@ class TaskExecutor(
       is ExecuteTask -> msg.process()
     }
   }
-
 
   /**
    * Processes a batch of service execution messages. Depending on the type of task represented
@@ -174,9 +181,11 @@ class TaskExecutor(
     val isDelegated: Boolean,
     val args: List<*>,
     val context: TaskContext
-  )
+  ) {
+    fun invoke(): Any? = method.invoke(instance, *args.toTypedArray())
+  }
 
-  private data class BatchedTaskData(
+  private data class BatchData(
     val instance: Any,
     val batchMethod: BatchMethod,
     val returnType: Type,
@@ -208,10 +217,13 @@ class TaskExecutor(
     val taskData = parse().getOrElse { return }
 
     // Get the task timeout. If this operation fails, return without proceeding
-    val timeout = getTaskTimeout(taskData).getOrElse { return }
+    val timeoutMillis = getTimeoutMillis(taskData).getOrElse { return }
 
-    // Execute the task with the specified timeout. If this operation fails, return without proceeding
-    val output = executeWithTimeout(taskData, timeout).getOrElse { return }
+    // Get the task grace. If this operation fails, return without proceeding
+    val graceMillis = getGraceMillis(taskData).getOrElse { return }
+
+    // Execute the task with the specified timeout and grace. If this operation fails, return without proceeding
+    val output = executeWithTimeout(taskData, timeoutMillis, graceMillis).getOrElse { return }
 
     // Signal that the task has completed successfully
     sendTaskCompleted(output, taskData)
@@ -224,36 +236,39 @@ class TaskExecutor(
     sendTaskStarted()
 
     // Parse the batch. If parsing fails, return without proceeding
-    val batchedTaskData = parse().getOrElse { return }
+    val batchData = parse().getOrElse { return }
 
     // Get the batch timeout. If this operation fails, return without proceeding
-    val timeout = getBatchTimeout(batchedTaskData).getOrElse { return }
+    val timeoutMillis = getTimeoutMillis(batchData).getOrElse { return }
+
+    // Get the task grace. If this operation fails, return without proceeding
+    val graceMillis = getGraceMillis(batchData).getOrElse { return }
 
     // Execute the batch with the specified timeout.
     // If this operation fails, return without proceeding
-    val output = executeWithTimeout(batchedTaskData, timeout).getOrElse { return }
+    val output = executeWithTimeout(batchData, timeoutMillis, graceMillis).getOrElse { return }
 
-    val inputTaskIds = batchedTaskData.argsMap.keys.map { it.toString() }.toSet()
+    val inputTaskIds = batchData.argsMap.keys.map { it.toString() }.toSet()
     val unknownFromOutput = output.keys.subtract(inputTaskIds)
     val missingFromOutput = inputTaskIds.subtract(output.keys)
 
     when {
       unknownFromOutput.isNotEmpty() -> sendTaskFailed(
           Exception("Unknown keys: ${unknownFromOutput.joinToString()}}"),
-          batchedTaskData.toMetaMap(),
+          batchData.toMetaMap(),
       ) {
-        "Error in the return values of the @batch ${batchedTaskData.batchMethod.batch.name} method return value"
+        "Error in the return values of the @batch ${batchData.batchMethod.batch.name} method return value"
       }
 
       missingFromOutput.isNotEmpty() -> sendTaskFailed(
           Exception("Missing keys: ${missingFromOutput.joinToString()}}"),
-          batchedTaskData.toMetaMap(),
+          batchData.toMetaMap(),
       ) {
-        "Error in the return values of the @batch ${batchedTaskData.batchMethod.batch.name} method return value"
+        "Error in the return values of the @batch ${batchData.batchMethod.batch.name} method return value"
       }
 
       // All tasks have completed successfully
-      else -> sendTaskCompleted(output, batchedTaskData)
+      else -> sendTaskCompleted(output, batchData)
     }
   }
 
@@ -285,7 +300,7 @@ class TaskExecutor(
     Result.failure(e)
   }
 
-  private suspend fun List<ExecuteTask>.parse(): Result<BatchedTaskData> = try {
+  private suspend fun List<ExecuteTask>.parse(): Result<BatchData> = try {
     Result.success(parseBatch())
   } catch (e: Exception) {
     sendTaskFailed(e, associate { it.taskId to it.taskMeta }) {
@@ -294,100 +309,116 @@ class TaskExecutor(
     Result.failure(e)
   }
 
-  private suspend fun getTimeout(
+  private suspend fun getTimeoutMillis(
     withTimeout: WithTimeout?,
     onError: suspend (Throwable) -> Unit
-  ): Result<Long> {
-    val timeoutMillis = withTimeout?.millis
-    val timeoutException = timeoutMillis?.exceptionOrNull()
+  ): Result<Long> = withTimeout?.timeoutMillis?.fold(
+      onSuccess = { Result.success(it ?: Long.MAX_VALUE) },
+      onFailure = {
+        onError(it)
+        Result.failure(it)
+      },
+  ) ?: Result.success(Long.MAX_VALUE)
 
-    if (timeoutException != null) {
-      onError(timeoutException)
-      return Result.failure(timeoutException)
-    }
+  private suspend fun getGraceMillis(
+    withTimeout: WithTimeout?,
+    onError: suspend (Throwable) -> Unit
+  ): Result<Long> = withTimeout?.graceMillis?.fold(
+      onSuccess = { Result.success(it) },
+      onFailure = {
+        onError(it)
+        Result.failure(it)
+      },
+  ) ?: Result.success(0L)
 
-    val timeoutValue = timeoutMillis?.getOrNull() ?: Long.MAX_VALUE
-    return Result.success(timeoutValue)
-  }
-
-  private suspend fun List<ExecuteTask>.getBatchTimeout(batchedTaskData: BatchedTaskData): Result<Long> =
-      getTimeout(batchedTaskData.withTimeout) { e ->
-        sendTaskFailed(
-            e,
-            associate { it.taskId to it.taskMeta },
-        ) { "Error in ${WithTimeout::getTimeoutSeconds.name} method" }
+  private suspend fun ExecuteTask.getTimeoutMillis(taskData: TaskData): Result<Long> =
+      getTimeoutMillis(taskData.withTimeout) {
+        sendTaskFailed(it, taskMeta) { "Error in ${WithTimeout::getTimeoutSeconds.name} method" }
       }
 
-  private suspend fun ExecuteTask.getTaskTimeout(taskData: TaskData): Result<Long> =
-      getTimeout(taskData.withTimeout) {
-        sendTaskFailed(it, taskMeta) { "Error in ${WithTimeout::getTimeoutSeconds.name} method" }
+  private suspend fun ExecuteTask.getGraceMillis(taskData: TaskData): Result<Long> =
+      getGraceMillis(taskData.withTimeout) {
+        sendTaskFailed(it, taskMeta) {
+          "Error in ${WithTimeout::getGracePeriodAfterTimeoutSeconds.name} method"
+        }
+      }
+
+  private suspend fun List<ExecuteTask>.getTimeoutMillis(batchData: BatchData): Result<Long> =
+      getTimeoutMillis(batchData.withTimeout) { e ->
+        sendTaskFailed(e, associate { it.taskId to it.taskMeta }) {
+          "Error in ${WithTimeout::getTimeoutSeconds.name} method"
+        }
+      }
+
+  private suspend fun List<ExecuteTask>.getGraceMillis(batchData: BatchData): Result<Long> =
+      getGraceMillis(batchData.withTimeout) { e ->
+        sendTaskFailed(e, associate { it.taskId to it.taskMeta }) {
+          "Error in ${WithTimeout::getGracePeriodAfterTimeoutSeconds.name} method"
+        }
       }
 
   private suspend fun ExecuteTask.executeWithTimeout(
     taskData: TaskData,
-    timeout: Long
+    timeoutMillis: Long,
+    graceMillis: Long
   ): Result<Any?> {
-    return try {
-      withTimeout(timeout) {
-        coroutineScope {
-          Task.setContext(taskData.context)
-          Result.success(taskData.method.invoke(taskData.instance, *taskData.args.toTypedArray()))
-        }
+    val name = with(taskData.context) { "$serviceName:$taskName-$taskId" }
+    // For workflow task, the workflow context is set in the thread local during the workflow instantiation
+    val workflowContext: WorkflowContext? = threadLocalWorkflowContext.get()
+    // Run the task with a timeout
+    val result = TaskRunner(executor, logger).runWithTimeout(name, timeoutMillis, graceMillis) {
+      // For the current thread, set the task context
+      threadLocalTaskContext.set(taskData.context)
+      // For the current thread, set the workflow context if it exists (for workflow tasks)
+      workflowContext?.let { threadLocalWorkflowContext.set(it) }
+      // invoke the task method
+      taskData.invoke().also {
+        // For the current thread, clear the workflow and task context
+        threadLocalWorkflowContext.remove()
+        threadLocalTaskContext.remove()
       }
-    } catch (e: TimeoutCancellationException) {
-      handleTimeoutException(taskData, timeout)
-      Result.failure(e)
-    } catch (e: InvocationTargetException) {
-      handleInvocationTargetException(taskData, e)
-      Result.failure(e)
-    } catch (e: Exception) {
-      sendTaskFailed(e, taskData.context.meta)
-      Result.failure(e)
     }
+    // Clear the thread local context after execution
+    threadLocalWorkflowContext.remove()
+    // handle exceptions that may have occurred during execution
+    when (val e = result.exceptionOrNull()) {
+      // success
+      null -> null
+      // timeout exception
+      is TimeoutException -> retryOrSendTaskFailed(taskData.withRetry, taskData.context, e)
+      // exception within the invoke method
+      is InvocationTargetException -> handleInvocationTargetException(taskData, e)
+      // any other exception
+      else -> sendTaskFailed(e, taskData.context.meta)
+    }
+    return result
   }
 
   private suspend fun List<ExecuteTask>.executeWithTimeout(
-    batchData: BatchedTaskData,
-    timeout: Long
+    batchData: BatchData,
+    timeoutMillis: Long,
+    graceMillis: Long
   ): Result<Map<String, Any?>> {
-    return try {
-      withTimeout(timeout) {
-        coroutineScope {
-          batchData.contextMap.map { (k, v) -> Task.setContext(k.toString(), v) }
-          Result.success(batchData.invoke())
-        }
-      }
-    } catch (e: TimeoutCancellationException) {
-      handleTimeoutException(batchData, timeout)
-      Result.failure(e)
-    } catch (e: InvocationTargetException) {
-      handleInvocationTargetException(batchData, e)
-      Result.failure(e)
-    } catch (e: Exception) {
-      sendTaskFailed(e, batchData.toMetaMap()) {
+    val name = with(batchData) {
+      "${contextMap.values.first().serviceName}:${batchMethod.batch.name}-${contextMap.keys.size}"
+    }
+    val result = TaskRunner(executor, logger).runWithTimeout(name, timeoutMillis, graceMillis) {
+      threadLocalBatchContext.set(batchData.contextMap.mapKeys { it.key.toString() })
+      batchData.invoke()
+    }
+    when (val e = result.exceptionOrNull()) {
+      // success
+      null -> null
+      // timeout exception
+      is TimeoutException -> retryOrSendBatchFailed(batchData.withRetry, batchData.contextMap, e)
+      // exception within the invoke method
+      is InvocationTargetException -> handleInvocationTargetException(batchData, e)
+      // any other exception
+      else -> sendTaskFailed(e, batchData.toMetaMap()) {
         "An error occurred while processing batch messages"
       }
-      Result.failure(e)
     }
-  }
-
-  private suspend fun ExecuteTask.handleTimeoutException(taskData: TaskData, timeout: Long) {
-    retryOrSendTaskFailed(
-        taskData.withRetry,
-        taskData.context,
-        TimeoutException("Task execution timed-out after $timeout ms"),
-    )
-  }
-
-  private suspend fun List<ExecuteTask>.handleTimeoutException(
-    batchData: BatchedTaskData,
-    timeout: Long
-  ) {
-    retryOrSendTaskFailed(
-        batchData.withRetry,
-        batchData.contextMap,
-        TimeoutException("Batch execution timed-out after $timeout ms"),
-    )
+    return result
   }
 
   private suspend fun ExecuteTask.handleInvocationTargetException(
@@ -403,12 +434,12 @@ class TaskExecutor(
   }
 
   private suspend fun List<ExecuteTask>.handleInvocationTargetException(
-    batchData: BatchedTaskData,
+    batchData: BatchData,
     e: InvocationTargetException
   ) {
     val cause = e.cause ?: e.targetException
     when (cause) {
-      is Exception -> retryOrSendTaskFailed(batchData.withRetry, batchData.contextMap, cause)
+      is Exception -> retryOrSendBatchFailed(batchData.withRetry, batchData.contextMap, cause)
       is Throwable -> throw cause
     }
   }
@@ -434,7 +465,7 @@ class TaskExecutor(
     }
   }
 
-  private suspend fun List<ExecuteTask>.retryOrSendTaskFailed(
+  private suspend fun List<ExecuteTask>.retryOrSendBatchFailed(
     withRetry: WithRetry?,
     batchContext: Map<TaskId, TaskContext>,
     cause: Exception
@@ -571,7 +602,7 @@ class TaskExecutor(
 
   private suspend fun List<ExecuteTask>.sendTaskCompleted(
     output: Map<String, Any?>,
-    batchData: BatchedTaskData
+    batchData: BatchData
   ) = coroutineScope {
     forEach { executeTask ->
       launch {
@@ -657,7 +688,7 @@ class TaskExecutor(
     )
   }
 
-  private suspend fun List<ExecuteTask>.parseBatch(): BatchedTaskData {
+  private suspend fun List<ExecuteTask>.parseBatch(): BatchData {
     // Select the first task or throw an exception if the list is empty
     val executeTask = firstOrNull() ?: thisShouldNotHappen()
 
@@ -681,7 +712,7 @@ class TaskExecutor(
     }
 
     // Return BatchTaskData containing the task information and contexts
-    return BatchedTaskData(
+    return BatchData(
         instance = taskData.instance,
         batchMethod = taskData.method.getBatchMethod() ?: thisShouldNotHappen(),
         returnType = taskData.returnType,
@@ -703,7 +734,7 @@ class TaskExecutor(
 
     val withRetry = getWithRetry(serviceName, serviceMethod)
 
-    // check is this method has the @Async annotation
+    // check if this method has the @Delegate annotation
     val isDelegated = serviceMethod.isDelegated
 
     val taskContext = getContext(withRetry, withTimeout)
@@ -789,9 +820,9 @@ class TaskExecutor(
    * Retrieves the `WithTimeout` setting for a given service and method.
    */
   private fun getWithTimeout(serviceName: ServiceName, serviceMethod: Method): WithTimeout? =
-      // use withTimeout from registry, if it exists
+      // configuration set in Service registration supersedes configuration from sources
       when (val wt = registry.getServiceExecutorWithTimeout(serviceName)) {
-        WithTimeout.UNSET ->
+        UNSET_WITH_TIMEOUT ->
           //use @Timeout annotation, or WithTimeout interface
           serviceMethod.withTimeout.getOrThrow()
           // else use default value
@@ -804,9 +835,9 @@ class TaskExecutor(
    * Retrieves the `WithTimeout` setting for a given workflow task.
    */
   private fun getWithTimeout(workflowName: WorkflowName) =
-      // use withTimeout from registry, if it exists
+      // configuration set in Workflow registration supersedes configuration from sources
       when (val wt = registry.getWorkflowExecutorWithTimeout(workflowName)) {
-        WithTimeout.UNSET ->
+        UNSET_WITH_TIMEOUT ->
           // HERE WE ARE LOOKING FOR THE TIMEOUT OF THE WORKFLOW TASK
           // NOT OF THE WORKFLOW ITSELF, THAT'S WHY WE DO NOT LOOK FOR
           // THE @Timeout ANNOTATION OR THE WithTimeout INTERFACE
@@ -821,9 +852,9 @@ class TaskExecutor(
    * Retrieves the `WithRetry` setting for a given service and method.
    */
   private fun getWithRetry(serviceName: ServiceName, serviceMethod: Method): WithRetry? =
-      // use withRetry from registry, if it exists
+      // use withRetry from the registry if it exists
       when (val wr = registry.getServiceExecutorWithRetry(serviceName)) {
-        WithRetry.UNSET ->
+        UNSET_WITH_RETRY ->
           // use @Retry annotation, or WithRetry interface
           serviceMethod.withRetry.getOrThrow()
           // else use default value
@@ -836,9 +867,9 @@ class TaskExecutor(
    * Retrieves the `WithRetry` setting for a given workflow task.
    */
   private fun getWithRetry(workflowName: WorkflowName, workflowMethod: Method) =
-      // use withRetry from registry, if it exists
+      // use withRetry from the registry if it exists
       when (val wr = registry.getWorkflowExecutorWithRetry(workflowName)) {
-        WithRetry.UNSET ->
+        UNSET_WITH_RETRY ->
           // else use @Retry annotation, or WithRetry interface
           workflowMethod.withRetry.getOrThrow()
           // else use default value

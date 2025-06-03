@@ -25,6 +25,7 @@ package io.infinitic.common.transport.consumers
 import io.infinitic.common.transport.interfaces.TransportConsumer
 import io.infinitic.common.transport.interfaces.TransportMessage
 import io.infinitic.common.transport.logged.LoggerWithCounter
+import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.cancel
@@ -32,7 +33,6 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * Starts receiving messages from the provided transport consumer and processes them in a coroutine.
@@ -69,7 +69,7 @@ fun <T : TransportMessage<M>, M> CoroutineScope.startReceiving(
         warn(e) { "Exception when receiving message from $this" }
       } catch (e: Error) {
         warn(e) { "Error when receiving message from $this" }
-        // canceling current scope (warning scope is different from inside launch)
+        // canceling the current scope (warning scope is different from inside launch)
         this@CoroutineScope.cancel()
       }
     }

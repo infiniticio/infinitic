@@ -49,7 +49,7 @@ class WorkflowStateTimerHandlerTests : StringSpec(
       val producer = mockk<InfiniticProducer>(relaxed = true) {
         coEvery { internalSendTo(any<WorkflowStateEngineMessage>(), any(), any()) } returns Unit
       }
-      val handler = WorkflowStateTimerHandler(producer)
+      val handler = WorkflowStateTimerHandler(producer, 60 * 60 * 24 * 3)
 
       "process should forward valid RemoteTimerCompleted message to WorkflowStateEngineTopic" {
         // Given
@@ -86,7 +86,7 @@ class WorkflowStateTimerHandlerTests : StringSpec(
         val timerId = TimerId()
         val emitterName = EmitterName("TestEmitter")
 
-        // Create a timestamp that is older than MAX_REMOTE_TIMER_AGE_MS (72 hours)
+        // Create a timestamp that is older than 72 hours
         val oldTimestamp = Instant.now().toEpochMilli() - (4 * 24 * 60 * 60 * 1000) // 96 hours ago
         val emittedAt = MillisInstant(oldTimestamp)
 

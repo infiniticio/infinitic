@@ -36,21 +36,21 @@ import io.infinitic.exceptions.tasks.TooManyMethodsFoundWithParameterCountExcept
 import io.infinitic.exceptions.tasks.TooManyMethodsFoundWithParameterTypesException
 import io.infinitic.tasks.WithRetry
 import io.infinitic.tasks.WithTimeout
-import io.infinitic.tasks.millis
+import io.infinitic.tasks.timeoutMillis
 import io.infinitic.workflows.WorkflowCheckMode
 import io.mockk.every
 import io.mockk.mockkClass
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
-import org.jetbrains.annotations.TestOnly
 import java.lang.reflect.Constructor
 import java.lang.reflect.Method
 import java.lang.reflect.Type
 import java.security.InvalidParameterException
-import java.util.*
+import java.util.Optional
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.jvm.optionals.getOrNull
 import kotlin.reflect.jvm.javaMethod
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import org.jetbrains.annotations.TestOnly
 
 private val cachesList
   get() = listOf(
@@ -157,7 +157,7 @@ fun String.getClass(
   errorClass: String = this.errorClass,
 ): Result<Class<*>> = try {
   Result.success(Class.forName(this))
-} catch (e: ClassNotFoundException) {
+} catch (_: ClassNotFoundException) {
   Result.failure(IllegalArgumentException(classNotFound))
 } catch (e: Exception) {
   Result.failure(IllegalArgumentException(errorClass, e))
@@ -369,7 +369,7 @@ private fun Class<*>.getMethodPerNameAndParameterTypes(
   parameterTypes: List<String>
 ): Method? = try {
   getMethod(methodName, *(parameterTypes.map { classForName(it) }.toTypedArray()))
-} catch (e: NoSuchMethodException) {
+} catch (_: NoSuchMethodException) {
   null
 }
 
@@ -478,7 +478,7 @@ private fun Method.findTimeoutInMillis(): Result<Long?>? =
     findWithTimeoutClassByAnnotation()
         ?.getInstance()
         ?.getOrElse { return Result.failure(it) }
-        ?.millis
+        ?.timeoutMillis
 
 /**
  * Returns the timeout of a class as defined by the @Timeout annotation
@@ -502,14 +502,14 @@ private fun <T : Any> Class<T>.findTimeoutInMillis(): Result<Long?>? {
   // this is not an interface, we can build an instance and call the method
   if (!isInterface) getInstance()
       .getOrElse { return Result.failure(it) }
-      .let { return (it as WithTimeout).millis }
+      .let { return (it as WithTimeout).timeoutMillis }
 
   // if 'this' is an interface, we use a mock to call the method
   // as building a mock is expensive, we cache it
   return try {
     Result.success(
         when (val mock = mock(this)) {
-          is WithTimeout -> mock.millis.getOrThrow()
+          is WithTimeout -> mock.timeoutMillis.getOrThrow()
           else -> thisShouldNotHappen()
         },
     )
@@ -560,7 +560,7 @@ internal fun <T> Class<T>.getEmptyConstructor(
   constructorError: String
 ): Result<Constructor<T>> = try {
   Result.success(getDeclaredConstructor())
-} catch (e: NoSuchMethodException) {
+} catch (_: NoSuchMethodException) {
   Result.failure(IllegalArgumentException(noEmptyConstructor))
 } catch (e: Exception) {
   Result.failure(IllegalArgumentException(constructorError, e))
@@ -658,7 +658,7 @@ internal fun <T : Annotation, S : Class<out T>> Method.findAnnotation(
     klass.interfaces.forEach { `interface` ->
       try {
         `interface`.getMethod(name, *parameterTypes).also { it.isAccessible = true }
-      } catch (e: Exception) {
+      } catch (_: Exception) {
         null
       }?.findAnnotation(annotation)?.also { return it }
     }
@@ -668,7 +668,7 @@ internal fun <T : Annotation, S : Class<out T>> Method.findAnnotation(
 
     method = try {
       klass.getMethod(name, *parameterTypes).also { it.isAccessible = true }
-    } catch (e: Exception) {
+    } catch (_: Exception) {
       break
     }
 
@@ -693,7 +693,7 @@ internal fun <T : Annotation, S : Class<out T>> Method.findParameterAnnotation(
     klass.interfaces.forEach { `interface` ->
       try {
         `interface`.getMethod(name, *parameterTypes).also { it.isAccessible = true }
-      } catch (e: Exception) {
+      } catch (_: Exception) {
         null
       }?.findParameterAnnotation(annotation, parameterIndex)?.also { return it }
     }
@@ -703,7 +703,7 @@ internal fun <T : Annotation, S : Class<out T>> Method.findParameterAnnotation(
 
     method = try {
       klass.getMethod(name, *parameterTypes).also { it.isAccessible = true }
-    } catch (e: Exception) {
+    } catch (_: Exception) {
       break
     }
 
@@ -744,7 +744,7 @@ private fun Class<*>.hasMethodImplemented(method: Method): Boolean {
 
   return try {
     getDeclaredMethod(method.name, *(method.parameterTypes)).isDefault
-  } catch (e: NoSuchMethodException) {
+  } catch (_: NoSuchMethodException) {
     false
   }
 }

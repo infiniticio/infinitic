@@ -45,12 +45,8 @@ jobs:
         uses: gradle/actions/setup-gradle@v3
         with:
           gradle-version: wrapper
-          cache-read-only: false
 
       - name: Test with Gradle
-        run: ./gradlew test --info --scan  # <= -d used to debug if needed
-        timeout-minutes: 12 # max time allocated (useful if some tests hang)
+        run: ./gradlew test  # <= --info -d used to debug if needed
+        timeout-minutes: 17 # max time allocated (useful if some tests hang)
 
-      - name: Publish Build Scan
-        if: success()
-        run: echo "Build Scan URL is ${{ steps.build.outputs.build-scan-url }}"

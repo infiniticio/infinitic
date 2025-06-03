@@ -23,10 +23,12 @@
 package io.infinitic.tests.timeouts
 
 import io.infinitic.Test
+import io.infinitic.exceptions.TaskFailedException
 import io.infinitic.exceptions.TaskTimedOutException
 import io.infinitic.exceptions.WorkflowFailedException
 import io.infinitic.exceptions.WorkflowTimedOutException
 import io.infinitic.utils.UtilService
+import io.infinitic.utils.UtilServiceImpl
 import io.infinitic.workflows.DeferredStatus
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.assertions.throwables.shouldThrow
@@ -86,11 +88,37 @@ internal class TimeoutsWorkflowTests :
           e.deferredException.shouldBeInstanceOf<TaskTimedOutException>()
           val cause = e.deferredException as TaskTimedOutException
           cause.serviceName shouldBe UtilService::class.java.name
-          cause.methodName shouldBe "withTimeout"
+          cause.methodName shouldBe "withServiceTimeout"
         }
 
         "timeout on a synchronous task should NOT throw if slower than the task" {
           shouldNotThrowAny { timeoutsWorkflow.withTimeoutOnTask(10) }
+        }
+
+        " timeout triggered in a synchronous task should be manageable" {
+          val e = shouldThrow<WorkflowFailedException> {
+            timeoutsWorkflow.withManagedTimeoutOnTaskExecution()
+          }
+
+          e.deferredException.shouldBeInstanceOf<TaskFailedException>()
+
+          UtilServiceImpl.onTimeout.get() shouldBe true
+          UtilServiceImpl.hasTimedOut.get() shouldBe true
+        }
+
+        "Execution timeout triggered in a synchronous task should throw" {
+          val e = shouldThrow<WorkflowFailedException> {
+            timeoutsWorkflow.withTimeoutOnTaskExecution(2000)
+          }
+
+          e.deferredException.shouldBeInstanceOf<TaskFailedException>()
+          val cause = e.deferredException as TaskFailedException
+          cause.serviceName shouldBe UtilService::class.java.name
+          cause.methodName shouldBe "withExecutionTimeout"
+        }
+
+        "Execution timeout on a synchronous task should NOT throw if slower than the task" {
+          shouldNotThrowAny { timeoutsWorkflow.withTimeoutOnTaskExecution(10) }
         }
 
         "timeout triggered on a synchronous task can be caught" {

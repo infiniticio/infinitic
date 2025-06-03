@@ -33,7 +33,11 @@ import io.infinitic.common.workflows.engine.messages.WorkflowStateEngineMessage
 import java.time.Instant
 
 @Suppress("UNUSED_PARAMETER")
-class WorkflowStateTimerHandler(val producer: InfiniticProducer) {
+class WorkflowStateTimerHandler(
+  val producer: InfiniticProducer,
+  pastDueSeconds: Long
+) {
+  private val pastDueMillis = pastDueSeconds * 1000
 
   suspend fun process(message: WorkflowStateEngineMessage, publishTime: MillisInstant) {
     if (message is RemoteTimerCompleted) {
@@ -43,8 +47,8 @@ class WorkflowStateTimerHandler(val producer: InfiniticProducer) {
       // to prevent unnecessary reprocessing. (WorkflowStateEngine would discard it anyway,
       // but this avoids extra processing earlier in the pipeline.)
       message.emittedAt?.let {
-        // If the emittedAt is more than 24 hours ago, we discard the message
-        if (Instant.now().toEpochMilli() - it.long > MAX_REMOTE_TIMER_AGE_MS) {
+        // If the emittedAt is more than 3 days ago (default), we discard the message
+        if (Instant.now().toEpochMilli() - it.long > pastDueMillis) {
           logger.warn { "RemoteTimerCompleted discarded as too old: $message" }
           return
         }
@@ -58,7 +62,5 @@ class WorkflowStateTimerHandler(val producer: InfiniticProducer) {
 
   companion object {
     val logger = LoggerWithCounter(KotlinLogging.logger {})
-
-    var MAX_REMOTE_TIMER_AGE_MS = 3 * 24 * 60 * 60 * 1000 // 72 hours in milliseconds
   }
 }
