@@ -38,6 +38,7 @@ fun interface WithTimeout {
 
 val WithTimeout.timeoutMillis: Result<Long?>
   get() = runCatching { getTimeoutSeconds()?.times(1000)?.toLong()?.coerceAtLeast(0L) }
+
 val WithTimeout.graceMillis: Result<Long>
   get() = runCatching { getGracePeriodAfterTimeoutSeconds().times(1000).toLong().coerceAtLeast(0L) }
 
