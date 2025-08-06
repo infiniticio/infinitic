@@ -20,7 +20,6 @@
  *
  * Licensor: infinitic.io
  */
-
 import okhttp3.RequestBody.Companion.toRequestBody
 
 // https://proandroiddev.com/publishing-a-maven-artifact-3-3-step-by-step-instructions-to-mavencentral-publishing-bd661081645d
@@ -31,7 +30,8 @@ import okhttp3.RequestBody.Companion.toRequestBody
 // * login to https://central.sonatype.com/publishing/deployments
 // * once the new version is uploaded then publish it
 //
-// curl -u ossSonatypeOrgUsername:ossSonatypeOrgPassword -X POST https://ossrh-staging-api.central.sonatype.com/manual/upload/defaultRepository/io.infinitic
+// curl -u ossSonatypeOrgUsername:ossSonatypeOrgPassword -X POST
+// https://ossrh-staging-api.central.sonatype.com/manual/upload/defaultRepository/io.infinitic
 //
 // You must have a gradle.properties file with
 // ossSonatypeOrgUsername=
@@ -60,9 +60,7 @@ buildscript {
     maven(url = uri("https://central.sonatype.com/repository/maven-snapshots/"))
     maven(url = uri("https://plugins.gradle.org/m2/"))
   }
-  dependencies {
-    classpath("com.squareup.okhttp3:okhttp:4.12.0")
-  }
+  dependencies { classpath("com.squareup.okhttp3:okhttp:4.12.0") }
 }
 
 repositories { mavenCentral() }
@@ -93,8 +91,7 @@ publishing {
   repositories {
     val releasesRepoUrl =
         uri("https://ossrh-staging-api.central.sonatype.com/service/local/staging/deploy/maven2/")
-    val snapshotsRepoUrl =
-        uri("https://central.sonatype.com/repository/maven-snapshots/")
+    val snapshotsRepoUrl = uri("https://central.sonatype.com/repository/maven-snapshots/")
     maven {
       name = "ossrh-staging-api"
       url = if (Ci.isRelease) releasesRepoUrl else snapshotsRepoUrl
@@ -139,39 +136,44 @@ publishing {
 }
 
 // === Notify Central Portal ===
-val notifyCentralPortal = if (rootProject.tasks.findByName("notifyCentralPortal") == null) {
-  rootProject.tasks.register("notifyCentralPortal") {
-    group = "publishing"
-    description = "Notify Central Portal after Maven publish"
+val notifyCentralPortal =
+    if (rootProject.tasks.findByName("notifyCentralPortal") == null) {
+      rootProject.tasks.register("notifyCentralPortal") {
+        group = "publishing"
+        description = "Notify Central Portal after Maven publish"
 
-    doLast {
-      val groupId = "io.infinitic"
-      val username = System.getenv("OSSRH_USERNAME") ?: ossSonatypeOrgUsername
-      val password = System.getenv("OSSRH_PASSWORD") ?: ossSonatypeOrgPassword
+        doLast {
+          val groupId = "io.infinitic"
+          val username = System.getenv("OSSRH_USERNAME") ?: ossSonatypeOrgUsername
+          val password = System.getenv("OSSRH_PASSWORD") ?: ossSonatypeOrgPassword
 
-      if (username == null || password == null) throw GradleException("Missing OSSRH credentials.")
+          if (username == null || password == null)
+              throw GradleException("Missing OSSRH credentials.")
 
-      val auth = okhttp3.Credentials.basic(username, password)
-      val client = okhttp3.OkHttpClient()
+          val auth = okhttp3.Credentials.basic(username, password)
+          val client = okhttp3.OkHttpClient()
 
-      val request = okhttp3.Request.Builder()
-          .url("https://ossrh-staging-api.central.sonatype.com/manual/upload/defaultRepository/$groupId")
-          .post(ByteArray(0).toRequestBody(null))
-          .header("Authorization", auth)
-          .build()
+          val request =
+              okhttp3.Request.Builder()
+                  .url(
+                      "https://ossrh-staging-api.central.sonatype.com/manual/upload/defaultRepository/$groupId")
+                  .post(ByteArray(0).toRequestBody(null))
+                  .header("Authorization", auth)
+                  .build()
 
-      val response = client.newCall(request).execute()
+          val response = client.newCall(request).execute()
 
-      if (!response.isSuccessful) {
-        throw GradleException("Failed to notify Central Portal: ${response.code} - ${response.body?.string()}")
-      } else {
-        println("✅ Successfully notified Central Portal for groupId: $groupId")
+          if (!response.isSuccessful) {
+            throw GradleException(
+                "Failed to notify Central Portal: ${response.code} - ${response.body?.string()}")
+          } else {
+            println("✅ Successfully notified Central Portal for groupId: $groupId")
+          }
+        }
       }
+    } else {
+      rootProject.tasks.named("notifyCentralPortal")
     }
-  }
-} else {
-  rootProject.tasks.named("notifyCentralPortal")
-}
 
 // === Hook into publishing (runs only once after all publishing is done) ===
 
