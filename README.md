@@ -66,3 +66,10 @@ Key benefits of using Infinitic:
 ## Getting Started
 
 See the [documentation](https://docs.infinitic.io).
+
+## 📬 Contact & Contributions
+Have a feature request, question, or an idea for improvement? We’d love to hear from you.
+
+For custom requests, consulting, or paid contributions, feel free to reach out directly:
+👉 Contact [Gilles Barbier](https://gillesbarbier.dev)
+
