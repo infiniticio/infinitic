@@ -25,9 +25,9 @@ package io.infinitic.storage.databases.mysql
 import com.zaxxer.hikari.HikariDataSource
 import io.infinitic.storage.config.MySQLConfig
 import io.infinitic.storage.keyValue.KeyValueStorage
+import java.sql.Connection
 import kotlinx.coroutines.delay
 import org.jetbrains.annotations.TestOnly
-import java.sql.Connection
 
 class MySQLKeyValueStorage(
   internal val pool: HikariDataSource,
@@ -49,34 +49,35 @@ class MySQLKeyValueStorage(
 
   override suspend fun get(key: String): ByteArray? =
       pool.connection.use { connection ->
-        connection.prepareStatement("SELECT `value` FROM $tableName WHERE `key`=?")
-            .use { statement ->
-              statement.setString(1, key)
-              statement.executeQuery().use { resultSet ->
-                if (resultSet.next()) {
-                  resultSet.getBytes("value")
-                } else null
-              }
-            }
+        connection.prepareStatement(
+            "SELECT `value` FROM $tableName WHERE `key` = ?",
+        ).use { stmt ->
+          stmt.setString(1, key)
+          stmt.executeQuery().use { resultSet ->
+            if (resultSet.next()) {
+              resultSet.getBytes("value")
+            } else null
+          }
+        }
       }
 
   override suspend fun put(key: String, bytes: ByteArray?) {
     pool.connection.use { connection ->
       when (bytes) {
         null -> connection.prepareStatement(
-            "DELETE FROM $tableName WHERE `key`=?",
-        ).use {
-          it.setString(1, key)
-          it.executeUpdate()
+            "DELETE FROM $tableName WHERE `key` = ?",
+        ).use { stmt ->
+          stmt.setString(1, key)
+          stmt.executeUpdate()
         }
 
         else -> connection.prepareStatement(
-            "INSERT INTO $tableName (`key`, value, version) VALUES (?, ?, 1) " +
-                "ON DUPLICATE KEY UPDATE value = VALUES(value), version = version + 1",
-        ).use {
-          it.setString(1, key)
-          it.setBytes(2, bytes)
-          it.executeUpdate()
+            "INSERT INTO $tableName (`key`, value, version) VALUES (?, ?, 1)" +
+                " ON DUPLICATE KEY UPDATE value = VALUES(value), version = version + 1",
+        ).use { stmt ->
+          stmt.setString(1, key)
+          stmt.setBytes(2, bytes)
+          stmt.executeUpdate()
         }
       }
     }
@@ -87,22 +88,22 @@ class MySQLKeyValueStorage(
 
     return pool.connection.use { connection ->
       val questionMarks = keys.joinToString(",") { "?" }
-      // Using BINARY for case-sensitive key comparison
-      connection.prepareStatement("SELECT `key`, `value` FROM $tableName WHERE BINARY `key` IN ($questionMarks)")
-          .use { statement ->
-            keys.forEachIndexed { index, key -> statement.setString(index + 1, key) }
-            statement.executeQuery().use { resultSet ->
-              val result = mutableMapOf<String, ByteArray?>()
-              while (resultSet.next()) {
-                result[resultSet.getString("key")] = resultSet.getBytes("value")
-              }
-              // add missing keys
-              keys.forEach { key ->
-                result.putIfAbsent(key, null)
-              }
-              result
-            }
+      connection.prepareStatement(
+          "SELECT `key`, `value` FROM $tableName WHERE `key` IN ($questionMarks)",
+      ).use { stmt ->
+        keys.forEachIndexed { index, key -> stmt.setString(index + 1, key) }
+        stmt.executeQuery().use { resultSet ->
+          val result = mutableMapOf<String, ByteArray?>()
+          while (resultSet.next()) {
+            result[resultSet.getString("key")] = resultSet.getBytes("value")
           }
+          // add missing keys
+          keys.forEach { key ->
+            result.putIfAbsent(key, null)
+          }
+          result
+        }
+      }
     }
   }
 
@@ -119,13 +120,14 @@ class MySQLKeyValueStorage(
         val keysToDelete = sortedBytes.filter { it.value == null }.keys
         if (keysToDelete.isNotEmpty()) {
           val questionMarks = keysToDelete.joinToString(",") { "?" }
-          connection.prepareStatement("DELETE FROM $tableName WHERE `key` IN ($questionMarks)")
-              .use { stmt ->
-                keysToDelete.forEachIndexed { index, key ->
-                  stmt.setString(index + 1, key)
-                }
-                stmt.executeUpdate()
-              }
+          connection.prepareStatement(
+              "DELETE FROM $tableName WHERE `key` IN ($questionMarks)",
+          ).use { stmt ->
+            keysToDelete.forEachIndexed { index, key ->
+              stmt.setString(index + 1, key)
+            }
+            stmt.executeUpdate()
+          }
         }
 
         // Batch INSERT/UPDATE using VALUES for better performance
@@ -211,25 +213,25 @@ class MySQLKeyValueStorage(
 
     return pool.connection.use { connection ->
       val questionMarks = keys.joinToString(",") { "?" }
-      // Using BINARY for case-sensitive key comparison
-      connection.prepareStatement("SELECT `key`, value, version FROM $tableName WHERE BINARY `key` IN ($questionMarks)")
-          .use { statement ->
-            keys.forEachIndexed { index, key -> statement.setString(index + 1, key) }
-            statement.executeQuery().use { resultSet ->
-              val result = mutableMapOf<String, Pair<ByteArray?, Long>>()
-              while (resultSet.next()) {
-                result[resultSet.getString("key")] = Pair(
-                    resultSet.getBytes("value"),
-                    resultSet.getLong("version"),
-                )
-              }
-              // add missing keys with version 0
-              keys.forEach { key ->
-                result.putIfAbsent(key, Pair(null, 0L))
-              }
-              result
-            }
+      connection.prepareStatement(
+          "SELECT `key`, value, version FROM $tableName WHERE `key` IN ($questionMarks)",
+      ).use { stmt ->
+        keys.forEachIndexed { index, key -> stmt.setString(index + 1, key) }
+        stmt.executeQuery().use { resultSet ->
+          val result = mutableMapOf<String, Pair<ByteArray?, Long>>()
+          while (resultSet.next()) {
+            result[resultSet.getString("key")] = Pair(
+                resultSet.getBytes("value"),
+                resultSet.getLong("version"),
+            )
           }
+          // add missing keys with version 0
+          keys.forEach { key ->
+            result.putIfAbsent(key, Pair(null, 0L))
+          }
+          result
+        }
+      }
     }
   }
 
@@ -341,10 +343,7 @@ class MySQLKeyValueStorage(
     false
   } else {
     connection.prepareStatement(
-        """
-        INSERT IGNORE INTO $tableName (`key`, value, version)
-        VALUES (?, ?, 1)
-        """.trimIndent(),
+        "INSERT IGNORE INTO $tableName (`key`, value, version) VALUES (?, ?, 1)",
     ).use { stmt ->
       stmt.setString(1, key)
       stmt.setBytes(2, bytes)
@@ -369,15 +368,16 @@ class MySQLKeyValueStorage(
 
   override suspend fun getStateAndVersion(key: String): Pair<ByteArray?, Long> =
       pool.connection.use { connection ->
-        connection.prepareStatement("SELECT value, version FROM $tableName WHERE `key`=?")
-            .use {
-              it.setString(1, key)
-              it.executeQuery().use { resultSet ->
-                if (resultSet.next()) {
-                  Pair(resultSet.getBytes("value"), resultSet.getLong("version"))
-                } else Pair(null, 0)
-              }
-            }
+        connection.prepareStatement(
+            "SELECT value, version FROM $tableName WHERE `key` = ?",
+        ).use { stmt ->
+          stmt.setString(1, key)
+          stmt.executeQuery().use { resultSet ->
+            if (resultSet.next()) {
+              Pair(resultSet.getBytes("value"), resultSet.getLong("version"))
+            } else Pair(null, 0)
+          }
+        }
       }
 
   private fun processUpdatesOneByOne(
@@ -430,7 +430,9 @@ class MySQLKeyValueStorage(
   @TestOnly
   override fun flush() {
     pool.connection.use { connection ->
-      connection.prepareStatement("TRUNCATE $tableName").use { it.executeUpdate() }
+      connection.prepareStatement(
+          "TRUNCATE $tableName",
+      ).use { it.executeUpdate() }
     }
   }
 
