@@ -87,8 +87,7 @@ class MySQLKeyValueStorage(
 
     return pool.connection.use { connection ->
       val questionMarks = keys.joinToString(",") { "?" }
-      // Using BINARY for case-sensitive key comparison
-      connection.prepareStatement("SELECT `key`, `value` FROM $tableName WHERE BINARY `key` IN ($questionMarks)")
+      connection.prepareStatement("SELECT `key`, `value` FROM $tableName WHERE `key` IN ($questionMarks)")
           .use { statement ->
             keys.forEachIndexed { index, key -> statement.setString(index + 1, key) }
             statement.executeQuery().use { resultSet ->
@@ -211,8 +210,7 @@ class MySQLKeyValueStorage(
 
     return pool.connection.use { connection ->
       val questionMarks = keys.joinToString(",") { "?" }
-      // Using BINARY for case-sensitive key comparison
-      connection.prepareStatement("SELECT `key`, value, version FROM $tableName WHERE BINARY `key` IN ($questionMarks)")
+      connection.prepareStatement("SELECT `key`, value, version FROM $tableName WHERE `key` IN ($questionMarks)")
           .use { statement ->
             keys.forEachIndexed { index, key -> statement.setString(index + 1, key) }
             statement.executeQuery().use { resultSet ->
