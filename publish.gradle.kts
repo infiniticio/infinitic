@@ -27,18 +27,22 @@ import okhttp3.RequestBody.Companion.toRequestBody
 // To publish a new version:
 // * check the new version number CI.BASE
 // * run: RELEASE=true ./gradlew publish --rerun-tasks
-// * login to https://central.sonatype.com/publishing/deployments
-// * once the new version is uploaded then publish it
 //
-// curl -u ossSonatypeOrgUsername:ossSonatypeOrgPassword -X POST
-// https://ossrh-staging-api.central.sonatype.com/manual/upload/defaultRepository/io.infinitic
+//   You must have a gradle.properties file with:
 //
-// You must have a gradle.properties file with
-// ossSonatypeOrgUsername=
-// ossSonatypeOrgPassword=
-// signing.keyId=
-// signing.password=
-// signing.secretKeyRingFile=/Users/you/.gnupg/secring.gpg
+//   ossSonatypeOrgUsername=
+//   ossSonatypeOrgPassword=
+//   signing.keyId=
+//   signing.password=
+//   signing.secretKeyRingFile=/Users/you/.gnupg/secring.gpg
+//
+// * once the new version is uploaded then publish it (FROM THE SAME IP ADDRESS) - see below
+//
+//   curl -u ossSonatypeOrgUsername:ossSonatypeOrgPassword -H 'accept: application/json' -X POST https://ossrh-staging-api.central.sonatype.com/manual/upload/defaultRepository/io.infinitic
+//
+//   (see. https://central.sonatype.org/publish/publish-portal-ossrh-staging-api/#ensuring-deployment-visibility-in-the-central-publisher-portal)
+//
+// * login to https://central.sonatype.com/publishing/deployments and click the Publish button
 //
 // To deploy a snapshot, run: ./gradlew publish --rerun-tasks
 // and add:
@@ -148,7 +152,7 @@ val notifyCentralPortal =
           val password = System.getenv("OSSRH_PASSWORD") ?: ossSonatypeOrgPassword
 
           if (username == null || password == null)
-              throw GradleException("Missing OSSRH credentials.")
+            throw GradleException("Missing OSSRH credentials.")
 
           val auth = okhttp3.Credentials.basic(username, password)
           val client = okhttp3.OkHttpClient()
@@ -156,7 +160,8 @@ val notifyCentralPortal =
           val request =
               okhttp3.Request.Builder()
                   .url(
-                      "https://ossrh-staging-api.central.sonatype.com/manual/upload/defaultRepository/$groupId")
+                      "https://ossrh-staging-api.central.sonatype.com/manual/upload/defaultRepository/$groupId",
+                  )
                   .post(ByteArray(0).toRequestBody(null))
                   .header("Authorization", auth)
                   .build()
@@ -165,7 +170,8 @@ val notifyCentralPortal =
 
           if (!response.isSuccessful) {
             throw GradleException(
-                "Failed to notify Central Portal: ${response.code} - ${response.body?.string()}")
+                "Failed to notify Central Portal: ${response.code} - ${response.body?.string()}",
+            )
           } else {
             println("✅ Successfully notified Central Portal for groupId: $groupId")
           }
