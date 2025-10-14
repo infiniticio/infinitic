@@ -102,7 +102,7 @@ class InfiniticClient(
   private var isClosed: AtomicBoolean = AtomicBoolean(false)
 
   // Scope used to asynchronously send message, and also to consumes messages
-  internal val clientScope = CoroutineScope(Dispatchers.IO)
+  override val clientScope = CoroutineScope(Dispatchers.IO)
 
   private val dispatcher by lazy { ClientDispatcher(clientScope, consumerFactory, producer) }
 
@@ -237,21 +237,14 @@ class InfiniticClient(
     }
   }
 
-  /**
-   * Get the workflow state from storage
-   *
-   * This method fetches the state from the database, decompresses and deserializes it.
-   */
-  override suspend fun getWorkflowState(workflowId: String): WorkflowState? {
+  override suspend fun getWorkflowStateByIdSuspend(workflowId: String): WorkflowState? {
     val storage = workflowStateStorage
       ?: throw IllegalStateException(
           "Storage is not configured for this client. " +
               "Please configure storage in the client configuration to use getWorkflowState().",
       )
 
-    val (state, _) = storage.getStateAndVersion(WorkflowId(workflowId))
-    
-    return state
+    return storage.getStateAndVersion(WorkflowId(workflowId)).first
   }
 
   override fun <R> startAsync(invoke: () -> R): CompletableFuture<Deferred<R>> {

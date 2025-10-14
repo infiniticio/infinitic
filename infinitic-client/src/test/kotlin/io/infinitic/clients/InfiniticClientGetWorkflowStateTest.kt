@@ -37,6 +37,9 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
+import kotlinx.coroutines.future.await
+import kotlinx.coroutines.runBlocking
 
 class InfiniticClientGetWorkflowStateTest :
   StringSpec(
@@ -59,14 +62,28 @@ class InfiniticClientGetWorkflowStateTest :
         }
 
         "getWorkflowState should throw when storage is not configured" {
+          val exception = shouldThrow<java.util.concurrent.CompletionException> {
+            clientWithoutStorage.getWorkflowStateById(IdGenerator.next())
+          }
+          exception.cause.shouldBeInstanceOf<IllegalStateException>()
+        }
+
+        "getWorkflowStateAsync should throw when storage is not configured" {
           shouldThrow<IllegalStateException> {
-            clientWithoutStorage.getWorkflowState(IdGenerator.next())
+            clientWithoutStorage.getWorkflowStateByIdAsync(IdGenerator.next()).await()
           }
         }
 
         "getWorkflowState should return null for non-existent workflow" {
           val workflowId = IdGenerator.next()
-          val state = clientWithStorage.getWorkflowState(workflowId)
+          val state = clientWithStorage.getWorkflowStateById(workflowId)
+
+          state.shouldBeNull()
+        }
+
+        "getWorkflowStateAsync should return null for non-existent workflow" {
+          val workflowId = IdGenerator.next()
+          val state = clientWithStorage.getWorkflowStateByIdAsync(workflowId).await()
 
           state.shouldBeNull()
         }
@@ -92,10 +109,85 @@ class InfiniticClientGetWorkflowStateTest :
 
           // Store the state directly using the internal storage
           val workflowStorage = BinaryWorkflowStateStorage(storage.keyValue)
-          workflowStorage.putStateWithVersion(workflowId, expectedState, 0)
+          runBlocking { workflowStorage.putStateWithVersion(workflowId, expectedState, 0) }
 
           // Retrieve the state using the client method
-          val retrievedState = clientWithStorage.getWorkflowState(workflowId.toString())
+          val retrievedState = clientWithStorage.getWorkflowStateById(workflowId.toString())
+
+          // Verify the retrieved state matches
+          retrievedState shouldBe expectedState
+        }
+
+        "getWorkflowStateAsync should return state for existing workflow" {
+          val workflowId = WorkflowId(IdGenerator.next())
+          val workflowName = WorkflowName("TestWorkflow")
+
+          // Create a workflow state
+          val expectedState =
+              WorkflowState(
+                  lastMessageId = MessageId(IdGenerator.next()),
+                  workflowId = workflowId,
+                  workflowName = workflowName,
+                  workflowVersion = WorkflowVersion(1),
+                  workflowTags = setOf(),
+                  workflowMeta = WorkflowMeta(),
+                  runningWorkflowTaskId = null,
+                  runningWorkflowMethodId = null,
+                  positionInRunningWorkflowMethod = null,
+                  workflowMethods = mutableListOf(),
+              )
+
+          // Store the state directly using the internal storage
+          val workflowStorage = BinaryWorkflowStateStorage(storage.keyValue)
+          runBlocking { workflowStorage.putStateWithVersion(workflowId, expectedState, 0) }
+
+          // Retrieve the state using the async client method
+          val retrievedState =
+              clientWithStorage.getWorkflowStateByIdAsync(workflowId.toString()).await()
+
+          // Verify the retrieved state matches
+          retrievedState shouldBe expectedState
+        }
+
+        "getWorkflowStateSuspend should throw when storage is not configured" {
+          shouldThrow<IllegalStateException> {
+            runBlocking { clientWithoutStorage.getWorkflowStateByIdSuspend(IdGenerator.next()) }
+          }
+        }
+
+        "getWorkflowStateSuspend should return null for non-existent workflow" {
+          val workflowId = IdGenerator.next()
+          val state = runBlocking { clientWithStorage.getWorkflowStateByIdSuspend(workflowId) }
+
+          state.shouldBeNull()
+        }
+
+        "getWorkflowStateSuspend should return state for existing workflow" {
+          val workflowId = WorkflowId(IdGenerator.next())
+          val workflowName = WorkflowName("TestWorkflow")
+
+          // Create a workflow state
+          val expectedState =
+              WorkflowState(
+                  lastMessageId = MessageId(IdGenerator.next()),
+                  workflowId = workflowId,
+                  workflowName = workflowName,
+                  workflowVersion = WorkflowVersion(1),
+                  workflowTags = setOf(),
+                  workflowMeta = WorkflowMeta(),
+                  runningWorkflowTaskId = null,
+                  runningWorkflowMethodId = null,
+                  positionInRunningWorkflowMethod = null,
+                  workflowMethods = mutableListOf(),
+              )
+
+          // Store the state directly using the internal storage
+          val workflowStorage = BinaryWorkflowStateStorage(storage.keyValue)
+          runBlocking { workflowStorage.putStateWithVersion(workflowId, expectedState, 0) }
+
+          // Retrieve the state using the suspend client method
+          val retrievedState =
+              runBlocking { clientWithStorage.getWorkflowStateByIdSuspend(workflowId.toString()) }
 
           // Verify the retrieved state matches
           retrievedState shouldBe expectedState
