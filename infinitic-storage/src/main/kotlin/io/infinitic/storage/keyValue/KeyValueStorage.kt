@@ -22,8 +22,8 @@
  */
 package io.infinitic.storage.keyValue
 
-import org.jetbrains.annotations.TestOnly
 import java.io.Closeable
+import org.jetbrains.annotations.TestOnly
 
 interface KeyValueStorage : Closeable {
   /**
@@ -56,7 +56,7 @@ interface KeyValueStorage : Closeable {
   suspend fun putWithVersion(key: String, bytes: ByteArray?, expectedVersion: Long): Boolean
 
   /**
-   * Retrieves  both value and version associated with the specified key from the storage
+   * Retrieves both value and version associated with the specified key from the storage
    * @return Pair of value and version, where version is 0 if value is null
    */
   suspend fun getStateAndVersion(key: String): Pair<ByteArray?, Long>

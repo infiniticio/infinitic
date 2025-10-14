@@ -587,6 +587,17 @@ interface InfiniticClientInterface : Closeable {
    */
   fun <T : Any> getIds(stub: T): Set<String>
 
+  /**
+   * Get the workflow state from storage
+   *
+   * This method fetches the state from the database, decompresses and deserializes it.
+   * Requires storage to be configured in the client.
+   *
+   * @param workflowId The ID of the workflow to fetch
+   * @return The workflow state if it exists, null otherwise
+   * @throws IllegalStateException if storage is not configured
+   */
+  suspend fun getWorkflowState(workflowId: String): io.infinitic.common.workflows.engine.state.WorkflowState?
 
   fun <R> startAsync(invoke: () -> R): CompletableFuture<Deferred<R>>
 

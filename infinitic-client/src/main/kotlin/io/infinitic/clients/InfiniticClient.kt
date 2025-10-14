@@ -41,13 +41,20 @@ import io.infinitic.common.transport.logged.LoggedInfiniticProducer
 import io.infinitic.common.transport.logged.LoggerWithCounter
 import io.infinitic.common.utils.annotatedName
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
+import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
+import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.exceptions.clients.InvalidIdTagSelectionException
 import io.infinitic.exceptions.clients.InvalidStubException
 import io.infinitic.properties.isLazyInitialized
 import io.infinitic.transport.config.TransportConfig
 import io.infinitic.workflows.DeferredStatus
+import io.infinitic.workflows.engine.storage.BinaryWorkflowStateStorage
+import io.infinitic.workflows.engine.storage.LoggedWorkflowStateStorage
+import java.lang.reflect.Proxy
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
@@ -56,9 +63,6 @@ import kotlinx.coroutines.job
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.jetbrains.annotations.TestOnly
-import java.lang.reflect.Proxy
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.atomic.AtomicBoolean
 
 @Suppress("unused")
 class InfiniticClient(
@@ -80,6 +84,15 @@ class InfiniticClient(
             .apply { config.name?.let { setName(it) } }
             .newProducer(null),
     )
+  }
+
+  private val workflowStateStorage by lazy {
+    config.storage?.let { storageConfig ->
+      LoggedWorkflowStateStorage(
+          logger = logger,
+          storage = BinaryWorkflowStateStorage(storageConfig.keyValue),
+      )
+    }
   }
 
   override fun getName() = producer.emitterName.toString()
@@ -224,6 +237,23 @@ class InfiniticClient(
     }
   }
 
+  /**
+   * Get the workflow state from storage
+   *
+   * This method fetches the state from the database, decompresses and deserializes it.
+   */
+  override suspend fun getWorkflowState(workflowId: String): WorkflowState? {
+    val storage = workflowStateStorage
+      ?: throw IllegalStateException(
+          "Storage is not configured for this client. " +
+              "Please configure storage in the client configuration to use getWorkflowState().",
+      )
+
+    val (state, _) = storage.getStateAndVersion(WorkflowId(workflowId))
+    
+    return state
+  }
+
   override fun <R> startAsync(invoke: () -> R): CompletableFuture<Deferred<R>> {
     val handler = ProxyHandler.async(invoke) ?: throw InvalidStubException()
 
@@ -305,6 +335,7 @@ class InfiniticClient(
   class InfiniticClientBuilder {
     private var name: String? = null
     private var transport: TransportConfig? = null
+    private var storage: io.infinitic.storage.config.StorageConfig? = null
 
     fun setName(name: String) =
         apply { this.name = name }
@@ -315,10 +346,13 @@ class InfiniticClient(
     fun setTransport(transport: TransportConfig.TransportConfigBuilder) =
         setTransport(transport.build())
 
+    fun setStorage(storage: io.infinitic.storage.config.StorageConfig) =
+        apply { this.storage = storage }
+
     fun build(): InfiniticClient {
       require(transport != null) { "transport must not be null" }
 
-      val config = InfiniticClientConfig(name, transport!!)
+      val config = InfiniticClientConfig(name, transport!!, storage)
 
       return InfiniticClient(config)
     }

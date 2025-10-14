@@ -10,3 +10,5 @@ out/
 .DS_Store
 gradle.properties
 pulsar/data/
+
+CLAUDE.md
