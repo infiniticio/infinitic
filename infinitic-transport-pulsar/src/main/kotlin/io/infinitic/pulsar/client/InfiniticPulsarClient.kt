@@ -27,11 +27,8 @@ import io.infinitic.common.messages.Envelope
 import io.infinitic.common.messages.Message
 import io.infinitic.common.transport.config.BatchConfig
 import io.infinitic.common.transport.config.maxMillis
-import io.micrometer.core.instrument.MeterRegistry
 import io.infinitic.pulsar.config.PulsarConsumerConfig
 import io.infinitic.pulsar.config.PulsarProducerConfig
-import io.infinitic.pulsar.schemas.KSchemaWriter
-import io.infinitic.pulsar.schemas.schemaDefinition
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -47,8 +44,6 @@ import org.apache.pulsar.client.api.SubscriptionInitialPosition
 import org.apache.pulsar.client.api.SubscriptionType
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
-import kotlin.reflect.KClass
-
 
 class InfiniticPulsarClient(private val pulsarClient: PulsarClient) {
 
@@ -106,12 +101,10 @@ class InfiniticPulsarClient(private val pulsarClient: PulsarClient) {
    */
   fun <T : Message> getProducer(
     topic: String,
-    schemaKClass: KClass<out Envelope<out T>>,
+    schema: Schema<Envelope<out Message>>,
     batchSendingConfig: BatchConfig?,
     pulsarProducerConfig: PulsarProducerConfig,
     key: String? = null,
-    meterRegistry: MeterRegistry? = null,
-    metricsTopic: String? = null,
   ): Result<Producer<Envelope<out T>>> {
     // get producer if it already exists
     return try {
@@ -120,12 +113,10 @@ class InfiniticPulsarClient(private val pulsarClient: PulsarClient) {
           producers.computeIfAbsent(topic) {
             createProducer(
                 topic,
-                schemaKClass,
+                schema,
                 pulsarProducerConfig,
                 batchSendingConfig,
                 key,
-                meterRegistry,
-                metricsTopic,
             )
           } as Producer<Envelope<out T>>,
       )
@@ -137,26 +128,13 @@ class InfiniticPulsarClient(private val pulsarClient: PulsarClient) {
 
   internal fun createProducer(
     topic: String,
-    schemaKClass: KClass<out Envelope<out Message>>,
+    schema: Schema<Envelope<out Message>>,
     pulsarProducerConfig: PulsarProducerConfig,
     batchSendingConfig: BatchConfig?,
     key: String? = null,
-    meterRegistry: MeterRegistry? = null,
-    metricsTopic: String? = null,
   ): Producer<Envelope<out Message>> {
     // otherwise create it
     logInfo { "Creating Producer on topic '$topic' ${key?.let { "with key='$key'" } ?: "without key"}" }
-
-    val schema = Schema.AVRO(
-        schemaDefinition(
-            schemaKClass,
-            KSchemaWriter(
-                workerName = name,
-                topic = metricsTopic,
-                registry = meterRegistry,
-            ),
-        ),
-    )
 
     val builder = pulsarClient
         .newProducer(schema)
@@ -251,8 +229,7 @@ class InfiniticPulsarClient(private val pulsarClient: PulsarClient) {
       }
     }
 
-    @Suppress("UNCHECKED_CAST")
-    return builder.create() as Producer<Envelope<out Message>>
+    return builder.create()
   }
 
   /** Create a new consumer
