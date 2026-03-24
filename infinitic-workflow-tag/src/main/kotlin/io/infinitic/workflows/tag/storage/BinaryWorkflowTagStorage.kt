@@ -25,6 +25,7 @@ package io.infinitic.workflows.tag.storage
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
+import io.infinitic.common.workflows.tags.storage.WorkflowIdsPage
 import io.infinitic.common.workflows.tags.storage.WorkflowTagStorage
 import io.infinitic.storage.keySet.KeySetStorage
 import io.infinitic.storage.keySet.WrappedKeySetStorage
@@ -49,6 +50,30 @@ class BinaryWorkflowTagStorage(keySetStorage: KeySetStorage) :
   ): Set<WorkflowId> {
     val key = getTagSetIdsKey(tag, workflowName)
     return keySetStorage.get(key).map { WorkflowId(String(it)) }.toSet()
+  }
+
+  override suspend fun getWorkflowIdsPage(
+    tag: WorkflowTag,
+    workflowName: WorkflowName,
+    limit: Int,
+    cursor: String?,
+  ): WorkflowIdsPage {
+    require(limit > 0) { "limit must be positive" }
+
+    val key = getTagSetIdsKey(tag, workflowName)
+    val workflowIds = linkedSetOf<WorkflowId>()
+    var nextCursor = cursor
+
+    do {
+      val page = keySetStorage.getPage(key, limit, nextCursor)
+      page.values.forEach { workflowIds.add(WorkflowId(String(it))) }
+      nextCursor = page.nextCursor
+    } while (workflowIds.size < limit && nextCursor != null)
+
+    return WorkflowIdsPage(
+        workflowIds = workflowIds.take(limit),
+        nextCursor = nextCursor,
+    )
   }
 
   override suspend fun addWorkflowId(

@@ -23,9 +23,11 @@
 package io.infinitic.storage.databases.redis
 
 import io.infinitic.storage.config.RedisConfig
+import io.infinitic.storage.keySet.KeySetPage
 import io.infinitic.storage.keySet.KeySetStorage
 import org.jetbrains.annotations.TestOnly
 import redis.clients.jedis.JedisPool
+import redis.clients.jedis.params.ScanParams
 
 class RedisKeySetStorage(internal val pool: JedisPool) : KeySetStorage {
 
@@ -37,6 +39,27 @@ class RedisKeySetStorage(internal val pool: JedisPool) : KeySetStorage {
       pool.resource.use { jedis ->
         jedis.smembers(key.toByteArray())
       }
+
+  override suspend fun getPage(
+    key: String,
+    limit: Int,
+    cursor: String?,
+  ): KeySetPage {
+    require(limit > 0) { "limit must be positive" }
+
+    return pool.resource.use { jedis ->
+      val result = jedis.sscan(
+          key.toByteArray(),
+          (cursor ?: ScanParams.SCAN_POINTER_START).toByteArray(),
+          ScanParams().count(limit),
+      )
+
+      KeySetPage(
+          values = result.getResult(),
+          nextCursor = result.getCursor().takeUnless { it == ScanParams.SCAN_POINTER_START },
+      )
+    }
+  }
 
   override suspend fun add(key: String, value: ByteArray) {
     pool.resource.use { jedis ->

@@ -622,6 +622,8 @@ class InfiniticWorker(
           workflowName = workflowName,
           concurrency = config.concurrency,
           batchConfig = batchConfig,
+          fanoutPageSize = config.fanoutPageSize,
+          fanoutSendParallelism = config.fanoutSendParallelism,
       )
     }
   }
@@ -973,9 +975,16 @@ class InfiniticWorker(
     storage: WorkflowTagStorage,
     workflowName: String,
     concurrency: Int,
-    batchConfig: BatchConfig?
+    batchConfig: BatchConfig?,
+    fanoutPageSize: Int,
+    fanoutSendParallelism: Int,
   ) {
-    val workflowTagEngine = WorkflowTagEngine(storage, producer)
+    val workflowTagEngine = WorkflowTagEngine(
+        storage = storage,
+        producer = producer,
+        fanoutPageSize = fanoutPageSize,
+        fanoutSendParallelism = fanoutSendParallelism,
+    )
 
     val cloudEventLogger = CloudEventLogger(
         WorkflowTagEngineTopic,

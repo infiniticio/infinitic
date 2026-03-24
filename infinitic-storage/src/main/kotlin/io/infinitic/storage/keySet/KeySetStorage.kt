@@ -24,11 +24,27 @@ package io.infinitic.storage.keySet
 
 import io.infinitic.storage.Flushable
 
+data class KeySetPage(
+  val values: List<ByteArray>,
+  val nextCursor: String?,
+)
+
 interface KeySetStorage : Flushable, AutoCloseable {
   /**
    * Retrieves the set of ByteArray associated with the given key.
    */
   suspend fun get(key: String): Set<ByteArray>
+
+  /**
+   * Retrieves one page of ByteArray associated with the given key.
+   *
+   * The cursor is backend-specific and opaque to callers.
+   */
+  suspend fun getPage(
+    key: String,
+    limit: Int,
+    cursor: String? = null,
+  ): KeySetPage
 
   /**
    * Adds a ByteArray value to the storage associated with the given key.

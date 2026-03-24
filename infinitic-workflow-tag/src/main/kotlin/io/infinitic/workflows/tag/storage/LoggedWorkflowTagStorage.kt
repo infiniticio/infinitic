@@ -26,6 +26,7 @@ import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
+import io.infinitic.common.workflows.tags.storage.WorkflowIdsPage
 import io.infinitic.common.workflows.tags.storage.WorkflowTagStorage
 import org.jetbrains.annotations.TestOnly
 
@@ -44,6 +45,20 @@ class LoggedWorkflowTagStorage(
     }
 
     return workflowIds
+  }
+
+  override suspend fun getWorkflowIdsPage(
+    tag: WorkflowTag,
+    workflowName: WorkflowName,
+    limit: Int,
+    cursor: String?,
+  ): WorkflowIdsPage {
+    val page = storage.getWorkflowIdsPage(tag, workflowName, limit, cursor)
+    logger.debug {
+      "TAG $tag - workflowName $workflowName - getWorkflowIdsPage ${page.workflowIds.size} found nextCursor=${page.nextCursor}"
+    }
+
+    return page
   }
 
   override suspend fun addWorkflowId(

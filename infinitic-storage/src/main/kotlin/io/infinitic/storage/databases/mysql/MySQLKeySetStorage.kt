@@ -24,6 +24,7 @@ package io.infinitic.storage.databases.mysql
 
 import com.zaxxer.hikari.HikariDataSource
 import io.infinitic.storage.config.MySQLConfig
+import io.infinitic.storage.keySet.KeySetPage
 import io.infinitic.storage.keySet.KeySetStorage
 import org.jetbrains.annotations.TestOnly
 import java.sql.ResultSet
@@ -56,6 +57,46 @@ class MySQLKeySetStorage(
               }
             }
       }
+
+  override suspend fun getPage(
+    key: String,
+    limit: Int,
+    cursor: String?,
+  ): KeySetPage {
+    require(limit > 0) { "limit must be positive" }
+
+    return pool.connection.use { connection ->
+      connection.prepareStatement(
+          """
+            SELECT `id`, `value`
+            FROM $tableName
+            WHERE `key` = ? AND `id` > ?
+            ORDER BY `id`
+            LIMIT ?
+          """.trimIndent(),
+      ).use { statement ->
+        statement.setString(1, key)
+        statement.setLong(2, cursor?.toLongOrNull() ?: 0L)
+        statement.setInt(3, limit + 1)
+
+        statement.executeQuery().use { resultSet ->
+          val values = mutableListOf<Pair<Long, ByteArray>>()
+
+          while (resultSet.next()) {
+            values.add(resultSet.getLong("id") to resultSet.getBytes("value"))
+          }
+
+          val hasMore = values.size > limit
+          val page = values.take(limit)
+
+          KeySetPage(
+              values = page.map { it.second },
+              nextCursor = page.lastOrNull()?.first?.takeIf { hasMore }?.toString(),
+          )
+        }
+      }
+    }
+  }
 
   override suspend fun add(key: String, value: ByteArray) {
     pool.connection.use { connection ->

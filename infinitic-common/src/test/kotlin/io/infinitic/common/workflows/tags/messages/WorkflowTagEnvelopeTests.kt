@@ -22,6 +22,9 @@
  */
 package io.infinitic.common.workflows.tags.messages
 
+import io.infinitic.common.data.MessageId
+import io.infinitic.common.data.MillisInstant
+import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.fixtures.TestFactory
 import io.infinitic.common.fixtures.checkBackwardCompatibility
 import io.infinitic.common.fixtures.checkOrCreateCurrentFile
@@ -37,7 +40,7 @@ class WorkflowTagEnvelopeTests :
   StringSpec(
       {
         WorkflowTagEngineMessage::class.sealedSubclasses.map {
-          val msg = TestFactory.random(it)
+          val msg = randomWorkflowTagMessage(it)
 
           "WorkflowTagMessage(${msg::class.simpleName}) should have its tag as key" {
             msg.key() shouldBe msg.workflowTag.toString()
@@ -48,6 +51,7 @@ class WorkflowTagEnvelopeTests :
           val tag = WorkflowTag(WorkflowTag.CUSTOM_ID_PREFIX + TestFactory.random(String::class))
           val msg = when (it) {
             DispatchWorkflowByCustomId::class -> TestFactory.random(it, mapOf("workflowTag" to tag))
+            ContinueWorkflowTagFanout::class -> randomWorkflowTagMessage(it)
 
             else -> TestFactory.random(it)
           }
@@ -60,6 +64,28 @@ class WorkflowTagEnvelopeTests :
               WorkflowTagEnvelope.fromByteArray(bytes, WorkflowTagEnvelope.writerSchema) shouldBe
                   envelope
             }
+          }
+        }
+
+        "ContinueWorkflowTagFanout should be avro-convertible with its wrapped command" {
+          val command = TestFactory.random<SendSignalByTag>()
+          val continuation = ContinueWorkflowTagFanout.from(
+              operationId = MessageId(),
+              limit = 123,
+              cursor = "cursor-42",
+              command = command,
+              emitterName = EmitterName("workflow-tag-engine"),
+              emittedAt = MillisInstant.now(),
+          )
+
+          shouldNotThrowAny {
+            val envelope = WorkflowTagEnvelope.from(continuation)
+            val bytes = envelope.toByteArray()
+            val decoded = WorkflowTagEnvelope.fromByteArray(bytes, WorkflowTagEnvelope.writerSchema)
+
+            decoded shouldBe envelope
+            decoded.message() shouldBe continuation
+            (decoded.message() as ContinueWorkflowTagFanout).command() shouldBe command
           }
         }
 
@@ -84,3 +110,19 @@ class WorkflowTagEnvelopeTests :
         }
       },
   )
+
+private fun randomWorkflowTagMessage(klass: kotlin.reflect.KClass<out WorkflowTagEngineMessage>) = when (klass) {
+  ContinueWorkflowTagFanout::class -> {
+    val command = TestFactory.random<SendSignalByTag>()
+    ContinueWorkflowTagFanout.from(
+        operationId = MessageId(),
+        limit = 100,
+        cursor = "cursor-1",
+        command = command,
+        emitterName = EmitterName("workflow-tag-engine"),
+        emittedAt = MillisInstant.now(),
+    )
+  }
+
+  else -> TestFactory.random(klass)
+}
