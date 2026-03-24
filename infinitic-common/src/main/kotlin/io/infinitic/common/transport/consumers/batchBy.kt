@@ -86,7 +86,9 @@ fun <T : TransportMessage<M>, M, D> Channel<Result<T, D>>.batchBy(
           // which is triggered by canceling the calling scope
           val result = receiveIfNotClose().also { trace { "batchBy: receiving $it" } } ?: break
           if (result.isFailure) {
-            outputChannel.send(Result.failure(listOf(result.message), result.exception))
+            outputChannel.send(
+                Result.failure(listOf(result.message), result.exception, result.receiptNanos),
+            )
           }
           if (result.isSuccess) {
             getBatchingChannel("").send(result)
@@ -168,15 +170,28 @@ fun <T : TransportMessage<M>, M> Channel<Result<List<T>, List<M>>>.batchBy(
             outputChannel.send(result)
           }
           if (result.isSuccess) {
-            val messagesByKey = result.message.zip(result.data).groupBy { getBatchKey(it.second) }
+            val messagesByKey = result.message.indices.groupBy { index ->
+              getBatchKey(result.data[index])
+            }
 
             when (messagesByKey.keys.size) {
               // if there is a unique key, then the batch is already done
               1 -> outputChannel.send(result)
               // else send messages to the same channel by key
-              else -> messagesByKey.forEach { (key, messages) ->
+              else -> messagesByKey.forEach { (key, indexes) ->
                 val batchingChannel = getBatchingChannel(key)
-                messages.forEach { batchingChannel.send(Result.success(it.first, it.second)) }
+                indexes.forEach { index ->
+                  val receiptNanos =
+                      result.receiptNanos.getOrNull(index)?.let { longArrayOf(it) }
+                          ?: NO_RECEIPT_NANOS
+                  batchingChannel.send(
+                      Result.success(
+                          result.message[index],
+                          result.data[index],
+                          receiptNanos,
+                      ),
+                  )
+                }
               }
             }
           }

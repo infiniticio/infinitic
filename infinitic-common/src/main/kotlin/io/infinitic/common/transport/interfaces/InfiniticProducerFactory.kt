@@ -23,6 +23,7 @@
 package io.infinitic.common.transport.interfaces
 
 import io.infinitic.common.transport.config.BatchConfig
+import io.micrometer.core.instrument.MeterRegistry
 
 interface InfiniticProducerFactory {
   /**
@@ -40,4 +41,8 @@ interface InfiniticProducerFactory {
    */
   fun newProducer(batchSendingConfig: BatchConfig?): InfiniticProducer
 
+  /**
+   * Enables optional producer-side metrics.
+   */
+  fun setMeterRegistry(registry: MeterRegistry?) = Unit
 }

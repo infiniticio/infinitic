@@ -25,6 +25,8 @@ package io.infinitic.common.transport.consumers
 import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.common.transport.interfaces.TransportMessage
 import io.infinitic.common.transport.logged.LoggerWithCounter
+import io.infinitic.common.transport.metrics.InfiniticMetrics
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
@@ -40,6 +42,7 @@ import kotlinx.coroutines.launch
 context(CoroutineScope, LoggerWithCounter)
 fun <T : TransportMessage<M>, M> Channel<Result<T, Unit>>.acknowledge(
   beforeDlq: (suspend (M, Exception) -> Unit)? = null,
+  metrics: InfiniticMetrics? = null,
 ) = collect { result ->
   val message = result.message
 
@@ -57,6 +60,9 @@ fun <T : TransportMessage<M>, M> Channel<Result<T, Unit>>.acknowledge(
 
   // counter
   decr()
+  result.receiptNanos.forEach { receivedAt ->
+    metrics?.executionTimer?.record(System.nanoTime() - receivedAt, TimeUnit.NANOSECONDS)
+  }
 }
 
 /**
@@ -72,6 +78,7 @@ fun <T : TransportMessage<M>, M> Channel<Result<T, Unit>>.acknowledge(
 context(CoroutineScope, LoggerWithCounter)
 fun <T : TransportMessage<M>, M> Channel<Result<List<T>, Unit>>.acknowledge(
   beforeDlq: (suspend (M, Exception) -> Unit)? = null,
+  metrics: InfiniticMetrics? = null,
 ) {
   collect { result ->
     val messages = result.message
@@ -103,6 +110,9 @@ fun <T : TransportMessage<M>, M> Channel<Result<List<T>, Unit>>.acknowledge(
 
     // counter
     decr(messages.size)
+    result.receiptNanos.forEach { receivedAt ->
+      metrics?.executionTimer?.record(System.nanoTime() - receivedAt, TimeUnit.NANOSECONDS)
+    }
   }
 }
 

@@ -27,8 +27,10 @@ import io.infinitic.common.messages.Envelope
 import io.infinitic.common.messages.Message
 import io.infinitic.common.transport.config.BatchConfig
 import io.infinitic.common.transport.config.maxMillis
+import io.micrometer.core.instrument.MeterRegistry
 import io.infinitic.pulsar.config.PulsarConsumerConfig
 import io.infinitic.pulsar.config.PulsarProducerConfig
+import io.infinitic.pulsar.schemas.KSchemaWriter
 import io.infinitic.pulsar.schemas.schemaDefinition
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.sync.Mutex
@@ -108,13 +110,23 @@ class InfiniticPulsarClient(private val pulsarClient: PulsarClient) {
     batchSendingConfig: BatchConfig?,
     pulsarProducerConfig: PulsarProducerConfig,
     key: String? = null,
+    meterRegistry: MeterRegistry? = null,
+    metricsTopic: String? = null,
   ): Result<Producer<Envelope<out T>>> {
     // get producer if it already exists
     return try {
       @Suppress("UNCHECKED_CAST")
       Result.success(
           producers.computeIfAbsent(topic) {
-            createProducer(topic, schemaKClass, pulsarProducerConfig, batchSendingConfig, key)
+            createProducer(
+                topic,
+                schemaKClass,
+                pulsarProducerConfig,
+                batchSendingConfig,
+                key,
+                meterRegistry,
+                metricsTopic,
+            )
           } as Producer<Envelope<out T>>,
       )
     } catch (e: PulsarClientException) {
@@ -129,11 +141,22 @@ class InfiniticPulsarClient(private val pulsarClient: PulsarClient) {
     pulsarProducerConfig: PulsarProducerConfig,
     batchSendingConfig: BatchConfig?,
     key: String? = null,
+    meterRegistry: MeterRegistry? = null,
+    metricsTopic: String? = null,
   ): Producer<Envelope<out Message>> {
     // otherwise create it
     logInfo { "Creating Producer on topic '$topic' ${key?.let { "with key='$key'" } ?: "without key"}" }
 
-    val schema = Schema.AVRO(schemaDefinition(schemaKClass))
+    val schema = Schema.AVRO(
+        schemaDefinition(
+            schemaKClass,
+            KSchemaWriter(
+                workerName = name,
+                topic = metricsTopic,
+                registry = meterRegistry,
+            ),
+        ),
+    )
 
     val builder = pulsarClient
         .newProducer(schema)

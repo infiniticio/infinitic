@@ -25,6 +25,7 @@ package io.infinitic.inMemory
 import io.infinitic.common.transport.config.BatchConfig
 import io.infinitic.common.transport.interfaces.InfiniticProducerFactory
 import io.infinitic.inMemory.channels.InMemoryChannels
+import io.micrometer.core.instrument.MeterRegistry
 
 class InMemoryInfiniticProducerFactory(
   private val mainChannels: InMemoryChannels,
@@ -39,10 +40,11 @@ class InMemoryInfiniticProducerFactory(
     this.name = name
   }
 
+  override fun setMeterRegistry(registry: MeterRegistry?) = Unit
+
   override fun newProducer(batchSendingConfig: BatchConfig?) = InMemoryInfiniticProducer(
       mainChannels,
       eventListenerChannels,
   )
 }
-
 

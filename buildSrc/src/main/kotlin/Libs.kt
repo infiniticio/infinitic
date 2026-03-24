@@ -124,6 +124,10 @@ object Libs {
     const val jvm = "io.github.oshai:kotlin-logging-jvm:7.0.3"
   }
 
+  object Micrometer {
+    const val core = "io.micrometer:micrometer-core:1.14.5"
+  }
+
   object Compress {
     const val commons = "org.apache.commons:commons-compress:1.27.1"
   }

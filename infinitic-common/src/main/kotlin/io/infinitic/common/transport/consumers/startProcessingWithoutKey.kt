@@ -28,6 +28,13 @@ import io.infinitic.common.transport.config.maxMillis
 import io.infinitic.common.transport.interfaces.TransportConsumer
 import io.infinitic.common.transport.interfaces.TransportMessage
 import io.infinitic.common.transport.logged.LoggerWithCounter
+import io.infinitic.common.transport.metrics.InfiniticMetrics
+import io.infinitic.common.transport.metrics.messageTypeOf
+import io.infinitic.common.transport.metrics.recordBatchProcessing
+import io.infinitic.common.transport.metrics.recordDeserialization
+import io.infinitic.common.transport.metrics.recordProcessing
+import io.micrometer.core.instrument.MeterRegistry
+import io.micrometer.core.instrument.Tag
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -49,9 +56,20 @@ fun <T : TransportMessage<M>, M> CoroutineScope.startProcessingWithoutKey(
   concurrency: Int,
   processor: (suspend (M, MillisInstant) -> Unit),
   beforeDlq: (suspend (M, Exception) -> Unit)? = null,
+  registry: MeterRegistry? = null,
+  workerName: String = "unknown",
 ) = with(logger) {
-  startReceiving(consumer)
-      .processWithoutKey(concurrency, processor, beforeDlq)
+  val metrics = registry?.let { InfiniticMetrics(it, workerName, consumer.topic) }
+
+  metrics?.registry?.gauge(
+      "infinitic.consumer.message.handling.in_flight",
+      listOf(Tag.of("worker_name", workerName), Tag.of("topic", consumer.topic)),
+      logger,
+      { it.remaining.toDouble() },
+  )
+
+  startReceiving(consumer, trackQueueTime = metrics != null)
+      .processWithoutKey(concurrency, processor, beforeDlq, metrics)
 }
 
 context(CoroutineScope, LoggerWithCounter)
@@ -59,23 +77,26 @@ fun <T : TransportMessage<M>, M> Channel<Result<T, T>>.processWithoutKey(
   concurrency: Int,
   processor: (suspend (M, MillisInstant) -> Unit),
   beforeDlq: (suspend (M, Exception) -> Unit)? = null,
+  metrics: InfiniticMetrics? = null,
 ) {
   val deserializedChannel: Channel<Result<T, M>> = Channel()
   repeat(concurrency) {
     this.process(deserializedChannel) { _, transportMessage ->
-      transportMessage.deserialize()
+      metrics.recordDeserialization { transportMessage.deserialize() }
     }
   }
 
   val processedChannel: Channel<Result<T, Unit>> = Channel()
   repeat(concurrency) {
     deserializedChannel.process(processedChannel) { transportMessage, message ->
-      processor(message, transportMessage.publishTime)
+      metrics.recordProcessing(messageTypeOf(message)) {
+        processor(message, transportMessage.publishTime)
+      }
     }
   }
 
   repeat(concurrency) {
-    processedChannel.acknowledge(beforeDlq)
+    processedChannel.acknowledge(beforeDlq, metrics)
   }
 }
 
@@ -97,9 +118,20 @@ fun <T : TransportMessage<M>, M> CoroutineScope.startBatchProcessingWithoutKey(
   getBatchKey: (suspend (M) -> String)? = null,
   processor: suspend (List<Pair<M, MillisInstant>>) -> Unit,
   beforeDlq: (suspend (M, Exception) -> Unit)? = null,
+  registry: MeterRegistry? = null,
+  workerName: String = "unknown",
 ) = with(logger) {
-  startBatchReceiving(consumer)
-      .processWithoutKey(concurrency, batchConfig, getBatchKey, processor, beforeDlq)
+  val metrics = registry?.let { InfiniticMetrics(it, workerName, consumer.topic) }
+
+  metrics?.registry?.gauge(
+      "infinitic.consumer.message.handling.in_flight",
+      listOf(Tag.of("worker_name", workerName), Tag.of("topic", consumer.topic)),
+      logger,
+      { it.remaining.toDouble() },
+  )
+
+  startBatchReceiving(consumer, trackQueueTime = metrics != null)
+      .processWithoutKey(concurrency, batchConfig, getBatchKey, processor, beforeDlq, metrics)
 }
 
 context(CoroutineScope, LoggerWithCounter)
@@ -109,13 +141,14 @@ fun <T : TransportMessage<M>, M> Channel<Result<List<T>, List<T>>>.processWithou
   getBatchKey: (suspend (M) -> String)? = null,
   batchProcessor: suspend (List<Pair<M, MillisInstant>>) -> Unit,
   beforeDlq: (suspend (M, Exception) -> Unit)? = null,
+  metrics: InfiniticMetrics? = null,
 ) {
   // concurrently deserialize the transportMessages
   val deserializedChannel: Channel<Result<List<T>, List<M>>> = Channel()
   repeat(concurrency) {
     this.process(deserializedChannel) { messages, _ ->
       coroutineScope {
-        messages.map { async { it.deserialize() } }.awaitAll()
+        messages.map { async { metrics.recordDeserialization { it.deserialize() } } }.awaitAll()
       }
     }
   }
@@ -130,13 +163,14 @@ fun <T : TransportMessage<M>, M> Channel<Result<List<T>, List<T>>>.processWithou
   val processedChannel: Channel<Result<List<T>, Unit>> = Channel()
   repeat(concurrency) {
     batchedChannel.process(processedChannel) { transportMessages, messages ->
-      batchProcessor(messages.zip(transportMessages.map { it.publishTime }))
+      metrics.recordBatchProcessing(messages) {
+        batchProcessor(messages.zip(transportMessages.map { it.publishTime }))
+      }
     }
   }
 
   // concurrently (negatively) acknowledge transport messages
   repeat(concurrency) {
-    processedChannel.acknowledge(beforeDlq)
+    processedChannel.acknowledge(beforeDlq, metrics)
   }
 }
-
