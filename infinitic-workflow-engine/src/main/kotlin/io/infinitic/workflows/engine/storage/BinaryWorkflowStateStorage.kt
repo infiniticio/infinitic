@@ -24,7 +24,9 @@ package io.infinitic.workflows.engine.storage
 
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.engine.state.WorkflowState
+import io.infinitic.common.workflows.engine.state.toConvenienceData
 import io.infinitic.common.workflows.engine.storage.WorkflowStateStorage
+import io.infinitic.common.workflows.engine.storage.WorkflowStateStorageWithConvenience
 import io.infinitic.storage.keyValue.KeyValueStorage
 import io.infinitic.storage.keyValue.WrappedKeyValueStorage
 import kotlinx.coroutines.async
@@ -36,12 +38,21 @@ import org.jetbrains.annotations.TestOnly
  *
  * Workflow state are converted to Avro bytes array and saved in a key value store by WorkflowId
  *
+ * Optionally stores convenience fields (status, meta, tags) alongside the state for easier querying.
+ * These fields are stored as separate keys and their storage failures are logged but don't affect
+ * the main workflow state storage operation.
+ *
  * Any exception thrown by the storage is wrapped into KeyValueStorageException
  */
-class BinaryWorkflowStateStorage(storage: KeyValueStorage) : WorkflowStateStorage {
+class BinaryWorkflowStateStorage(
+  storage: KeyValueStorage,
+  private val storeConvenienceFields: Boolean = true
+) : WorkflowStateStorage, WorkflowStateStorageWithConvenience {
 
   // wrap any exception into KeyValueStorageException
   private val storage = WrappedKeyValueStorage(storage)
+
+  override fun supportsConvenienceFields(): Boolean = storeConvenienceFields
 
   override suspend fun putStateWithVersion(
     workflowId: WorkflowId,
@@ -49,7 +60,36 @@ class BinaryWorkflowStateStorage(storage: KeyValueStorage) : WorkflowStateStorag
     expectedVersion: Long
   ): Boolean {
     val key = getWorkflowStateKey(workflowId)
-    return storage.putWithVersion(key, workflowState?.toByteArray(), expectedVersion)
+    val result = storage.putWithVersion(key, workflowState?.toByteArray(), expectedVersion)
+
+    // Store convenience fields if enabled and state is not null
+    if (result && storeConvenienceFields && workflowState != null) {
+      try {
+        storeConvenienceFieldsForWorkflow(workflowId, workflowState)
+      } catch (e: Exception) {
+        // Log but don't fail the operation if convenience fields storage fails
+        // These are optional fields for querying convenience
+        println("Warning: Failed to store convenience fields for workflow $workflowId: ${e.message}")
+      }
+    }
+
+    return result
+  }
+
+  private suspend fun storeConvenienceFieldsForWorkflow(
+    workflowId: WorkflowId,
+    workflowState: WorkflowState
+  ) {
+    val convenienceData = workflowState.toConvenienceData()
+
+    // Store each convenience field as a separate key
+    val convenienceKeys = mapOf(
+        getWorkflowStatusKey(workflowId) to convenienceData.status.toByteArray(),
+        getWorkflowMetaKey(workflowId) to convenienceData.meta.toByteArray(),
+        getWorkflowTagsKey(workflowId) to convenienceData.tags.toByteArray()
+    )
+
+    storage.put(convenienceKeys)
   }
 
   override suspend fun getStateAndVersion(workflowId: WorkflowId): Pair<WorkflowState?, Long> {
@@ -98,4 +138,10 @@ class BinaryWorkflowStateStorage(storage: KeyValueStorage) : WorkflowStateStorag
   override fun flush() = storage.flush()
 
   internal fun getWorkflowStateKey(workflowId: WorkflowId) = "workflow.state.$workflowId"
+
+  private fun getWorkflowStatusKey(workflowId: WorkflowId) = "workflow.status.$workflowId"
+
+  private fun getWorkflowMetaKey(workflowId: WorkflowId) = "workflow.meta.$workflowId"
+
+  private fun getWorkflowTagsKey(workflowId: WorkflowId) = "workflow.tags.$workflowId"
 }
