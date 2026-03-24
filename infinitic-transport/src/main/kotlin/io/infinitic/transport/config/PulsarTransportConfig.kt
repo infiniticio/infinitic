@@ -31,6 +31,7 @@ import io.infinitic.pulsar.config.PulsarConfig
 import io.infinitic.pulsar.config.PulsarConsumerConfig
 import io.infinitic.pulsar.config.PulsarProducerConfig
 import io.infinitic.pulsar.config.policies.PoliciesConfig
+import io.infinitic.common.transport.interfaces.TransportTopicResolver
 import java.net.URLEncoder
 
 @Suppress("unused")
@@ -56,6 +57,9 @@ data class PulsarTransportConfig(
 
   /** Infinitic Resources */
   override val resources by lazy { PulsarInfiniticResources(pulsar.pulsarResources) }
+
+  /** Pure topic name resolver */
+  override val topicResolver: TransportTopicResolver by lazy { pulsar.pulsarResources }
 
   /** Infinitic Consumer */
   override val consumerFactory by lazy {
@@ -167,4 +171,3 @@ data class PulsarTransportConfig(
     }
   }
 }
-

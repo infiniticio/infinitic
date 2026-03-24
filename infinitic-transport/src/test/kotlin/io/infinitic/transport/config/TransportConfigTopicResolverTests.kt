@@ -22,35 +22,28 @@
  */
 package io.infinitic.transport.config
 
-import io.infinitic.inMemory.InMemoryConsumerFactory
-import io.infinitic.inMemory.InMemoryInfiniticProducerFactory
-import io.infinitic.inMemory.InMemoryInfiniticResources
-import io.infinitic.inMemory.channels.InMemoryChannels
-import io.infinitic.inMemory.resources.InMemoryResources
+import io.infinitic.common.transport.ServiceExecutorTopic
+import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.shouldBe
 
-data class InMemoryTransportConfig(
-  override val shutdownGracePeriodSeconds: Double = 5.0
-) : TransportConfig() {
+class TransportConfigTopicResolverTests : StringSpec(
+    {
+      "PulsarTransportConfig should expose pulsar topic resolver" {
+        val config = PulsarTransportConfig.builder()
+            .setBrokerServiceUrl("pulsar://localhost:6650/")
+            .setWebServiceUrl("http://localhost:8080")
+            .setTenant("infinitic")
+            .setNamespace("dev")
+            .build()
 
-  init {
-    require(shutdownGracePeriodSeconds > 0) { "shutdownGracePeriodSeconds must be > 0" }
-  }
+        config.topicResolver shouldBe config.pulsar.pulsarResources
+      }
 
-  override val cloudEventSourcePrefix: String = "inMemory"
+      "InMemoryTransportConfig should expose in-memory topic resolver" {
+        val config = InMemoryTransportConfig()
 
-  private val mainChannels = InMemoryChannels()
-  private val eventListenerChannels = InMemoryChannels()
-
-  override val resources = InMemoryInfiniticResources(mainChannels)
-
-  override val topicResolver = InMemoryResources()
-
-  override val consumerFactory = InMemoryConsumerFactory(mainChannels, eventListenerChannels)
-
-  override val producerFactory =
-      InMemoryInfiniticProducerFactory(mainChannels, eventListenerChannels)
-
-  override fun close() {
-    // Do nothing
-  }
-}
+        config.topicResolver.topicFullName(ServiceExecutorTopic, "MyService") shouldBe
+            "inmemory://task-executor:MyService"
+      }
+    },
+)
