@@ -42,13 +42,14 @@ import kotlinx.coroutines.withContext
  * @param concurrency The number of concurrent shards to use for distributing the messages.
  * @return A list of channels, where each channel corresponds to a shard and contains the received messages.
  */
-context(LoggerWithCounter)
+context(logger: LoggerWithCounter)
 internal fun <T : TransportMessage<M>, M> CoroutineScope.startReceivingAndShard(
   consumer: TransportConsumer<T>,
   batchReceiving: Boolean,
   concurrency: Int = 1,
   trackQueueTime: Boolean = false,
 ): List<Channel<Result<T, T>>> {
+  val scope = this
   val shardChannels: List<Channel<Result<T, T>>> = List(concurrency) { createChannel() }
 
   launch {
@@ -60,13 +61,13 @@ internal fun <T : TransportMessage<M>, M> CoroutineScope.startReceivingAndShard(
           true -> {
             val batch = consumer.batchReceive()
             withContext(NonCancellable) {
-              trace { "Batch (${batch.size}) received from ${consumer.name}: $batch" }
+              logger.trace { "Batch (${batch.size}) received from ${consumer.name}: $batch" }
               // counter
-              incr(batch.size)
+              logger.incr(batch.size)
               val receivedAt = if (trackQueueTime) System.nanoTime() else null
               batch.forEach {
                 val shard = getShard(it.key!!, size)
-                trace { "sending $it (key = ${it.key}) to shard $shard}" }
+                logger.trace { "sending $it (key = ${it.key}) to shard $shard}" }
                 val receiptNanos =
                     receivedAt?.let { nanos -> longArrayOf(nanos) } ?: NO_RECEIPT_NANOS
                 shardChannels[shard].send(Result.success(it, it, receiptNanos))
@@ -77,9 +78,9 @@ internal fun <T : TransportMessage<M>, M> CoroutineScope.startReceivingAndShard(
           false -> {
             val msg = consumer.receive()
             withContext(NonCancellable) {
-              trace { "Received from ${consumer.name}: $msg" }
+              logger.trace { "Received from ${consumer.name}: $msg" }
               // counter
-              incr()
+              logger.incr()
               val shard = getShard(msg.key!!, size)
               val receiptNanos =
                   if (trackQueueTime) longArrayOf(System.nanoTime()) else NO_RECEIPT_NANOS
@@ -90,12 +91,12 @@ internal fun <T : TransportMessage<M>, M> CoroutineScope.startReceivingAndShard(
       } catch (e: CancellationException) {
         // do nothing, will exit if calling scope is not active anymore
       } catch (e: Exception) {
-        warn(e) { "Exception when receiving message from $this" }
+        logger.warn(e) { "Exception when receiving message from $this" }
       } catch (e: Error) {
-        warn(e) { "Error when receiving message from $this" }
+        logger.warn(e) { "Error when receiving message from $this" }
         // canceling the current scope (warning scope is different from inside launch)
         // that's why we define the scope variable at the very beginning
-        this@CoroutineScope.cancel()
+        scope.cancel()
       }
     }
     withContext(NonCancellable) {

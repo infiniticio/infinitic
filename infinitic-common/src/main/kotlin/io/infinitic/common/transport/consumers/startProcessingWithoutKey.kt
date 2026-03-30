@@ -72,7 +72,7 @@ fun <T : TransportMessage<M>, M> CoroutineScope.startProcessingWithoutKey(
       .processWithoutKey(concurrency, processor, beforeDlq, metrics)
 }
 
-context(CoroutineScope, LoggerWithCounter)
+context(scope: CoroutineScope, logger: LoggerWithCounter)
 fun <T : TransportMessage<M>, M> Channel<Result<T, T>>.processWithoutKey(
   concurrency: Int,
   processor: (suspend (M, MillisInstant) -> Unit),
@@ -134,7 +134,7 @@ fun <T : TransportMessage<M>, M> CoroutineScope.startBatchProcessingWithoutKey(
       .processWithoutKey(concurrency, batchConfig, getBatchKey, processor, beforeDlq, metrics)
 }
 
-context(CoroutineScope, LoggerWithCounter)
+context(scope: CoroutineScope, logger: LoggerWithCounter)
 fun <T : TransportMessage<M>, M> Channel<Result<List<T>, List<T>>>.processWithoutKey(
   concurrency: Int,
   batchConfig: BatchConfig,

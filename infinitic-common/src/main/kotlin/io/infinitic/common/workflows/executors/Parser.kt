@@ -43,7 +43,7 @@ import kotlin.reflect.full.memberProperties
 import kotlin.reflect.full.starProjectedType
 import kotlin.reflect.jvm.javaField
 
-context(KLogger)
+context(logger: KLogger)
 fun Workflow.setProperties(
   propertiesHashValue: Map<PropertyHash, PropertyValue>,
   propertiesNameHash: Map<PropertyName, PropertyHash>
@@ -76,7 +76,7 @@ fun Workflow.getProperties() = this::class.memberProperties
         { PropertyValue.from(it.second, it.first.javaField!!.genericType) },
     )
 
-context(KLogger)
+context(logger: KLogger)
 private fun Workflow.setProperties(values: Map<PropertyName, PropertyValue>) {
   val properties = this::class.memberProperties
   values.forEach { (name, value) ->
@@ -86,7 +86,7 @@ private fun Workflow.setProperties(values: Map<PropertyName, PropertyValue>) {
           // so `isStorableProperty` will only check correctly the type of the property
           if (isStorableProperty(it, value)) setProperty(it, value)
         }
-      ?: warn {
+      ?: logger.warn {
         "The property '${name.name}' present in the workflow history for class " +
             "'${this::class.java.name} is not recognized and will be ignored."
       }

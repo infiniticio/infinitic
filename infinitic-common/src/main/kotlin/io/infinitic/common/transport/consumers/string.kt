@@ -30,11 +30,11 @@ import io.github.oshai.kotlinlogging.KLogger
  * This property ensures that a call to the `toString()` method does not throw an exception
  * This is used in catch() sections to avoid creating a potential additional issue
  */
-context(KLogger)
+context(logger: KLogger)
 internal val Any.string: String
   get() = try {
-    toString()
+    this@string.toString()
   } catch (e: Exception) {
-    warn(e) { "Error when calling toString()" }
+    logger.warn(e) { "Error when calling toString()" }
     "${this::class.java.name}(${e::class.java.name}(${e.message}))"
   }

@@ -31,21 +31,25 @@ import kotlinx.coroutines.sync.withLock
 private val producersMutex = Mutex()
 private val producerCounters = mutableMapOf<Channel<*>, Int>()
 
-context(KLogger)
+context(logger: KLogger)
 internal suspend fun Channel<*>.addProducer(origin: String = "") = producersMutex.withLock {
-  trace { "$origin: Adding one producer from ${producerCounters[this]} to channel ${hashCode()}" }
+  logger.trace {
+    "$origin: Adding one producer from ${producerCounters[this]} to channel ${this@addProducer.hashCode()}"
+  }
   producerCounters[this] = (producerCounters[this] ?: 0) + 1
 }
 
-context(KLogger)
+context(logger: KLogger)
 internal suspend fun Channel<*>.removeProducer(origin: String = "") = producersMutex.withLock {
-  trace { "$origin: Removing one producer from ${producerCounters[this]} from channel ${hashCode()}" }
+  logger.trace {
+    "$origin: Removing one producer from ${producerCounters[this]} from channel ${this@removeProducer.hashCode()}"
+  }
 
   when (val count = producerCounters[this]) {
     null -> thisShouldNotHappen()
     1 -> {
       producerCounters.remove(this)
-      debug { "Closing channel ${hashCode()}" }
+      logger.debug { "Closing channel ${this@removeProducer.hashCode()}" }
       close()
     }
 

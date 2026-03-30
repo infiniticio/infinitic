@@ -40,13 +40,13 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 
-context(CoroutineScope, LoggerWithCounter)
+context(scope: CoroutineScope, logger: LoggerWithCounter)
 internal fun InfiniticConsumerFactory.listenToWorkflowStateTopics(
   workflowName: WorkflowName,
   batchConfig: BatchConfig?,
   subscriptionName: String?,
   outChannel: Channel<Result<List<TransportMessage<Message>>, List<TransportMessage<Message>>>>,
-): Job = launch {
+): Job = scope.launch {
 
   // Send messages from WorkflowStateCmdTopic to outChannel
   val workflowStateCmdSubscription = SubscriptionType.EVENT_LISTENER.create(

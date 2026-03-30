@@ -21,6 +21,7 @@
  * Licensor: infinitic.io
  */
 import com.adarshr.gradle.testlogger.theme.ThemeType
+import org.jetbrains.kotlin.gradle.dsl.JvmDefaultMode
 
 buildscript {
   repositories {
@@ -91,7 +92,10 @@ subprojects {
 
   kotlin {
     jvmToolchain(17)
-    compilerOptions { freeCompilerArgs.set(listOf("-Xjvm-default=all", "-Xcontext-receivers")) }
+    compilerOptions {
+      jvmDefault.set(JvmDefaultMode.NO_COMPATIBILITY)
+      freeCompilerArgs.set(listOf("-Xcontext-parameters"))
+    }
     sourceSets.all { languageSettings { optIn("kotlin.ExperimentalStdlibApi") } }
   }
 

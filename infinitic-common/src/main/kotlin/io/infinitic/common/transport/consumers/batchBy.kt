@@ -42,23 +42,23 @@ import kotlinx.coroutines.withContext
  * @param maxMillis The maximum duration (in milliseconds) to wait for messages to form a batch.
  * @return A [Channel] containing the batched results.
  */
-context(CoroutineScope, KLogger)
+context(scope: CoroutineScope, logger: KLogger)
 fun <T : TransportMessage<M>, M, D> Channel<Result<T, D>>.batchBy(
   maxMessages: Int,
   maxMillis: Long,
 ): Channel<Result<List<T>, List<D>>> {
-  val callingScope: CoroutineScope = this@CoroutineScope
+  val callingScope: CoroutineScope = scope
 
   // output channel where result after processing are sent
   val outputChannel = Channel<Result<List<T>, List<D>>>()
 
-  debug { "batchBy: starting listening channel ${this@batchBy.hashCode()}" }
+  logger.debug { "batchBy: starting listening channel ${this@batchBy.hashCode()}" }
 
   // channels where messages are sent to be batched (one channel per key)
   val batchingMutex = Mutex()
   val batchingChannels = mutableMapOf<String, Channel<Result<T, D>>>()
 
-  launch {
+  scope.launch {
     // start a non cancellable scope
     withContext(NonCancellable) {
 
@@ -70,7 +70,7 @@ fun <T : TransportMessage<M>, M, D> Channel<Result<T, D>>.batchBy(
         return batchingMutex.withLock {
           batchingChannels.getOrPut(key) {
             // Create, register and start batching channel
-            Channel<Result<T, D>> { warn { "Batch: Undelivered element $it" } }.apply {
+            Channel<Result<T, D>> { logger.warn { "Batch: Undelivered element $it" } }.apply {
               addProducer("batchBy")
               startBatching(maxMessages, maxMillis, outputChannel)
             }
@@ -84,7 +84,7 @@ fun <T : TransportMessage<M>, M, D> Channel<Result<T, D>>.batchBy(
         try {
           // the only way to quit this loop is to close the input channel
           // which is triggered by canceling the calling scope
-          val result = receiveIfNotClose().also { trace { "batchBy: receiving $it" } } ?: break
+          val result = receiveIfNotClose().also { logger.trace { "batchBy: receiving $it" } } ?: break
           if (result.isFailure) {
             outputChannel.send(
                 Result.failure(listOf(result.message), result.exception, result.receiptNanos),
@@ -94,10 +94,10 @@ fun <T : TransportMessage<M>, M, D> Channel<Result<T, D>>.batchBy(
             getBatchingChannel("").send(result)
           }
         } catch (e: Exception) {
-          warn(e) { "Exception during batching" }
+          logger.warn(e) { "Exception during batching" }
           throw e
         } catch (e: Error) {
-          warn(e) { "Error during batching, cancelling calling scope" }
+          logger.warn(e) { "Error during batching, cancelling calling scope" }
           callingScope.cancel()
         }
       }
@@ -123,24 +123,24 @@ fun <T : TransportMessage<M>, M, D> Channel<Result<T, D>>.batchBy(
  * @param getBatchKey A suspend function that returns a key for grouping messages into batches.
  * @return A new channel that emits batched messages.
  */
-context(CoroutineScope, KLogger)
+context(scope: CoroutineScope, logger: KLogger)
 fun <T : TransportMessage<M>, M> Channel<Result<List<T>, List<M>>>.batchBy(
   maxMessages: Int,
   maxMillis: Long,
   getBatchKey: suspend (M) -> String,
 ): Channel<Result<List<T>, List<M>>> {
-  val callingScope: CoroutineScope = this@CoroutineScope
+  val callingScope: CoroutineScope = scope
 
   // output channel where result after processing are sent
   val outputChannel = Channel<Result<List<T>, List<M>>>()
 
-  debug { "batchBy: starting listening channel ${this@batchBy.hashCode()}" }
+  logger.debug { "batchBy: starting listening channel ${this@batchBy.hashCode()}" }
 
   // channels where messages are sent to be batched (one channel per key)
   val batchingMutex = Mutex()
   val batchingChannels = mutableMapOf<String, Channel<Result<T, M>>>()
 
-  launch {
+  scope.launch {
     // start a non cancellable scope
     withContext(NonCancellable) {
 
@@ -151,7 +151,7 @@ fun <T : TransportMessage<M>, M> Channel<Result<List<T>, List<M>>>.batchBy(
 
         return batchingMutex.withLock {
           batchingChannels.getOrPut(key) {
-            Channel<Result<T, M>> { warn { "Batch: Undelivered element $it" } }.apply {
+            Channel<Result<T, M>> { logger.warn { "Batch: Undelivered element $it" } }.apply {
               addProducer("batchBy")
               startBatching(maxMessages, maxMillis, outputChannel)
             }
@@ -165,7 +165,7 @@ fun <T : TransportMessage<M>, M> Channel<Result<List<T>, List<M>>>.batchBy(
         try {
           // the only way to quit this loop is to close the input channel
           // which is triggered by canceling the calling scope
-          val result = receiveIfNotClose().also { trace { "batchBy: receiving $it" } } ?: break
+          val result = receiveIfNotClose().also { logger.trace { "batchBy: receiving $it" } } ?: break
           if (result.isFailure) {
             outputChannel.send(result)
           }
@@ -196,10 +196,10 @@ fun <T : TransportMessage<M>, M> Channel<Result<List<T>, List<M>>>.batchBy(
             }
           }
         } catch (e: Exception) {
-          warn(e) { "Exception during batching" }
+          logger.warn(e) { "Exception during batching" }
           throw e
         } catch (e: Error) {
-          warn(e) { "Error during batching, cancelling calling scope" }
+          logger.warn(e) { "Error during batching, cancelling calling scope" }
           callingScope.cancel()
         }
       }
