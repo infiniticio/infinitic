@@ -58,6 +58,13 @@ interface WorkflowTagCmdMessage {
   val requester: Requester?
 }
 
+interface WorkflowTagFanoutMessage : WorkflowTagCmdMessage, Message {
+  val workflowTag: WorkflowTag
+  val workflowName: WorkflowName
+  val emittedAt: MillisInstant?
+  override val emitterName: EmitterName
+}
+
 @Serializable
 @AvroNamespace("io.infinitic.workflows.tag")
 sealed class WorkflowTagEngineMessage : Message {
@@ -87,7 +94,7 @@ data class SendSignalByTag(
   @AvroDefault(Avro.NULL) override val requester: Requester?,
   @AvroDefault(Avro.NULL) override val emittedAt: MillisInstant?,
   override val emitterName: EmitterName,
-) : WorkflowTagEngineMessage(), WorkflowTagCmdMessage
+) : WorkflowTagEngineMessage(), WorkflowTagFanoutMessage
 
 /**
  * This message is a command to cancel all workflow instances with the provided tag.
@@ -102,7 +109,7 @@ data class CancelWorkflowByTag(
   @AvroDefault(Avro.NULL) override var requester: Requester?,
   @AvroDefault(Avro.NULL) override val emittedAt: MillisInstant?,
   override val emitterName: EmitterName,
-) : WorkflowTagEngineMessage(), WorkflowTagCmdMessage {
+) : WorkflowTagEngineMessage(), WorkflowTagFanoutMessage {
   init {
     // this is used only to handle previous messages that are still on <0.13 version
     // in topics or in bufferedMessages of a workflow state
@@ -130,7 +137,7 @@ data class RetryWorkflowTaskByTag(
   @AvroDefault(Avro.NULL) override val requester: Requester?,
   @AvroDefault(Avro.NULL) override val emittedAt: MillisInstant?,
   override val emitterName: EmitterName,
-) : WorkflowTagEngineMessage(), WorkflowTagCmdMessage
+) : WorkflowTagEngineMessage(), WorkflowTagFanoutMessage
 
 /**
  * This message is a command to retry the tasks of all workflow instances with the provided tag.
@@ -146,7 +153,7 @@ data class RetryTasksByTag(
   @AvroDefault(Avro.NULL) override val requester: Requester?,
   @AvroDefault(Avro.NULL) override val emittedAt: MillisInstant?,
   override val emitterName: EmitterName,
-) : WorkflowTagEngineMessage(), WorkflowTagCmdMessage
+) : WorkflowTagEngineMessage(), WorkflowTagFanoutMessage
 
 /**
  * This message is a command to complete all timers of all workflow instances with the provided tag.
@@ -161,7 +168,7 @@ data class CompleteTimersByTag(
   @AvroDefault(Avro.NULL) override val requester: Requester?,
   @AvroDefault(Avro.NULL) override val emittedAt: MillisInstant?,
   override val emitterName: EmitterName,
-) : WorkflowTagEngineMessage(), WorkflowTagCmdMessage
+) : WorkflowTagEngineMessage(), WorkflowTagFanoutMessage
 
 /**
  * This message is a command to tell the tag engine that a workflow with the provided tag is running
@@ -264,7 +271,7 @@ data class DispatchMethodByTag(
   @AvroDefault(Avro.NULL) val methodTimeout: MillisDuration? = null,
   @AvroDefault(Avro.NULL) override val emittedAt: MillisInstant?,
   override val emitterName: EmitterName,
-) : WorkflowTagEngineMessage(), WorkflowTagCmdMessage {
+) : WorkflowTagEngineMessage(), WorkflowTagFanoutMessage {
   init {
     // this is used only to handle previous messages that are still on <0.13 version
     // in topics or in bufferedMessages of a workflow state
@@ -277,6 +284,123 @@ data class DispatchMethodByTag(
           workflowMethodName = MethodName("undefined"),
           workflowMethodId = parentMethodRunId ?: WorkflowMethodId("undefined"),
       )
+    }
+  }
+}
+
+@Serializable
+@AvroNamespace("io.infinitic.workflows.tag")
+data class ContinueWorkflowTagFanout(
+  val operationId: MessageId,
+  val cursor: String? = null,
+  val limit: Int,
+  @AvroDefault(Avro.NULL) private val dispatchMethodByTag: DispatchMethodByTag? = null,
+  @AvroDefault(Avro.NULL) private val sendSignalByTag: SendSignalByTag? = null,
+  @AvroDefault(Avro.NULL) private val cancelWorkflowByTag: CancelWorkflowByTag? = null,
+  @AvroDefault(Avro.NULL) private val retryWorkflowTaskByTag: RetryWorkflowTaskByTag? = null,
+  @AvroDefault(Avro.NULL) private val retryTasksByTag: RetryTasksByTag? = null,
+  @AvroDefault(Avro.NULL) private val completeTimersByTag: CompleteTimersByTag? = null,
+  @AvroDefault(Avro.NULL) override val emittedAt: MillisInstant?,
+  override val emitterName: EmitterName,
+) : WorkflowTagEngineMessage(), WorkflowTagCmdMessage {
+
+  init {
+    require(limit > 0) { "limit must be positive" }
+
+    val commands = listOfNotNull(
+        dispatchMethodByTag,
+        sendSignalByTag,
+        cancelWorkflowByTag,
+        retryWorkflowTaskByTag,
+        retryTasksByTag,
+        completeTimersByTag,
+    )
+
+    require(commands.size == 1) { "ContinueWorkflowTagFanout must wrap exactly one command" }
+  }
+
+  override val workflowTag: WorkflowTag
+    get() = command().workflowTag
+
+  override val workflowName: WorkflowName
+    get() = command().workflowName
+
+  override val requester: Requester?
+    get() = command().requester
+
+  fun command(): WorkflowTagFanoutMessage = listOfNotNull(
+      dispatchMethodByTag,
+      sendSignalByTag,
+      cancelWorkflowByTag,
+      retryWorkflowTaskByTag,
+      retryTasksByTag,
+      completeTimersByTag,
+  ).single()
+
+  companion object {
+    fun from(
+      operationId: MessageId,
+      limit: Int,
+      command: WorkflowTagFanoutMessage,
+      cursor: String? = null,
+      emitterName: EmitterName,
+      emittedAt: MillisInstant?,
+    ) = when (command) {
+      is DispatchMethodByTag -> ContinueWorkflowTagFanout(
+          operationId = operationId,
+          cursor = cursor,
+          limit = limit,
+          dispatchMethodByTag = command,
+          emittedAt = emittedAt,
+          emitterName = emitterName,
+      )
+
+      is SendSignalByTag -> ContinueWorkflowTagFanout(
+          operationId = operationId,
+          cursor = cursor,
+          limit = limit,
+          sendSignalByTag = command,
+          emittedAt = emittedAt,
+          emitterName = emitterName,
+      )
+
+      is CancelWorkflowByTag -> ContinueWorkflowTagFanout(
+          operationId = operationId,
+          cursor = cursor,
+          limit = limit,
+          cancelWorkflowByTag = command,
+          emittedAt = emittedAt,
+          emitterName = emitterName,
+      )
+
+      is RetryWorkflowTaskByTag -> ContinueWorkflowTagFanout(
+          operationId = operationId,
+          cursor = cursor,
+          limit = limit,
+          retryWorkflowTaskByTag = command,
+          emittedAt = emittedAt,
+          emitterName = emitterName,
+      )
+
+      is RetryTasksByTag -> ContinueWorkflowTagFanout(
+          operationId = operationId,
+          cursor = cursor,
+          limit = limit,
+          retryTasksByTag = command,
+          emittedAt = emittedAt,
+          emitterName = emitterName,
+      )
+
+      is CompleteTimersByTag -> ContinueWorkflowTagFanout(
+          operationId = operationId,
+          cursor = cursor,
+          limit = limit,
+          completeTimersByTag = command,
+          emittedAt = emittedAt,
+          emitterName = emitterName,
+      )
+
+      else -> throw IllegalArgumentException("Unsupported fanout command: ${command::class.simpleName}")
     }
   }
 }

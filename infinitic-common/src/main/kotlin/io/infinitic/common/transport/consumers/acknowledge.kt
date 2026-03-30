@@ -39,7 +39,7 @@ import kotlinx.coroutines.launch
  * @param M The type of the message contained within the transport message.
  * @param beforeDlq A suspending function that will be executed before a message is sent to the dead-letter queue.
  */
-context(CoroutineScope, LoggerWithCounter)
+context(scope: CoroutineScope, logger: LoggerWithCounter)
 fun <T : TransportMessage<M>, M> Channel<Result<T, Unit>>.acknowledge(
   beforeDlq: (suspend (M, Exception) -> Unit)? = null,
   metrics: InfiniticMetrics? = null,
@@ -59,7 +59,7 @@ fun <T : TransportMessage<M>, M> Channel<Result<T, Unit>>.acknowledge(
   }
 
   // counter
-  decr()
+  logger.decr()
   result.receiptNanos.forEach { receivedAt ->
     metrics?.executionTimer?.record(System.nanoTime() - receivedAt, TimeUnit.NANOSECONDS)
   }
@@ -75,7 +75,7 @@ fun <T : TransportMessage<M>, M> Channel<Result<T, Unit>>.acknowledge(
  *                  This function takes a message and an exception as parameters. It is optional and
  *                  defaults to null.
  */
-context(CoroutineScope, LoggerWithCounter)
+context(scope: CoroutineScope, logger: LoggerWithCounter)
 fun <T : TransportMessage<M>, M> Channel<Result<List<T>, Unit>>.acknowledge(
   beforeDlq: (suspend (M, Exception) -> Unit)? = null,
   metrics: InfiniticMetrics? = null,
@@ -109,7 +109,7 @@ fun <T : TransportMessage<M>, M> Channel<Result<List<T>, Unit>>.acknowledge(
     }
 
     // counter
-    decr(messages.size)
+    logger.decr(messages.size)
     result.receiptNanos.forEach { receivedAt ->
       metrics?.executionTimer?.record(System.nanoTime() - receivedAt, TimeUnit.NANOSECONDS)
     }
@@ -121,7 +121,7 @@ fun <T : TransportMessage<M>, M> Channel<Result<List<T>, Unit>>.acknowledge(
  * il will be automatically be sent to Dead-Letter-Queue
  * In that case, we try to run the `beforeDlq` function
  */
-context(KLogger)
+context(logger: KLogger)
 private suspend fun <T : TransportMessage<M>, M> T.dlq(
   e: Exception,
   beforeDlq: (suspend (M, Exception) -> Unit)?
@@ -129,14 +129,14 @@ private suspend fun <T : TransportMessage<M>, M> T.dlq(
   if (sentToDeadLetterQueue) {
     val deserialized = deserializeOrNull()
     // log as error, as this failed message will now be skipped
-    error(e) {
+    logger.error(e) {
       "Sending message to DLQ: ${deserialized?.string ?: messageId}"
     }
     if (deserialized != null && beforeDlq != null) {
       try {
         beforeDlq(deserialized, e)
       } catch (e: Exception) {
-        warn(e) {
+        logger.warn(e) {
           "Error when calling dead letter hook for message ${deserialized.string}"
         }
       }
@@ -144,22 +144,22 @@ private suspend fun <T : TransportMessage<M>, M> T.dlq(
   }
 }
 
-context(KLogger)
+context(logger: KLogger)
 private suspend fun <T : TransportMessage<M>, M> T.tryAcknowledge() = try {
-  trace { "Acknowledging message $messageId" }
+  logger.trace { "Acknowledging message $messageId" }
   acknowledge()
-  debug { "Acknowledged message $messageId" }
+  logger.debug { "Acknowledged message $messageId" }
 } catch (e: Exception) {
-  warn(e) { "Error when acknowledging $messageId" }
+  logger.warn(e) { "Error when acknowledging $messageId" }
 }
 
-context(KLogger)
+context(logger: KLogger)
 internal suspend fun <T : TransportMessage<M>, M> T.tryNegativeAcknowledge() = try {
-  trace { "Negatively acknowledging message $messageId" }
+  logger.trace { "Negatively acknowledging message $messageId" }
   negativeAcknowledge()
-  debug { "Negatively acknowledged message $messageId" }
+  logger.debug { "Negatively acknowledged message $messageId" }
 } catch (e: Exception) {
-  warn(e) { "Error when negatively acknowledging $messageId" }
+  logger.warn(e) { "Error when negatively acknowledging $messageId" }
   null
 }
 

@@ -37,11 +37,11 @@ import kotlinx.coroutines.withContext
  * @param process A suspending lambda function to process each received result.
  *                If null, no processing is applied.
  */
-context(CoroutineScope, KLogger)
+context(scope: CoroutineScope, logger: KLogger)
 fun <S> Channel<S>.collect(
   process: (suspend (S) -> Unit)? = null
-) = launch {
-  debug { "collect: starting listening channel ${this@collect.hashCode()}" }
+) = scope.launch {
+  logger.debug { "collect: starting listening channel ${this@collect.hashCode()}" }
 
   // start a non cancellable scope
   withContext(NonCancellable) {
@@ -50,16 +50,16 @@ fun <S> Channel<S>.collect(
         try {
           // the only way to quit this loop is to close the input channel
           // which is triggered by canceling the calling scope
-          val o = receiveIfNotClose().also { trace { "collect: receiving $it" } } ?: break
+          val o = receiveIfNotClose().also { logger.trace { "collect: receiving $it" } } ?: break
           process?.invoke(o)
         } catch (e: Exception) {
-          warn(e) { "Exception while collecting" }
+          logger.warn(e) { "Exception while collecting" }
         } catch (e: Throwable) {
-          warn(e) { "Error while collecting, cancelling calling scope" }
-          this@CoroutineScope.cancel()
+          logger.warn(e) { "Error while collecting, cancelling calling scope" }
+          scope.cancel()
         }
       }
-      trace { "collect: exiting" }
+      logger.trace { "collect: exiting" }
     }
   }
 }

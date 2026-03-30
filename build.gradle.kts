@@ -21,6 +21,8 @@
  * Licensor: infinitic.io
  */
 import com.adarshr.gradle.testlogger.theme.ThemeType
+import org.jetbrains.kotlin.gradle.dsl.JvmDefaultMode
+import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 
 buildscript {
   repositories {
@@ -48,7 +50,7 @@ println("version = ${Ci.version}")
 
 kotlin { jvmToolchain(17) }
 
-tasks.withType<JavaCompile> {
+tasks.withType<JavaCompile>().configureEach {
   sourceCompatibility = JavaVersion.VERSION_17.toString()
   targetCompatibility = JavaVersion.VERSION_17.toString()
 }
@@ -72,13 +74,13 @@ subprojects {
     testImplementation(Libs.Kotest.junit5)
     testImplementation(Libs.Kotest.property)
     testImplementation(Libs.Mockk.mockk)
-
-    if (name != "infinitic-common") {
-      testImplementation(testFixtures(project(":infinitic-common")))
-    }
   }
 
-  tasks.withType<Test> {
+  if (project.name != "infinitic-common") {
+    dependencies { testImplementation(testFixtures(project(":infinitic-common"))) }
+  }
+
+  tasks.withType<Test>().configureEach {
     useJUnitPlatform()
     reports.html.required = true
     testlogger {
@@ -89,14 +91,17 @@ subprojects {
     }
   }
 
-  kotlin {
+  extensions.configure<KotlinJvmProjectExtension> {
     jvmToolchain(17)
-    compilerOptions { freeCompilerArgs.set(listOf("-Xjvm-default=all", "-Xcontext-receivers")) }
-    sourceSets.all { languageSettings { optIn("kotlin.ExperimentalStdlibApi") } }
+    compilerOptions {
+      jvmDefault.set(JvmDefaultMode.NO_COMPATIBILITY)
+      freeCompilerArgs.set(listOf("-Xcontext-parameters"))
+      optIn.add("kotlin.ExperimentalStdlibApi")
+    }
   }
 
   // Keep this to tell compatibility to applications
-  tasks.withType<JavaCompile> {
+  tasks.withType<JavaCompile>().configureEach {
     sourceCompatibility = JavaVersion.VERSION_17.toString()
     targetCompatibility = JavaVersion.VERSION_17.toString()
   }

@@ -264,14 +264,14 @@ class WorkflowStateEngine(
     // but there is a transient state. In such cases,
     // the event is stored in the transient state to be processed later.
     if (raceConditionWithState && !isWorkflowTaskCompleted)
-      return initialState.also { it!!.messagesBuffer.add(message) }
+      return initialState!!.also { it.messagesBuffer.add(message) }
 
     // Specific scenario where we receive a DispatchWorkflow message
     // while there is a transient state storing a message,
     // then we refine the state and keep the message.
     // (We do not process the event, that should be processed only after a WorkflowTaskCompleted)
     if (raceConditionWithState && message is DispatchWorkflow) {
-      return message.newState().copy(messagesBuffer = initialState!!.messagesBuffer)
+      return message.newState().copy(messagesBuffer = initialState.messagesBuffer)
     }
 
     val state = when {

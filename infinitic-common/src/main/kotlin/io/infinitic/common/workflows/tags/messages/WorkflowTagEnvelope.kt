@@ -44,7 +44,8 @@ data class WorkflowTagEnvelope(
   private val retryWorkflowTaskByTag: RetryWorkflowTaskByTag? = null,
   private val retryTasksByTag: RetryTasksByTag? = null,
   @AvroDefault(Avro.NULL) private val completeTimersByTag: CompleteTimersByTag? = null,
-  private val getWorkflowIdsByTag: GetWorkflowIdsByTag? = null
+  private val getWorkflowIdsByTag: GetWorkflowIdsByTag? = null,
+  @AvroDefault(Avro.NULL) private val continueWorkflowTagFanout: ContinueWorkflowTagFanout? = null,
 ) : Envelope<WorkflowTagEngineMessage> {
 
   init {
@@ -59,6 +60,7 @@ data class WorkflowTagEnvelope(
         completeTimersByTag,
         dispatchMethodByTag,
         getWorkflowIdsByTag,
+        continueWorkflowTagFanout,
     )
 
     require(noNull.size == 1)
@@ -128,6 +130,12 @@ data class WorkflowTagEnvelope(
           type = WorkflowTagMessageType.GET_WORKFLOW_IDS_BY_TAG,
           getWorkflowIdsByTag = msg,
       )
+
+      is ContinueWorkflowTagFanout -> WorkflowTagEnvelope(
+          name = "${msg.workflowName}",
+          type = WorkflowTagMessageType.CONTINUE_WORKFLOW_TAG_FANOUT,
+          continueWorkflowTagFanout = msg,
+      )
     }
 
     /** Deserialize from a byte array and an avro schema */
@@ -149,6 +157,7 @@ data class WorkflowTagEnvelope(
     WorkflowTagMessageType.COMPLETE_TIMER_BY_TAG -> completeTimersByTag
     WorkflowTagMessageType.DISPATCH_METHOD_BY_TAG -> dispatchMethodByTag
     WorkflowTagMessageType.GET_WORKFLOW_IDS_BY_TAG -> getWorkflowIdsByTag
+    WorkflowTagMessageType.CONTINUE_WORKFLOW_TAG_FANOUT -> continueWorkflowTagFanout
   }!!
 
   fun toByteArray() = AvroSerDe.writeBinary(this, serializer())

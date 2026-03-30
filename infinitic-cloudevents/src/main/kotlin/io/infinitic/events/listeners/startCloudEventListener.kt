@@ -40,7 +40,7 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 
-context(LoggerWithCounter)
+context(logger: LoggerWithCounter)
 fun CoroutineScope.startCloudEventListener(
   consumerFactory: InfiniticConsumerFactory,
   resources: InfiniticResources,
@@ -88,7 +88,7 @@ fun CoroutineScope.startCloudEventListener(
   // Listen to the service topics for each service found
   launch {
     resources.refreshServiceListAsync(config) { serviceName ->
-      info { "EventListener starts listening Service $serviceName" }
+      logger.info { "EventListener starts listening Service $serviceName" }
 
       consumerFactory.listenToServiceExecutorTopics(
           serviceName,
@@ -102,7 +102,7 @@ fun CoroutineScope.startCloudEventListener(
   // Listen to the workflow topics for each workflow found
   launch {
     resources.refreshWorkflowListAsync(config) { workflowName ->
-      info { "EventListener starts listening Workflow $workflowName" }
+      logger.info { "EventListener starts listening Workflow $workflowName" }
 
       consumerFactory.listenToWorkflowExecutorTopics(
           workflowName,

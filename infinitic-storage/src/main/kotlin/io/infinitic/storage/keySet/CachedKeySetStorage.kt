@@ -39,6 +39,12 @@ class CachedKeySetStorage(
         storage.get(key).also { cache.set(key, it) }
       }
 
+  override suspend fun getPage(
+    key: String,
+    limit: Int,
+    cursor: String?,
+  ) = storage.getPage(key, limit, cursor)
+
   override suspend fun add(key: String, value: ByteArray) {
     storage.add(key, value)
     cache.add(key, value)

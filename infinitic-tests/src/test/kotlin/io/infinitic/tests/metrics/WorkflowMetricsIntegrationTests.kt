@@ -57,7 +57,7 @@ internal class WorkflowMetricsIntegrationTests : StringSpec(
 
         try {
           worker.startAsync()
-          
+
           val client = worker.client
           val workflow = client.newWorkflow(InlineWorkflow::class.java)
 

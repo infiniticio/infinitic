@@ -23,6 +23,7 @@
 package io.infinitic.events
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.infinitic.logger.IgnoreNullKLogger
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.messages.Message
 import io.infinitic.common.transport.ClientTopic
@@ -63,7 +64,7 @@ class CloudEventLogger(
   private val prefix: String,
   private val beautify: Boolean
 ) {
-  private val logger = topic.eventLogger(entity)?.ignoreNull()
+  private val logger: IgnoreNullKLogger? = topic.eventLogger(entity)?.ignoreNull()
 
   fun log(message: Message, publishedAt: MillisInstant) = try {
     logger?.debug {
@@ -92,4 +93,3 @@ class CloudEventLogger(
     KotlinLogging.logger(it)
   }
 }
-

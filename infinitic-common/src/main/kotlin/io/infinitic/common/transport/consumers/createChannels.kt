@@ -32,7 +32,7 @@ import kotlinx.coroutines.runBlocking
  * Creates a new channel
  * that negatively acknowledge the `TransportMessage` object if non-distributed
  */
-context(LoggerWithCounter)
+context(logger: LoggerWithCounter)
 fun <T : TransportMessage<M>, M> createChannel(): Channel<Result<T, T>> =
     Channel {
       runBlocking {
@@ -44,7 +44,7 @@ fun <T : TransportMessage<M>, M> createChannel(): Channel<Result<T, T>> =
  * Creates a new channel
  * that negatively acknowledge the `TransportMessage` objects if non-distributed
  */
-context(LoggerWithCounter)
+context(logger: LoggerWithCounter)
 fun <T : TransportMessage<M>, M> createBatchChannel(): Channel<Result<List<T>, List<T>>> =
     Channel {
       runBlocking {

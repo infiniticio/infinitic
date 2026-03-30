@@ -27,6 +27,11 @@ import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 
+data class WorkflowIdsPage(
+  val workflowIds: List<WorkflowId>,
+  val nextCursor: String?,
+)
+
 /**
  * TagStateStorage implementations are responsible for storing the different state objects used by
  * the engine.
@@ -37,6 +42,13 @@ import io.infinitic.common.workflows.data.workflows.WorkflowTag
  */
 interface WorkflowTagStorage : Flushable {
   suspend fun getWorkflowIds(tag: WorkflowTag, workflowName: WorkflowName): Set<WorkflowId>
+
+  suspend fun getWorkflowIdsPage(
+    tag: WorkflowTag,
+    workflowName: WorkflowName,
+    limit: Int,
+    cursor: String? = null,
+  ): WorkflowIdsPage
 
   suspend fun addWorkflowId(tag: WorkflowTag, workflowName: WorkflowName, workflowId: WorkflowId)
 

@@ -41,16 +41,16 @@ import kotlinx.coroutines.withContext
  * @param process A suspending function that takes an input element and produces an output element.
  * @return A new channel that contains the processed results.
  */
-context(CoroutineScope, KLogger)
+context(scope: CoroutineScope, logger: KLogger)
 fun <T : Any, I, O> Channel<Result<T, I>>.process(
   to: Channel<Result<T, O>> = Channel(),
   process: suspend (T, I) -> O,
 ): Channel<Result<T, O>> {
-  val callingScope = this@CoroutineScope
+  val callingScope = scope
 
-  debug { "process: starting listening channel ${this@process.hashCode()}" }
+  logger.debug { "process: starting listening channel ${this@process.hashCode()}" }
 
-  launch {
+  scope.launch {
     // start a non cancellable scope
     withContext(NonCancellable) {
       to.addProducer("process")
@@ -58,14 +58,14 @@ fun <T : Any, I, O> Channel<Result<T, I>>.process(
         try {
           // the only way to quit this loop is to close the input channel
           // which is triggered by canceling the calling scope
-          val result = receiveIfNotClose().also { trace { "process: receiving $it " } } ?: break
+          val result = receiveIfNotClose().also { logger.trace { "process: receiving $it " } } ?: break
           result.onSuccess {
             try {
               val o = process(result.message, it)
               to.send(result.success(o))
             } catch (e: Exception) {
               to.send(result.failure(e))
-              warn(e) { "Exception while processing" }
+              logger.warn(e) { "Exception while processing" }
             } catch (e: Error) {
               to.send(result.failure(RuntimeException(e)))
               throw e
@@ -75,7 +75,7 @@ fun <T : Any, I, O> Channel<Result<T, I>>.process(
             to.send(result.failure(it))
           }
         } catch (e: Throwable) {
-          warn(e) { "Error while processing, cancelling calling scope" }
+          logger.warn(e) { "Error while processing, cancelling calling scope" }
           callingScope.cancel()
         }
       }

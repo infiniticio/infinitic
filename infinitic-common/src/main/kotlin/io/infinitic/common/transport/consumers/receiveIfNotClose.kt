@@ -26,11 +26,11 @@ import io.github.oshai.kotlinlogging.KLogger
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
 
-context(KLogger)
+context(logger: KLogger)
 internal suspend fun <M> Channel<M>.receiveIfNotClose(): M? =
     try {
-      receive().also { trace { "receiveIfNotClose: received $it" } }
+      receive().also { logger.trace { "receiveIfNotClose: received $it" } }
     } catch (e: ClosedReceiveChannelException) {
-      debug { "receiveIfNotClose: channel closed" }
+      logger.debug { "receiveIfNotClose: channel closed" }
       null
     }

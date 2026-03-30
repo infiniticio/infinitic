@@ -33,6 +33,16 @@ class WrappedKeySetStorage(val storage: KeySetStorage) : KeySetStorage {
         throwWrappedException(e)
       }
 
+  override suspend fun getPage(
+    key: String,
+    limit: Int,
+    cursor: String?,
+  ) = try {
+    storage.getPage(key, limit, cursor)
+  } catch (e: Exception) {
+    throwWrappedException(e)
+  }
+
   override suspend fun add(key: String, value: ByteArray) =
       try {
         storage.add(key, value)
@@ -81,4 +91,3 @@ class WrappedKeySetStorage(val storage: KeySetStorage) : KeySetStorage {
 
   private fun throwWrappedException(e: Exception): Nothing = throw KeySetStorageException(e)
 }
-

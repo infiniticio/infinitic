@@ -43,14 +43,15 @@ import kotlinx.coroutines.withContext
  *                      If not provided, a new channel is created and used.
  * @return The channel to which received messages are sent.
  */
-context(LoggerWithCounter)
+context(logger: LoggerWithCounter)
 fun <T : TransportMessage<M>, M> CoroutineScope.startReceiving(
   consumer: TransportConsumer<out T>,
   outputChannel: Channel<Result<T, T>> = createChannel(),
   trackQueueTime: Boolean = false,
 ): Channel<Result<T, T>> {
+  val scope = this
 
-  debug { "Starting producing on channel ${outputChannel.hashCode()} from ${consumer.name}" }
+  logger.debug { "Starting producing on channel ${outputChannel.hashCode()} from ${consumer.name}" }
 
   launch {
     outputChannel.addProducer("startReceiving")
@@ -59,9 +60,9 @@ fun <T : TransportMessage<M>, M> CoroutineScope.startReceiving(
       try {
         val msg = consumer.receive()
         withContext(NonCancellable) {
-          trace { "Received from ${consumer.name}: $msg " }
+          logger.trace { "Received from ${consumer.name}: $msg " }
           // counter
-          incr()
+          logger.incr()
           val receiptNanos =
               if (trackQueueTime) longArrayOf(System.nanoTime()) else NO_RECEIPT_NANOS
           outputChannel.send(Result.success(msg, msg, receiptNanos))
@@ -69,11 +70,11 @@ fun <T : TransportMessage<M>, M> CoroutineScope.startReceiving(
       } catch (_: CancellationException) {
         // do nothing, will exit if calling scope is not active anymore
       } catch (e: Exception) {
-        warn(e) { "Exception when receiving message from $this" }
+        logger.warn(e) { "Exception when receiving message from $this" }
       } catch (e: Error) {
-        warn(e) { "Error when receiving message from $this" }
+        logger.warn(e) { "Error when receiving message from $this" }
         // canceling the current scope (warning scope is different from inside launch)
-        this@CoroutineScope.cancel()
+        scope.cancel()
       }
     }
     withContext(NonCancellable) {
@@ -93,14 +94,15 @@ fun <T : TransportMessage<M>, M> CoroutineScope.startReceiving(
  *                      If not provided, a new channel is created and used.
  * @return The output channel where the batches of transport messages are sent.
  */
-context(LoggerWithCounter)
+context(logger: LoggerWithCounter)
 fun <T : TransportMessage<M>, M> CoroutineScope.startBatchReceiving(
   consumer: TransportConsumer<out T>,
   outputChannel: Channel<Result<List<T>, List<T>>> = createBatchChannel(),
   trackQueueTime: Boolean = false,
 ): Channel<Result<List<T>, List<T>>> {
+  val scope = this
 
-  debug { "starting batch producing on channel ${outputChannel.hashCode()} from ${consumer.name}" }
+  logger.debug { "starting batch producing on channel ${outputChannel.hashCode()} from ${consumer.name}" }
 
   launch {
     outputChannel.addProducer("startBatchReceiving")
@@ -109,9 +111,9 @@ fun <T : TransportMessage<M>, M> CoroutineScope.startBatchReceiving(
       try {
         val batch = consumer.batchReceive()
         withContext(NonCancellable) {
-          trace { "Batch (${batch.size}) received from ${consumer.name}: $batch" }
+          logger.trace { "Batch (${batch.size}) received from ${consumer.name}: $batch" }
           // counter
-          incr(batch.size)
+          logger.incr(batch.size)
           val receiptNanos =
               if (trackQueueTime) {
                 val receivedAt = System.nanoTime()
@@ -124,11 +126,11 @@ fun <T : TransportMessage<M>, M> CoroutineScope.startBatchReceiving(
       } catch (_: CancellationException) {
         // do nothing, will exit if calling scope is not active anymore
       } catch (e: Exception) {
-        warn(e) { "Exception when receiving message from $this" }
+        logger.warn(e) { "Exception when receiving message from $this" }
       } catch (e: Error) {
-        warn(e) { "Error when receiving message from $this" }
+        logger.warn(e) { "Error when receiving message from $this" }
         // canceling current scope (warning scope is different from inside launch)
-        this@CoroutineScope.cancel()
+        scope.cancel()
       }
     }
     withContext(NonCancellable) {

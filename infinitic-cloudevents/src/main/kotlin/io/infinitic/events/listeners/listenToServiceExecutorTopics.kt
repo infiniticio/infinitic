@@ -40,13 +40,13 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 
-context(CoroutineScope, LoggerWithCounter)
+context(scope: CoroutineScope, logger: LoggerWithCounter)
 internal fun InfiniticConsumerFactory.listenToServiceExecutorTopics(
   serviceName: ServiceName,
   batchConfig: BatchConfig,
   subscriptionName: String?,
   outChannel: Channel<Result<List<TransportMessage<Message>>, List<TransportMessage<Message>>>>,
-): Job = launch {
+): Job = scope.launch {
 
   // Send messages from ServiceExecutorTopic to outChannel
   val serviceExecutorSubscription = SubscriptionType.EVENT_LISTENER.create(

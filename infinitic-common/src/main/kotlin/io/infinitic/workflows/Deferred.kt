@@ -157,7 +157,7 @@ fun <T> List<Deferred<out T>>.or(): Deferred<T> =
 /**
  * Kotlin Serializer for Deferred objects.
  */
-private object DeferredSerializer : KSerializer<Deferred<*>> {
+object DeferredSerializer : KSerializer<Deferred<*>> {
   override val descriptor: SerialDescriptor = Step.serializer().descriptor
 
   override fun serialize(encoder: Encoder, value: Deferred<*>) {

@@ -38,19 +38,19 @@ import kotlinx.coroutines.launch
  * @param maxMillis The maximum duration (in milliseconds) to wait for messages to form a batch.
  * @param outputChannel The channel to send the batched messages to. Defaults to a new channel.
  */
-context(CoroutineScope, KLogger)
+context(scope: CoroutineScope, logger: KLogger)
 fun <T, M> Channel<Result<T, M>>.startBatching(
   maxMessages: Int,
   maxMillis: Long,
   outputChannel: Channel<Result<List<T>, List<M>>> = Channel(),
 ): Channel<Result<List<T>, List<M>>> {
-  launch {
+  scope.launch {
     var isOpen = true
     outputChannel.addProducer("startBatching")
     while (isOpen) {
       // the only way to quit this loop is to close the input channel
       val first = receiveIfNotClose() ?: break
-      trace { "batching: receiving first $first " }
+      logger.trace { "batching: receiving first $first " }
       val nextBatch = buildList {
         add(first)
         val result = batchWithTimeout(maxMessages - 1, maxMillis)
@@ -59,9 +59,9 @@ fun <T, M> Channel<Result<T, M>>.startBatching(
       }
       val receiptNanos = concatenateReceiptNanos(nextBatch)
       val out = Result.success(nextBatch.map { it.message }, nextBatch.map { it.data }, receiptNanos)
-      debug { "batching: sending $out" }
+      logger.debug { "batching: sending $out" }
       outputChannel.send(out)
-      trace { "batching: sent $out" }
+      logger.trace { "batching: sent $out" }
     }
     outputChannel.removeProducer("startBatching")
   }

@@ -24,6 +24,7 @@ package io.infinitic.storage.databases.inMemory
 
 import io.infinitic.storage.config.InMemoryConfig
 import io.infinitic.storage.data.Bytes
+import io.infinitic.storage.keySet.KeySetPage
 import io.infinitic.storage.keySet.KeySetStorage
 import org.jetbrains.annotations.TestOnly
 
@@ -36,6 +37,26 @@ class InMemoryKeySetStorage(internal val storage: MutableMap<String, MutableSet<
 
   override suspend fun get(key: String): Set<ByteArray> {
     return getBytesPerKey(key).map { it.content }.toSet()
+  }
+
+  override suspend fun getPage(
+    key: String,
+    limit: Int,
+    cursor: String?,
+  ): KeySetPage {
+    require(limit > 0) { "limit must be positive" }
+
+    val values = getBytesPerKey(key)
+        .map { it.content }
+        .sortedBy { String(it) }
+    val startIndex = cursor?.toIntOrNull() ?: 0
+    val page = values.drop(startIndex).take(limit)
+    val nextIndex = startIndex + page.size
+
+    return KeySetPage(
+        values = page,
+        nextCursor = nextIndex.takeIf { it < values.size }?.toString(),
+    )
   }
 
   override suspend fun add(key: String, value: ByteArray) {

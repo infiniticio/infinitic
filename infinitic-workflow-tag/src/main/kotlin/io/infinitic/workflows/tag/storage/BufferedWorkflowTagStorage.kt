@@ -26,6 +26,7 @@ import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
+import io.infinitic.common.workflows.tags.storage.WorkflowIdsPage
 import io.infinitic.common.workflows.tags.storage.WorkflowTagStorage
 import org.jetbrains.annotations.TestOnly
 
@@ -46,6 +47,25 @@ class BufferedWorkflowTagStorage(private val set: MutableSet<WorkflowId>?) : Wor
     tag: WorkflowTag,
     workflowName: WorkflowName
   ): Set<WorkflowId> = set?.toSet() ?: thisShouldNotHappen()
+
+  override suspend fun getWorkflowIdsPage(
+    tag: WorkflowTag,
+    workflowName: WorkflowName,
+    limit: Int,
+    cursor: String?,
+  ): WorkflowIdsPage {
+    require(limit > 0) { "limit must be positive" }
+
+    val values = set?.sortedBy { it.toString() } ?: thisShouldNotHappen()
+    val startIndex = cursor?.toIntOrNull() ?: 0
+    val page = values.drop(startIndex).take(limit)
+    val nextIndex = startIndex + page.size
+
+    return WorkflowIdsPage(
+        workflowIds = page,
+        nextCursor = nextIndex.takeIf { it < values.size }?.toString(),
+    )
+  }
 
   override suspend fun addWorkflowId(
     tag: WorkflowTag,

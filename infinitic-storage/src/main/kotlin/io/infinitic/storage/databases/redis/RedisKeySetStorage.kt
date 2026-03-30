@@ -23,13 +23,18 @@
 package io.infinitic.storage.databases.redis
 
 import io.infinitic.storage.config.RedisConfig
+import io.infinitic.storage.keySet.KeySetPage
 import io.infinitic.storage.keySet.KeySetStorage
 import org.jetbrains.annotations.TestOnly
 import redis.clients.jedis.JedisPool
+import redis.clients.jedis.params.ScanParams
+import java.util.Base64
 
 class RedisKeySetStorage(internal val pool: JedisPool) : KeySetStorage {
 
   companion object {
+    private const val BUFFERED_CURSOR_PREFIX = "buffered:"
+
     fun from(config: RedisConfig) = RedisKeySetStorage(config.getPool())
   }
 
@@ -37,6 +42,35 @@ class RedisKeySetStorage(internal val pool: JedisPool) : KeySetStorage {
       pool.resource.use { jedis ->
         jedis.smembers(key.toByteArray())
       }
+
+  override suspend fun getPage(
+    key: String,
+    limit: Int,
+    cursor: String?,
+  ): KeySetPage {
+    require(limit > 0) { "limit must be positive" }
+
+    val state = RedisPageCursor.from(cursor)
+    val values = mutableListOf<ByteArray>()
+    val pendingValues = ArrayDeque(state.pendingValues)
+
+    return pool.resource.use { jedis ->
+      var backendCursor = state.backendCursor
+      pendingValues.drainInto(values, limit)
+
+      while (values.size < limit && backendCursor != null) {
+        val (pageValues, nextBackendCursor) = readPage(jedis, key, backendCursor, limit - values.size)
+        pendingValues.addAll(pageValues)
+        pendingValues.drainInto(values, limit)
+        backendCursor = nextBackendCursor
+      }
+
+      KeySetPage(
+          values = values,
+          nextCursor = RedisPageCursor(backendCursor, pendingValues.toList()).serialize(),
+      )
+    }
+  }
 
   override suspend fun add(key: String, value: ByteArray) {
     pool.resource.use { jedis ->
@@ -92,5 +126,76 @@ class RedisKeySetStorage(internal val pool: JedisPool) : KeySetStorage {
   @TestOnly
   override fun flush() {
     pool.resource.use { it.flushDB() }
+  }
+
+  private fun readPage(
+    jedis: redis.clients.jedis.Jedis,
+    key: String,
+    cursor: String,
+    limit: Int,
+  ): Pair<List<ByteArray>, String?> {
+    val result = jedis.sscan(
+        key.toByteArray(),
+        cursor.toByteArray(),
+        ScanParams().count(limit),
+    )
+
+    return result.getResult() to result.getCursor().takeUnless { it == ScanParams.SCAN_POINTER_START }
+  }
+
+  private fun ArrayDeque<ByteArray>.drainInto(
+    values: MutableList<ByteArray>,
+    limit: Int,
+  ) {
+    while (values.size < limit && isNotEmpty()) {
+      values += removeFirst()
+    }
+  }
+
+  private data class RedisPageCursor(
+    val backendCursor: String?,
+    val pendingValues: List<ByteArray>,
+  ) {
+    companion object {
+      fun from(cursor: String?): RedisPageCursor {
+        if (cursor == null) {
+          return RedisPageCursor(
+              backendCursor = ScanParams.SCAN_POINTER_START,
+              pendingValues = emptyList(),
+          )
+        }
+
+        if (!cursor.startsWith(BUFFERED_CURSOR_PREFIX)) {
+          return RedisPageCursor(
+              backendCursor = cursor,
+              pendingValues = emptyList(),
+          )
+        }
+
+        val payload = cursor.removePrefix(BUFFERED_CURSOR_PREFIX)
+        val parts = payload.split(":", limit = 2)
+        val backendCursor = parts.first().ifEmpty { null }
+        val pendingValues = parts.getOrNull(1)
+            ?.takeIf { it.isNotEmpty() }
+            ?.split(",")
+            ?.map { Base64.getUrlDecoder().decode(it) }
+            ?: emptyList()
+
+        return RedisPageCursor(
+            backendCursor = backendCursor,
+            pendingValues = pendingValues,
+        )
+      }
+    }
+
+    fun serialize(): String? {
+      if (pendingValues.isEmpty()) return backendCursor
+
+      val encodedValues = pendingValues.joinToString(",") {
+        Base64.getUrlEncoder().withoutPadding().encodeToString(it)
+      }
+
+      return "$BUFFERED_CURSOR_PREFIX${backendCursor.orEmpty()}:$encodedValues"
+    }
   }
 }

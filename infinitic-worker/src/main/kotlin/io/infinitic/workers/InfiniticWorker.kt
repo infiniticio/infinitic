@@ -649,6 +649,7 @@ class InfiniticWorker(
           workflowName = workflowName,
           concurrency = config.concurrency,
           batchConfig = batchConfig,
+          fanoutPageSize = config.fanoutPageSize,
           registry = registry,
           workerName = workerName,
       )
@@ -1043,10 +1044,15 @@ class InfiniticWorker(
     workflowName: String,
     concurrency: Int,
     batchConfig: BatchConfig?,
+    fanoutPageSize: Int,
     registry: MeterRegistry? = null,
     workerName: String = "unknown",
   ) {
-    val workflowTagEngine = WorkflowTagEngine(storage, producer)
+    val workflowTagEngine = WorkflowTagEngine(
+        storage = storage,
+        producer = producer,
+        fanoutPageSize = fanoutPageSize,
+    )
 
     val cloudEventLogger = CloudEventLogger(
         WorkflowTagEngineTopic,
