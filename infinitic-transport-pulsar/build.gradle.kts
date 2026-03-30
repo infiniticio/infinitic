@@ -34,6 +34,7 @@ dependencies {
   implementation(Libs.Coroutines.jdk8)
   implementation(Libs.Pulsar.functions)
   implementation(Libs.Hoplite.yaml)
+  implementation(Libs.Text.commons)
 
   api(Libs.Hoplite.core) // API needed for Secret class
   api(Libs.Pulsar.client)
