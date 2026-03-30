@@ -650,7 +650,6 @@ class InfiniticWorker(
           concurrency = config.concurrency,
           batchConfig = batchConfig,
           fanoutPageSize = config.fanoutPageSize,
-          fanoutSendParallelism = config.fanoutSendParallelism,
           registry = registry,
           workerName = workerName,
       )
@@ -1046,7 +1045,6 @@ class InfiniticWorker(
     concurrency: Int,
     batchConfig: BatchConfig?,
     fanoutPageSize: Int,
-    fanoutSendParallelism: Int,
     registry: MeterRegistry? = null,
     workerName: String = "unknown",
   ) {
@@ -1054,7 +1052,6 @@ class InfiniticWorker(
         storage = storage,
         producer = producer,
         fanoutPageSize = fanoutPageSize,
-        fanoutSendParallelism = fanoutSendParallelism,
     )
 
     val cloudEventLogger = CloudEventLogger(

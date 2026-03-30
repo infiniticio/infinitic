@@ -67,13 +67,11 @@ import kotlinx.coroutines.launch
 class WorkflowTagEngine(
   private val storage: WorkflowTagStorage,
   private val producer: InfiniticProducer,
-  private val fanoutPageSize: Int = 1000,
-  private val fanoutSendParallelism: Int = 64,
+  private val fanoutPageSize: Int = 5000,
 ) {
 
   init {
     require(fanoutPageSize > 0) { "fanoutPageSize must be positive" }
-    require(fanoutSendParallelism > 0) { "fanoutSendParallelism must be positive" }
   }
 
   private val emitterName = producer.emitterName
@@ -428,12 +426,8 @@ class WorkflowTagEngine(
     items: List<T>,
     block: suspend (T) -> Unit,
   ) = coroutineScope {
-    items.chunked(fanoutSendParallelism).forEach { chunk ->
-      coroutineScope {
-        chunk.forEach { item ->
-          launch { block(item) }
-        }
-      }
+    items.forEach { item ->
+      launch { block(item) }
     }
   }
 

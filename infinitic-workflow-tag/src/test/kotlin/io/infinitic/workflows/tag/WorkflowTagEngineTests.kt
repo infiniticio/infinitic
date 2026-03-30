@@ -88,7 +88,7 @@ class WorkflowTagEngineTests : StringSpec(
         harness.workflowCmdMessages.size shouldBe 0
 
         val continuation = harness.tagMessages.single() as ContinueWorkflowTagFanout
-        continuation.limit shouldBe 1000
+        continuation.limit shouldBe 5000
         continuation.command().shouldBeInstanceOf<RetryTasksByTag>()
       }
 
@@ -104,7 +104,7 @@ class WorkflowTagEngineTests : StringSpec(
         harness.engine.process(continuation, MillisInstant.now())
 
         coVerify(exactly = 1) {
-          harness.storage.getWorkflowIdsPage(message.workflowTag, message.workflowName, 1000, null)
+          harness.storage.getWorkflowIdsPage(message.workflowTag, message.workflowName, 5000, null)
         }
         harness.workflowCmdMessages.size shouldBe workflowIds.size
         harness.workflowCmdMessages.filterIsInstance<CancelWorkflow>().map { it.workflowId }
@@ -130,10 +130,15 @@ class WorkflowTagEngineTests : StringSpec(
       "SendSignalByTag continuation should request the next page when cursor remains" {
         val workflowId = WorkflowId()
         val message = random<SendSignalByTag>()
-        val harness = getHarness(message.workflowTag, message.workflowName, setOf(workflowId))
+        val harness = getHarness(
+            message.workflowTag,
+            message.workflowName,
+            setOf(workflowId),
+            fanoutPageSize = 1,
+        )
         val firstPage = WorkflowIdsPage(workflowIds = listOf(workflowId), nextCursor = "cursor-2")
         coEvery {
-          harness.storage.getWorkflowIdsPage(message.workflowTag, message.workflowName, 1000, null)
+          harness.storage.getWorkflowIdsPage(message.workflowTag, message.workflowName, 1, null)
         } returns firstPage
 
         harness.engine.process(message, MillisInstant.now())
@@ -150,10 +155,15 @@ class WorkflowTagEngineTests : StringSpec(
       "SendSignalByTag should fan out all pages until completion" {
         val workflowIds = listOf(WorkflowId(), WorkflowId())
         val message = random<SendSignalByTag>()
-        val harness = getHarness(message.workflowTag, message.workflowName, workflowIds.toSet())
+        val harness = getHarness(
+            message.workflowTag,
+            message.workflowName,
+            workflowIds.toSet(),
+            fanoutPageSize = 1,
+        )
 
         coEvery {
-          harness.storage.getWorkflowIdsPage(message.workflowTag, message.workflowName, 1000, null)
+          harness.storage.getWorkflowIdsPage(message.workflowTag, message.workflowName, 1, null)
         } returns WorkflowIdsPage(
             workflowIds = listOf(workflowIds.first()),
             nextCursor = "cursor-2",
@@ -162,7 +172,7 @@ class WorkflowTagEngineTests : StringSpec(
           harness.storage.getWorkflowIdsPage(
               message.workflowTag,
               message.workflowName,
-              1000,
+              1,
               "cursor-2",
           )
         } returns WorkflowIdsPage(
@@ -188,10 +198,10 @@ class WorkflowTagEngineTests : StringSpec(
         harness.tagMessages shouldBe emptyList()
 
         coVerify(exactly = 1) {
-          harness.storage.getWorkflowIdsPage(message.workflowTag, message.workflowName, 1000, null)
+          harness.storage.getWorkflowIdsPage(message.workflowTag, message.workflowName, 1, null)
         }
         coVerify(exactly = 1) {
-          harness.storage.getWorkflowIdsPage(message.workflowTag, message.workflowName, 1000, "cursor-2")
+          harness.storage.getWorkflowIdsPage(message.workflowTag, message.workflowName, 1, "cursor-2")
         }
       }
 
@@ -330,12 +340,13 @@ private fun getHarness(
   workflowTag: WorkflowTag,
   workflowName: WorkflowName,
   workflowIds: Set<WorkflowId> = setOf(WorkflowId()),
+  fanoutPageSize: Int = 5000,
 ): Harness {
   val storage = mockWorkflowTagStorage(workflowTag, workflowName, workflowIds)
   val producerHarness = getProducer()
 
   return Harness(
-      engine = WorkflowTagEngine(storage, producerHarness.producer),
+      engine = WorkflowTagEngine(storage, producerHarness.producer, fanoutPageSize),
       storage = storage,
       producer = producerHarness.producer,
       workflowCmdMessages = producerHarness.workflowCmdMessages,

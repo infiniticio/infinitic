@@ -48,14 +48,12 @@ data class WorkflowTagEngineConfig(
    * If not provided, it will not use batching.
    */
   val batch: BatchConfig? = null,
-  val fanoutPageSize: Int = 1000,
-  val fanoutSendParallelism: Int = 64,
+  val fanoutPageSize: Int = 5000,
 ) : WithMutableWorkflowName, WithMutableStorage {
 
   init {
     require(concurrency >= 0) { "concurrency must be positive" }
     require(fanoutPageSize > 0) { "fanoutPageSize must be positive" }
-    require(fanoutSendParallelism > 0) { "fanoutSendParallelism must be positive" }
   }
 
   val workflowTagStorage by lazy {
@@ -98,7 +96,6 @@ data class WorkflowTagEngineConfig(
     private var storage = default.storage
     private var batch: BatchConfig? = default.batch
     private var fanoutPageSize = default.fanoutPageSize
-    private var fanoutSendParallelism = default.fanoutSendParallelism
 
     fun setWorkflowName(workflowName: String) =
         apply { this.workflowName = workflowName }
@@ -115,14 +112,10 @@ data class WorkflowTagEngineConfig(
     fun setFanoutPageSize(fanoutPageSize: Int) =
         apply { this.fanoutPageSize = fanoutPageSize }
 
-    fun setFanoutSendParallelism(fanoutSendParallelism: Int) =
-        apply { this.fanoutSendParallelism = fanoutSendParallelism }
-
     fun build(): WorkflowTagEngineConfig {
       workflowName.checkWorkflowName()
       concurrency.checkConcurrency(::concurrency.name)
       fanoutPageSize.checkConcurrency(::fanoutPageSize.name)
-      fanoutSendParallelism.checkConcurrency(::fanoutSendParallelism.name)
 
       return WorkflowTagEngineConfig(
           workflowName,
@@ -130,7 +123,6 @@ data class WorkflowTagEngineConfig(
           storage,
           batch,
           fanoutPageSize,
-          fanoutSendParallelism,
       )
     }
   }

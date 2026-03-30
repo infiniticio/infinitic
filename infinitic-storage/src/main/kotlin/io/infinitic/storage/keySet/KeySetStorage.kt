@@ -38,7 +38,11 @@ interface KeySetStorage : Flushable, AutoCloseable {
   /**
    * Retrieves one page of ByteArray associated with the given key.
    *
-   * The cursor is backend-specific and opaque to callers.
+   * Implementations must return at most [limit] values.
+   *
+   * The cursor is backend-specific and opaque to callers. Implementations may encode buffered
+   * state inside the cursor when the underlying backend pagination primitive does not natively
+   * honor [limit].
    */
   suspend fun getPage(
     key: String,
