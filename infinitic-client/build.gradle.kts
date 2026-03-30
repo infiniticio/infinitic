@@ -23,6 +23,9 @@
 dependencies {
   api(project(":infinitic-common"))
   api(project(":infinitic-transport"))
+  api(project(":infinitic-storage"))
+  api(project(":infinitic-workflow-engine"))
+
   implementation(project(":infinitic-utils"))
 
   implementation(Libs.Coroutines.core)

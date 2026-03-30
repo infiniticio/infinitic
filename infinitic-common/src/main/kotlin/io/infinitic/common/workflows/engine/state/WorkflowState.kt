@@ -39,6 +39,8 @@ import io.infinitic.common.workflows.data.commands.PastCommand
 import io.infinitic.common.workflows.data.properties.PropertyHash
 import io.infinitic.common.workflows.data.properties.PropertyName
 import io.infinitic.common.workflows.data.properties.PropertyValue
+import io.infinitic.common.workflows.data.steps.PastStep
+import io.infinitic.common.workflows.data.steps.StepStatus
 import io.infinitic.common.workflows.data.workflowMethods.PositionInWorkflowMethod
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethod
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
@@ -126,6 +128,22 @@ data class WorkflowState(
   fun toByteArray() = AvroSerDe.writeBinaryWithSchemaFingerprint(this, serializer())
 
   fun toJson(): String = prettyPrint.encodeToString(serializer(), this)
+
+  fun hasFailedTask(): Boolean = workflowMethods.any { method ->
+    method.pastCommands.any { pastCommand: PastCommand ->
+      pastCommand.commandStatus !is CommandStatus.Ongoing &&
+          pastCommand.commandStatus !is CommandStatus.Completed
+    }
+  }
+
+  fun isExecutorRunning() = (runningWorkflowTaskId != null)
+
+  fun isWaiting(): Boolean = workflowMethods.any { method ->
+    method.pastSteps.any { pastStep: PastStep ->
+      pastStep.stepStatus is StepStatus.Waiting
+    }
+  }
+
 
   fun hasSignalAlreadyBeenReceived(signalId: SignalId) =
       workflowMethods.any { methodRun ->

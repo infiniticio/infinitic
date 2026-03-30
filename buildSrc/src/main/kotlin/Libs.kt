@@ -131,4 +131,8 @@ object Libs {
   object Compress {
     const val commons = "org.apache.commons:commons-compress:1.27.1"
   }
+
+  object Text {
+    const val commons = "org.apache.commons:commons-text:1.15.0"
+  }
 }

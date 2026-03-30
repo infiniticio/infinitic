@@ -20,30 +20,22 @@
  *
  * Licensor: infinitic.io
  */
-plugins { `java-library` }
+package io.infinitic.common.workflows.engine.storage
 
-dependencies {
-  api(project(":infinitic-common"))
-  api(project(":infinitic-task-executor"))
-
-  implementation(project(":infinitic-utils"))
-  implementation(project(":infinitic-workflow-tag"))
-  implementation(project(":infinitic-workflow-engine"))
-
-  implementation(Libs.Coroutines.core)
-  implementation(Libs.Coroutines.jdk8)
-  implementation(Libs.Pulsar.functions)
-  implementation(Libs.Hoplite.yaml)
-  implementation(Libs.Text.commons)
-
-  api(Libs.Hoplite.core) // API needed for Secret class
-  api(Libs.Pulsar.client)
-  api(Libs.Pulsar.clientAdmin)
-  api(Libs.Pulsar.clientAdminApi)
-  api(Libs.Pulsar.authAthenz)
-  api(Libs.Pulsar.authSasl)
-
-  testImplementation(Libs.Kotlin.reflect)
+/**
+ * Optional marker interface for WorkflowStateStorage implementations that support
+ * storing convenience fields (status, meta, tags) alongside the workflow state.
+ *
+ * These convenience fields are extracted from the WorkflowState and stored separately
+ * to enable efficient querying without deserializing the full state.
+ *
+ * Storage backends that don't support this (e.g., Redis) can simply not implement
+ * this interface, and the convenience fields will not be stored.
+ */
+interface WorkflowStateStorageWithConvenience : WorkflowStateStorage {
+  /**
+   * Indicates whether this storage implementation supports storing convenience fields.
+   * This method is provided for runtime detection.
+   */
+  fun supportsConvenienceFields(): Boolean = true
 }
-
-apply("../publish.gradle.kts")

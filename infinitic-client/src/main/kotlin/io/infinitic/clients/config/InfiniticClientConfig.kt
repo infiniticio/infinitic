@@ -25,6 +25,7 @@ package io.infinitic.clients.config
 import io.infinitic.common.config.loadConfigFromFile
 import io.infinitic.common.config.loadConfigFromResource
 import io.infinitic.common.config.loadConfigFromYaml
+import io.infinitic.storage.config.StorageConfig
 import io.infinitic.transport.config.TransportConfig
 
 data class InfiniticClientConfig(
@@ -33,6 +34,9 @@ data class InfiniticClientConfig(
 
   /** Transport configuration */
   override val transport: TransportConfig,
+
+  /** Storage configuration */
+  override val storage: StorageConfig? = null,
 ) : InfiniticClientConfigInterface {
 
   companion object {
