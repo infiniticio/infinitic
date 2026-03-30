@@ -23,7 +23,7 @@
 
 services:
   pulsar:
-    image: apachepulsar/pulsar:3.1.2
+    image: apachepulsar/pulsar:4.0.5
     command: sh -c "bin/apply-config-from-env.py conf/standalone.conf && bin/pulsar standalone"
     hostname: pulsar
     ports:
