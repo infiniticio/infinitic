@@ -20,7 +20,7 @@
  *
  * Licensor: infinitic.io
  */
-const val kotlinVersion = "2.1.0"
+const val kotlinVersion = "2.2.20"
 
 @Suppress("ConstPropertyName")
 object Plugins {
