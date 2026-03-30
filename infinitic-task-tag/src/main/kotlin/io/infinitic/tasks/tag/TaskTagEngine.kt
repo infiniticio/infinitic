@@ -71,7 +71,6 @@ class TaskTagEngine(
       is SetDelegatedTaskData -> setDelegatedTaskData(storage, message)
       is CompleteDelegatedTask -> completeDelegateTask(storage, producer, message, publishTime)
       is GetTaskIdsByTag -> getTaskIds(storage, producer, message)
-      else -> thisShouldNotHappen()
     }
   }
 

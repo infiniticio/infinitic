@@ -73,10 +73,10 @@ subprojects {
     testImplementation(Libs.Kotest.junit5)
     testImplementation(Libs.Kotest.property)
     testImplementation(Libs.Mockk.mockk)
+  }
 
-    if (name != "infinitic-common") {
-      testImplementation(testFixtures(project(":infinitic-common")))
-    }
+  if (project.name != "infinitic-common") {
+    dependencies { testImplementation(testFixtures(project(":infinitic-common"))) }
   }
 
   tasks.withType<Test> {

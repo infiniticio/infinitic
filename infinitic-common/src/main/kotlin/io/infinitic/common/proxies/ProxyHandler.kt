@@ -129,7 +129,7 @@ sealed class ProxyHandler<T : Any>(
     val any = getAsyncReturnValue(method)
 
     // if the method is defined at Object level, return default value
-    if (method.declaringClass == Object::class.java) {
+    if (method.declaringClass == Any::class.java) {
       return when (method.name) {
         "toString" -> klass.name
         else -> any

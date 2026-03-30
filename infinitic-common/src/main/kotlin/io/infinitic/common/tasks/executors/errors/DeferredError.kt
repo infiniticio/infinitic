@@ -324,7 +324,7 @@ data class MethodFailedError(
             workflowName = WorkflowName(e.workflowName),
             workflowId = WorkflowId(e.workflowId),
             workflowMethodName = MethodName(e.workflowMethodName),
-            workflowMethodId = e.workflowMethodId?.let { WorkflowMethodId(it) },
+            workflowMethodId = e.workflowMethodId?.let(::WorkflowMethodId),
             deferredError = from(e.deferredException),
         )
   }
