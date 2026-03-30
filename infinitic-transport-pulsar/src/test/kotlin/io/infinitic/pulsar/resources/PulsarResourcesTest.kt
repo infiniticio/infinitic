@@ -165,6 +165,21 @@ class PulsarResourcesTest : StringSpec(
         }
       }
 
+      "resolver methods should resolve pure logical and full topic names" {
+        val entity = RandomString(10).nextString()
+        val domain = "persistent://$tenant/$namespace"
+
+        pulsarResources.topicName(ServiceExecutorTopic, entity) shouldBe "task-executor:$entity"
+        pulsarResources.topicFullName(ServiceExecutorTopic, entity) shouldBe
+            "$domain/task-executor:$entity"
+        pulsarResources.topicName(WorkflowStateEngineTopic, null) shouldBe "workflow-engine"
+        pulsarResources.topicFullName(WorkflowStateEngineTopic, null) shouldBe
+            "$domain/workflow-engine"
+        pulsarResources.topicDlqName(ServiceExecutorTopic, entity) shouldBe "task-executor-dlq:$entity"
+        pulsarResources.topicDlqFullName(ServiceExecutorTopic, entity) shouldBe
+            "$domain/task-executor-dlq:$entity"
+      }
+
       "escaped topic entities should round-trip" {
         val entity = "service:\\name\nétape\t\"quote\""
 

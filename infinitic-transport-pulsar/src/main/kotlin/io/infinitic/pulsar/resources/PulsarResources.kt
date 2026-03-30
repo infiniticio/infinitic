@@ -28,13 +28,14 @@ import io.infinitic.common.transport.ClientTopic
 import io.infinitic.common.transport.MainSubscription
 import io.infinitic.common.transport.Topic
 import io.infinitic.common.transport.isTimer
+import io.infinitic.common.transport.interfaces.TransportTopicResolver
 import io.infinitic.pulsar.admin.InfiniticPulsarAdmin
 import io.infinitic.pulsar.config.PulsarConfig
 
 @Suppress("MemberVisibilityCanBePrivate")
 class PulsarResources(
   pulsarConfig: PulsarConfig
-) {
+) : TransportTopicResolver {
 
   val admin by lazy { InfiniticPulsarAdmin(pulsarConfig.pulsarAdmin) }
 
@@ -60,6 +61,14 @@ class PulsarResources(
    * Full name of a topic
    */
   fun topicFullName(topic: String) = "persistent://$namespaceFullName/$topic"
+
+  override fun <S : Message> topicName(topic: Topic<S>, entity: String?) = topic.name(entity)
+
+  override fun <S : Message> topicFullName(topic: Topic<S>, entity: String?) = topic.fullName(entity)
+
+  override fun <S : Message> topicDlqName(topic: Topic<S>, entity: String) = topic.nameDLQ(entity)
+
+  override fun <S : Message> topicDlqFullName(topic: Topic<S>, entity: String) = topic.fullNameDLQ(entity)
 
   /** Set of topics for current tenant and namespace */
   suspend fun getTopicsFullName(): Result<Set<String>> = admin.getTopicsSet(namespaceFullName)

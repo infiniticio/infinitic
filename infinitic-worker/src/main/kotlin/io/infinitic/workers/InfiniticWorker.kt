@@ -65,6 +65,7 @@ import io.infinitic.config.notNullPropertiesToString
 import io.infinitic.events.CloudEventLogger
 import io.infinitic.events.config.EventListenerConfig
 import io.infinitic.events.listeners.startCloudEventListener
+import io.micrometer.core.instrument.MeterRegistry
 import io.infinitic.tasks.Task
 import io.infinitic.tasks.UNSET_WITH_RETRY
 import io.infinitic.tasks.UNSET_WITH_TIMEOUT
@@ -113,6 +114,7 @@ import kotlinx.coroutines.withTimeout
 class InfiniticWorker(
   val config: InfiniticWorkerConfigInterface,
 ) : AutoCloseable, ConfigGetterInterface {
+  var meterRegistry: MeterRegistry? = null
 
   /**
    * Indicates whether the InfiniticWorker instance is started.
@@ -307,28 +309,39 @@ class InfiniticWorker(
       scope.launch {
         try {
           coroutineScope {
+            producerFactory.setMeterRegistry(meterRegistry)
+            val workerName = producerFactory.getName()
+
             config.services.forEach { serviceConfig ->
               logger.info { "Service ${serviceConfig.name}:" }
               // Start SERVICE TAG ENGINE
-              serviceConfig.tagEngine?.let { startServiceTagEngine(this, it) }
+              serviceConfig.tagEngine?.let {
+                startServiceTagEngine(this, it, meterRegistry, workerName)
+              }
               // Start SERVICE EXECUTOR
-              serviceConfig.executor?.let { startServiceExecutor(this, it) }
+              serviceConfig.executor?.let {
+                startServiceExecutor(this, it, meterRegistry, workerName)
+              }
             }
 
             config.workflows.forEach { workflowConfig ->
               logger.info { "Workflow ${workflowConfig.name}:" }
               // Start WORKFLOW TAG ENGINE
-              workflowConfig.tagEngine?.let { startWorkflowTagEngine(this, it) }
+              workflowConfig.tagEngine?.let {
+                startWorkflowTagEngine(this, it, meterRegistry, workerName)
+              }
               // Start WORKFLOW STATE ENGINE
-              workflowConfig.stateEngine?.let { startWorkflowStateEngine(this, it) }
+              workflowConfig.stateEngine?.let {
+                startWorkflowStateEngine(this, it, meterRegistry, workerName)
+              }
               // Start WORKFLOW EXECUTOR
-              workflowConfig.executor?.let { startWorkflowExecutor(this, it) }
+              workflowConfig.executor?.let {
+                startWorkflowExecutor(this, it, meterRegistry, workerName)
+              }
             }
 
             // Start Event Listener
             config.eventListener?.let { startEventListener(this, it) }
-
-            val workerName = producerFactory.getName()
 
             logger.info {
               "Worker '${workerName}' ready (shutdownGracePeriodSeconds=${shutdownGracePeriodSeconds}s)"
@@ -484,7 +497,9 @@ class InfiniticWorker(
    */
   internal suspend fun startServiceTagEngine(
     scope: CoroutineScope,
-    config: ServiceTagEngineConfig
+    config: ServiceTagEngineConfig,
+    registry: MeterRegistry? = null,
+    workerName: String = "unknown",
   ) {
     if (config.concurrency > 0) {
       // Log Service Tag Engine configuration
@@ -510,6 +525,8 @@ class InfiniticWorker(
           storage = storage,
           serviceName = serviceName,
           concurrency = config.concurrency,
+          registry = registry,
+          workerName = workerName,
       )
     }
   }
@@ -519,7 +536,9 @@ class InfiniticWorker(
    */
   internal suspend fun startServiceExecutor(
     scope: CoroutineScope,
-    config: ServiceExecutorConfig
+    config: ServiceExecutorConfig,
+    registry: MeterRegistry? = null,
+    workerName: String = "unknown",
   ) {
     // init batch methods for the current factory
     config.initBatchProcessorMethods()
@@ -549,6 +568,8 @@ class InfiniticWorker(
           serviceName = serviceName,
           concurrency = config.concurrency,
           batchConfig = batchConfig,
+          registry = registry,
+          workerName = workerName,
       )
     }
 
@@ -567,6 +588,8 @@ class InfiniticWorker(
           producer = loggedProducer,
           concurrency = config.retryHandlerConcurrency,
           batchConfig = batchConfig,
+          registry = registry,
+          workerName = workerName,
       )
     }
 
@@ -586,6 +609,8 @@ class InfiniticWorker(
           serviceName = serviceName,
           concurrency = config.eventHandlerConcurrency,
           batchConfig = batchConfig,
+          registry = registry,
+          workerName = workerName,
       )
     }
   }
@@ -595,7 +620,9 @@ class InfiniticWorker(
    */
   internal suspend fun startWorkflowTagEngine(
     scope: CoroutineScope,
-    config: WorkflowTagEngineConfig
+    config: WorkflowTagEngineConfig,
+    registry: MeterRegistry? = null,
+    workerName: String = "unknown",
   ) {
     if (config.concurrency > 0) {
       // Log Workflow State Engine configuration
@@ -622,6 +649,8 @@ class InfiniticWorker(
           workflowName = workflowName,
           concurrency = config.concurrency,
           batchConfig = batchConfig,
+          registry = registry,
+          workerName = workerName,
       )
     }
   }
@@ -631,7 +660,9 @@ class InfiniticWorker(
    */
   internal suspend fun startWorkflowStateEngine(
     scope: CoroutineScope,
-    config: WorkflowStateEngineConfig
+    config: WorkflowStateEngineConfig,
+    registry: MeterRegistry? = null,
+    workerName: String = "unknown",
   ) {
     // Log Workflow State Engine configuration
     logWorkflowStateEngineStart(config)
@@ -656,6 +687,8 @@ class InfiniticWorker(
           workflowName = workflowName,
           concurrency = config.commandHandlerConcurrency,
           batchConfig = batchConfig,
+          registry = registry,
+          workerName = workerName,
       )
     }
 
@@ -677,6 +710,8 @@ class InfiniticWorker(
           workflowName = workflowName,
           concurrency = config.concurrency,
           batchConfig = batchConfig,
+          registry = registry,
+          workerName = workerName,
       )
     }
 
@@ -696,6 +731,8 @@ class InfiniticWorker(
           concurrency = config.timerHandlerConcurrency,
           batchConfig = batchConfig,
           pastDueSeconds = config.timerHandlerPastDueSeconds,
+          registry = registry,
+          workerName = workerName,
       )
     }
 
@@ -715,6 +752,8 @@ class InfiniticWorker(
           workflowName = workflowName,
           concurrency = config.eventHandlerConcurrency,
           batchConfig = batchConfig,
+          registry = registry,
+          workerName = workerName,
       )
     }
   }
@@ -724,7 +763,9 @@ class InfiniticWorker(
    */
   internal suspend fun startWorkflowExecutor(
     scope: CoroutineScope,
-    config: WorkflowExecutorConfig
+    config: WorkflowExecutorConfig,
+    registry: MeterRegistry? = null,
+    workerName: String = "unknown",
   ) {
     // Log Workflow Executor configuration
     logWorkflowExecutorStart(config)
@@ -749,6 +790,8 @@ class InfiniticWorker(
           workflowName = workflowName,
           concurrency = config.concurrency,
           batchConfig = configBatch,
+          registry = registry,
+          workerName = workerName,
       )
     }
 
@@ -767,6 +810,8 @@ class InfiniticWorker(
           producer = loggedProducer,
           concurrency = config.retryHandlerConcurrency,
           batchConfig = configBatch,
+          registry = registry,
+          workerName = workerName,
       )
     }
 
@@ -786,6 +831,8 @@ class InfiniticWorker(
           workflowName = workflowName,
           concurrency = config.eventHandlerConcurrency,
           batchConfig = configBatch,
+          registry = registry,
+          workerName = workerName,
       )
     }
   }
@@ -798,6 +845,8 @@ class InfiniticWorker(
     storage: TaskTagStorage,
     serviceName: String,
     concurrency: Int,
+    registry: MeterRegistry? = null,
+    workerName: String = "unknown",
   ) {
     val taskTagEngine = TaskTagEngine(storage, producer)
 
@@ -819,6 +868,8 @@ class InfiniticWorker(
         consumer = consumer,
         concurrency = concurrency,
         processor = processor,
+        registry = registry,
+        workerName = workerName,
     )
   }
 
@@ -829,11 +880,13 @@ class InfiniticWorker(
     producer: InfiniticProducer,
     serviceName: String,
     concurrency: Int,
-    batchConfig: BatchConfig?
+    batchConfig: BatchConfig?,
+    registry: MeterRegistry? = null,
+    workerName: String = "unknown",
   ) {
     val executor = Executors.newFixedThreadPool(concurrency)
     synchronized<Unit>(executors) { executors.add(executor) }
-    val taskExecutor = TaskExecutor(executor, registry, producer, client)
+    val taskExecutor = TaskExecutor(executor, this@InfiniticWorker.registry, producer, client)
 
     val cloudEventLogger = CloudEventLogger(
         ServiceExecutorTopic,
@@ -860,6 +913,8 @@ class InfiniticWorker(
             taskExecutor.process(message)
           },
           beforeDlq = beforeDlq,
+          registry = registry,
+          workerName = workerName,
       )
 
       else -> startBatchProcessingWithoutKey(
@@ -877,6 +932,8 @@ class InfiniticWorker(
             }
           },
           beforeDlq = beforeDlq,
+          registry = registry,
+          workerName = workerName,
       )
     }
   }
@@ -887,7 +944,9 @@ class InfiniticWorker(
     consumer: TransportConsumer<out TransportMessage<ServiceExecutorMessage>>,
     producer: InfiniticProducer,
     concurrency: Int,
-    batchConfig: BatchConfig?
+    batchConfig: BatchConfig?,
+    registry: MeterRegistry? = null,
+    workerName: String = "unknown",
   ) {
     val taskRetryHandler = TaskRetryHandler(producer)
 
@@ -897,6 +956,8 @@ class InfiniticWorker(
           consumer = consumer,
           concurrency = concurrency,
           processor = taskRetryHandler::process,
+          registry = registry,
+          workerName = workerName,
       )
 
       else -> startBatchProcessingWithoutKey(
@@ -913,6 +974,8 @@ class InfiniticWorker(
               }
             }
           },
+          registry = registry,
+          workerName = workerName,
       )
     }
   }
@@ -924,7 +987,9 @@ class InfiniticWorker(
     producer: InfiniticProducer,
     serviceName: String,
     concurrency: Int,
-    batchConfig: BatchConfig?
+    batchConfig: BatchConfig?,
+    registry: MeterRegistry? = null,
+    workerName: String = "unknown",
   ) {
     val taskEventHandler = TaskEventHandler(producer)
 
@@ -946,6 +1011,8 @@ class InfiniticWorker(
               launch { taskEventHandler.process(message, publishedAt) }
             }
           },
+          registry = registry,
+          workerName = workerName,
       )
 
       else -> startBatchProcessingWithoutKey(
@@ -961,6 +1028,8 @@ class InfiniticWorker(
               }
             }
           },
+          registry = registry,
+          workerName = workerName,
       )
     }
   }
@@ -973,7 +1042,9 @@ class InfiniticWorker(
     storage: WorkflowTagStorage,
     workflowName: String,
     concurrency: Int,
-    batchConfig: BatchConfig?
+    batchConfig: BatchConfig?,
+    registry: MeterRegistry? = null,
+    workerName: String = "unknown",
   ) {
     val workflowTagEngine = WorkflowTagEngine(storage, producer)
 
@@ -993,6 +1064,8 @@ class InfiniticWorker(
             cloudEventLogger.log(message, publishedAt)
             workflowTagEngine.process(message, publishedAt)
           },
+          registry = registry,
+          workerName = workerName,
       )
 
       else -> startBatchProcessingWithKey(
@@ -1008,6 +1081,8 @@ class InfiniticWorker(
               launch { workflowTagEngine.batchProcess(messages) }
             }
           },
+          registry = registry,
+          workerName = workerName,
       )
     }
   }
@@ -1019,7 +1094,9 @@ class InfiniticWorker(
     producer: InfiniticProducer,
     workflowName: String,
     concurrency: Int,
-    batchConfig: BatchConfig?
+    batchConfig: BatchConfig?,
+    registry: MeterRegistry? = null,
+    workerName: String = "unknown",
   ) {
     val workflowStateCmdHandler = WorkflowStateCmdHandler(producer)
 
@@ -1041,6 +1118,8 @@ class InfiniticWorker(
               launch { workflowStateCmdHandler.process(message, publishedAt) }
             }
           },
+          registry = registry,
+          workerName = workerName,
       )
 
       else -> startBatchProcessingWithKey(
@@ -1056,6 +1135,8 @@ class InfiniticWorker(
               launch { workflowStateCmdHandler.batchProcess(messages) }
             }
           },
+          registry = registry,
+          workerName = workerName,
       )
     }
   }
@@ -1068,7 +1149,9 @@ class InfiniticWorker(
     storage: WorkflowStateStorage,
     workflowName: String,
     concurrency: Int,
-    batchConfig: BatchConfig?
+    batchConfig: BatchConfig?,
+    registry: MeterRegistry? = null,
+    workerName: String = "unknown",
   ) {
     val workflowStateEngine = WorkflowStateEngine(storage, producer)
 
@@ -1090,6 +1173,8 @@ class InfiniticWorker(
               launch { workflowStateEngine.process(message, publishedAt) }
             }
           },
+          registry = registry,
+          workerName = workerName,
       )
 
       else -> startBatchProcessingWithKey(
@@ -1105,6 +1190,8 @@ class InfiniticWorker(
               launch { workflowStateEngine.batchProcess(messages) }
             }
           },
+          registry = registry,
+          workerName = workerName,
       )
     }
   }
@@ -1116,7 +1203,9 @@ class InfiniticWorker(
     producer: InfiniticProducer,
     concurrency: Int,
     batchConfig: BatchConfig?,
-    pastDueSeconds: Long
+    pastDueSeconds: Long,
+    registry: MeterRegistry? = null,
+    workerName: String = "unknown",
   ) {
     val workflowStateTimerHandler = WorkflowStateTimerHandler(producer, pastDueSeconds)
 
@@ -1126,6 +1215,8 @@ class InfiniticWorker(
           consumer = consumer,
           concurrency = concurrency,
           processor = workflowStateTimerHandler::process,
+          registry = registry,
+          workerName = workerName,
       )
 
       else -> startBatchProcessingWithoutKey(
@@ -1140,6 +1231,8 @@ class InfiniticWorker(
               }
             }
           },
+          registry = registry,
+          workerName = workerName,
       )
     }
   }
@@ -1151,7 +1244,9 @@ class InfiniticWorker(
     producer: InfiniticProducer,
     workflowName: String,
     concurrency: Int,
-    batchConfig: BatchConfig?
+    batchConfig: BatchConfig?,
+    registry: MeterRegistry? = null,
+    workerName: String = "unknown",
   ) {
     val workflowStateEventHandler = WorkflowStateEventHandler(producer)
 
@@ -1173,6 +1268,8 @@ class InfiniticWorker(
               launch { workflowStateEventHandler.process(message, publishedAt) }
             }
           },
+          registry = registry,
+          workerName = workerName,
       )
 
       else -> startBatchProcessingWithoutKey(
@@ -1188,6 +1285,8 @@ class InfiniticWorker(
               }
             }
           },
+          registry = registry,
+          workerName = workerName,
       )
     }
   }
@@ -1199,11 +1298,14 @@ class InfiniticWorker(
     producer: InfiniticProducer,
     workflowName: String,
     concurrency: Int,
-    batchConfig: BatchConfig?
+    batchConfig: BatchConfig?,
+    registry: MeterRegistry? = null,
+    workerName: String = "unknown",
   ) {
     val executor = Executors.newFixedThreadPool(concurrency * (batchConfig?.maxMessages ?: 1))
     synchronized<Unit>(executors) { executors.add(executor) }
-    val workflowTaskExecutor = TaskExecutor(executor, registry, producer, client)
+    val workflowTaskExecutor =
+        TaskExecutor(executor, this@InfiniticWorker.registry, producer, client)
 
     val cloudEventLogger = CloudEventLogger(
         WorkflowExecutorTopic,
@@ -1233,6 +1335,8 @@ class InfiniticWorker(
             }
           },
           beforeDlq = beforeDlq,
+          registry = registry,
+          workerName = workerName,
       )
 
       else -> startBatchProcessingWithoutKey(
@@ -1249,6 +1353,8 @@ class InfiniticWorker(
             }
           },
           beforeDlq = beforeDlq,
+          registry = registry,
+          workerName = workerName,
       )
     }
   }
@@ -1259,7 +1365,9 @@ class InfiniticWorker(
     consumer: TransportConsumer<out TransportMessage<ServiceExecutorMessage>>,
     producer: InfiniticProducer,
     concurrency: Int,
-    batchConfig: BatchConfig?
+    batchConfig: BatchConfig?,
+    registry: MeterRegistry? = null,
+    workerName: String = "unknown",
   ) {
     val taskRetryHandler = TaskRetryHandler(producer)
 
@@ -1269,6 +1377,8 @@ class InfiniticWorker(
           consumer = consumer,
           concurrency = concurrency,
           processor = taskRetryHandler::process,
+          registry = registry,
+          workerName = workerName,
       )
 
       else -> startBatchProcessingWithoutKey(
@@ -1283,6 +1393,8 @@ class InfiniticWorker(
               }
             }
           },
+          registry = registry,
+          workerName = workerName,
       )
     }
   }
@@ -1294,7 +1406,9 @@ class InfiniticWorker(
     producer: InfiniticProducer,
     workflowName: String,
     concurrency: Int,
-    batchConfig: BatchConfig?
+    batchConfig: BatchConfig?,
+    registry: MeterRegistry? = null,
+    workerName: String = "unknown",
   ) {
     val workflowTaskEventHandler = TaskEventHandler(producer)
 
@@ -1316,6 +1430,8 @@ class InfiniticWorker(
               launch { workflowTaskEventHandler.process(message, publishedAt) }
             }
           },
+          registry = registry,
+          workerName = workerName,
       )
 
       else -> startBatchProcessingWithoutKey(
@@ -1331,6 +1447,8 @@ class InfiniticWorker(
               }
             }
           },
+          registry = registry,
+          workerName = workerName,
       )
     }
   }

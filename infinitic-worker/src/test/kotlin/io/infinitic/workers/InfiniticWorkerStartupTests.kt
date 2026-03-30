@@ -42,6 +42,7 @@ import io.infinitic.workers.samples.WorkflowAImpl
 import io.infinitic.workflows.WorkflowCheckMode
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
+import io.mockk.coVerify
 import io.mockk.spyk
 import io.mockk.verify
 import kotlinx.coroutines.CoroutineScope
@@ -149,8 +150,13 @@ class InfiniticWorkerStartupTests : StringSpec(
 
         // Then
         val capturedConfig = mutableListOf<ServiceTagEngineConfig>()
-        verify(exactly = services.size) {
-          worker["startServiceTagEngine"](any<CoroutineScope>(), capture(capturedConfig))
+        coVerify(exactly = services.size) {
+          worker.startServiceTagEngine(
+              any<CoroutineScope>(),
+              capture(capturedConfig),
+              null,
+              any<String>(),
+          )
         }
 
         capturedConfig shouldBe services.map { it.tagEngine }
@@ -178,8 +184,13 @@ class InfiniticWorkerStartupTests : StringSpec(
 
         // Then
         val capturedConfig = mutableListOf<ServiceExecutorConfig>()
-        verify(exactly = services.size) {
-          worker["startServiceExecutor"](any<CoroutineScope>(), capture(capturedConfig))
+        coVerify(exactly = services.size) {
+          worker.startServiceExecutor(
+              any<CoroutineScope>(),
+              capture(capturedConfig),
+              null,
+              any<String>(),
+          )
         }
 
         capturedConfig shouldBe services.map { it.executor }
@@ -207,8 +218,13 @@ class InfiniticWorkerStartupTests : StringSpec(
 
         // Then
         val capturedConfig = mutableListOf<WorkflowTagEngineConfig>()
-        verify(exactly = workflows.size) {
-          worker["startWorkflowTagEngine"](any<CoroutineScope>(), capture(capturedConfig))
+        coVerify(exactly = workflows.size) {
+          worker.startWorkflowTagEngine(
+              any<CoroutineScope>(),
+              capture(capturedConfig),
+              null,
+              any<String>(),
+          )
         }
 
         capturedConfig shouldBe workflows.map { it.tagEngine }
@@ -236,8 +252,13 @@ class InfiniticWorkerStartupTests : StringSpec(
 
         // Then
         val capturedConfig = mutableListOf<WorkflowStateEngineConfig>()
-        verify(exactly = workflows.size) {
-          worker["startWorkflowStateEngine"](any<CoroutineScope>(), capture(capturedConfig))
+        coVerify(exactly = workflows.size) {
+          worker.startWorkflowStateEngine(
+              any<CoroutineScope>(),
+              capture(capturedConfig),
+              null,
+              any<String>(),
+          )
         }
 
         capturedConfig shouldBe workflows.map { it.stateEngine }
@@ -265,8 +286,13 @@ class InfiniticWorkerStartupTests : StringSpec(
 
         // Then
         val capturedConfig = mutableListOf<WorkflowExecutorConfig>()
-        verify(exactly = workflows.size) {
-          worker["startWorkflowExecutor"](any<CoroutineScope>(), capture(capturedConfig))
+        coVerify(exactly = workflows.size) {
+          worker.startWorkflowExecutor(
+              any<CoroutineScope>(),
+              capture(capturedConfig),
+              null,
+              any<String>(),
+          )
         }
 
         capturedConfig shouldBe workflows.map { it.executor }
@@ -319,34 +345,44 @@ class InfiniticWorkerStartupTests : StringSpec(
               any<EventListenerConfig>(),
           )
         }
-        verify(exactly = 1) {
-          worker["startServiceExecutor"](
+        coVerify(exactly = 1) {
+          worker.startServiceExecutor(
               any<CoroutineScope>(),
               any<ServiceExecutorConfig>(),
+              null,
+              any<String>(),
           )
         }
-        verify(exactly = 1) {
-          worker["startServiceTagEngine"](
+        coVerify(exactly = 1) {
+          worker.startServiceTagEngine(
               any<CoroutineScope>(),
               any<ServiceTagEngineConfig>(),
+              null,
+              any<String>(),
           )
         }
-        verify(exactly = 1) {
-          worker["startWorkflowTagEngine"](
+        coVerify(exactly = 1) {
+          worker.startWorkflowTagEngine(
               any<CoroutineScope>(),
               any<WorkflowTagEngineConfig>(),
+              null,
+              any<String>(),
           )
         }
-        verify(exactly = 1) {
-          worker["startWorkflowStateEngine"](
+        coVerify(exactly = 1) {
+          worker.startWorkflowStateEngine(
               any<CoroutineScope>(),
               any<WorkflowStateEngineConfig>(),
+              null,
+              any<String>(),
           )
         }
-        verify(exactly = 1) {
-          worker["startWorkflowExecutor"](
+        coVerify(exactly = 1) {
+          worker.startWorkflowExecutor(
               any<CoroutineScope>(),
               any<WorkflowExecutorConfig>(),
+              null,
+              any<String>(),
           )
         }
       }

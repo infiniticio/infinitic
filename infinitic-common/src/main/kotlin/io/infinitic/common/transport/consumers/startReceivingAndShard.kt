@@ -47,6 +47,7 @@ internal fun <T : TransportMessage<M>, M> CoroutineScope.startReceivingAndShard(
   consumer: TransportConsumer<T>,
   batchReceiving: Boolean,
   concurrency: Int = 1,
+  trackQueueTime: Boolean = false,
 ): List<Channel<Result<T, T>>> {
   val shardChannels: List<Channel<Result<T, T>>> = List(concurrency) { createChannel() }
 
@@ -62,10 +63,13 @@ internal fun <T : TransportMessage<M>, M> CoroutineScope.startReceivingAndShard(
               trace { "Batch (${batch.size}) received from ${consumer.name}: $batch" }
               // counter
               incr(batch.size)
+              val receivedAt = if (trackQueueTime) System.nanoTime() else null
               batch.forEach {
                 val shard = getShard(it.key!!, size)
                 trace { "sending $it (key = ${it.key}) to shard $shard}" }
-                shardChannels[shard].send(Result.success(it, it))
+                val receiptNanos =
+                    receivedAt?.let { nanos -> longArrayOf(nanos) } ?: NO_RECEIPT_NANOS
+                shardChannels[shard].send(Result.success(it, it, receiptNanos))
               }
             }
           }
@@ -77,7 +81,9 @@ internal fun <T : TransportMessage<M>, M> CoroutineScope.startReceivingAndShard(
               // counter
               incr()
               val shard = getShard(msg.key!!, size)
-              shardChannels[shard].send(Result.success(msg, msg))
+              val receiptNanos =
+                  if (trackQueueTime) longArrayOf(System.nanoTime()) else NO_RECEIPT_NANOS
+              shardChannels[shard].send(Result.success(msg, msg, receiptNanos))
             }
           }
         }

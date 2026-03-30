@@ -92,6 +92,7 @@ class PulsarInfiniticConsumerTests :
 
         fun getConsumer() = mockk<PulsarConsumer<WorkflowEngineEnvelope>> {
           every { receiveAsync() } returns CompletableFuture.completedFuture(pulsarMessage)
+          every { getTopic() } returns "persistent://tenant/namespace/workflow-engine:test"
           every { unsubscribe() } returns Unit
           every { close() } returns Unit
         }

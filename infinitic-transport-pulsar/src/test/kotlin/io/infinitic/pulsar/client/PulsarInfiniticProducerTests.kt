@@ -30,6 +30,7 @@ import io.infinitic.common.transport.config.BatchConfig
 import io.infinitic.common.transport.config.maxMillis
 import io.infinitic.common.workflows.engine.messages.WorkflowEngineEnvelope
 import io.infinitic.pulsar.config.PulsarProducerConfig
+import io.infinitic.pulsar.schemas.schemaDefinition
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.every
@@ -127,6 +128,10 @@ class PulsarInfiniticProducerTests : StringSpec(
       }
 
       val client = InfiniticPulsarClient(pulsarClient).apply { name = "test" }
+      @Suppress("UNCHECKED_CAST")
+      val workflowEngineSchema =
+          Schema.AVRO(schemaDefinition(WorkflowEngineEnvelope::class))
+              as Schema<Envelope<out Message>>
 
       "Configuration given should be applied to producer (no batch config)" {
         val randomConfig =
@@ -136,7 +141,7 @@ class PulsarInfiniticProducerTests : StringSpec(
         // when
         client.createProducer(
             topic = randomTopic,
-            schemaKClass = WorkflowEngineEnvelope::class,
+            schema = workflowEngineSchema,
             pulsarProducerConfig = randomConfig,
             batchSendingConfig = null,
             key = null,
@@ -176,13 +181,12 @@ class PulsarInfiniticProducerTests : StringSpec(
         val randomConfig =
             TestFactory.random<PulsarProducerConfig>(mapOf("defaultCryptoKeyReader" to null))
         val randomTopic = TestFactory.random<String>()
-        val randomSchemaKClass = WorkflowEngineEnvelope::class
         val randomBatchConfig = TestFactory.random<BatchConfig>()
 
         // when
         client.createProducer(
             topic = randomTopic,
-            schemaKClass = randomSchemaKClass,
+            schema = workflowEngineSchema,
             pulsarProducerConfig = randomConfig,
             batchSendingConfig = randomBatchConfig,
             key = null,
@@ -221,13 +225,12 @@ class PulsarInfiniticProducerTests : StringSpec(
         val randomConfig =
             TestFactory.random<PulsarProducerConfig>(mapOf("defaultCryptoKeyReader" to null))
         val randomTopic = TestFactory.random<String>()
-        val randomSchemaKClass = WorkflowEngineEnvelope::class
         val randomKey = TestFactory.random<String>()
 
         // when
         client.createProducer(
             topic = randomTopic,
-            schemaKClass = randomSchemaKClass,
+            schema = workflowEngineSchema,
             pulsarProducerConfig = randomConfig,
             batchSendingConfig = null,
             key = randomKey,

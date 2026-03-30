@@ -41,6 +41,6 @@ object Plugins {
 
   object Spotless {
     const val id = "com.diffplug.spotless"
-    const val version = "6.22.0"
+    const val version = "7.2.1"
   }
 }

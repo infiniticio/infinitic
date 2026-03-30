@@ -26,6 +26,7 @@ import io.infinitic.inMemory.InMemoryConsumerFactory
 import io.infinitic.inMemory.InMemoryInfiniticProducerFactory
 import io.infinitic.inMemory.InMemoryInfiniticResources
 import io.infinitic.inMemory.channels.InMemoryChannels
+import io.infinitic.inMemory.resources.InMemoryResources
 
 data class InMemoryTransportConfig(
   override val shutdownGracePeriodSeconds: Double = 5.0
@@ -42,6 +43,8 @@ data class InMemoryTransportConfig(
 
   override val resources = InMemoryInfiniticResources(mainChannels)
 
+  override val topicResolver = InMemoryResources()
+
   override val consumerFactory = InMemoryConsumerFactory(mainChannels, eventListenerChannels)
 
   override val producerFactory =
@@ -51,4 +54,3 @@ data class InMemoryTransportConfig(
     // Do nothing
   }
 }
-

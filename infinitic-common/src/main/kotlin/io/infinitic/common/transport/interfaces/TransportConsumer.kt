@@ -47,4 +47,9 @@ interface TransportConsumer<T : TransportMessage<*>> {
    * Represents the name of the TransportConsumer. Used for Logging only
    */
   val name: String
+
+  /**
+   * Resolved transport topic name used by this consumer at runtime.
+   */
+  val topic: String
 }

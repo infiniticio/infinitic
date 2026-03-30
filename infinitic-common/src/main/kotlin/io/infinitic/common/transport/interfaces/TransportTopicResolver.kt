@@ -20,28 +20,17 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.transport.logged
+package io.infinitic.common.transport.interfaces
 
-import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.common.messages.Message
-import io.infinitic.common.transport.interfaces.InfiniticConsumer
-import io.infinitic.common.transport.interfaces.TransportMessage
+import io.infinitic.common.transport.Topic
 
-class LoggedInfiniticConsumer<M : Message>(
-  private val logger: KLogger,
-  private val consumer: InfiniticConsumer<M>,
-) : InfiniticConsumer<M> {
-  override suspend fun receive(): TransportMessage<M> = consumer.receive().also {
-    logger.trace { "Received $it from ${consumer.name}" }
-  }
+interface TransportTopicResolver {
+  fun <S : Message> topicName(topic: Topic<S>, entity: String?): String
 
-  override suspend fun batchReceive() = consumer.batchReceive().also {
-    logger.trace { "Batch (${it.size}) received from ${consumer.name}" }
-  }
+  fun <S : Message> topicFullName(topic: Topic<S>, entity: String?): String
 
-  override val maxRedeliveryCount: Int = consumer.maxRedeliveryCount
+  fun <S : Message> topicDlqName(topic: Topic<S>, entity: String): String
 
-  override val name: String = consumer.name
-
-  override val topic: String = consumer.topic
+  fun <S : Message> topicDlqFullName(topic: Topic<S>, entity: String): String
 }

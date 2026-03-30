@@ -46,6 +46,13 @@ repositories { mavenCentral() }
 
 println("version = ${Ci.version}")
 
+kotlin { jvmToolchain(17) }
+
+tasks.withType<JavaCompile> {
+  sourceCompatibility = JavaVersion.VERSION_17.toString()
+  targetCompatibility = JavaVersion.VERSION_17.toString()
+}
+
 subprojects {
   apply(plugin = Plugins.Kotlin.id)
   apply(plugin = Plugins.Serialization.id)

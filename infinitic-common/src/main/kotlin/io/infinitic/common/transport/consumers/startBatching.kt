@@ -57,7 +57,8 @@ fun <T, M> Channel<Result<T, M>>.startBatching(
         result.messages.forEach { add(it) }
         isOpen = result.isChannelOpen
       }
-      val out = Result.success(nextBatch.map { it.message }, nextBatch.map { it.data })
+      val receiptNanos = concatenateReceiptNanos(nextBatch)
+      val out = Result.success(nextBatch.map { it.message }, nextBatch.map { it.data }, receiptNanos)
       debug { "batching: sending $out" }
       outputChannel.send(out)
       trace { "batching: sent $out" }
@@ -65,4 +66,16 @@ fun <T, M> Channel<Result<T, M>>.startBatching(
     outputChannel.removeProducer("startBatching")
   }
   return outputChannel
+}
+
+private fun concatenateReceiptNanos(results: List<Result<*, *>>): LongArray {
+  val size = results.sumOf { it.receiptNanos.size }
+  if (size == 0) return NO_RECEIPT_NANOS
+
+  val receiptNanos = LongArray(size)
+  var index = 0
+  results.forEach { result ->
+    result.receiptNanos.forEach { receiptNanos[index++] = it }
+  }
+  return receiptNanos
 }

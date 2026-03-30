@@ -20,28 +20,28 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.transport.logged
+package io.infinitic.inMemory.resources
 
-import io.github.oshai.kotlinlogging.KLogger
 import io.infinitic.common.messages.Message
-import io.infinitic.common.transport.interfaces.InfiniticConsumer
-import io.infinitic.common.transport.interfaces.TransportMessage
+import io.infinitic.common.transport.Topic
+import io.infinitic.common.transport.interfaces.TransportTopicResolver
 
-class LoggedInfiniticConsumer<M : Message>(
-  private val logger: KLogger,
-  private val consumer: InfiniticConsumer<M>,
-) : InfiniticConsumer<M> {
-  override suspend fun receive(): TransportMessage<M> = consumer.receive().also {
-    logger.trace { "Received $it from ${consumer.name}" }
-  }
+private const val IN_MEMORY_PROTOCOL = "inmemory://"
+private const val SEPARATOR = ":"
+private const val DLQ_SUFFIX = "-dlq"
 
-  override suspend fun batchReceive() = consumer.batchReceive().also {
-    logger.trace { "Batch (${it.size}) received from ${consumer.name}" }
-  }
+class InMemoryResources : TransportTopicResolver {
+  override fun <S : Message> topicName(topic: Topic<S>, entity: String?) = topic.logicalName(entity)
 
-  override val maxRedeliveryCount: Int = consumer.maxRedeliveryCount
+  override fun <S : Message> topicFullName(topic: Topic<S>, entity: String?) =
+      "$IN_MEMORY_PROTOCOL${topicName(topic, entity)}"
 
-  override val name: String = consumer.name
+  override fun <S : Message> topicDlqName(topic: Topic<S>, entity: String) =
+      "${topic.prefix}$DLQ_SUFFIX$SEPARATOR$entity"
 
-  override val topic: String = consumer.topic
+  override fun <S : Message> topicDlqFullName(topic: Topic<S>, entity: String) =
+      "$IN_MEMORY_PROTOCOL${topicDlqName(topic, entity)}"
+
+  private fun Topic<*>.logicalName(entity: String?) =
+      prefix + (entity?.let { "$SEPARATOR$it" } ?: "")
 }

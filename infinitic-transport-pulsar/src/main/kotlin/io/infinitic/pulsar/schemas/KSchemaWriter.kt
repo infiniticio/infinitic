@@ -24,8 +24,72 @@ package io.infinitic.pulsar.schemas
 
 import io.infinitic.common.messages.Envelope
 import io.infinitic.common.messages.toByteArray
+import io.micrometer.core.instrument.MeterRegistry
+import io.micrometer.core.instrument.Tag
+import io.micrometer.core.instrument.Timer
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicLong
 import org.apache.pulsar.client.api.schema.SchemaWriter
 
-class KSchemaWriter<T : Envelope<*>> : SchemaWriter<T> {
-  override fun write(message: T) = message.toByteArray()
+class KSchemaWriter<T : Envelope<*>>(
+  workerName: String? = null,
+  topic: String? = null,
+  registry: MeterRegistry? = null,
+) : SchemaWriter<T> {
+  private val metrics =
+      when {
+        registry != null && workerName != null && topic != null ->
+          ProducerSerializationMetrics(registry, workerName, topic)
+        else -> null
+      }
+
+  override fun write(message: T): ByteArray {
+    val metrics = metrics ?: return message.toByteArray()
+    val messageType = message.message()::class.simpleName ?: "Unknown"
+    val inFlight = metrics.inFlight(messageType)
+    inFlight.incrementAndGet()
+    val startNanos = System.nanoTime()
+
+    try {
+      return message.toByteArray()
+    } finally {
+      metrics.timer(messageType).record(System.nanoTime() - startNanos, TimeUnit.NANOSECONDS)
+      inFlight.decrementAndGet()
+    }
+  }
+}
+
+private class ProducerSerializationMetrics(
+  private val registry: MeterRegistry,
+  private val workerName: String,
+  private val topic: String,
+) {
+  private val inFlight = ConcurrentHashMap<String, AtomicLong>()
+
+  fun inFlight(messageType: String): AtomicLong =
+      inFlight.computeIfAbsent(messageType) { mt ->
+        AtomicLong(0).also { counter ->
+          registry.gauge(
+              "infinitic.producer.message.serialization.in_flight",
+              listOf(
+                  Tag.of("worker_name", workerName),
+                  Tag.of("topic", topic),
+                  Tag.of("message_type", mt),
+              ),
+              counter,
+              AtomicLong::toDouble,
+          )
+        }
+      }
+
+  fun timer(messageType: String): Timer = registry.timer(
+      "infinitic.producer.message.serialization",
+      "worker_name",
+      workerName,
+      "topic",
+      topic,
+      "message_type",
+      messageType,
+  )
 }

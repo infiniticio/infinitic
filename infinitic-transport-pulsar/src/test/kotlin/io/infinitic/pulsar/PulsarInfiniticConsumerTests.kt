@@ -98,6 +98,7 @@ class PulsarInfiniticConsumerTests : StringSpec(
           CompletableFuture<PulsarMessage<Envelope<out Message>>>()
         }
         every { consumerName } returns "consumerName"
+        every { getTopic() } returns "persistent://$tenant/$namespace/test-topic"
       }
 
       val client = mockk<InfiniticPulsarClient> {

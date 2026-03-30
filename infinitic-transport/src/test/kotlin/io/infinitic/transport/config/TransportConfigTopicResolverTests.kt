@@ -20,28 +20,30 @@
  *
  * Licensor: infinitic.io
  */
-package io.infinitic.common.transport.logged
+package io.infinitic.transport.config
 
-import io.github.oshai.kotlinlogging.KLogger
-import io.infinitic.common.messages.Message
-import io.infinitic.common.transport.interfaces.InfiniticConsumer
-import io.infinitic.common.transport.interfaces.TransportMessage
+import io.infinitic.common.transport.ServiceExecutorTopic
+import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.shouldBe
 
-class LoggedInfiniticConsumer<M : Message>(
-  private val logger: KLogger,
-  private val consumer: InfiniticConsumer<M>,
-) : InfiniticConsumer<M> {
-  override suspend fun receive(): TransportMessage<M> = consumer.receive().also {
-    logger.trace { "Received $it from ${consumer.name}" }
-  }
+class TransportConfigTopicResolverTests : StringSpec(
+    {
+      "PulsarTransportConfig should expose pulsar topic resolver" {
+        val config = PulsarTransportConfig.builder()
+            .setBrokerServiceUrl("pulsar://localhost:6650/")
+            .setWebServiceUrl("http://localhost:8080")
+            .setTenant("infinitic")
+            .setNamespace("dev")
+            .build()
 
-  override suspend fun batchReceive() = consumer.batchReceive().also {
-    logger.trace { "Batch (${it.size}) received from ${consumer.name}" }
-  }
+        config.topicResolver shouldBe config.pulsar.pulsarResources
+      }
 
-  override val maxRedeliveryCount: Int = consumer.maxRedeliveryCount
+      "InMemoryTransportConfig should expose in-memory topic resolver" {
+        val config = InMemoryTransportConfig()
 
-  override val name: String = consumer.name
-
-  override val topic: String = consumer.topic
-}
+        config.topicResolver.topicFullName(ServiceExecutorTopic, "MyService") shouldBe
+            "inmemory://task-executor:MyService"
+      }
+    },
+)
