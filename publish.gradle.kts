@@ -38,9 +38,11 @@ import okhttp3.RequestBody.Companion.toRequestBody
 //
 // * once the new version is uploaded then publish it (FROM THE SAME IP ADDRESS) - see below
 //
-//   curl -u ossSonatypeOrgUsername:ossSonatypeOrgPassword -H 'accept: application/json' -X POST https://ossrh-staging-api.central.sonatype.com/manual/upload/defaultRepository/io.infinitic
+//   curl -u ossSonatypeOrgUsername:ossSonatypeOrgPassword -H 'accept: application/json' -X POST
+// https://ossrh-staging-api.central.sonatype.com/manual/upload/defaultRepository/io.infinitic
 //
-//   (see. https://central.sonatype.org/publish/publish-portal-ossrh-staging-api/#ensuring-deployment-visibility-in-the-central-publisher-portal)
+//   (see.
+// https://central.sonatype.org/publish/publish-portal-ossrh-staging-api/#ensuring-deployment-visibility-in-the-central-publisher-portal)
 //
 // * login to https://central.sonatype.com/publishing/deployments and click the Publish button
 //
@@ -152,7 +154,7 @@ val notifyCentralPortal =
           val password = System.getenv("OSSRH_PASSWORD") ?: ossSonatypeOrgPassword
 
           if (username == null || password == null)
-            throw GradleException("Missing OSSRH credentials.")
+              throw GradleException("Missing OSSRH credentials.")
 
           val auth = okhttp3.Credentials.basic(username, password)
           val client = okhttp3.OkHttpClient()

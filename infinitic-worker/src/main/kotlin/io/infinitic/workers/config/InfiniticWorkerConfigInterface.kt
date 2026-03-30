@@ -30,7 +30,7 @@ import io.infinitic.storage.config.StorageConfig
 @Suppress("unused")
 interface InfiniticWorkerConfigInterface : InfiniticClientConfigInterface {
   /** Default storage */
-  val storage: StorageConfig?
+  override val storage: StorageConfig?
 
   /** Logs configuration */
   val logs: LogsConfig

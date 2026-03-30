@@ -22,9 +22,13 @@
  */
 package io.infinitic.clients.config
 
+import io.infinitic.storage.config.StorageConfig
 import io.infinitic.transport.config.TransportConfigInterface
 
 interface InfiniticClientConfigInterface : TransportConfigInterface {
   /** (Optional) Client name */
   val name: String?
+
+  /** (Optional) Storage configuration for accessing workflow states */
+  val storage: StorageConfig?
 }
