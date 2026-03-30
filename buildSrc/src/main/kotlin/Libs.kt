@@ -125,7 +125,7 @@ object Libs {
   }
 
   object Micrometer {
-    const val core = "io.micrometer:micrometer-core:1.14.5"
+    const val core = "io.micrometer:micrometer-core:1.16.4"
   }
 
   object Compress {
