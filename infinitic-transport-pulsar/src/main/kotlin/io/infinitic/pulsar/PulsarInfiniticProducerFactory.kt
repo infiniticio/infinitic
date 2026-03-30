@@ -25,6 +25,7 @@ package io.infinitic.pulsar
 import io.infinitic.common.transport.NamingTopic
 import io.infinitic.common.transport.config.BatchConfig
 import io.infinitic.common.transport.interfaces.InfiniticProducerFactory
+import io.micrometer.core.instrument.MeterRegistry
 import io.infinitic.pulsar.client.InfiniticPulsarClient
 import io.infinitic.pulsar.config.PulsarProducerConfig
 import io.infinitic.pulsar.resources.PulsarResources
@@ -37,6 +38,7 @@ class PulsarInfiniticProducerFactory(
 ) : InfiniticProducerFactory {
 
   private var suggestedName: String? = null
+  private var meterRegistry: MeterRegistry? = null
 
   override suspend fun getName(): String {
     val namingTopic = with(pulsarResources) {
@@ -50,6 +52,10 @@ class PulsarInfiniticProducerFactory(
     suggestedName = name
   }
 
+  override fun setMeterRegistry(registry: MeterRegistry?) {
+    meterRegistry = registry
+  }
+
   override fun newProducer(batchSendingConfig: BatchConfig?): PulsarInfiniticProducer {
     // init client name
     runBlocking { getName() }
@@ -59,6 +65,7 @@ class PulsarInfiniticProducerFactory(
         pulsarProducerConfig,
         pulsarResources,
         batchSendingConfig,
+        meterRegistry,
     )
   }
 }

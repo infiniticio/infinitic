@@ -27,6 +27,7 @@ plugins { id("java-test-fixtures") }
 dependencies {
   // JsonPath is used on client API
   api(Libs.JsonPath.jayway)
+  api(Libs.Micrometer.core)
 
   implementation(Libs.Serialization.json)
   implementation(Libs.Mockk.mockk)

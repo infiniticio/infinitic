@@ -30,19 +30,26 @@ import io.infinitic.common.transport.config.BatchConfig
 import io.infinitic.common.transport.interfaces.InfiniticConsumerFactory
 import io.infinitic.inMemory.channels.InMemoryChannels
 import io.infinitic.inMemory.consumers.InMemoryConsumer
+import io.infinitic.inMemory.resources.InMemoryResources
 import kotlinx.coroutines.channels.Channel
 
 class InMemoryConsumerFactory(
   private val mainChannels: InMemoryChannels,
   private val eventListenerChannels: InMemoryChannels,
 ) : InfiniticConsumerFactory {
+  private val topicResolver = InMemoryResources()
 
   override suspend fun <S : Message> newConsumer(
     subscription: Subscription<S>,
     entity: String,
     batchReceivingConfig: BatchConfig?,
   ): InMemoryConsumer<S> =
-      InMemoryConsumer(subscription.topic, batchReceivingConfig, subscription.getChannel(entity))
+      InMemoryConsumer(
+          subscription.topic,
+          topicResolver.topicFullName(subscription.topic, entity),
+          batchReceivingConfig,
+          subscription.getChannel(entity),
+      )
 
   private fun <S : Message> Subscription<S>.getChannel(entity: String): Channel<S> =
       when (this) {
@@ -50,4 +57,3 @@ class InMemoryConsumerFactory(
         is EventListenerSubscription -> with(eventListenerChannels) { topic.channel(entity) }
       }
 }
-

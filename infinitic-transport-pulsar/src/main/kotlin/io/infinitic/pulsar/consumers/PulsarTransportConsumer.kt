@@ -30,24 +30,31 @@ import kotlinx.coroutines.future.await
 import org.apache.pulsar.client.api.Consumer
 
 class PulsarTransportConsumer<M : Message>(
-  private val topic: Topic<M>,
+  private val messageTopic: Topic<M>,
   private val pulsarConsumer: Consumer<Envelope<M>>,
-  override val maxRedeliveryCount: Int
+  override val maxRedeliveryCount: Int,
 ) : InfiniticConsumer<M> {
 
   override suspend fun receive(): PulsarTransportMessage<M> {
     val pulsarMessage = pulsarConsumer.receiveAsync().await()
 
-    return PulsarTransportMessage(pulsarMessage, pulsarConsumer, topic, maxRedeliveryCount)
+    return PulsarTransportMessage(
+        pulsarMessage,
+        pulsarConsumer,
+        messageTopic,
+        maxRedeliveryCount,
+    )
   }
 
   override suspend fun batchReceive(): List<PulsarTransportMessage<M>> {
     val pulsarMessages = pulsarConsumer.batchReceiveAsync().await()
 
     return pulsarMessages.map {
-      PulsarTransportMessage(it, pulsarConsumer, topic, maxRedeliveryCount)
+      PulsarTransportMessage(it, pulsarConsumer, messageTopic, maxRedeliveryCount)
     }
   }
 
   override val name: String = pulsarConsumer.consumerName
+
+  override val topic: String = pulsarConsumer.topic
 }

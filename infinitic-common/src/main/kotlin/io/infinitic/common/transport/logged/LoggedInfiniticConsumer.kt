@@ -42,4 +42,6 @@ class LoggedInfiniticConsumer<M : Message>(
   override val maxRedeliveryCount: Int = consumer.maxRedeliveryCount
 
   override val name: String = consumer.name
+
+  override val topic: String = consumer.topic
 }

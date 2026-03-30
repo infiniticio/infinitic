@@ -22,9 +22,12 @@
  */
 package io.infinitic.common.transport.consumers
 
+internal val NO_RECEIPT_NANOS = LongArray(0)
+
 class Result<out M, out T> internal constructor(
   val message: M,
-  private val value: Any?
+  private val value: Any?,
+  val receiptNanos: LongArray = NO_RECEIPT_NANOS,
 ) {
 
   val isSuccess: Boolean get() = value !is Failure
@@ -61,24 +64,31 @@ class Result<out M, out T> internal constructor(
         else -> "Success($message, $value)"
       }
 
-  fun <S> success(value: S): Result<M, S> = Result(message, value)
+  fun <S> success(value: S): Result<M, S> = Result(message, value, receiptNanos)
 
-  fun <S> failure(exception: Exception): Result<M, S> = Result(message, Failure(exception))
+  fun <S> failure(exception: Exception): Result<M, S> =
+      Result(message, Failure(exception), receiptNanos)
 
-  fun <S> failure(): Result<M, S> = Result(message, Failure(exception))
+  fun <S> failure(): Result<M, S> = Result(message, Failure(exception), receiptNanos)
 
   companion object {
     /**
      * Returns an instance that encapsulates the given [value] as successful value.
      */
-    fun <M, T> success(message: M, value: T): Result<M, T> =
-        Result(message, value)
+    fun <M, T> success(
+      message: M,
+      value: T,
+      receiptNanos: LongArray = NO_RECEIPT_NANOS,
+    ): Result<M, T> = Result(message, value, receiptNanos)
 
     /**
      * Returns an instance that encapsulates the given [Exception] [exception] as failure.
      */
-    fun <M, T> failure(message: M, exception: Exception): Result<M, T> =
-        Result(message, Failure(exception))
+    fun <M, T> failure(
+      message: M,
+      exception: Exception,
+      receiptNanos: LongArray = NO_RECEIPT_NANOS,
+    ): Result<M, T> = Result(message, Failure(exception), receiptNanos)
   }
 
   private class Failure(val exception: Exception) {
@@ -87,4 +97,3 @@ class Result<out M, out T> internal constructor(
     override fun toString(): String = "$exception"
   }
 }
-

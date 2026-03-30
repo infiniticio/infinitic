@@ -164,5 +164,40 @@ class PulsarResourcesTest : StringSpec(
           ServiceExecutorEventTopic.fullName(entity) shouldBe "$domain/task-events:$entity"
         }
       }
+
+      "resolver methods should resolve pure logical and full topic names" {
+        val entity = RandomString(10).nextString()
+        val domain = "persistent://$tenant/$namespace"
+
+        pulsarResources.topicName(ServiceExecutorTopic, entity) shouldBe "task-executor:$entity"
+        pulsarResources.topicFullName(ServiceExecutorTopic, entity) shouldBe
+            "$domain/task-executor:$entity"
+        pulsarResources.topicName(WorkflowStateEngineTopic, null) shouldBe "workflow-engine"
+        pulsarResources.topicFullName(WorkflowStateEngineTopic, null) shouldBe
+            "$domain/workflow-engine"
+        pulsarResources.topicDlqName(ServiceExecutorTopic, entity) shouldBe "task-executor-dlq:$entity"
+        pulsarResources.topicDlqFullName(ServiceExecutorTopic, entity) shouldBe
+            "$domain/task-executor-dlq:$entity"
+      }
+
+      "escaped topic entities should round-trip" {
+        val entity = "service:\\name\nétape\t\"quote\""
+
+        for (serviceTopic in ServiceTopic.entries) {
+          val topicName = serviceTopic.name(entity)
+          getServiceNameFromTopicName(topicName) shouldBe entity
+
+          val dlqTopicName = serviceTopic.nameDLQ(entity)
+          getServiceNameFromTopicName(dlqTopicName) shouldBe entity
+        }
+
+        for (workflowTopic in WorkflowTopic.entries) {
+          val topicName = workflowTopic.name(entity)
+          getWorkflowNameFromTopicName(topicName) shouldBe entity
+
+          val dlqTopicName = workflowTopic.nameDLQ(entity)
+          getWorkflowNameFromTopicName(dlqTopicName) shouldBe entity
+        }
+      }
     },
 )

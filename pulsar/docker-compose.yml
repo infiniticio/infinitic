@@ -23,7 +23,7 @@
 
 services:
   pulsar:
-    image: apachepulsar/pulsar:3.1.2
+    image: apachepulsar/pulsar:4.0.5
     command: sh -c "bin/apply-config-from-env.py conf/standalone.conf && bin/pulsar standalone"
     hostname: pulsar
     ports:
@@ -37,33 +37,3 @@ services:
       interval: 5s
       timeout: 10s
       retries: 10
-
-  streamvisor:
-    image: ghcr.io/streamvisor/streamvisor:3.2.0
-    ports:
-      - '8888:8888'
-      - '7750:7750'
-    volumes:
-      - './data/streamvisor/data/:/streamvisor/data'
-    depends_on:
-      pulsar:
-        condition: service_healthy
-    links:
-      - pulsar
-    environment:
-      - 'STREAMVISOR_ENVIRONMENTS_0_NAME=standalone'
-      - 'STREAMVISOR_ENVIRONMENTS_0_SERVICEURL=http://pulsar:8080'
-      - 'STREAMVISOR_ENVIRONMENTS_0_BROKERURL=pulsar://pulsar:6650'
-
-  data-faker:
-    image: ghcr.io/streamvisor/data-faker:1.2.1
-    profiles:
-      - demo
-    depends_on:
-      pulsar:
-        condition: service_healthy
-    links:
-      - pulsar
-    environment:
-      - 'PULSAR_ADMIN_URL=http://pulsar:8080'
-      - 'PULSAR_BROKER_SERVICEURL=pulsar://pulsar:6650'

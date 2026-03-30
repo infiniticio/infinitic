@@ -37,18 +37,19 @@ import kotlinx.coroutines.channels.Channel
  * @property channel The channel from which messages are consumed.
  */
 class InMemoryConsumer<S : Message>(
-  private val topic: Topic<S>,
+  private val messageTopic: Topic<S>,
+  override val topic: String,
   private val batchReceivingConfig: BatchConfig?,
   private val channel: Channel<S>
 ) : InfiniticConsumer<S> {
 
-  override suspend fun receive() = InMemoryTransportMessage(channel.receive(), topic)
+  override suspend fun receive() = InMemoryTransportMessage(channel.receive(), messageTopic)
 
   override suspend fun batchReceive(): List<InMemoryTransportMessage<S>> = channel.batchWithTimeout(
       batchReceivingConfig!!.maxMessages,
       batchReceivingConfig.maxMillis,
   ).messages.map {
-    InMemoryTransportMessage(it, topic)
+    InMemoryTransportMessage(it, messageTopic)
   }
 
   override val maxRedeliveryCount = 1

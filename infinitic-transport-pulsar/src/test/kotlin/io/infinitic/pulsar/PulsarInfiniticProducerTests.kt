@@ -58,6 +58,7 @@ import io.kotest.core.annotation.EnabledIf
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 
 @EnabledIf(DockerOnly::class)
 class PulsarInfiniticProducerTests : StringSpec(
@@ -284,6 +285,48 @@ class PulsarInfiniticProducerTests : StringSpec(
         // publishing to an absent ServiceEventsTopic should create it
         val topic = with(pulsarResources) { ServiceExecutorEventTopic.fullName(message.entity()) }
         admin.getTopicInfo(topic).getOrThrow() shouldNotBe null
+      }
+
+      "publishing with a meter registry should record producer serialization metrics" {
+        val registry = SimpleMeterRegistry()
+        val producer = PulsarInfiniticProducerFactory(
+            pulsarConfig.infiniticPulsarClient,
+            pulsarConfig.producer,
+            pulsarResources,
+        ).apply {
+          setMeterRegistry(registry)
+        }.newProducer(null)
+        val message = TestFactory.random<ServiceExecutorMessage>()
+        val topic = with(pulsarResources) { ServiceExecutorTopic.fullName(message.entity()) }
+
+        try {
+          shouldNotThrowAny { producer.internalSendTo(message, ServiceExecutorTopic) }
+
+          registry.get("infinitic.producer.message.serialization")
+              .tags(
+                  "worker_name",
+                  producer.emitterName.toString(),
+                  "topic",
+                  topic,
+                  "message_type",
+                  message::class.simpleName!!,
+              )
+              .timer()
+              .count() shouldBe 1L
+
+          registry.find("infinitic.producer.message.serialization.in_flight")
+              .tags(
+                  "worker_name",
+                  producer.emitterName.toString(),
+                  "topic",
+                  topic,
+                  "message_type",
+                  message::class.simpleName!!,
+              )
+              .gauge() shouldNotBe null
+        } finally {
+          registry.close()
+        }
       }
     },
 )

@@ -46,7 +46,8 @@ import kotlinx.coroutines.withContext
 context(LoggerWithCounter)
 fun <T : TransportMessage<M>, M> CoroutineScope.startReceiving(
   consumer: TransportConsumer<out T>,
-  outputChannel: Channel<Result<T, T>> = createChannel()
+  outputChannel: Channel<Result<T, T>> = createChannel(),
+  trackQueueTime: Boolean = false,
 ): Channel<Result<T, T>> {
 
   debug { "Starting producing on channel ${outputChannel.hashCode()} from ${consumer.name}" }
@@ -61,7 +62,9 @@ fun <T : TransportMessage<M>, M> CoroutineScope.startReceiving(
           trace { "Received from ${consumer.name}: $msg " }
           // counter
           incr()
-          outputChannel.send(Result.success(msg, msg))
+          val receiptNanos =
+              if (trackQueueTime) longArrayOf(System.nanoTime()) else NO_RECEIPT_NANOS
+          outputChannel.send(Result.success(msg, msg, receiptNanos))
         }
       } catch (_: CancellationException) {
         // do nothing, will exit if calling scope is not active anymore
@@ -93,7 +96,8 @@ fun <T : TransportMessage<M>, M> CoroutineScope.startReceiving(
 context(LoggerWithCounter)
 fun <T : TransportMessage<M>, M> CoroutineScope.startBatchReceiving(
   consumer: TransportConsumer<out T>,
-  outputChannel: Channel<Result<List<T>, List<T>>> = createBatchChannel()
+  outputChannel: Channel<Result<List<T>, List<T>>> = createBatchChannel(),
+  trackQueueTime: Boolean = false,
 ): Channel<Result<List<T>, List<T>>> {
 
   debug { "starting batch producing on channel ${outputChannel.hashCode()} from ${consumer.name}" }
@@ -108,7 +112,14 @@ fun <T : TransportMessage<M>, M> CoroutineScope.startBatchReceiving(
           trace { "Batch (${batch.size}) received from ${consumer.name}: $batch" }
           // counter
           incr(batch.size)
-          outputChannel.send(Result.success(batch, batch))
+          val receiptNanos =
+              if (trackQueueTime) {
+                val receivedAt = System.nanoTime()
+                LongArray(batch.size) { receivedAt }
+              } else {
+                NO_RECEIPT_NANOS
+              }
+          outputChannel.send(Result.success(batch, batch, receiptNanos))
         }
       } catch (_: CancellationException) {
         // do nothing, will exit if calling scope is not active anymore

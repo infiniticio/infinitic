@@ -31,11 +31,14 @@ import io.infinitic.common.transport.ClientTopic
 import io.infinitic.common.transport.Topic
 import io.infinitic.common.transport.config.BatchConfig
 import io.infinitic.common.transport.interfaces.InfiniticProducer
+import io.micrometer.core.instrument.MeterRegistry
 import io.infinitic.pulsar.client.InfiniticPulsarClient
 import io.infinitic.pulsar.config.PulsarProducerConfig
 import io.infinitic.pulsar.resources.PulsarResources
 import io.infinitic.pulsar.resources.envelope
 import io.infinitic.pulsar.resources.initWhenProducing
+import io.infinitic.pulsar.schemas.KSchemaWriter
+import io.infinitic.pulsar.schemas.schemaDefinition
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import kotlin.reflect.KClass
@@ -43,12 +46,14 @@ import kotlinx.coroutines.future.await
 import org.apache.pulsar.client.api.Producer
 import org.apache.pulsar.client.api.PulsarClientException.AlreadyClosedException
 import org.apache.pulsar.client.api.PulsarClientException.TopicDoesNotExistException
+import org.apache.pulsar.client.api.Schema
 
 class PulsarInfiniticProducer(
   private val client: InfiniticPulsarClient,
   private val pulsarProducerConfig: PulsarProducerConfig,
   private val pulsarResources: PulsarResources,
-  private val batchSendingConfig: BatchConfig?
+  private val batchSendingConfig: BatchConfig?,
+  private val meterRegistry: MeterRegistry?,
 ) : InfiniticProducer {
 
   override val emitterName by lazy { EmitterName(client.name) }
@@ -118,6 +123,7 @@ class PulsarInfiniticProducer(
     key: String?,
     batchSendingConfig: BatchConfig?
   ): Result<Producer<Envelope<out T>>> {
+    val metricsTopicFullName = pulsarResources.topicFullName(topic, entity)
     val topicFullName = with(pulsarResources) {
       topic.forEntity(
           entity = entity,
@@ -125,10 +131,21 @@ class PulsarInfiniticProducer(
           checkConsumer = true,
       )
     }
+    @Suppress("UNCHECKED_CAST")
+    val schema = Schema.AVRO(
+        schemaDefinition(
+            envelopeKClass,
+            KSchemaWriter(
+                workerName = client.name,
+                topic = metricsTopicFullName,
+                registry = meterRegistry,
+            ),
+        ),
+    ) as Schema<Envelope<out Message>>
 
     return client.getProducer(
         topicFullName,
-        envelopeKClass,
+        schema,
         batchSendingConfig,
         pulsarProducerConfig,
         key,

@@ -133,6 +133,8 @@ internal open class IntConsumer(private val maxMessages: Int = 1) : TransportCon
   override val maxRedeliveryCount = 1
 
   override val name: String = this.toString()
+
+  override val topic: String = "test-topic"
 }
 
 internal suspend fun process(deserialized: Int, publishedAt: MillisInstant) {

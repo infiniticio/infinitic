@@ -25,6 +25,7 @@ package io.infinitic.transport.config
 import io.infinitic.common.transport.interfaces.InfiniticConsumerFactory
 import io.infinitic.common.transport.interfaces.InfiniticProducerFactory
 import io.infinitic.common.transport.interfaces.InfiniticResources
+import io.infinitic.common.transport.interfaces.TransportTopicResolver
 
 sealed class TransportConfig : AutoCloseable {
   /**
@@ -42,6 +43,11 @@ sealed class TransportConfig : AutoCloseable {
    * This property provides methods to fetch available services and workflows,
    */
   abstract val resources: InfiniticResources
+
+  /**
+   * Provides pure topic name resolution for the configured transport.
+   */
+  abstract val topicResolver: TransportTopicResolver
 
   /**
    * Provides methods to create consumers for processing messages.

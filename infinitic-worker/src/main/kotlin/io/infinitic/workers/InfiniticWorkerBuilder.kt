@@ -25,6 +25,7 @@
 package io.infinitic.workers
 
 import io.infinitic.events.config.EventListenerConfig
+import io.micrometer.core.instrument.MeterRegistry
 import io.infinitic.storage.config.StorageConfig
 import io.infinitic.transport.config.TransportConfig
 import io.infinitic.workers.config.InfiniticWorkerConfig
@@ -48,6 +49,7 @@ class InfiniticWorkerBuilder {
   private var workflows: MutableList<WorkflowConfig> = mutableListOf()
   private var services: MutableList<ServiceConfig> = mutableListOf()
   private var eventListener: EventListenerConfig? = null
+  private var meterRegistry: MeterRegistry? = null
 
   private fun getOrCreateServiceConfig(serviceName: String) =
       services.firstOrNull { it.name == serviceName }
@@ -114,6 +116,9 @@ class InfiniticWorkerBuilder {
   fun setEventListener(eventListener: EventListenerConfig.EventListenerConfigBuilder) =
       setEventListener(eventListener.build())
 
+  fun setMeterRegistry(registry: MeterRegistry) =
+      apply { this.meterRegistry = registry }
+
   fun build(): InfiniticWorker {
     require(transport != null) { "transport must not be null" }
 
@@ -127,6 +132,6 @@ class InfiniticWorkerBuilder {
         eventListener,
     )
 
-    return InfiniticWorker(config)
+    return InfiniticWorker(config).also { it.meterRegistry = meterRegistry }
   }
 }

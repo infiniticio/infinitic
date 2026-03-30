@@ -20,8 +20,7 @@
  *
  * Licensor: infinitic.io
  */
-import io.infinitic.dashboard.InfiniticDashboard
-
+package io.infinitic.dashboard
 
 fun main(args: Array<String>) {
   // get name of config file
