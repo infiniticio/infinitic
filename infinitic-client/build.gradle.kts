@@ -30,6 +30,7 @@ dependencies {
 
   implementation(Libs.Coroutines.core)
   implementation(Libs.Coroutines.jdk8)
+  implementation(Libs.Serialization.json)
 
   testImplementation(project(":infinitic-transport-inMemory"))
   testImplementation(Libs.Serialization.json)

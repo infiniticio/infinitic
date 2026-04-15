@@ -24,8 +24,18 @@ package io.infinitic.clients
 
 import io.infinitic.clients.config.InfiniticClientConfig
 import io.infinitic.common.data.MessageId
+import io.infinitic.common.data.methods.MethodArgs
+import io.infinitic.common.data.methods.MethodName
+import io.infinitic.common.data.methods.MethodParameterTypes
+import io.infinitic.common.data.methods.MethodReturnValue
+import io.infinitic.common.serDe.SerializedData
 import io.infinitic.common.utils.IdGenerator
 import io.infinitic.common.workers.config.WorkflowVersion
+import io.infinitic.common.workflows.data.properties.PropertyName
+import io.infinitic.common.workflows.data.properties.PropertyValue
+import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethod
+import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
+import io.infinitic.common.workflows.data.workflowTasks.WorkflowTaskIndex
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
@@ -38,8 +48,12 @@ import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import java.util.Base64
 import kotlinx.coroutines.future.await
-import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
 
 class InfiniticClientGetWorkflowStateTest :
   StringSpec(
@@ -61,38 +75,95 @@ class InfiniticClientGetWorkflowStateTest :
           clientWithoutStorage.close()
         }
 
-        "getWorkflowState should throw when storage is not configured" {
+        "getWorkflowStateJson should throw when storage is not configured" {
           val exception = shouldThrow<java.util.concurrent.CompletionException> {
-            clientWithoutStorage.getWorkflowStateById(IdGenerator.next())
+            clientWithoutStorage.getWorkflowStateJsonById(IdGenerator.next())
           }
           exception.cause.shouldBeInstanceOf<IllegalStateException>()
         }
 
-        "getWorkflowStateAsync should throw when storage is not configured" {
+        "getWorkflowStateJsonAsync should throw when storage is not configured" {
           shouldThrow<IllegalStateException> {
-            clientWithoutStorage.getWorkflowStateByIdAsync(IdGenerator.next()).await()
+            clientWithoutStorage.getWorkflowStateJsonByIdAsync(IdGenerator.next()).await()
           }
         }
 
-        "getWorkflowState should return null for non-existent workflow" {
+        "getWorkflowStateJson should return null for non-existent workflow" {
           val workflowId = IdGenerator.next()
-          val state = clientWithStorage.getWorkflowStateById(workflowId)
+          val state = clientWithStorage.getWorkflowStateJsonById(workflowId)
 
           state.shouldBeNull()
         }
 
-        "getWorkflowStateAsync should return null for non-existent workflow" {
+        "getWorkflowStateJsonAsync should return null for non-existent workflow" {
           val workflowId = IdGenerator.next()
-          val state = clientWithStorage.getWorkflowStateByIdAsync(workflowId).await()
+          val state = clientWithStorage.getWorkflowStateJsonByIdAsync(workflowId).await()
 
           state.shouldBeNull()
         }
 
-        "getWorkflowState should return state for existing workflow" {
+        "getWorkflowStateJson should return json for existing workflow" {
+          val workflowId = WorkflowId(IdGenerator.next())
+          val workflowName = WorkflowName("TestWorkflow")
+          val propertyValue = PropertyValue.from("property-value", String::class.java)
+          val propertyName = PropertyName("prop")
+          val propertyHash = propertyValue.hash()
+          val workflowMetaValue = "meta-value".toByteArray()
+
+          val expectedState =
+              WorkflowState(
+                  lastMessageId = MessageId(IdGenerator.next()),
+                  workflowId = workflowId,
+                  workflowName = workflowName,
+                  workflowVersion = WorkflowVersion(1),
+                  workflowTags = setOf(),
+                  workflowMeta = WorkflowMeta(mapOf("meta-key" to workflowMetaValue)),
+                  runningWorkflowTaskId = null,
+                  runningWorkflowMethodId = null,
+                  positionInRunningWorkflowMethod = null,
+                  workflowMethods = mutableListOf(
+                      WorkflowMethod(
+                          waitingClients = mutableSetOf(),
+                          workflowMethodId = WorkflowMethodId("test-method-id"),
+                          requester = null,
+                          methodName = MethodName("run"),
+                          methodParameterTypes = MethodParameterTypes(listOf(String::class.java.name)),
+                          methodParameters = MethodArgs(
+                              listOf(SerializedData.encode("arg-value", String::class.java, null)),
+                          ),
+                          methodReturnValue = MethodReturnValue.from(
+                              "return-value",
+                              String::class.java,
+                          ),
+                          workflowTaskIndexAtStart = WorkflowTaskIndex(0),
+                          propertiesNameHashAtStart = mapOf(propertyName to propertyHash),
+                      ),
+                  ),
+                  currentPropertiesNameHash = mutableMapOf(propertyName to propertyHash),
+                  propertiesHashValue = mutableMapOf(propertyHash to propertyValue),
+              )
+
+          val workflowStorage = BinaryWorkflowStateStorage(storage.keyValue)
+          workflowStorage.putStateWithVersion(workflowId, expectedState, 0)
+
+          val retrievedState = clientWithStorage.getWorkflowStateJsonById(workflowId.toString())
+          val retrievedJson = Json.parseToJsonElement(retrievedState!!).jsonObject
+          val workflowMethodJson = retrievedJson["workflowMethods"]!!.jsonArray[0].jsonObject
+          val methodParametersJson = workflowMethodJson["methodParameters"]!!.jsonArray
+          val workflowMetaJson = retrievedJson["workflowMeta"]!!.jsonObject
+          val propertiesJson = retrievedJson["propertiesHashValue"]!!.jsonObject
+
+          workflowMetaJson["meta-key"] shouldBe
+              JsonPrimitive(Base64.getEncoder().encodeToString(workflowMetaValue))
+          methodParametersJson[0] shouldBe JsonPrimitive("arg-value")
+          workflowMethodJson["methodReturnValue"] shouldBe JsonPrimitive("return-value")
+          propertiesJson[propertyHash.hash] shouldBe JsonPrimitive("property-value")
+        }
+
+        "getWorkflowStateJsonAsync should return json for existing workflow" {
           val workflowId = WorkflowId(IdGenerator.next())
           val workflowName = WorkflowName("TestWorkflow")
 
-          // Create a workflow state
           val expectedState =
               WorkflowState(
                   lastMessageId = MessageId(IdGenerator.next()),
@@ -107,66 +178,32 @@ class InfiniticClientGetWorkflowStateTest :
                   workflowMethods = mutableListOf(),
               )
 
-          // Store the state directly using the internal storage
           val workflowStorage = BinaryWorkflowStateStorage(storage.keyValue)
-          runBlocking { workflowStorage.putStateWithVersion(workflowId, expectedState, 0) }
+          workflowStorage.putStateWithVersion(workflowId, expectedState, 0)
 
-          // Retrieve the state using the client method
-          val retrievedState = clientWithStorage.getWorkflowStateById(workflowId.toString())
-
-          // Verify the retrieved state matches
-          retrievedState shouldBe expectedState
-        }
-
-        "getWorkflowStateAsync should return state for existing workflow" {
-          val workflowId = WorkflowId(IdGenerator.next())
-          val workflowName = WorkflowName("TestWorkflow")
-
-          // Create a workflow state
-          val expectedState =
-              WorkflowState(
-                  lastMessageId = MessageId(IdGenerator.next()),
-                  workflowId = workflowId,
-                  workflowName = workflowName,
-                  workflowVersion = WorkflowVersion(1),
-                  workflowTags = setOf(),
-                  workflowMeta = WorkflowMeta(),
-                  runningWorkflowTaskId = null,
-                  runningWorkflowMethodId = null,
-                  positionInRunningWorkflowMethod = null,
-                  workflowMethods = mutableListOf(),
-              )
-
-          // Store the state directly using the internal storage
-          val workflowStorage = BinaryWorkflowStateStorage(storage.keyValue)
-          runBlocking { workflowStorage.putStateWithVersion(workflowId, expectedState, 0) }
-
-          // Retrieve the state using the async client method
           val retrievedState =
-              clientWithStorage.getWorkflowStateByIdAsync(workflowId.toString()).await()
+              clientWithStorage.getWorkflowStateJsonByIdAsync(workflowId.toString()).await()
 
-          // Verify the retrieved state matches
-          retrievedState shouldBe expectedState
+          retrievedState shouldBe expectedState.toClientJson()
         }
 
-        "getWorkflowStateSuspend should throw when storage is not configured" {
+        "getWorkflowStateJsonSuspend should throw when storage is not configured" {
           shouldThrow<IllegalStateException> {
-            runBlocking { clientWithoutStorage.getWorkflowStateByIdSuspend(IdGenerator.next()) }
+            clientWithoutStorage.getWorkflowStateJsonByIdSuspend(IdGenerator.next())
           }
         }
 
-        "getWorkflowStateSuspend should return null for non-existent workflow" {
+        "getWorkflowStateJsonSuspend should return null for non-existent workflow" {
           val workflowId = IdGenerator.next()
-          val state = runBlocking { clientWithStorage.getWorkflowStateByIdSuspend(workflowId) }
+          val state = clientWithStorage.getWorkflowStateJsonByIdSuspend(workflowId)
 
           state.shouldBeNull()
         }
 
-        "getWorkflowStateSuspend should return state for existing workflow" {
+        "getWorkflowStateJsonSuspend should return json for existing workflow" {
           val workflowId = WorkflowId(IdGenerator.next())
           val workflowName = WorkflowName("TestWorkflow")
 
-          // Create a workflow state
           val expectedState =
               WorkflowState(
                   lastMessageId = MessageId(IdGenerator.next()),
@@ -181,16 +218,13 @@ class InfiniticClientGetWorkflowStateTest :
                   workflowMethods = mutableListOf(),
               )
 
-          // Store the state directly using the internal storage
           val workflowStorage = BinaryWorkflowStateStorage(storage.keyValue)
-          runBlocking { workflowStorage.putStateWithVersion(workflowId, expectedState, 0) }
+          workflowStorage.putStateWithVersion(workflowId, expectedState, 0)
 
-          // Retrieve the state using the suspend client method
           val retrievedState =
-              runBlocking { clientWithStorage.getWorkflowStateByIdSuspend(workflowId.toString()) }
+              clientWithStorage.getWorkflowStateJsonByIdSuspend(workflowId.toString())
 
-          // Verify the retrieved state matches
-          retrievedState shouldBe expectedState
+          retrievedState shouldBe expectedState.toClientJson()
         }
       },
   )

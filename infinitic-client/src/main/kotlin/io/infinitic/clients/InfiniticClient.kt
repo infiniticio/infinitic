@@ -44,7 +44,6 @@ import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
-import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.exceptions.clients.InvalidIdTagSelectionException
 import io.infinitic.exceptions.clients.InvalidStubException
 import io.infinitic.properties.isLazyInitialized
@@ -55,6 +54,7 @@ import io.infinitic.workflows.engine.storage.LoggedWorkflowStateStorage
 import java.lang.reflect.Proxy
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
@@ -115,7 +115,7 @@ class InfiniticClient(
       clientScope.cancel()
       runBlocking {
         try {
-          withTimeout((shutdownGracePeriodSeconds * 1000).toLong()) {
+          withTimeout((shutdownGracePeriodSeconds * 1000).toLong().milliseconds) {
             clientScope.coroutineContext.job.join()
           }
         } catch (e: TimeoutCancellationException) {
@@ -237,14 +237,14 @@ class InfiniticClient(
     }
   }
 
-  override suspend fun getWorkflowStateByIdSuspend(workflowId: String): WorkflowState? {
+  override suspend fun getWorkflowStateJsonByIdSuspend(workflowId: String): String? {
     val storage = workflowStateStorage
       ?: throw IllegalStateException(
           "Storage is not configured for this client. " +
-              "Please configure storage in the client configuration to use getWorkflowState().",
+              "Please configure storage in the client configuration to use getWorkflowStateJson().",
       )
 
-    return storage.getStateAndVersion(WorkflowId(workflowId)).first
+    return storage.getStateAndVersion(WorkflowId(workflowId)).first?.toClientJson()
   }
 
   override fun <R> startAsync(invoke: () -> R): CompletableFuture<Deferred<R>> {
