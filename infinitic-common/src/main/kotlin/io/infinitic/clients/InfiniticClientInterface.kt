@@ -34,7 +34,6 @@ import io.infinitic.common.workflows.Consumer6
 import io.infinitic.common.workflows.Consumer7
 import io.infinitic.common.workflows.Consumer8
 import io.infinitic.common.workflows.Consumer9
-import io.infinitic.common.workflows.engine.state.WorkflowState
 import io.infinitic.workflows.DeferredStatus
 import java.io.Closeable
 import java.util.concurrent.CompletableFuture
@@ -593,43 +592,46 @@ interface InfiniticClientInterface : Closeable {
   fun <T : Any> getIds(stub: T): Set<String>
 
   /**
-   * Get the workflow state from storage (async)
+   * Get the workflow state as JSON from storage (async)
    *
-   * This method fetches the state from the database, decompresses and deserializes it.
+   * This method fetches the state from the database, decompresses and deserializes it, then
+   * renders it as JSON for display.
    * Requires storage to be configured in the client.
    *
    * @param workflowId The ID of the workflow to fetch
-   * @return CompletableFuture containing the workflow state if it exists, null otherwise
+   * @return CompletableFuture containing the workflow state JSON if it exists, null otherwise
    * @throws IllegalStateException if storage is not configured
    */
-  fun getWorkflowStateByIdAsync(workflowId: String): CompletableFuture<WorkflowState?> {
-    return clientScope.future { getWorkflowStateByIdSuspend(workflowId) }
+  fun getWorkflowStateJsonByIdAsync(workflowId: String): CompletableFuture<String?> {
+    return clientScope.future { getWorkflowStateJsonByIdSuspend(workflowId) }
   }
 
   /**
-   * Get the workflow state from storage (blocking)
+   * Get the workflow state as JSON from storage (blocking)
    *
-   * This method fetches the state from the database, decompresses and deserializes it.
+   * This method fetches the state from the database, decompresses and deserializes it, then
+   * renders it as JSON for display.
    * Requires storage to be configured in the client.
    *
    * @param workflowId The ID of the workflow to fetch
-   * @return The workflow state if it exists, null otherwise
+   * @return The workflow state JSON if it exists, null otherwise
    * @throws IllegalStateException if storage is not configured
    */
-  fun getWorkflowStateById(workflowId: String): WorkflowState? =
-      getWorkflowStateByIdAsync(workflowId).join()
+  fun getWorkflowStateJsonById(workflowId: String): String? =
+      getWorkflowStateJsonByIdAsync(workflowId).join()
 
   /**
-   * Get the workflow state from storage (suspend)
+   * Get the workflow state as JSON from storage (suspend)
    *
-   * This method fetches the state from the database, decompresses and deserializes it.
+   * This method fetches the state from the database, decompresses and deserializes it, then
+   * renders it as JSON for display.
    * Requires storage to be configured in the client.
    *
    * @param workflowId The ID of the workflow to fetch
-   * @return The workflow state if it exists, null otherwise
+   * @return The workflow state JSON if it exists, null otherwise
    * @throws IllegalStateException if storage is not configured
    */
-  suspend fun getWorkflowStateByIdSuspend(workflowId: String): WorkflowState?
+  suspend fun getWorkflowStateJsonByIdSuspend(workflowId: String): String?
 
 
   fun <R> startAsync(invoke: () -> R): CompletableFuture<Deferred<R>>
