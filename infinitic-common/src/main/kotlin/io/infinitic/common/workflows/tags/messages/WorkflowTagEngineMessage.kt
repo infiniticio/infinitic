@@ -181,7 +181,9 @@ data class AddTagToWorkflow(
   val workflowId: WorkflowId,
   override val emitterName: EmitterName,
   @AvroDefault(Avro.NULL) override val emittedAt: MillisInstant?
-) : WorkflowTagEngineMessage()
+) : WorkflowTagEngineMessage() {
+  override fun key() = "${workflowTag}:${workflowId}"
+}
 
 /**
  * This message is a command to tell the tag engine that a workflow with the provided tag is not running anymore
@@ -194,7 +196,9 @@ data class RemoveTagFromWorkflow(
   val workflowId: WorkflowId,
   override val emitterName: EmitterName,
   @AvroDefault(Avro.NULL) override val emittedAt: MillisInstant?
-) : WorkflowTagEngineMessage()
+) : WorkflowTagEngineMessage() {
+  override fun key() = "${workflowTag}:${workflowId}"
+}
 
 /**
  * This message is a command to request the tag engine to send back the ids of all workflows with the provided tag
