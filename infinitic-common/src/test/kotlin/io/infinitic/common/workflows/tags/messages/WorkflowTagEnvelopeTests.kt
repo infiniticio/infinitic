@@ -42,8 +42,15 @@ class WorkflowTagEnvelopeTests :
         WorkflowTagEngineMessage::class.sealedSubclasses.map {
           val msg = randomWorkflowTagMessage(it)
 
-          "WorkflowTagMessage(${msg::class.simpleName}) should have its tag as key" {
-            msg.key() shouldBe msg.workflowTag.toString()
+          "WorkflowTagMessage(${msg::class.simpleName}) should have expected key" {
+            when (msg) {
+              is AddTagToWorkflow ->
+                msg.key() shouldBe "${msg.workflowTag}:${msg.workflowId}"
+              is RemoveTagFromWorkflow ->
+                msg.key() shouldBe "${msg.workflowTag}:${msg.workflowId}"
+              else ->
+                msg.key() shouldBe msg.workflowTag.toString()
+            }
           }
         }
 
