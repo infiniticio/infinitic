@@ -217,6 +217,41 @@ class WorkflowTagEngineTests : StringSpec(
         (harness.clientMessages.single() as WorkflowIdsByTag).workflowIds shouldBe workflowIds
       }
 
+      "batch with mixed message types should use bulk path for add/remove" {
+        val workflowIds = setOf(WorkflowId(), WorkflowId())
+        val tag = WorkflowTag("test-tag")
+        val name = WorkflowName("test-name")
+        val harness = getHarness(tag, name, workflowIds)
+
+        val addMsg = random<AddTagToWorkflow>(
+            mapOf("workflowTag" to tag, "workflowName" to name),
+        )
+        val removeMsg = random<RemoveTagFromWorkflow>(
+            mapOf("workflowTag" to tag, "workflowName" to name),
+        )
+        val fanoutMsg = random<SendSignalByTag>(
+            mapOf("workflowTag" to tag, "workflowName" to name),
+        )
+
+        val now = MillisInstant.now()
+        harness.engine.batchProcess(
+            listOf(addMsg to now, removeMsg to now, fanoutMsg to now),
+        )
+
+        // Bulk path used for add/remove (getWorkflowIds with Set<Pair> + updateWorkflowIds)
+        coVerify(exactly = 1) {
+          harness.storage.getWorkflowIds(match<Set<Pair<WorkflowTag, WorkflowName>>> { it.isNotEmpty() })
+        }
+        coVerify(exactly = 1) { harness.storage.updateWorkflowIds(any(), any()) }
+
+        // Individual addWorkflowId/removeWorkflowId NOT called (bulk path handles them)
+        coVerify(exactly = 0) { harness.storage.addWorkflowId(any(), any(), any()) }
+        coVerify(exactly = 0) { harness.storage.removeWorkflowId(any(), any(), any()) }
+
+        // The fanout message was also processed (produced a continuation)
+        harness.tagMessages.single().shouldBeInstanceOf<ContinueWorkflowTagFanout>()
+      }
+
       "batch processing should do the same than one by one processing" {
         val n = 3
         val tags = List(n) { RandomString.make(10) }

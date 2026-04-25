@@ -81,19 +81,23 @@ class WorkflowTagEngine(
   ) {
     if (messages.isEmpty()) return
 
-    if (messages.all { (message, _) -> message is AddTagToWorkflow || message is RemoveTagFromWorkflow }) {
-      batchProcessAddRemoveOnly(messages)
-      return
+    val (addRemove, others) = messages.partition { (message, _) ->
+      message is AddTagToWorkflow || message is RemoveTagFromWorkflow
     }
 
-    val messagesMap: Map<Pair<WorkflowTag, WorkflowName>, List<Pair<WorkflowTagEngineMessage, MillisInstant>>> =
-        messages.groupBy { it.first.workflowTag to it.first.workflowName }
+    // Process add/remove through the optimized bulk path
+    if (addRemove.isNotEmpty()) {
+      batchProcessAddRemoveOnly(addRemove)
+    }
 
-    coroutineScope {
-      messagesMap
-          .map { (tagAndName, messages) ->
-            launch { batchProcessByTag(storage, producer, messages) }
-          }
+    // Process remaining messages (fanout, customId, getIds, continuations) per tag
+    if (others.isNotEmpty()) {
+      val messagesMap = others.groupBy { it.first.workflowTag to it.first.workflowName }
+      coroutineScope {
+        messagesMap.map { (_, groupedMessages) ->
+          launch { batchProcessByTag(storage, producer, groupedMessages) }
+        }
+      }
     }
   }
 
