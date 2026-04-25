@@ -122,5 +122,60 @@ class BinaryWorkflowTagStorageTest : FunSpec(
         page.workflowIds shouldContainExactly listOf(id1, id2)
         page.nextCursor shouldBe "cursor-2"
       }
+      test("getWorkflowIdsPage should not over-fetch when duplicates cause re-iteration") {
+        // When duplicates reduce the LinkedHashSet below limit, the loop must
+        // request only the deficit (limit - size), not the full limit.
+        // Otherwise the cursor overshoots and IDs are permanently skipped.
+        val workflowName = WorkflowName("test-name")
+        val workflowTag = WorkflowTag("test-tag")
+
+        // 4 unique IDs stored across pages
+        val allIds = (1..4).map { "id-$it".toByteArray() }
+        var requestedLimits = mutableListOf<Int>()
+
+        val keySetStorage = object : KeySetStorage {
+          override suspend fun get(key: String) = emptySet<ByteArray>()
+
+          override suspend fun getPage(key: String, limit: Int, cursor: String?): KeySetPage {
+            requestedLimits.add(limit)
+            val offset = cursor?.toIntOrNull() ?: 0
+            // First call: inject a duplicate to simulate Redis SSCAN behavior
+            val values = if (offset == 0) {
+              listOf(allIds[0], allIds[0]) // duplicate → LinkedHashSet gets 1 unique
+            } else {
+              allIds.drop(offset).take(limit)
+            }
+            val nextOffset = if (offset == 0) 1 else offset + limit
+            val nextCursor = if (nextOffset < allIds.size) nextOffset.toString() else null
+            return KeySetPage(values = values, nextCursor = nextCursor)
+          }
+
+          override suspend fun add(key: String, value: ByteArray) = Unit
+          override suspend fun remove(key: String, value: ByteArray) = Unit
+          override suspend fun get(keys: Set<String>) = emptyMap<String, Set<ByteArray>>()
+          override suspend fun update(
+            add: Map<String, Set<ByteArray>>,
+            remove: Map<String, Set<ByteArray>>,
+          ) = Unit
+          override fun flush() = Unit
+          override fun close() = Unit
+        }
+        val storage = BinaryWorkflowTagStorage(keySetStorage)
+
+        val page = storage.getWorkflowIdsPage(workflowTag, workflowName, limit = 2)
+
+        // First call: limit=2, got 2 items but 1 dup → set size=1 → loop continues
+        // Second call should request limit=1 (the deficit), not limit=2
+        requestedLimits[0] shouldBe 2
+        requestedLimits[1] shouldBe 1
+
+        page.workflowIds.size shouldBe 2
+        page.workflowIds[0] shouldBe WorkflowId("id-1")
+        page.workflowIds[1] shouldBe WorkflowId("id-2")
+
+        // Cursor must be non-null — id-3 and id-4 still remain
+        page.nextCursor shouldBe "2"
+      }
+
     },
 )

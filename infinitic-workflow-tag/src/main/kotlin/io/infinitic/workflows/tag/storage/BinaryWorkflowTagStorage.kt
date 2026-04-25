@@ -65,7 +65,7 @@ class BinaryWorkflowTagStorage(keySetStorage: KeySetStorage) :
     var nextCursor = cursor
 
     do {
-      val page = keySetStorage.getPage(key, limit, nextCursor)
+      val page = keySetStorage.getPage(key, limit - workflowIds.size, nextCursor)
       page.values.forEach { workflowIds.add(WorkflowId(String(it))) }
       nextCursor = page.nextCursor
     } while (workflowIds.size < limit && nextCursor != null)
