@@ -73,35 +73,29 @@ import kotlin.random.Random
 
 class WorkflowTagEngineTests : StringSpec(
     {
-      "public ByTag messages should enqueue an internal continuation" {
+      "public ByTag messages should inline the first page fanout" {
         val workflowIds = setOf(WorkflowId(), WorkflowId())
         val message = random<RetryTasksByTag>()
         val harness = getHarness(message.workflowTag, message.workflowName, workflowIds)
 
         harness.engine.process(message, MillisInstant.now())
 
-        coVerify(exactly = 0) { harness.storage.getWorkflowIds(message.workflowTag, message.workflowName) }
-        coVerify(exactly = 0) {
-          harness.storage.getWorkflowIdsPage(message.workflowTag, message.workflowName, any(), any())
+        coVerify(exactly = 1) {
+          harness.storage.getWorkflowIdsPage(message.workflowTag, message.workflowName, 5000, null)
         }
-        harness.tagMessages.single().shouldBeInstanceOf<ContinueWorkflowTagFanout>()
-        harness.workflowCmdMessages.size shouldBe 0
-
-        val continuation = harness.tagMessages.single() as ContinueWorkflowTagFanout
-        continuation.limit shouldBe 5000
-        continuation.command().shouldBeInstanceOf<RetryTasksByTag>()
+        // No continuation produced — all IDs fit in one page
+        harness.tagMessages.size shouldBe 0
+        // Fanout happened inline
+        harness.workflowCmdMessages.filterIsInstance<RetryTasks>().map { it.workflowId }
+            .shouldContainExactlyInAnyOrder(workflowIds.toList())
       }
 
-      "CancelWorkflowByTag continuation should fan out one CancelWorkflow per workflow id" {
+      "CancelWorkflowByTag should fan out one CancelWorkflow per workflow id inline" {
         val workflowIds = listOf(WorkflowId(), WorkflowId())
         val message = random<CancelWorkflowByTag>()
         val harness = getHarness(message.workflowTag, message.workflowName, workflowIds.toSet())
 
         harness.engine.process(message, MillisInstant.now())
-        val continuation = harness.tagMessages.single() as ContinueWorkflowTagFanout
-
-        harness.tagMessages.clear()
-        harness.engine.process(continuation, MillisInstant.now())
 
         coVerify(exactly = 1) {
           harness.storage.getWorkflowIdsPage(message.workflowTag, message.workflowName, 5000, null)
@@ -112,22 +106,19 @@ class WorkflowTagEngineTests : StringSpec(
         harness.tagMessages.size shouldBe 0
       }
 
-      "RetryWorkflowTaskByTag continuation should fan out one RetryWorkflowTask per workflow id" {
+      "RetryWorkflowTaskByTag should fan out one RetryWorkflowTask per workflow id inline" {
         val workflowIds = listOf(WorkflowId(), WorkflowId())
         val message = random<RetryWorkflowTaskByTag>()
         val harness = getHarness(message.workflowTag, message.workflowName, workflowIds.toSet())
 
         harness.engine.process(message, MillisInstant.now())
-        val continuation = harness.tagMessages.single() as ContinueWorkflowTagFanout
-
-        harness.tagMessages.clear()
-        harness.engine.process(continuation, MillisInstant.now())
 
         harness.workflowCmdMessages.filterIsInstance<RetryWorkflowTask>().map { it.workflowId }
             .shouldContainExactlyInAnyOrder(workflowIds)
+        harness.tagMessages.size shouldBe 0
       }
 
-      "SendSignalByTag continuation should request the next page when cursor remains" {
+      "SendSignalByTag should inline first page and enqueue continuation when cursor remains" {
         val workflowId = WorkflowId()
         val message = random<SendSignalByTag>()
         val harness = getHarness(
@@ -142,12 +133,10 @@ class WorkflowTagEngineTests : StringSpec(
         } returns firstPage
 
         harness.engine.process(message, MillisInstant.now())
-        val continuation = harness.tagMessages.single() as ContinueWorkflowTagFanout
 
-        harness.tagMessages.clear()
-        harness.engine.process(continuation, MillisInstant.now())
-
+        // First page fanned out inline
         harness.workflowCmdMessages.single().shouldBeInstanceOf<SendSignal>()
+        // Continuation enqueued for next page
         harness.tagMessages.single().shouldBeInstanceOf<ContinueWorkflowTagFanout>()
         (harness.tagMessages.single() as ContinueWorkflowTagFanout).cursor shouldBe "cursor-2"
       }
@@ -180,18 +169,16 @@ class WorkflowTagEngineTests : StringSpec(
             nextCursor = null,
         )
 
+        // First page is inline
         harness.engine.process(message, MillisInstant.now())
-        val firstContinuation = harness.tagMessages.single() as ContinueWorkflowTagFanout
+        harness.workflowCmdMessages.filterIsInstance<SendSignal>().map { it.workflowId } shouldBe
+            listOf(workflowIds.first())
+        val continuation = harness.tagMessages.single() as ContinueWorkflowTagFanout
+        continuation.cursor shouldBe "cursor-2"
 
+        // Second page via continuation
         harness.tagMessages.clear()
-        harness.engine.process(firstContinuation, MillisInstant.now())
-        harness.workflowCmdMessages.filterIsInstance<SendSignal>().map { it.workflowId }
-            .shouldContainExactlyInAnyOrder(listOf(workflowIds.first()))
-        val secondContinuation = harness.tagMessages.single() as ContinueWorkflowTagFanout
-        secondContinuation.cursor shouldBe "cursor-2"
-
-        harness.tagMessages.clear()
-        harness.engine.process(secondContinuation, MillisInstant.now())
+        harness.engine.process(continuation, MillisInstant.now())
 
         harness.workflowCmdMessages.filterIsInstance<SendSignal>().map { it.workflowId }
             .shouldContainExactlyInAnyOrder(workflowIds)

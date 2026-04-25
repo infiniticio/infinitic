@@ -147,31 +147,49 @@ class WorkflowTagEngine(
       is RemoveTagFromWorkflow -> removeTagFromWorkflow(storage, message)
       is GetWorkflowIdsByTag -> getWorkflowIds(storage, producer, message)
       is DispatchWorkflowByCustomId -> dispatchByCustomId(storage, producer, message, publishTime)
-      is DispatchMethodByTag -> enqueueInitialFanoutContinuation(producer, message, publishTime)
-      is SendSignalByTag -> enqueueInitialFanoutContinuation(producer, message, publishTime)
-      is CancelWorkflowByTag -> enqueueInitialFanoutContinuation(producer, message, publishTime)
-      is RetryWorkflowTaskByTag -> enqueueInitialFanoutContinuation(producer, message, publishTime)
-      is RetryTasksByTag -> enqueueInitialFanoutContinuation(producer, message, publishTime)
-      is CompleteTimersByTag -> enqueueInitialFanoutContinuation(producer, message, publishTime)
+      is DispatchMethodByTag -> inlineFanout(storage, producer, message, publishTime)
+      is SendSignalByTag -> inlineFanout(storage, producer, message, publishTime)
+      is CancelWorkflowByTag -> inlineFanout(storage, producer, message, publishTime)
+      is RetryWorkflowTaskByTag -> inlineFanout(storage, producer, message, publishTime)
+      is RetryTasksByTag -> inlineFanout(storage, producer, message, publishTime)
+      is CompleteTimersByTag -> inlineFanout(storage, producer, message, publishTime)
       is ContinueWorkflowTagFanout -> continueFanout(storage, producer, message)
     }
   }
 
-  private suspend fun enqueueInitialFanoutContinuation(
+  private suspend fun inlineFanout(
+    storage: WorkflowTagStorage,
     producer: InfiniticProducer,
     message: WorkflowTagFanoutMessage,
     publishTime: MillisInstant,
   ) {
     val normalizedMessage = normalizeFanoutMessage(message, publishTime)
-    val continuation = ContinueWorkflowTagFanout.from(
-        operationId = message.messageId ?: thisShouldNotHappen(),
+
+    val page = storage.getWorkflowIdsPage(
+        tag = normalizedMessage.workflowTag,
+        workflowName = normalizedMessage.workflowName,
         limit = fanoutPageSize,
-        command = normalizedMessage,
-        emitterName = emitterName,
-        emittedAt = normalizedMessage.emittedAt,
     )
 
-    with(producer) { continuation.sendTo(WorkflowTagEngineTopic) }
+    if (page.workflowIds.isEmpty()) {
+      discardTagWithoutIds(normalizedMessage as WorkflowTagEngineMessage)
+      return
+    }
+
+    fanoutPage(producer, normalizedMessage, page.workflowIds)
+
+    // Only use self-messaging for subsequent pages
+    page.nextCursor?.let { nextCursor ->
+      val continuation = ContinueWorkflowTagFanout.from(
+          operationId = message.messageId ?: thisShouldNotHappen(),
+          limit = fanoutPageSize,
+          cursor = nextCursor,
+          command = normalizedMessage,
+          emitterName = emitterName,
+          emittedAt = normalizedMessage.emittedAt,
+      )
+      with(producer) { continuation.sendTo(WorkflowTagEngineTopic) }
+    }
   }
 
   private suspend fun continueFanout(
