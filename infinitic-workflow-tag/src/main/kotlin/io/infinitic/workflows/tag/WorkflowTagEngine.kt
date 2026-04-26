@@ -25,6 +25,7 @@ package io.infinitic.workflows.tag
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.WorkflowIdsByTag
+import io.infinitic.common.data.MessageId
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.exceptions.thisShouldNotHappen
 import io.infinitic.common.requester.workflowId
@@ -33,6 +34,7 @@ import io.infinitic.common.transport.WorkflowStateCmdTopic
 import io.infinitic.common.transport.WorkflowTagEngineTopic
 import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.transport.logged.LoggerWithCounter
+import io.infinitic.common.transport.producers.BufferedInfiniticProducer
 import io.infinitic.common.workflows.data.workflowMethods.WorkflowMethodId
 import io.infinitic.common.workflows.data.workflows.WorkflowId
 import io.infinitic.common.workflows.data.workflows.WorkflowName
@@ -59,6 +61,7 @@ import io.infinitic.common.workflows.tags.messages.RetryWorkflowTaskByTag
 import io.infinitic.common.workflows.tags.messages.SendSignalByTag
 import io.infinitic.common.workflows.tags.messages.WorkflowTagFanoutMessage
 import io.infinitic.common.workflows.tags.messages.WorkflowTagEngineMessage
+import io.infinitic.common.workflows.tags.storage.WorkflowIdsPage
 import io.infinitic.common.workflows.tags.storage.WorkflowTagStorage
 import io.infinitic.workflows.tag.storage.BufferedWorkflowTagStorage
 import kotlinx.coroutines.coroutineScope
@@ -81,130 +84,223 @@ class WorkflowTagEngine(
   ) {
     if (messages.isEmpty()) return
 
-    if (messages.all { (message, _) -> message is AddTagToWorkflow || message is RemoveTagFromWorkflow }) {
-      batchProcessAddRemoveOnly(messages)
-      return
-    }
-
     val messagesMap: Map<Pair<WorkflowTag, WorkflowName>, List<Pair<WorkflowTagEngineMessage, MillisInstant>>> =
         messages.groupBy { it.first.workflowTag to it.first.workflowName }
 
-    coroutineScope {
-      messagesMap
-          .map { (tagAndName, messages) ->
-            launch { batchProcessByTag(storage, producer, messages) }
-          }
+    // Keep one mutable view per tag/name group, as in 0.18.2. Most groups only need it to
+    // accumulate add/remove deltas; groups with full-set reads get preloaded below.
+    val groupsNeedingFullIds = messagesMap.filterValues { groupedMessages ->
+      groupedMessages.any { (message, _) -> message.needsFullIdsInBufferedStorage() }
+    }.keys
+
+    val setIds = when (groupsNeedingFullIds.isEmpty()) {
+      true -> emptyMap()
+      false -> storage.getWorkflowIds(groupsNeedingFullIds)
     }
-  }
-
-  private suspend fun batchProcessAddRemoveOnly(
-    messages: List<Pair<WorkflowTagEngineMessage, MillisInstant>>,
-  ) {
-    val messagesMap: Map<Pair<WorkflowTag, WorkflowName>, List<Pair<WorkflowTagEngineMessage, MillisInstant>>> =
-        messages.groupBy { it.first.workflowTag to it.first.workflowName }
-
-    val setIds = storage.getWorkflowIds(messagesMap.keys)
-    val storages = messagesMap.keys.associateWith {
-      BufferedWorkflowTagStorage(setIds[it]?.toMutableSet() ?: mutableSetOf())
+    val bufferedStorages = messagesMap.keys.associateWith {
+      BufferedWorkflowTagStorage(setIds[it]?.toMutableSet())
+    }
+    val bufferedProducers = messagesMap.keys.associateWith {
+      BufferedInfiniticProducer(producer)
     }
 
+    // Each tag/name group keeps publish-time order internally; groups run independently.
     coroutineScope {
       messagesMap.map { (tagAndName, groupedMessages) ->
-        val bufferedStorage = storages[tagAndName]!!
-        launch { batchProcessByTag(bufferedStorage, producer, groupedMessages) }
+        val bufferedStorage = bufferedStorages[tagAndName]!!
+        val bufferedProducer = bufferedProducers[tagAndName]!!
+        launch {
+          batchProcessByTag(
+              bufferedStorage = bufferedStorage,
+              storage = storage,
+              bufferedProducer = bufferedProducer,
+              messages = groupedMessages,
+          )
+        }
       }
     }
 
-    storage.updateWorkflowIds(
-        add = storages.mapValues { it.value.adds },
-        remove = storages.mapValues { it.value.removes },
-    )
+    // Publish only after every group has finished so batch output is emitted as one unit.
+    coroutineScope {
+      bufferedProducers.values.forEach { launch { it.send() } }
+    }
+
+    val adds = bufferedStorages
+        .mapValues { it.value.adds }
+        .filterValues { it.isNotEmpty() }
+    val removes = bufferedStorages
+        .mapValues { it.value.removes }
+        .filterValues { it.isNotEmpty() }
+
+    // Flush accumulated tag mutations once, preserving the batch-storage optimization.
+    if (adds.isNotEmpty() || removes.isNotEmpty()) {
+      storage.updateWorkflowIds(
+          add = adds,
+          remove = removes,
+      )
+    }
   }
 
   private suspend fun batchProcessByTag(
+    bufferedStorage: BufferedWorkflowTagStorage,
     storage: WorkflowTagStorage,
-    producer: InfiniticProducer,
+    bufferedProducer: BufferedInfiniticProducer,
     messages: List<Pair<WorkflowTagEngineMessage, MillisInstant>>
   ) {
+    // Shared by this tag/name batch only, so equal fan-outs reuse one page read.
+    val pageCache = mutableMapOf<FanoutPageKey, WorkflowIdsPage>()
+
     messages
         .sortedBy { it.second.long }
         .forEach { (message, publishTime) ->
-          process(storage, producer, message, publishTime)
+          process(bufferedStorage, storage, bufferedProducer, message, publishTime, pageCache)
         }
   }
 
   suspend fun process(message: WorkflowTagEngineMessage, publishTime: MillisInstant) =
-      process(storage, producer, message, publishTime)
+      process(storage, storage, producer, message, publishTime)
 
   private suspend fun process(
+    bufferedStorage: WorkflowTagStorage,
     storage: WorkflowTagStorage,
-    producer: InfiniticProducer,
+    bufferedProducer: InfiniticProducer,
     message: WorkflowTagEngineMessage,
-    publishTime: MillisInstant
+    publishTime: MillisInstant,
+    pageCache: MutableMap<FanoutPageKey, WorkflowIdsPage>? = null,
   ) {
     when (message) {
-      is AddTagToWorkflow -> addTagToWorkflow(storage, message)
-      is RemoveTagFromWorkflow -> removeTagFromWorkflow(storage, message)
-      is GetWorkflowIdsByTag -> getWorkflowIds(storage, producer, message)
-      is DispatchWorkflowByCustomId -> dispatchByCustomId(storage, producer, message, publishTime)
-      is DispatchMethodByTag -> enqueueInitialFanoutContinuation(producer, message, publishTime)
-      is SendSignalByTag -> enqueueInitialFanoutContinuation(producer, message, publishTime)
-      is CancelWorkflowByTag -> enqueueInitialFanoutContinuation(producer, message, publishTime)
-      is RetryWorkflowTaskByTag -> enqueueInitialFanoutContinuation(producer, message, publishTime)
-      is RetryTasksByTag -> enqueueInitialFanoutContinuation(producer, message, publishTime)
-      is CompleteTimersByTag -> enqueueInitialFanoutContinuation(producer, message, publishTime)
-      is ContinueWorkflowTagFanout -> continueFanout(storage, producer, message)
+      // commands that change the storage
+      is AddTagToWorkflow -> addTagToWorkflow(bufferedStorage, message)
+      is RemoveTagFromWorkflow -> removeTagFromWorkflow(bufferedStorage, message)
+      // commands that require all ids
+      is GetWorkflowIdsByTag -> getWorkflowIds(bufferedStorage, bufferedProducer, message)
+      is DispatchWorkflowByCustomId -> dispatchByCustomId(bufferedStorage, bufferedProducer, message, publishTime)
+      // Fan-outs are paged from durable storage, not from the batch buffer. That preserves
+      // pagination without loading every id, but same-batch add/remove mutations are not visible.
+      is DispatchMethodByTag,
+      is SendSignalByTag,
+      is CancelWorkflowByTag,
+      is RetryWorkflowTaskByTag,
+      is RetryTasksByTag,
+      is CompleteTimersByTag, -> processInitialFanout(
+          storage,
+          bufferedProducer,
+          message,
+          publishTime,
+          pageCache,
+      )
+
+      is ContinueWorkflowTagFanout -> continueFanout(
+          storage,
+          bufferedProducer,
+          message,
+          publishTime,
+          pageCache,
+      )
     }
   }
 
-  private suspend fun enqueueInitialFanoutContinuation(
+  private suspend fun processInitialFanout(
+    storage: WorkflowTagStorage,
     producer: InfiniticProducer,
     message: WorkflowTagFanoutMessage,
     publishTime: MillisInstant,
+    pageCache: MutableMap<FanoutPageKey, WorkflowIdsPage>?,
   ) {
     val normalizedMessage = normalizeFanoutMessage(message, publishTime)
-    val continuation = ContinueWorkflowTagFanout.from(
+    // Initial fan-outs process the first page now; continuations start only at the next cursor.
+    processFanoutPage(
+        storage = storage,
+        producer = producer,
         operationId = message.messageId ?: thisShouldNotHappen(),
         limit = fanoutPageSize,
+        cursor = null,
         command = normalizedMessage,
-        emitterName = emitterName,
-        emittedAt = normalizedMessage.emittedAt,
+        emittedAt = normalizedMessage.emittedAt ?: publishTime,
+        pageCache = pageCache,
     )
-
-    with(producer) { continuation.sendTo(WorkflowTagEngineTopic) }
   }
 
   private suspend fun continueFanout(
     storage: WorkflowTagStorage,
     producer: InfiniticProducer,
     message: ContinueWorkflowTagFanout,
+    publishTime: MillisInstant,
+    pageCache: MutableMap<FanoutPageKey, WorkflowIdsPage>?,
   ) {
-    val command = message.command()
-    val workflowIdsPage = storage.getWorkflowIdsPage(
-        tag = command.workflowTag,
-        workflowName = command.workflowName,
+    val command = normalizeFanoutMessage(message.command(), message.emittedAt ?: publishTime)
+    // Existing continuation messages resume at their stored cursor.
+    processFanoutPage(
+        storage = storage,
+        producer = producer,
+        operationId = message.operationId,
         limit = message.limit,
         cursor = message.cursor,
+        command = command,
+        emittedAt = message.emittedAt ?: command.emittedAt ?: publishTime,
+        pageCache = pageCache,
     )
+  }
+
+  private suspend fun processFanoutPage(
+    storage: WorkflowTagStorage,
+    producer: InfiniticProducer,
+    operationId: MessageId,
+    limit: Int,
+    cursor: String?,
+    command: WorkflowTagFanoutMessage,
+    emittedAt: MillisInstant,
+    pageCache: MutableMap<FanoutPageKey, WorkflowIdsPage>?,
+  ) {
+    val workflowIdsPage = getWorkflowIdsPage(storage, command, limit, cursor, pageCache)
 
     if (workflowIdsPage.workflowIds.isEmpty()) {
-      if (message.cursor == null) discardTagWithoutIds(command as WorkflowTagEngineMessage)
+      if (cursor == null) discardTagWithoutIds(command as WorkflowTagEngineMessage)
       return
     }
 
     fanoutPage(producer, command, workflowIdsPage.workflowIds)
 
+    // A continuation is needed only when the storage returned another cursor.
     workflowIdsPage.nextCursor?.let { nextCursor ->
       val continuation = ContinueWorkflowTagFanout.from(
-          operationId = message.operationId,
-          limit = message.limit,
+          operationId = operationId,
+          limit = limit,
           cursor = nextCursor,
           command = command,
           emitterName = emitterName,
-          emittedAt = message.emittedAt,
+          emittedAt = emittedAt,
       )
       with(producer) { continuation.sendTo(WorkflowTagEngineTopic) }
     }
+  }
+
+  private suspend fun getWorkflowIdsPage(
+    storage: WorkflowTagStorage,
+    command: WorkflowTagFanoutMessage,
+    limit: Int,
+    cursor: String?,
+    pageCache: MutableMap<FanoutPageKey, WorkflowIdsPage>?,
+  ): WorkflowIdsPage {
+    val key = FanoutPageKey(
+        tag = command.workflowTag,
+        workflowName = command.workflowName,
+        limit = limit,
+        cursor = cursor,
+    )
+    pageCache?.get(key)?.let { return it }
+
+    val page = storage.getWorkflowIdsPage(
+        tag = command.workflowTag,
+        workflowName = command.workflowName,
+        limit = limit,
+        cursor = cursor,
+    )
+    if (pageCache != null) {
+      pageCache[key] = page
+    }
+
+    return page
   }
 
   private suspend fun dispatchByCustomId(
@@ -479,7 +575,23 @@ class WorkflowTagEngine(
     logger.info { "discarding ${message::class.simpleName} as no workflow `${message.workflowName}` found for tag `${message.workflowTag}`" }
   }
 
+  // Fan-outs are paged separately; only full-set commands need the batch buffer preloaded.
+  private fun WorkflowTagEngineMessage.needsFullIdsInBufferedStorage() = when (this) {
+    is DispatchWorkflowByCustomId,
+    is GetWorkflowIdsByTag,
+    -> true
+
+    else -> false
+  }
+
   companion object {
     val logger = LoggerWithCounter(KotlinLogging.logger {})
   }
 }
+
+private data class FanoutPageKey(
+  val tag: WorkflowTag,
+  val workflowName: WorkflowName,
+  val limit: Int,
+  val cursor: String?,
+)

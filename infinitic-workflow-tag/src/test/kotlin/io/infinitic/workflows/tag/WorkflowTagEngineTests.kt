@@ -22,20 +22,26 @@
  */
 package io.infinitic.workflows.tag
 
+import io.infinitic.common.clients.data.ClientName
 import io.infinitic.common.clients.messages.ClientMessage
 import io.infinitic.common.clients.messages.WorkflowIdsByTag
+import io.infinitic.common.data.methods.MethodArgs
+import io.infinitic.common.data.methods.MethodName
 import io.infinitic.common.data.MillisInstant
 import io.infinitic.common.emitters.EmitterName
 import io.infinitic.common.fixtures.TestFactory
+import io.infinitic.common.requester.ClientRequester
 import io.infinitic.common.transport.ClientTopic
 import io.infinitic.common.transport.WorkflowStateCmdTopic
 import io.infinitic.common.transport.WorkflowTagEngineTopic
 import io.infinitic.common.transport.interfaces.InfiniticProducer
 import io.infinitic.common.transport.producers.BufferedInfiniticProducer
 import io.infinitic.common.workflows.data.workflows.WorkflowId
+import io.infinitic.common.workflows.data.workflows.WorkflowMeta
 import io.infinitic.common.workflows.data.workflows.WorkflowName
 import io.infinitic.common.workflows.data.workflows.WorkflowTag
 import io.infinitic.common.workflows.engine.messages.CancelWorkflow
+import io.infinitic.common.workflows.engine.messages.DispatchWorkflow
 import io.infinitic.common.workflows.engine.messages.RetryTasks
 import io.infinitic.common.workflows.engine.messages.RetryWorkflowTask
 import io.infinitic.common.workflows.engine.messages.SendSignal
@@ -67,40 +73,40 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
-import kotlinx.coroutines.delay
 import net.bytebuddy.utility.RandomString
 import kotlin.random.Random
 
 class WorkflowTagEngineTests : StringSpec(
     {
-      "public ByTag messages should enqueue an internal continuation" {
-        val workflowIds = setOf(WorkflowId(), WorkflowId())
+      "public ByTag messages should fan out the first page immediately" {
+        val workflowIds = listOf(WorkflowId(), WorkflowId())
         val message = random<RetryTasksByTag>()
-        val harness = getHarness(message.workflowTag, message.workflowName, workflowIds)
+        val harness = getHarness(message.workflowTag, message.workflowName, workflowIds.toSet())
 
         harness.engine.process(message, MillisInstant.now())
 
         coVerify(exactly = 0) { harness.storage.getWorkflowIds(message.workflowTag, message.workflowName) }
-        coVerify(exactly = 0) {
-          harness.storage.getWorkflowIdsPage(message.workflowTag, message.workflowName, any(), any())
+        coVerify(exactly = 1) {
+          harness.storage.getWorkflowIdsPage(message.workflowTag, message.workflowName, 5000, null)
         }
-        harness.tagMessages.single().shouldBeInstanceOf<ContinueWorkflowTagFanout>()
-        harness.workflowCmdMessages.size shouldBe 0
-
-        val continuation = harness.tagMessages.single() as ContinueWorkflowTagFanout
-        continuation.limit shouldBe 5000
-        continuation.command().shouldBeInstanceOf<RetryTasksByTag>()
+        harness.tagMessages shouldBe emptyList()
+        harness.workflowCmdMessages.filterIsInstance<RetryTasks>().map { it.workflowId }
+            .shouldContainExactlyInAnyOrder(workflowIds)
       }
 
       "CancelWorkflowByTag continuation should fan out one CancelWorkflow per workflow id" {
         val workflowIds = listOf(WorkflowId(), WorkflowId())
         val message = random<CancelWorkflowByTag>()
         val harness = getHarness(message.workflowTag, message.workflowName, workflowIds.toSet())
+        val emittedAt = MillisInstant.now()
+        val continuation = ContinueWorkflowTagFanout.from(
+            operationId = message.messageId,
+            limit = 5000,
+            command = message.copy(emittedAt = emittedAt),
+            emitterName = message.emitterName,
+            emittedAt = emittedAt,
+        )
 
-        harness.engine.process(message, MillisInstant.now())
-        val continuation = harness.tagMessages.single() as ContinueWorkflowTagFanout
-
-        harness.tagMessages.clear()
         harness.engine.process(continuation, MillisInstant.now())
 
         coVerify(exactly = 1) {
@@ -116,18 +122,22 @@ class WorkflowTagEngineTests : StringSpec(
         val workflowIds = listOf(WorkflowId(), WorkflowId())
         val message = random<RetryWorkflowTaskByTag>()
         val harness = getHarness(message.workflowTag, message.workflowName, workflowIds.toSet())
+        val emittedAt = MillisInstant.now()
+        val continuation = ContinueWorkflowTagFanout.from(
+            operationId = message.messageId,
+            limit = 5000,
+            command = message.copy(emittedAt = emittedAt),
+            emitterName = message.emitterName,
+            emittedAt = emittedAt,
+        )
 
-        harness.engine.process(message, MillisInstant.now())
-        val continuation = harness.tagMessages.single() as ContinueWorkflowTagFanout
-
-        harness.tagMessages.clear()
         harness.engine.process(continuation, MillisInstant.now())
 
         harness.workflowCmdMessages.filterIsInstance<RetryWorkflowTask>().map { it.workflowId }
             .shouldContainExactlyInAnyOrder(workflowIds)
       }
 
-      "SendSignalByTag continuation should request the next page when cursor remains" {
+      "SendSignalByTag should request the next page when cursor remains" {
         val workflowId = WorkflowId()
         val message = random<SendSignalByTag>()
         val harness = getHarness(
@@ -142,10 +152,6 @@ class WorkflowTagEngineTests : StringSpec(
         } returns firstPage
 
         harness.engine.process(message, MillisInstant.now())
-        val continuation = harness.tagMessages.single() as ContinueWorkflowTagFanout
-
-        harness.tagMessages.clear()
-        harness.engine.process(continuation, MillisInstant.now())
 
         harness.workflowCmdMessages.single().shouldBeInstanceOf<SendSignal>()
         harness.tagMessages.single().shouldBeInstanceOf<ContinueWorkflowTagFanout>()
@@ -181,10 +187,6 @@ class WorkflowTagEngineTests : StringSpec(
         )
 
         harness.engine.process(message, MillisInstant.now())
-        val firstContinuation = harness.tagMessages.single() as ContinueWorkflowTagFanout
-
-        harness.tagMessages.clear()
-        harness.engine.process(firstContinuation, MillisInstant.now())
         harness.workflowCmdMessages.filterIsInstance<SendSignal>().map { it.workflowId }
             .shouldContainExactlyInAnyOrder(listOf(workflowIds.first()))
         val secondContinuation = harness.tagMessages.single() as ContinueWorkflowTagFanout
@@ -217,7 +219,229 @@ class WorkflowTagEngineTests : StringSpec(
         (harness.clientMessages.single() as WorkflowIdsByTag).workflowIds shouldBe workflowIds
       }
 
-      "batch processing should do the same than one by one processing" {
+      "batch GetWorkflowIdsByTag should use buffered tag mutations" {
+        val workflowTag = WorkflowTag("tag")
+        val workflowName = WorkflowName("workflow")
+        val workflowId = WorkflowId("workflow-id")
+        val addId = WorkflowId("add-id")
+        val removeId = WorkflowId("remove-id")
+        val add = AddTagToWorkflow(
+            workflowName = workflowName,
+            workflowTag = workflowTag,
+            workflowId = addId,
+            emitterName = EmitterName("emitter"),
+            emittedAt = null,
+        )
+        val remove = RemoveTagFromWorkflow(
+            workflowName = workflowName,
+            workflowTag = workflowTag,
+            workflowId = removeId,
+            emitterName = EmitterName("emitter"),
+            emittedAt = null,
+        )
+        val query = random<GetWorkflowIdsByTag>(
+            mapOf("workflowTag" to workflowTag, "workflowName" to workflowName),
+        )
+        val harness = getHarness(workflowTag, workflowName, setOf(workflowId, removeId))
+
+        harness.engine.batchProcess(
+            listOf(
+                add to MillisInstant(1),
+                remove to MillisInstant(2),
+                query to MillisInstant(3),
+            ),
+        )
+
+        coVerify(exactly = 1) { harness.storage.getWorkflowIds(setOf(workflowTag to workflowName)) }
+        coVerify(exactly = 0) { harness.storage.getWorkflowIds(workflowTag, workflowName) }
+        (harness.clientMessages.single() as WorkflowIdsByTag).workflowIds shouldBe setOf(
+            workflowId,
+            addId,
+        )
+      }
+
+      "batch DispatchWorkflowByCustomId should use buffered custom-id mutation" {
+        val customId = WorkflowTag("customId:workflow")
+        val workflowName = WorkflowName("workflow")
+        val firstWorkflowId = WorkflowId("first-workflow-id")
+        val secondWorkflowId = WorkflowId("second-workflow-id")
+        val firstDispatch = DispatchWorkflowByCustomId(
+            workflowName = workflowName,
+            workflowTag = customId,
+            workflowId = firstWorkflowId,
+            methodName = MethodName("method"),
+            methodParameters = MethodArgs(),
+            methodParameterTypes = null,
+            workflowTags = setOf(customId),
+            workflowMeta = WorkflowMeta(),
+            requester = ClientRequester(ClientName("client")),
+            clientWaiting = false,
+            emitterName = EmitterName("emitter"),
+            emittedAt = null,
+        )
+        val secondDispatch = firstDispatch.copy(workflowId = secondWorkflowId)
+        val harness = getHarness(customId, workflowName, emptySet())
+
+        harness.engine.batchProcess(
+            listOf(
+                firstDispatch to MillisInstant(1),
+                secondDispatch to MillisInstant(2),
+            ),
+        )
+
+        coVerify(exactly = 1) { harness.storage.getWorkflowIds(setOf(customId to workflowName)) }
+        coVerify(exactly = 1) {
+          harness.storage.updateWorkflowIds(
+              add = mapOf((customId to workflowName) to setOf(firstWorkflowId)),
+              remove = emptyMap(),
+          )
+        }
+        harness.workflowCmdMessages.filterIsInstance<DispatchWorkflow>().map { it.workflowId }
+            .shouldContainExactlyInAnyOrder(listOf(firstWorkflowId))
+      }
+
+      "mixed batch should buffer tag mutations and flush them with updateWorkflowIds" {
+        val workflowTag = WorkflowTag("tag")
+        val workflowName = WorkflowName("workflow")
+        val workflowId = WorkflowId("workflow-id")
+        val addId = WorkflowId("add-id")
+        val removeId = WorkflowId("remove-id")
+        val common = mapOf("workflowTag" to workflowTag, "workflowName" to workflowName)
+        val add = AddTagToWorkflow(
+            workflowName = workflowName,
+            workflowTag = workflowTag,
+            workflowId = addId,
+            emitterName = EmitterName("emitter"),
+            emittedAt = null,
+        )
+        val remove = RemoveTagFromWorkflow(
+            workflowName = workflowName,
+            workflowTag = workflowTag,
+            workflowId = removeId,
+            emitterName = EmitterName("emitter"),
+            emittedAt = null,
+        )
+        val retry = random<RetryWorkflowTaskByTag>(common)
+        val harness = getHarness(workflowTag, workflowName, setOf(workflowId))
+
+        harness.engine.batchProcess(
+            listOf(
+                add to MillisInstant(1),
+                retry to MillisInstant(2),
+                remove to MillisInstant(3),
+            ),
+        )
+
+        coVerify(exactly = 0) { harness.storage.addWorkflowId(any(), any(), any()) }
+        coVerify(exactly = 0) { harness.storage.removeWorkflowId(any(), any(), any()) }
+        coVerify(exactly = 1) {
+          harness.storage.updateWorkflowIds(
+              add = mapOf((workflowTag to workflowName) to setOf(addId)),
+              remove = mapOf((workflowTag to workflowName) to setOf(removeId)),
+          )
+        }
+        harness.workflowCmdMessages.filterIsInstance<RetryWorkflowTask>().map { it.workflowId }
+            .shouldContainExactlyInAnyOrder(listOf(workflowId))
+      }
+
+      "large mixed batch should keep storage interactions batched" {
+        val workflowTag = WorkflowTag("tag")
+        val workflowName = WorkflowName("workflow")
+        val existingId = WorkflowId("existing-id")
+        val pageIds = listOf(WorkflowId("page-1"), WorkflowId("page-2"))
+        val addIds = (1..100).map { WorkflowId("add-$it") }
+        val removeIds = (1..100).map { WorkflowId("remove-$it") }
+        val common = mapOf("workflowTag" to workflowTag, "workflowName" to workflowName)
+        val adds = addIds.map { workflowId ->
+          AddTagToWorkflow(
+              workflowName = workflowName,
+              workflowTag = workflowTag,
+              workflowId = workflowId,
+              emitterName = EmitterName("emitter"),
+              emittedAt = null,
+          )
+        }
+        val removes = removeIds.map { workflowId ->
+          RemoveTagFromWorkflow(
+              workflowName = workflowName,
+              workflowTag = workflowTag,
+              workflowId = workflowId,
+              emitterName = EmitterName("emitter"),
+              emittedAt = null,
+          )
+        }
+        val retryWorkflowTask = random<RetryWorkflowTaskByTag>(common)
+        val retryTasks = random<RetryTasksByTag>(common)
+        val query = random<GetWorkflowIdsByTag>(common)
+        val harness = getHarness(
+            workflowTag,
+            workflowName,
+            setOf(existingId) + removeIds.toSet(),
+        )
+        coEvery {
+          harness.storage.getWorkflowIdsPage(workflowTag, workflowName, 5000, null)
+        } returns WorkflowIdsPage(pageIds, null)
+
+        val messages = buildList {
+          adds.forEachIndexed { index, message -> add(message to MillisInstant(index.toLong())) }
+          removes.forEachIndexed { index, message ->
+            add(message to MillisInstant((adds.size + index).toLong()))
+          }
+          add(retryWorkflowTask to MillisInstant(300))
+          add(retryTasks to MillisInstant(301))
+          add(query to MillisInstant(302))
+        }
+
+        harness.engine.batchProcess(messages)
+
+        coVerify(exactly = 0) { harness.storage.addWorkflowId(any(), any(), any()) }
+        coVerify(exactly = 0) { harness.storage.removeWorkflowId(any(), any(), any()) }
+        coVerify(exactly = 1) { harness.storage.getWorkflowIds(setOf(workflowTag to workflowName)) }
+        coVerify(exactly = 1) {
+          harness.storage.getWorkflowIdsPage(workflowTag, workflowName, 5000, null)
+        }
+        coVerify(exactly = 1) {
+          harness.storage.updateWorkflowIds(
+              add = mapOf((workflowTag to workflowName) to addIds.toSet()),
+              remove = mapOf((workflowTag to workflowName) to removeIds.toSet()),
+          )
+        }
+        (harness.clientMessages.single() as WorkflowIdsByTag).workflowIds shouldBe
+            setOf(existingId) + addIds.toSet()
+        harness.workflowCmdMessages.filterIsInstance<RetryWorkflowTask>().map { it.workflowId }
+            .shouldContainExactlyInAnyOrder(pageIds)
+        harness.workflowCmdMessages.filterIsInstance<RetryTasks>().map { it.workflowId }
+            .shouldContainExactlyInAnyOrder(pageIds)
+      }
+
+      "fan-outs in the same batch should share page reads for the same cursor and limit" {
+        val workflowIds = listOf(WorkflowId(), WorkflowId())
+        val message1 = random<RetryWorkflowTaskByTag>()
+        val common = mapOf(
+            "workflowTag" to message1.workflowTag,
+            "workflowName" to message1.workflowName,
+        )
+        val message2 = random<RetryTasksByTag>(common)
+        val harness = getHarness(message1.workflowTag, message1.workflowName, workflowIds.toSet())
+
+        harness.engine.batchProcess(
+            listOf(
+                message1 to MillisInstant(1),
+                message2 to MillisInstant(2),
+            ),
+        )
+
+        coVerify(exactly = 1) {
+          harness.storage.getWorkflowIdsPage(message1.workflowTag, message1.workflowName, 5000, null)
+        }
+        coVerify(exactly = 0) { harness.storage.updateWorkflowIds(any(), any()) }
+        harness.workflowCmdMessages.filterIsInstance<RetryWorkflowTask>().map { it.workflowId }
+            .shouldContainExactlyInAnyOrder(workflowIds)
+        harness.workflowCmdMessages.filterIsInstance<RetryTasks>().map { it.workflowId }
+            .shouldContainExactlyInAnyOrder(workflowIds)
+      }
+
+      "batch processing should do the same than one by one processing for paginated fan-out" {
         val n = 3
         val tags = List(n) { RandomString.make(10) }
         val names = List(n) { RandomString.make(10) }
@@ -228,19 +452,17 @@ class WorkflowTagEngineTests : StringSpec(
               "workflowName" to WorkflowName(names[Random.nextInt(n)]),
           )
 
-          when (Random.nextInt(8)) {
-            0 -> random<AddTagToWorkflow>(common)
-            1 -> random<RemoveTagFromWorkflow>(common)
-            2 -> random<SendSignalByTag>(common)
-            3 -> random<CancelWorkflowByTag>(common)
-            4 -> random<RetryWorkflowTaskByTag>(common)
-            5 -> random<RetryTasksByTag>(common)
-            6 -> random<CompleteTimersByTag>(common)
+          when (Random.nextInt(6)) {
+            0 -> random<SendSignalByTag>(common)
+            1 -> random<CancelWorkflowByTag>(common)
+            2 -> random<RetryWorkflowTaskByTag>(common)
+            3 -> random<RetryTasksByTag>(common)
+            4 -> random<CompleteTimersByTag>(common)
             else -> random<DispatchMethodByTag>(common)
           }
         }
 
-        val publishedAt = List(messages.size) { delay(1); MillisInstant.now() }
+        val publishedAt = messages.indices.map { MillisInstant(it.toLong()) }
         fun randomTag() = WorkflowTag(tags[Random.nextInt(n)])
         fun randomId() = WorkflowId(ids[Random.nextInt(100)])
         fun randomName() = WorkflowName(names[Random.nextInt(n)])
@@ -255,12 +477,12 @@ class WorkflowTagEngineTests : StringSpec(
             keySetStorage1.mapValues { entry -> entry.value.toMutableSet() }.toMutableMap()
 
         val producer1 = BufferedInfiniticProducer(getProducer().producer)
-        val engine1 = WorkflowTagEngine(storage1, producer1)
+        val engine1 = WorkflowTagEngine(storage1, producer1, fanoutPageSize = 7)
         engine1.batchProcess(messages.zip(publishedAt))
 
         val storage2 = BinaryWorkflowTagStorage(InMemoryKeySetStorage(keySetStorage2))
         val producer2 = BufferedInfiniticProducer(getProducer().producer)
-        val engine2 = WorkflowTagEngine(storage2, producer2)
+        val engine2 = WorkflowTagEngine(storage2, producer2, fanoutPageSize = 7)
 
         messages.zip(publishedAt).forEach { (message, emittedAt) ->
           engine2.process(message, emittedAt)
