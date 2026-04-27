@@ -8,6 +8,5 @@ bin/
 out/
 *.log
 .DS_Store
-gradle.properties
 pulsar/data/
 .omc/

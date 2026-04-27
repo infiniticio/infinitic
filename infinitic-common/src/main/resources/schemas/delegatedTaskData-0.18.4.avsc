@@ -1,0 +1,55 @@
+{
+  "type" : "record",
+  "name" : "DelegatedTaskData",
+  "namespace" : "io.infinitic.tasks",
+  "fields" : [ {
+    "name" : "serviceName",
+    "type" : "string"
+  }, {
+    "name" : "methodName",
+    "type" : "string"
+  }, {
+    "name" : "taskId",
+    "type" : "string"
+  }, {
+    "name" : "requester",
+    "type" : [ {
+      "type" : "record",
+      "name" : "ClientRequester",
+      "namespace" : "io.infinitic.data",
+      "fields" : [ {
+        "name" : "clientName",
+        "type" : "string"
+      } ]
+    }, {
+      "type" : "record",
+      "name" : "WorkflowRequester",
+      "namespace" : "io.infinitic.data",
+      "fields" : [ {
+        "name" : "workflowName",
+        "type" : "string"
+      }, {
+        "name" : "workflowVersion",
+        "type" : [ "null", "int" ]
+      }, {
+        "name" : "workflowId",
+        "type" : "string"
+      }, {
+        "name" : "workflowMethodName",
+        "type" : "string"
+      }, {
+        "name" : "workflowMethodId",
+        "type" : "string"
+      } ]
+    } ]
+  }, {
+    "name" : "clientWaiting",
+    "type" : [ "null", "boolean" ]
+  }, {
+    "name" : "taskMeta",
+    "type" : {
+      "type" : "map",
+      "values" : "bytes"
+    }
+  } ]
+}
